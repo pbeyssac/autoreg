@@ -166,7 +166,7 @@ while (<ZF>) {
 			print OF "; lock $subdom\n" if $do_out;
 			next;
 		}
-	} elsif ($indomain && !$inheaders && /^;/) {
+	} elsif ($indomain && !$inheaders && /^\s*;/) {
 		$indomain = 0;
 		if ($action eq "delete") { $skip = 1 }
 	} elsif ($indomain && $inheaders && !/^\s*;/) {
@@ -187,6 +187,9 @@ if ($action eq 'new') {
 } elsif (!$found && $action ne 'soa') {
 	unlink($outfile) unless $action eq "show";
 	die sprintf($MSG_NODOM, $domain, $action);
+} elsif (!$was_updated && $action eq 'soa') {
+	unlink($outfile);
+	exit 1;
 }
 
 # don't close OF now : we want to keep the lock during the rename !
@@ -204,7 +207,7 @@ if ($do_out) {
 	rename($outfile, $zonefile) || die "rename failed:\!\n";
 	#close(OF);
 }
-exit;
+exit 0;
 
 sub modifyzone {
     if ($do_out) {
