@@ -11,6 +11,6 @@ Just ideas...
 	- be able to edit zone records in user requests
 	- be able to add a Cc: in a rejection/info mail
 	- be able to change destination e-mail in requests
-	- handle user-info through a CGI
+	- handle user-info and/or zone-auth through a CGI
 	- handle any record in the zone through a CGI
 	- PGP mails

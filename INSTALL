@@ -126,9 +126,12 @@ dns-manager-fr:	"| /usr/local/dns-manager/bin/receive-mail -lfr"
 
   1)	Create a new zone file, for example zones/DUMMY.ORG
 	(use one of the sample files in zones/ as a template)
-	and add it to conf/zones-auth with a dummy list of users.
+	and add it to conf/zones-auth with a list of authorized
+	users. Note that the users here are only HTTP users and
+	have absolutely no relation with Unix accounts.
 
-	Try to access it with different usernames (valid and invalid):
+	Try to access it with different usernames (authorized or not
+	authorized for the zone):
 
 		bin/access-zone -u username -t MX -a new TEST.DUMMY.ORG
 		(type anything on stdin, then ^D)
@@ -141,9 +144,9 @@ dns-manager-fr:	"| /usr/local/dns-manager/bin/receive-mail -lfr"
 
 	etc.
 
-  2) once this works, you can try the HTML forms and see if they correctly
-     call access-zone to check the requested domain, and put accepted requests
-     in val/
+  2) once this works, you can try the HTML forms to call the CGI scripts,
+     and see if they correctly call access-zone to check the requested
+     domain, and put accepted requests in val/
 
   3) then you can try the val script (called through the HTTP server) and
      see if it correctly displays the list of requests and each individual
@@ -171,3 +174,6 @@ dns-manager-fr:	"| /usr/local/dns-manager/bin/receive-mail -lfr"
   disappear when it shouldn't). If ok, reload named. If not, you
   can use the .old backup to restore the zone and see what went
   wrong (it never occured to me, but you never know).
+
+  When you feel confident that all works, you can run soa directly
+  with the -r option: it causes it to restart named automatically.

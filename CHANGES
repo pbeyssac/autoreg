@@ -1,5 +1,8 @@
 $Id$
 
+Wed Jan 21 21:32:15 CET 1998
+Updated soa, README and INSTALL.
+
 Sat Mar  8 16:32:57 MET 1997
 Enhanced README and INSTALL
 Patch to nph-dnsreq (didn't send correct headers)

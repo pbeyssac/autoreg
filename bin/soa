@@ -1,6 +1,10 @@
 #!/bin/sh
 # $Id$
 
+# options:
+#	-r to kill -1 named, if a zone has changed
+#	-c to be quiet if nothing has changed (useful in cron jobs)
+
 # Where to find the "access-zone" script
 AZ=/usr/local/dns-manager/bin/access-zone
 # The directory for zone files

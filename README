@@ -8,7 +8,7 @@ needs the following software packages:
 		Perl 4
 		AR41 probably won't work on Perl 5 without some work
 
-		Apache httpd 1.1 or 1.2
+		Apache httpd 1.1.x, 1.2.x or 1.3.x
 		Any Apache above 1.0 should be ok
 
 		sendmail
@@ -19,6 +19,7 @@ needs the following software packages:
 		named
 		Any version of BIND will probably do;
 		Most recent versions (currently 4.9.6 or 8.1.1) recommended
+		for security reasons.
 
 		dig
 		Any version will probably do; 2.1 or above recommended.
@@ -36,7 +37,7 @@ In this distribution you'll find the following directories:
 The request flow in AR41 is organized in the following way:
 
 
-(1) the user sends a request
+(1) the user sends a request by HTTP or mail
 
 	   Web (httpd)			Mail (sendmail)
 		|				|
@@ -76,9 +77,14 @@ Once in a while the "real" zones need to be updated:
 
 (5) the administrator updates the master zones (needs access to a shell)
 
-	# cd /usr/local/dns-manager/zones
-	# ../bin/soa UK.EU.ORG FR.EU.ORG
+	# soa -r UK.EU.ORG FR.EU.ORG
 
-(6) the nameserver is reloaded
+    soa displays the diffs between the current zones (stored in /etc/namedb)
+    and the new zones (stored in the zone directory you chose).
+    Then it updates the SOA of the updated zones, copies these zones
+    to /etc/namedb, then reloads named (if started with option -r).
 
-	# ndc reload
+    I run soa through a cron job, 3 or 4 times per hour.
+    In that case, I run soa with option -c so that it stays quiet
+    if there is nothing to do (in that case, cron doesn't send
+    a mail).
