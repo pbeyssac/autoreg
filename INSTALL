@@ -44,7 +44,7 @@ $Id$
 * Adapt the path for /usr/local/bin/dns-manager/conf/config
 	in every script (bin/* and cgi-bin/*):
 
-	bin/soa: see the environments variables at the start
+	bin/soa: see the environment variables at the start
 
 	bin/access-zone:require "/usr/local/dns-manager/conf/config";
 	bin/check-cname:require "/usr/local/dns-manager/conf/config";
@@ -143,3 +143,4 @@ dns-manager-fr:	"| /usr/local/dns-manager/bin/receive-mail -lfr"
 
 	- copy the file to the master directory and reload named.
 
+  Alternatively, you can use the "soa" script which does all this.
