@@ -44,6 +44,8 @@ $Id$
 * Adapt the path for /usr/local/bin/dns-manager/conf/config
 	in every script (bin/* and cgi-bin/*):
 
+	bin/soa: see the environments variables at the start
+
 	bin/access-zone:require "/usr/local/dns-manager/conf/config";
 	bin/check-cname:require "/usr/local/dns-manager/conf/config";
 	bin/check-mx:require "/usr/local/dns-manager/conf/config";
@@ -52,6 +54,7 @@ $Id$
 	bin/receive-mail:require "/usr/local/dns-manager/conf/config";
 	cgi-bin/nph-dnsreq:require "/usr/local/dns-manager/conf/config";
 	cgi-bin/val:require "/usr/local/dns-manager/conf/config";
+
 
 * Put the following in your HTTP server pages:
 
