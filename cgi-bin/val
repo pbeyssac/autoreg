@@ -80,8 +80,8 @@ sub dodir {
       print "<TT>$fname</TT> ***<BR>\n";
     } else {
       $replyto = <F>; chop $replyto;
-      $line = <F>;
-      ($action, $domain, $lang) = split(/ /, $line);
+      $line = <F>; chop $line;
+      ($action, $domain, $lang, $state) = split(/ /, $line);
 
       next if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'}));
 
@@ -98,12 +98,57 @@ sub dodir {
       } elsif ($action eq 'D') {
 	$action = "DEL";
       }
-      print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$fname\"><TT>$fname</TT></A> $action $lang $domain <BR>\n";
+      if ($state eq 'Open') {
+        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$fname\"><TT>$fname</TT></A> $action $lang $domain<BR>\n";
+      } else {
+        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$fname\"><TT>$fname</TT></A> $action $lang $domain ($state)<BR>\n";
+      }
       close(F);
     }
   }
   if (!$foundone) {
       print "Sorry, no request found...<BR>\n";
+  }
+}
+
+sub dostate {
+  local ($replyto, $domain, $rq, $line, $state, $newstate);
+
+  $rq=$_[0];
+  $newstate=$_[1];
+
+  if (!open (F, $rq)) {
+    print "Unable to find $rq.\n";
+    return;
+  }
+  $replyto = <F>; chop $replyto;
+  $line = <F>; chop $line;
+  ($action, $domain, $ENV{'LANG'}, $state) = split(/ /, $line);
+
+  if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'})) {
+    print "You are not authorized for this request.\n";
+    close(F);
+    return;
+  }
+
+  if (!open(NF, ">$rq.new")) {
+    print "Unable to update $rq.\n";
+    close(F);
+    return;
+  }
+
+  print NF "$replyto\n$action $domain $ENV{'LANG'} $newstate\n";
+  while (<F>) {
+    print NF $_;
+  }
+  close(F);
+  close(NF);
+
+  if (!rename($rq.'.new', $rq)) {
+    print "Cannot modify request.<P>\n";
+    unlink("$rq.new");
+  } else {
+    print "State changed from $state to $newstate.<P>\n";
   }
 }
 
@@ -311,6 +356,16 @@ sub dodisplay {
 
   print "<P>\n";
 
+  $act='setanswered';
+  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
+  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+  print "<INPUT TYPE=\"submit\" VALUE=\"Set state = Answered\"><BR>\n";
+  print "(to mark the request as waiting for more details from the requester)<BR>\n";
+  print "</FORM>\n";
+
+  print "<P>\n";
+
   $act='reject';
   print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
   print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
@@ -398,6 +453,8 @@ if ($content{'action'} eq 'display') {
   &dodisplay($content{'rq'});
 } elsif ($content{'action'} eq 'reject') {
   &doreject($content{'rq'});
+} elsif ($content{'action'} eq 'setanswered') {
+  &dostate($content{'rq'}, "Answered");
 } elsif ($content{'action'} eq 'accept') {
 #  if (&checkmd5("$user_pass:".&getmd5($content{'rq'}).
 #		":$ENV{'REMOTE_USER'}:accept:$content{'rq'}",
