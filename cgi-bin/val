@@ -168,6 +168,8 @@ sub doreject {
 sub doaccept {
   local ($rq) = $_[0];
 
+  local ($line);
+
   local ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
 	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
   if ($error) { print "Error: $error.<P>\n"; return; }
@@ -175,12 +177,18 @@ sub doaccept {
   $ENV{'LANG'} = $lang;
   do "$DNSCONF/msg-val";
 
+  local ($pdom) = &parent_of($domain);
+  local ($remadm) = &zauth_remote($pdom);
+  if ($remadm) {
+    print "[Zone $pdom handled by <A HREF=\"mailto:$remadm\">$remadm</A>]<P>\n";
+  }
+
   #
   # Check request with respect to zone file
   #
   if (!open(AZ, "$AZPATH -c -a$action -u$ENV{'REMOTE_USER'} $domain 2>&1 |")) {
       print "<STRONG>Unable to test request in zone.</STRONG><P>\n";
-      return;
+      return "";
   } else {
     print "<PRE>\n";
     while (<AZ>) {
@@ -192,7 +200,10 @@ sub doaccept {
     close (AZ);
     if ($? != 0) {
       print "<STRONG>This request cannot be executed.</STRONG>\n";
-      return;
+      # Ignore error if remote zone
+      if (!$remadm) {
+        return "";
+      }
     }
   }
 
@@ -222,8 +233,6 @@ sub doaccept {
     print SMU "Cc: $user_mail\n";
     print SMU "Subject: whois update request for [$rq]\n";
     print SMU "\n";
-
-    local ($line);
 
     foreach $line (split('\n', $output)) {
       if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
@@ -257,7 +266,7 @@ sub doaccept {
   #
   if (!open(SMU, "|$SENDMAIL -t")) {
     print "Unable to send mail to user.<P>\n";
-    return;
+    return "";
   }
 
   printf SMU $VALHEADERS, $MSG_ADDR;
@@ -306,7 +315,6 @@ sub doaccept {
   }
   if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
     print SMU $MSG_BDYWI;
-    local ($line);
     foreach $line (split('\n', $dbrecords)) {
       if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
 	  if ($1 eq "CHANGED") { $line = "changed: $user_mail $date"; }
@@ -317,15 +325,62 @@ sub doaccept {
     print SMU "\n";
   }
 
-  print SMU $MSG_OKBYE;
+  if ($remadm) {
+    print SMU $MSG_OKRMB;
+  } else {
+    print SMU $MSG_OKBYE;
+  }
   close(SMU);
   if ($? != 0) {
     print "<STRONG>sendmail returned an error !</STRONG><P>\n";
     print "Request kept.<P>\n";
-  } else {
-    &rq_remove($rq, $ENV{'REMOTE_USER'});
-    print "End of processing.<P>\n";
+    return;
   }
+
+  # Prepare the mail for the remote zone administrator, if any
+
+  if ($remadm) {
+    if (!open(SMU, "|$SENDMAIL -t")) {
+      print "Unable to send mail to remote administrator.<P>\n";
+      return "";
+    }
+    print SMU "From: $user_mail\n";
+    print SMU "To: $remadm\n";
+    print SMU "Subject: request for $domain\n";
+    print SMU "\n";
+
+    if ($action =~ /^M/) {
+      printf SMU $MSG_RQM, $domain;
+    } elsif ($action =~ /^N/) {
+      printf SMU $MSG_RQN, $domain;
+    } elsif ($action =~ /^D/) {
+      printf SMU $MSG_RQD, $domain;
+    } 
+    print SMU "\n";
+
+    if ($action eq 'N' || $action eq 'M' || $action eq 'MZ') {
+      print SMU $MSG_RQOKD;
+      print SMU "\n";
+      print SMU $dns;
+      print SMU "\n";
+    }
+
+    if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
+      print SMU $MSG_RQOKW;
+      foreach $line (split('\n', $dbrecords)) {
+        if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
+	    if ($1 eq "CHANGED") { $line = "changed: $user_mail $date"; }
+	    elsif ($1 eq "MNT-BY") { $line = "mnt-by:  $user_mntby"; }
+        }
+        print SMU $line."\n";
+      }
+      print SMU "\n";
+    }
+    close(SMU);
+  }
+
+  &rq_remove($rq, $ENV{'REMOTE_USER'});
+  print "End of processing.<P>\n";
 }
 
 sub doeditwhois {
@@ -381,6 +436,12 @@ sub dodisplay {
 
   $ENV{'LANG'} = $lang;
   do "$DNSCONF/msg-val";
+
+  local ($pdom) = &parent_of($domain);
+  local ($remadm) = &zauth_remote($pdom);
+  if ($remadm) {
+    print "[Zone $pdom handled by <A HREF=\"mailto:$remadm\">$remadm</A>]<P>\n";
+  }
 
   if ($action eq 'N' || $action eq 'M' || $action eq 'MZ') {
     print "<HR><H2>Records to be inserted in zone file:</H2><PRE>\n";
@@ -512,6 +573,14 @@ sub dodisplay {
     print "<P>\n";
   } else {
     print "(request not yet confirmed by user)<P>\n";
+    $act='setopen';
+    print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
+    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+    print "<INPUT TYPE=\"submit\" VALUE=\"Set state = Open\"><BR>\n";
+    print "(to consider the request as acknowledged by the user)<BR>\n";
+    print "</FORM>\n";
+    print "<P>\n";
   }
 
 #  $act='info';
@@ -611,6 +680,9 @@ if ($content{'action'} eq 'editwhois') {
 } elsif ($content{'action'} eq 'info') {
   &doinfo($content{'rq'});
   &dostate($content{'rq'}, "Answered");
+} elsif ($content{'action'} eq 'setopen') {
+  &dostate($content{'rq'}, "Open");
+  &dodisplay($content{'rq'});
 } elsif ($content{'action'} eq 'setanswered') {
   &dostate($content{'rq'}, "Answered");
 } elsif ($content{'action'} eq 'accept') {

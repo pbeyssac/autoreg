@@ -30,6 +30,7 @@ $MSG_RQD="Destruction du domaine %s\n";
 $MSG_ACKOK="Bonjour,\n\nVotre confirmation de la requête [%s] est acceptée.\n\nVous serez notifié dès le traitement de la requête.\n";
 $MSG_ACKKO="Votre confirmation de la requête [%s] ne correspond pas\nà une requête en attente, et n'a donc pas été prise en compte.\n";
 $MSG_OKBYE="\nLeur propagation prendra environ une demi-journée.\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
+$MSG_OKRMB="\nLa zone étant tenue à jour manuellement, votre requête est transmise\nau responsable.\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
 $MSG_BYE="\n\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
 
 } else {
@@ -58,6 +59,7 @@ $MSG_RQD="Deletion of domain %s\n";
 $MSG_ACKOK="Hello,\n\nYour acknowledgement for request [%s] is accepted.\n\nYou will receive a notification when your request has been processed.\n";
 $MSG_ACKKO="Hello,\n\nYour acknowledgement for request [%s] does not match\nany pending request. It has been ignored, sorry.\n";
 $MSG_OKBYE="\nPlease allow about half a day for propagation.\n\tVirtually yours,\n\tEU.org management.\n\n";
+$MSG_OKRMB="\nAs the zone is handled by hand, your request is being forwarded to\nthe maintainer.\n\tVirtually yours,\n\tEU.org management.\n\n";
 $MSG_BYE="\n\n\tVirtually yours,\n\tEU.org management.\n\n";
 
 }

@@ -7,16 +7,14 @@
 
 # read the zone authorization file
 sub zauth_read {
-  local ($zname, $users);
+  local ($zname, $users, $email);
   open(ZA, "$ZAUTFILE") || return;
   while (<ZA>) {
     next if /^#/;
-    if (/^([^:]+):(.*)$/) {
-      $zname = $1;
-      $users = $2;
-      $zname =~ tr/a-z/A-Z/;
-      $ZAUTH{$zname} = $users;
-    }
+    ($zname, $users, $email) = split(/[:\n]/, $_);
+    $zname =~ tr/a-z/A-Z/;
+    $ZAUTH{$zname} = $users;
+    $ZAUTHADDR{$zname} = $email;
   }
   close ZA;
   return;
@@ -33,6 +31,12 @@ sub zauth_check {
     return $_ if $_ eq $user;
   }
   return "";
+}
+
+# Returns the e-mail address of the maintainer if the zone is remote
+sub zauth_remote {
+  local ($zone) = $_[0];
+  return $ZAUTHADDR{$zone};
 }
 
 1;

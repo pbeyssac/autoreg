@@ -5,13 +5,16 @@
 #
 # contains lines of the form:
 #
-#	zone-fqdn:user-list
+#	zone-fqdn:user-list:e-mail
 #
 # zone-fqdn		the zone name (name of the file in $ZONEDIR)
 #
 # user-list		a comma-separated (NO SPACE) list of http users
 #			having the right to validate/reject/view requests
 #			for that zone.
+#
+# e-mail		(optional) if present, the zone is managed remotely
+#			and update mails should be sent there.
 #
 EU.ORG:pb,fcb,roberto
 AT.EU.ORG:pb,fcb,roberto
