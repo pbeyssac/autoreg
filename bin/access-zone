@@ -165,9 +165,9 @@ while (<ZF>) {
 			print OF "; lock $subdom\n";
 			next;
 		}
-	} elsif ($indomain && !$inheaders && /^;$/) {
+	} elsif ($indomain && !$inheaders && /^;/) {
 		$indomain = 0;
-		if ($action eq "delete") { $skip = 1; next }
+		if ($action eq "delete") { $skip = 1 }
 	} elsif ($indomain && $inheaders && !/^\s*;/) {
 		$inheaders = 0;
 	} elsif ($indomain && $action eq "show") { print }
