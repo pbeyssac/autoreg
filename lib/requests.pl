@@ -33,7 +33,7 @@ sub rq_set_whois {
     return "Access to request $rq not authorized.";
   }
 
-  if (!open(NF, ">$VALDIR/$rq.new")) {
+  if (!open(NF, ">.$VALDIR/$rq.new")) {
     close(F);
     return "Unable to update request file.";
   }
@@ -60,9 +60,9 @@ sub rq_set_whois {
 
   # We need to keep the locks until after the rename.
 
-  if (!rename("$VALDIR/$rq.new", "$VALDIR/$rq")) {
+  if (!rename(".$VALDIR/$rq.new", "$VALDIR/$rq")) {
     local ($err) = $!;
-    unlink("$VALDIR/$rq.new");
+    unlink(".$VALDIR/$rq.new");
     close(F);
     close(NF);
     return "Unable to update request file: $err";
@@ -91,7 +91,7 @@ sub rq_set_state {
     return "Access to request $rq not authorized.";
   }
 
-  if (!open(NF, ">$VALDIR/$rq.new")) {
+  if (!open(NF, ">.$VALDIR/$rq.new")) {
     close(F);
     return "Unable to update request file.";
   }
@@ -104,9 +104,9 @@ sub rq_set_state {
 
   # We need to keep the locks until after the rename.
 
-  if (!rename("$VALDIR/$rq.new", "$VALDIR/$rq")) {
+  if (!rename(".$VALDIR/$rq.new", "$VALDIR/$rq")) {
     local ($err) = $!;
-    unlink("$VALDIR/$rq.new");
+    unlink(".$VALDIR/$rq.new");
     close(F);
     close(NF);
     return "Unable to update request file: $err";
@@ -210,7 +210,7 @@ sub rq_create {
 	= ($_[0], $_[1], $_[2], $_[3], $_[4]);
   local ($dns, $dbrecords);
 
-  open(VR, ">$VALDIR/$rq.tmp") || die "Cannot open $VALDIR/$rq.tmp: $!\n";
+  open(VR, ">.$VALDIR/$rq.tmp") || die "Cannot open .$VALDIR/$rq.tmp: $!\n";
   flock(VR, $LOCK_EX);
   print VR "$replyto\n";
   print VR "$req $domain $lang WaitAck\n";
@@ -225,8 +225,8 @@ sub rq_end_dns {
 sub rq_end_create {
   local ($rq, $fh) = ($_[0], $_[1]);
   print $fh ";;\n";
-  rename("$VALDIR/$rq.tmp", "$VALDIR/$rq")
-	|| die "Cannot rename $VALDIR/$rq.tmp: $!\n";
+  rename(".$VALDIR/$rq.tmp", "$VALDIR/$rq")
+	|| die "Cannot rename .$VALDIR/$rq.tmp: $!\n";
   close($fh);
 }
 
