@@ -24,7 +24,7 @@ $MSG_LONG="Error: maximal length for subdomains in %s is %d.\n";
 $MSG_LOCKD="Error: domain %s is locked.\n";
 $MSG_EXIST="Error: domain %s already exists, cannot create.\n";
 $MSG_NODOM="Error: domain %s not found, cannot %s.\n";
-$MSG_NOTYP="Error: %s records are not permitted in zone.\n";
+$MSG_NOTYP="Error: %s records are not permitted in this zone.\n";
 $MSG_NUSER="Error: user %s is not permitted to modify zone.\n";
 
 }

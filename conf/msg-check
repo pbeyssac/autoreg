@@ -71,7 +71,7 @@ $MSG_NOREC="Impossible de montrer les enregistrements actuels.\n\n";
 $MSG_NOINS="Impossible d'insérer les nouveaux enregistrements.\n\n";
 
 $ERR_GHBNM="\nErreur: gethostbyname(%s): $s\n";
-$ERR_NSMIS="Erreur: La liste de NS sur %s diffère de celle fournie.\n";
+$ERR_NSMIS="Erreur: La liste de NS sur %s diffère de ce que vous avez fourni.\n";
 $ERR_MISIP="Erreur: manque l'adresse IP pour %s (dans le domaine)\n";
 $ERR_PROLD="Erreur: le numéro de série sur %s n'est pas le plus élevé !\n";
 $ERR_HOSTU="\nErreur: machine inconnue.\n";
@@ -156,7 +156,7 @@ $MSG_NOREC="Unable to show existing records.\n\n";
 $MSG_NOINS="Unable to insert records.\n\n";
 
 $ERR_GHBNM="\nError: gethostbyname(%s): $s\n";
-$ERR_NSMIS="Error: NS list on %s does not match the provided list'.\n";
+$ERR_NSMIS="Error: NS list on %s differs from the list you provided.\n";
 $ERR_MISIP="Error: missing IP for %s (in domain)\n";
 $ERR_PROLD="Error: serial number on %s is not the highest !\n";
 $ERR_HOSTU="\nError: unknown host.\n";

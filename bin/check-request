@@ -233,10 +233,10 @@ print $MSG_CNTCK;
 
 $makewhois = 1;
 
-if ($ref{"am"} && $ref{"am"} !~ /^[A-Z][a-zA-Z -]*$/) {
+if ($ref{"am"} && $ref{"am"} !~ /^[a-zA-Z -]*$/) {
 	&pr_error($ERR_INVCH, $ref{"am"});
 }
-if ($ref{"tm"} && $ref{"tm"} !~ /^[A-Z][a-zA-Z -]*$/) {
+if ($ref{"tm"} && $ref{"tm"} !~ /^[a-zA-Z -]*$/) {
 	&pr_error($ERR_INVCH, $ref{"tm"});
 }
 
