@@ -23,6 +23,7 @@ require "$DNSCONF/msg-check";
 require "$DNSCONF/msg-val";
 require "$DNSLIB/auth.pl";
 require "$DNSLIB/errors.pl";
+require "$DNSLIB/md5.pl";
 require "$DNSLIB/misc.pl";
 require "$DNSLIB/requests.pl";
 
@@ -372,6 +373,9 @@ if ($makewhois) {
 	&whodata($vr);
 }
 &rq_end_create($REQID, $vr);
+
+&rq_set_attr($REQID, 'DNSADMIN',
+	     "checkack", &md5_compute("$MD5SEED:$REQID:".time().":$$:"));
 
 print $MSG_ENDCK;
 print $MSG_RQOK1;
