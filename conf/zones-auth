@@ -7,7 +7,7 @@
 #
 #	zone-fqdn:user-list
 #
-# zone-fqdn		the zone name and name of the file in $ZONEDIR
+# zone-fqdn		the zone name (name of the file in $ZONEDIR)
 #
 # user-list		a comma-separated (NO SPACE) list of http users
 #			having the right to validate/reject/view requests

@@ -56,6 +56,8 @@ $WHOISDBM="auto-dbm@EU.org";
 $DBNAME="FREENIC";
 
 # The following definitely should be elsewhere.
+
+# read the zone authorization file
 sub zauth_read {
   local ($zname, $users);
   open(ZA, "$ZAUTFILE") || return;
@@ -72,6 +74,7 @@ sub zauth_read {
   return;
 }
 
+# check that a given user has the rights to access a given zone.
 sub zauth_check {
   local ($zone, $user) = @_;
   $zone =~ tr/a-z/A-Z/;
