@@ -88,6 +88,12 @@ sub dostate {
   local ($error, $replyto, $action, $domain, $lang, $state)
 	= &rq_set_state($rq, $ENV{'REMOTE_USER'}, $newstate, $newstateinfo);
 
+  local ($curdate) = `date`; chop $curdate;
+
+  &rq_set_attr($rq, $ENV{'REMOTE_USER'},
+	       "state-changed",
+	       "$newstate($newstateinfo) by $ENV{'REMOTE_USER'}, $curdate");
+
   if ($error) {
     print "Error: $error.<P>\n";
   } else {
