@@ -13,7 +13,7 @@
 #			having the right to validate/reject/view requests
 #			for that zone.
 #
-# e-mail		(optional) if present, the zone is managed remotely
+# e-mail		(optional) if not empty, the zone is managed remotely
 #			and update mails should be sent there.
 #
 EU.ORG:pb,fcb,roberto

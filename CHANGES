@@ -1,5 +1,13 @@
 $Id$
 
+Tue Feb 24 00:46:13 CET 1998
+Generate MD5 sum for each new request. Will be used later for request ack.
+
+Fri Feb 20 22:10:43 CET 1998
+Don't display requests in "WaitAck" state.
+Handle state-dependent info (username for Answered state, for a start).
+Remove a race condition (closed the zone file too soon in access_zone).
+
 Wed Feb 18 01:18:55 CET 1998
 Added APNIC and AUNIC to whois servers list.
 Improved Whois support.

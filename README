@@ -18,7 +18,7 @@ needs the following software packages:
 
 		named
 		Any version of BIND will probably do;
-		Most recent versions (currently 4.9.6 or 8.1.1) recommended
+		Most recent versions (currently 4.9.7 or 8.1.2) recommended
 		for security reasons.
 
 		dig

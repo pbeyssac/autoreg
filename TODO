@@ -6,7 +6,7 @@ Just ideas...
 	- automated domain creation
 	- better handling for domains with a remote primary
 	- auto validation by the user for delete/change
-	- handle of additional user information sent by mail
+	- handle additional user information sent by mail
 	- log more user info (IP, Web browser used) when accepting a request
 	- be able to finger to get current request status
 	- resend mail to user (for still unack'ed requests)
