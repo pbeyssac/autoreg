@@ -15,6 +15,64 @@ $LOCK_SH = 1;
 $LOCK_EX = 2;
 $LOCK_UN = 8;
 
+sub rq_set_whois {
+  local ($rq, $user, $newwhois) = ($_[0], $_[1], $_[2]);
+  local ($replyto, $action, $domain, $lang, $line, $state);
+
+  if (!open (F, "$VALDIR/$rq")) {
+    return "Cannot find request $rq.";
+  }
+  flock(F, $LOCK_EX);
+
+  $replyto = <F>; chop $replyto;
+  $line = <F>; chop $line;
+  ($action, $domain, $lang, $state) = split(/ /, $line);
+
+  if (!&zauth_check(&parent_of($domain), $user)) {
+    close(F);
+    return "Access to request $rq not authorized.";
+  }
+
+  if (!open(NF, ">$VALDIR/$rq.new")) {
+    close(F);
+    return "Unable to update request file.";
+  }
+  flock(NF, $LOCK_EX);
+
+  print NF "$line\n";
+
+  # Copy zone info
+  while (<F>) {
+    print NF $_;
+    if (/^;;$/) { last; };
+  }
+  # Skip old whois info
+  while (<F>) {
+    if (/^;;$/) { last; };
+  }
+  print NF $newwhois;
+  print NF ";;\n";
+
+  # Copy additional info
+  while (<F>) {
+    print NF;
+  }
+
+  # We need to keep the locks until after the rename.
+
+  if (!rename("$VALDIR/$rq.new", "$VALDIR/$rq")) {
+    local ($err) = $!;
+    unlink("$VALDIR/$rq.new");
+    close(F);
+    close(NF);
+    return "Unable to update request file: $err";
+  } else {
+    close(F);
+    close(NF);
+    return ("", $replyto, $action, $domain, $lang, $state);
+  }
+}
+
 sub rq_set_state {
   local ($rq, $user, $newstate) = ($_[0], $_[1], $_[2]);
   local ($replyto, $action, $domain, $lang, $line, $state);

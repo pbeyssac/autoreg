@@ -244,6 +244,50 @@ sub doaccept {
   }
 }
 
+sub doeditwhois {
+  local ($rq, $newwhois) = ($_[0], $_[1]);
+
+  local ($line, $wh, $nempty);
+
+  # Remove trailing \r
+  # Remove empty lines (some browsers suppress them when POSTing)
+  # Remove leading "_" lines
+  # Replace other "_" with empty lines
+  # Remove trailing empty lines
+  # Remove any content for mnt-by:
+  # Remove changed:
+  # Force an empty line before "person:" and "domain:"
+
+  foreach $line (split('\n', $newwhois, $nl)) {
+    if ($line =~ /\r$/) { chop $line }
+    if ($line =~ /^$/) {
+        next;
+    } elsif ($line =~ /^_$/) {
+        $nempty++;
+        next;
+    } elsif ($line =~ /^person:/) {
+        $nempty = 1;
+    } elsif ($line =~ /^domain:/) {
+        $nempty = 1;
+    } elsif ($line =~ /^mnt-by:/) {
+        $line = "mnt-by: ";
+    } elsif ($line =~ /^changed:/) {
+	next;
+    }
+    if ($nempty) {
+      if ($nl) { $wh .= "\n" }
+      $nempty = 0;
+    }
+    $wh .= $line."\n";
+    $nl++;
+  }
+
+  local ($error, $replyto, $action, $domain, $lang, $state)
+	= &rq_set_whois($rq, $ENV{'REMOTE_USER'}, $wh);
+
+  if ($error) { print "Error: $error.<P>\n"; return; }
+}
+
 sub dodisplay {
   local ($rq) = $_[0];
 
@@ -262,11 +306,17 @@ sub dodisplay {
 
   if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
     $nh = "";
-    print "<HR><H2>Records to be inserted in WHOIS base:</H2><PRE>\n";
+    print "<HR><H2>Records to be inserted in WHOIS base:</H2>\n";
 
-    local ($line);
+    print "(lines with a \"_\" by itself are considered empty)<BR>\n";
+
+    local ($line, $text, $nrows);
+    $nrows=3;
+
     foreach $line (split('\n', $dbrecords)) {
-      if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
+      if ($line =~ /^$/) {
+          $line = "_";
+      } elsif ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
 	  if ($1 eq "CHANGED") { $line = "changed: $user_mail $date"; }
 	  elsif ($1 eq "MNT-BY") { $line = "mnt-by:  $user_mntby"; }
 	  elsif ($1 eq "nic-hdl" && $nh1) { $nh2 = $2; }
@@ -276,10 +326,23 @@ sub dodisplay {
 	  elsif ($1 eq "person" && $pn1) { $pn2 = $2; }
 	  elsif ($1 eq "person") { $pn1 = $2; };
       }
-      $line =~ s/>/&gt;/g; s/</&lt;/g;
-      print $line."\n";
+      $text .= $line."\n";
+      $nrows++;
     }
-    print "</PRE><HR>\n";
+    $text =~ s/>/&gt;/g; s/</&lt;/g;
+
+    $act="editwhois";
+    print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
+    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+    print "<TEXTAREA NAME=\"whois\" COLS=70 ROWS=$nrows>\n";
+    print "$text";
+    print "_\n_\n_\n</TEXTAREA>\n";
+    print "If necessary, edit the above then\n";
+    print "<INPUT TYPE=\"submit\" VALUE=\"submit\"> to save changes\n";
+    print "</FORM>\n";
+
+    print "<HR>\n";
 
     #
     # Local form only for whois on domain name
@@ -382,6 +445,8 @@ sub dodisplay {
   print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
   print "<INPUT TYPE=\"submit\" VALUE=\"Delete quietly\">\n";
   print "</FORM>\n";
+
+  print "<HR><A HREF=\"$ENV{'SCRIPT_NAME'}\">Return to directory</A>\n";
 }
 
 sub getuser {
@@ -449,7 +514,10 @@ if (!$user_mail) {
   exit;
 }
 
-if ($content{'action'} eq 'display') {
+if ($content{'action'} eq 'editwhois') {
+  &doeditwhois($content{'rq'}, $content{'whois'});
+  &dodisplay($content{'rq'});
+} elsif ($content{'action'} eq 'display') {
   &dodisplay($content{'rq'});
 } elsif ($content{'action'} eq 'reject') {
   &doreject($content{'rq'});
