@@ -1,5 +1,10 @@
 $Id$
 
+Wed Feb 18 01:18:55 CET 1998
+Added APNIC and AUNIC to whois servers list.
+Improved Whois support.
+Smarter admin/tech contact merge.
+
 Wed Jan 21 21:32:15 CET 1998
 Updated soa, README and INSTALL.
 

@@ -48,8 +48,6 @@ $Id$
 
 * Configure bin/soa with the master directory for named zone files, etc.
 
-* Configure lib/whois.pl with your whois path.
-
 * Put the following in your HTTP server pages:
 
 	html/form.html		-> user request form

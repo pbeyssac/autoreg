@@ -2,14 +2,18 @@ $Id$
 
 Just ideas...
 
-	- auto validation by the user
-	- better handling of additional user information sent by mail
+	- automated confirmation request to the owner for delete/change
+	- automated domain creation
+	- better handling for domains with a remote primary
+	- auto validation by the user for delete/change
+	- handle of additional user information sent by mail
+	- log more user info (IP, Web browser used) when accepting a request
 	- be able to finger to get current request status
 	- resend mail to user (for still unack'ed requests)
 	- add A+MX to possible user requests
 	- check given mail addresses for MX record
 	- be able to edit zone records in user requests
-	- be able to add a Cc: in a rejection/info mail
+	- be able to add a Cc: in a rejection/info request mail
 	- be able to change destination e-mail in requests
 	- handle user-info and/or zone-auth through a CGI
 	- handle any record in the zone through a CGI
