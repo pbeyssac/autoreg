@@ -519,7 +519,7 @@ sub dodisplay {
 	{ &dowhoisforms($ac); }
     if ($pn1 && $pn1 ne $tc && $pn1 ne $ac)
 	{ &dolocalwhoisform($pn1); }
-    if ($pn2 && $pn2 ne $pn1 && pn2 ne $tc && pn2 ne $ac)
+    if ($pn2 && $pn2 ne $pn1 && $pn2 ne $tc && $pn2 ne $ac)
 	{ &dolocalwhoisform($pn2); }
   }
 
