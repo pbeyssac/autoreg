@@ -7,6 +7,7 @@
 require "/usr/local/dns-manager/conf/config";
 #require "$DNSLIB/md5.pl";
 require "$DNSLIB/misc.pl";
+require "$DNSLIB/user.pl";
 require "$DNSLIB/whois.pl";
 require "$DNSLIB/cgi.pl";
 require "$DNSLIB/auth.pl";
@@ -595,24 +596,6 @@ sub dodisplay {
   print "<HR><A HREF=\"$ENV{'SCRIPT_NAME'}\">Return to directory</A>\n";
 }
 
-sub getuser {
-  local ($remuser) = $_[0];
-
-  if (!open(UP, $PASSFILE)) {
-	return;
-  }
-  while (<UP>) {
-	next if /^#/;
-	chop;
-	local ($user, $pass, $email, $mntby, $passmnt) = split(/:/);
-	if ($user eq $remuser) {
-	  close UP;
-	  return ($pass, $email, $mntby, $passmnt); }
-  }
-  close (UP);
-  return;
-}
-
 print "Content-Type: text/html\n\n<HTML><HEAD>";
 print "</HEAD><BODY>\n";
 
@@ -633,7 +616,7 @@ if ($content{'rq'} && $content{'rq'} !~ /[a-zA-Z0-9-_]/) {
 }
 
 ($user_pass, $user_mail, $user_mntby, $user_pmnt)
-	= &getuser($ENV{'REMOTE_USER'});
+	= &user_get($ENV{'REMOTE_USER'});
 
 if (!$user_mail) {
   print "<STRONG>Cannot find user info for $ENV{'REMOTE_USER'}</STRONG><P>\n";
