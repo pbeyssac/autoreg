@@ -15,7 +15,7 @@ require "$DNSLIB/requests.pl";
 
 &zauth_read;
 
-$date=`date +%y%m%d`; chop $date;
+$date=`date +%Y%m%d`; chop $date;
 
 sub dowhoisform {
     local ($server, $request, $label) = ($_[0], $_[1], $_[2]);
