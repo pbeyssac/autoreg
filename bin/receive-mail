@@ -8,7 +8,7 @@
 require "getopts.pl";
 do Getopts("l:");
 
-if ($#ARGV != -1) { die "Usage: receive-mail\n"; }
+if ($#ARGV != -1) { die "Usage: receive-mail [-l language-iso-code]\n"; }
 
 if ($opt_l eq 'fr') {
 	$LANG="fr";
@@ -18,9 +18,12 @@ if ($opt_l eq 'fr') {
 
 # local configuration
 require "/usr/local/dns-manager/conf/config";
+require "$DNSLIB/requests.pl";
 
-$REQID="mail-$$";
-$REQFILE="$REQDIR/$REQID";
+#
+# Create a temporary request file
+#
+$REQFILE="$REQDIR/mail-$$";
 
 $headers = 1;
 
@@ -49,6 +52,7 @@ while (<STDIN>) {
 
 	if ($hd eq "from")		{ $from=substr($lline, 6); }
 	elsif ($hd eq "reply-to")	{ $replyto=substr($lline, 10); }
+	elsif ($hd eq "subject")	{ $subject=substr($lline, 9); }
 }
 
 if ($headers) {
@@ -69,15 +73,50 @@ if ($replyto) {
 	unlink($REQFILE);
 	die "Error: no identified sender.\n";
 }
-print VF "Subject: [$REQID]\n\n";
 
 print WF $thdrs;
-while (<STDIN>) { print WF; }
+
+#
+# Copy the mail body to WF, removing all leading garbage
+# to account for quoted replies, etc.
+#
+while (<STDIN>) {
+	s/^[^a-zA-Z0-9]*//;
+	print WF;
+}
 close(WF);
 
-open(CHECK, "$CRPATH -l$LANG < $REQFILE mail 2>&1 |") || die "Cannot start $CRPATH: $!\n";
+#
+# Try to process aknowledgement mails
+#
+local ($rqid) = &rq_extract($subject);
+if ($rqid) {
+  # A valid request id has been found in the Subject:
+  if (!&rq_exists($rqid)) {
+    # The request does not exist
+    #
+  } else {
+    # The request exists: read it and check its state
+    ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
+	= &rq_get_info($rqid, "DNSADMIN");
+    if ($state eq "WaitAck") {
+      # Change its state to "Open" and notify the user
+      &rq_set_state($rqid, "DNSADMIN", "Open");
+    }
+
+    unlink($REQFILE);
+    close(VF);
+    die "Error sending mail: $!\n" if $?;
+    exit 0;
+  }
+}
+
+open(CHECK, "$CRPATH -s -l$LANG < $REQFILE mail 2>&1 |") || die "Cannot start $CRPATH: $!\n";
 while (<CHECK>) {
 	print VF;
 }
 close(CHECK);
 unlink($REQFILE) if $?;
+
+close(VF);
+die "Error sending mail: $!\n" if $?;
