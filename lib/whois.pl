@@ -7,7 +7,6 @@ $WHOIS="/usr/bin/whois";
 
 sub whois_html {
    local ($server, $request) = ($_[0], $_[1]);
-   print "<HR>\n";
    $server =~ s/["';&]//g;
    $request =~ s/["';&]//g;
 
@@ -16,13 +15,13 @@ sub whois_html {
       return;
    }
    print "<TT>whois -h $server $request</TT>\n";
-   print "<HR><PRE>\n";
+   print "<PRE>\n";
    while (<WHOIS>) {
       s/</&lt;/g;
       s/>/&gt;/g;
       print;
    }
-   print "</PRE><HR>\n";
+   print "</PRE>\n";
    close(WHOIS);
 }
 

@@ -24,6 +24,7 @@ print "</HEAD><BODY>\n";
 &doform;
 
 if ($content{'request'}) {
+  print "<HR>\n";
   &whois_html($content{'server'}, $content{'request'});
 }
 
