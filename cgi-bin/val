@@ -44,9 +44,12 @@ sub dowhoisforms {
 
 sub dodir {
   local (@dirlist) = &rq_list();
+  local (@domlist);
+  local (@rqlist);
   local ($foundone) = 0;
 
   local ($rq);
+  local ($rqhtml);
 
   print "\n";
 
@@ -69,13 +72,22 @@ sub dodir {
 	$action = "DEL";
       }
       if ($state eq 'Open') {
-        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain<BR>\n";
+	$rqhtml = "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $replyto<BR>\n";
       } elsif ($state eq 'Answered' && $stateinfo) {
-        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain ($state by $stateinfo)<BR>\n";
+	$rqhtml = "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $replyto ($state by $stateinfo)<BR>\n";
       } else {
-        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain ($state)<BR>\n";
+	$rqhtml = "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $replyto ($state)<BR>\n";
+      }
+      if ($domlist{$domain}) {
+	$rqlist{$domlist{$domain}} = $rqlist{$domlist{$domain}} . "see also " . $rqhtml;
+      } else {
+	$domlist{$domain} = $rq;
+	$rqlist{$rq} = $rqhtml;
       }
     }
+  }
+  foreach $key (sort(keys %rqlist)) {
+	print $rqlist{$key};
   }
   if (!$foundone) {
       print "Sorry, no request found...<BR>\n";
