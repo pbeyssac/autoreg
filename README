@@ -1,6 +1,6 @@
 $Id$
 
-			AR41 0.9 beta
+			AR41 0.10 beta
 
 AR41 currently runs on the following software configuration and
 needs the following software packages:
@@ -8,14 +8,17 @@ needs the following software packages:
 		Perl 4
 		AR41 probably won't work on Perl 5 without some work
 
-		Apache httpd 1.1 or the latest 1.2beta
+		Apache httpd 1.1 or 1.2
 		Any Apache above 1.0 should be ok
 
 		sendmail
-		Any version; at last 8.x recommended
+		Any version; at least 8.x recommended
+		Use mailer option "9" (if available) to decode
+		quoted-printable garbage.
 
 		named
-		Any version of BIND will probably do; 4.9.5 P1 recommended
+		Any version of BIND will probably do;
+		Most recent versions (currently 4.9.6 or 8.1.1) recommended
 
 		dig
 		Any version will probably do; 2.1 or above recommended.
@@ -28,6 +31,7 @@ In this distribution you'll find the following directories:
 	./bin			scripts
 	./cgi-bin		CGI scripts
 	./conf			config files
+	./lib			Perl library files
 
 The request flow in AR41 is organized in the following way:
 
@@ -40,20 +44,41 @@ The request flow in AR41 is organized in the following way:
 		|				|
 		---------------------------------
 				|
-			 check-request -> request stored to val/*
+			 check-request -> request stored in val/*,
+						state "WaitAck".
+				       -> confirmation request sent
+					  by mail to user.
 
+(2) the user acknowledges the request by mail
 
-(2) the administrator accesses requests in val/* through the CGI script
+			Mail (sendmail)
+				|
+			bin/receive-mail -> request updated to state = "Open".
+					 -> Mail reply to the user
+
+(3) the administrator accesses requests in val/* through the CGI script
 	"val".
 	
 			      httpd
 				|
 			   cgi-bin/val
 
-(3) the administrator validates a request:
+(4) the administrator validates a request:
 
 			      httpd
 				|
-			   cgi-bin/val
-				|
-			bin/access-zone -> updates the zone file
+			   cgi-bin/val -> request file deleted
+				       -> bin/access-zone (zone file updated)
+				       -> Mail to the user (confirmation)
+				       -> Mail to the Whois db manager
+
+Once in a while the "real" zones need to be updated:
+
+(5) the administrator updates the master zones (needs access to a shell)
+
+	# cd /usr/local/dns-manager/zones
+	# ../bin/soa UK.EU.ORG FR.EU.ORG
+
+(6) the nameserver is reloaded
+
+	# ndc reload
