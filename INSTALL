@@ -55,15 +55,15 @@ $Id$
 	cgi-bin/nph-dnsreq:require "/usr/local/dns-manager/conf/config";
 	cgi-bin/val:require "/usr/local/dns-manager/conf/config";
 
+* Configure bin/soa with the master directory for named zone files, etc.
 
 * Put the following in your HTTP server pages:
 
 	html/form.html		-> user request form
-	html/adm		-> admin directory
 	html/adm/index.html	-> admin help
 
-   WARNING : the adm directory should be protected with a .htaccess file !
-	     An example is provided.
+   WARNING : the adm directory pages should be protected with a
+	     .htaccess file ! An example is provided.
 
 * Install the CGI scripts and update the Web pages accordingly:
 
@@ -76,6 +76,15 @@ $Id$
 					OR
 
 			   as /cgi-bin/dns/val
+
+	whois		-> in your HTML admin directory as whois.cgi
+			   (this implies that you enable this in your HTTP
+			   server)
+
+					OR
+
+			   as /cgi-bin/dns/whois
+
 
    WARNING : the val script should be protected with a .htaccess in
 	     the same directory !
@@ -119,28 +128,50 @@ dns-manager-fr:	"| /usr/local/dns-manager/bin/receive-mail -lfr"
    	conf/zones-auth	with your zones info
 	your HTTP server's htpasswd file with the administrators passwords
 
+* Step-by-step check of the configuration:
+
+  1)	Create a new zone file, for example zones/DUMMY.ORG
+	(use one of the sample files in zones/ as a template)
+
+	Try to access it through
+
+		bin/access-zone -u username -t MX -a new TEST.DUMMY.ORG
+		(type anything on stdin, then ^D)
+
+		bin/access-zone -u username -t CNAME -a new TEST.DUMMY.ORG
+		(type anything on stdin, then ^D)
+
+		bin/access-zone -u username -t CNAME -a delete TEST.DUMMY.ORG
+
+	etc.
+
+  2) once this works, you can try the HTML forms and see if they correctly
+     call access-zone to check the requested domain, and put accepted requests
+     in val/
+
+  3) then you can try the val script (called through the HTTP server) and
+     see if it correctly displays the list of requests and each individual
+     request
+
+  4) finally, try to validate a request through val and see what happens
+
 * DO NOT CONFIGURE THE SYSTEM TO DIRECTLY MODIFY THE "MASTER" ZONE FILES !
   MAKE BACKUPS !
 
-  To take modifications into account:
+  To take modifications into account, cd to the "zones" directory and
+  use the "soa" script. It does the following:
 
-	- run "access-zone -u USERNAME -asoa ZONENAME" to update the
+	- runs "access-zone -u $USER -a soa ZONENAME" to update the
 	  serial number in the SOA if it needs to.
 
-	  USERNAME is used to check permissions and is kept in
-	  logs.
+	  $USER is used to check permissions and is kept in logs.
 
-	  For example:
+	- makes a "diff" between the current master copy and the new zone
 
-		access-zone -upb -asoa EU.ORG
-		access-zone -upb -asoa FR.EU.ORG
+	- renames the current master copy with a trailing ".old" and
+	  replaces it with the new zone
 
-	  etc...
-
-	- make a "diff" (-U4 is a good idea) between the zone file
-	  and the master copy and check nothing's wrong in the diffs
-	  (in particular, nothing must disappear when it shouldn't)
-
-	- copy the file to the master directory and reload named.
-
-  Alternatively, you can use the "soa" script which does all this.
+  Check nothing's wrong in the diffs (in particular, nothing must
+  disappear when it shouldn't). If ok, reload named. If not, you
+  can use the .old backup to restore the zone and see what went
+  wrong (it never occured to me, but you never know).

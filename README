@@ -1,14 +1,25 @@
 $Id$
 
-			AR41 0.8 beta
+			AR41 0.9 beta
 
-AR41 currently runs on the following software configuration:
+AR41 currently runs on the following software configuration and
+needs the following software packages:
 
-	Perl 4
-	Apache httpd 1.1.1
-	dig
-	sendmail
-	named 4.9.4 P1
+		Perl 4
+		AR41 probably won't work on Perl 5 without some work
+
+		Apache httpd 1.1 or the latest 1.2beta
+		Any Apache above 1.0 should be ok
+
+		sendmail
+		Any version; at last 8.x recommended
+
+		named
+		Any version of BIND will probably do; 4.9.5 P1 recommended
+
+		dig
+		Any version will probably do; 2.1 or above recommended.
+		It's included in the BIND distribution.
 
 In this distribution you'll find the following directories:
 
@@ -17,3 +28,32 @@ In this distribution you'll find the following directories:
 	./bin			scripts
 	./cgi-bin		CGI scripts
 	./conf			config files
+
+The request flow in AR41 is organized in the following way:
+
+
+(1) the user sends a request
+
+	   Web (httpd)			Mail (sendmail)
+		|				|
+	cgi-bin/nph-dnsreq		bin/receive-mail
+		|				|
+		---------------------------------
+				|
+			 check-request -> request stored to val/*
+
+
+(2) the administrator accesses requests in val/* through the CGI script
+	"val".
+	
+			      httpd
+				|
+			   cgi-bin/val
+
+(3) the administrator validates a request:
+
+			      httpd
+				|
+			   cgi-bin/val
+				|
+			bin/access-zone -> updates the zone file

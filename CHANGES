@@ -1,5 +1,9 @@
 $Id$
 
+Sat Mar  8 16:32:57 MET 1997
+Enhanced README and INSTALL
+Patch to nph-dnsreq (didn't send correct headers)
+
 Mon Jan 27 22:20:32 MET 1997
 HTTP user name added as info to state=Answered
 whois gateway added, with pointers in the validation form.
