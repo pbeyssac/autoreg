@@ -175,6 +175,26 @@ sub doaccept {
   $ENV{'LANG'} = $lang;
   do "$DNSCONF/msg-val";
 
+  #
+  # Check request with respect to zone file
+  #
+  if (!open(AZ, "$AZPATH -c -a$action -u$ENV{'REMOTE_USER'} $domain 2>&1 |")) {
+      print "<STRONG>Unable to test request in zone.</STRONG><P>\n";
+      return;
+  } else {
+    print "<PRE>\n";
+    while (<AZ>) {
+      s/>/&gt;/g;
+      s/</&lt;/g;
+      print;
+    }
+    print "</PRE>\n";
+    close (AZ);
+    if ($? != 0) {
+      print "<STRONG>This request cannot be executed.</STRONG>\n";
+      return;
+    }
+  }
 
   if ($action ne 'MZ') {
     # send e-mail to whois db manager
@@ -227,12 +247,16 @@ sub doaccept {
     if ($? != 0) {
       print "<STRONG>sendmail for Whois update returned an error !</STRONG>\n";
       print "<BR>\n";
-      print "Request kept.<P>\n";
+      print "Request kept, not processed.<P>\n";
+      return;
     }
   }
 
+  #
+  # Prepare the mail for the user
+  #
   if (!open(SMU, "|$SENDMAIL -t")) {
-    print "Unable to send mail.<P>\n";
+    print "Unable to send mail to user.<P>\n";
     return;
   }
 
@@ -249,6 +273,10 @@ sub doaccept {
     } else {
       while (<AZ>) { print SMU $_; }
       close(AZ);
+      if ($?) {
+	print SMU $MSG_NOREC;
+	print "<STRONG>Unable to show existing records.</STRONG><P>\n";
+      }
       print SMU "\n";
     }
   }
@@ -385,7 +413,8 @@ sub dodisplay {
       $text .= $line."\n";
       $nrows++;
     }
-    $text =~ s/>/&gt;/g; s/</&lt;/g;
+    $text =~ s/>/&gt;/g;
+    $text =~ s/</&lt;/g;
 
     $act="editwhois";
     print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
