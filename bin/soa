@@ -37,22 +37,31 @@ done
 for i in $*
 do
 	if $AZ -u$USER -asoa $i; then
+	    if [ -r $ZONES/$i -a -r $DEST/$i ]; then
 		echo $i updated
-		# Minimize diffs
-		(
-		echo "; AUTOMATICALLY GENERATED -- DON'T EDIT THIS FILE"
-		echo "; edit $ZONES/$i instead"
-		echo ";"
-		cat $i) | diff -U2 $DEST/$i -
 		(
 		echo "; AUTOMATICALLY GENERATED -- DON'T EDIT THIS FILE"
 		echo "; edit $ZONES/$i instead"
 		echo ";"
 		cat $i) > $DEST/$i.new
-		mv -f $DEST/$i $DEST/$i.old
-		mv -f $DEST/$i.new $DEST/$i
-		echo ----
-		mod=1
+
+		# Check the copy
+		if tail +4 $DEST/$i.new | cmp -s - $ZONES/$i; then
+		    # Copy ok, show diffs
+		    diff -U2 $DEST/$i $DEST/$i.new
+		    # replace the older file
+		    mv -f $DEST/$i $DEST/$i.old
+		    mv -f $DEST/$i.new $DEST/$i
+
+		    echo ----
+		    mod=1
+		else
+		    echo "Error: cannot copy $ZONES/$i to $DEST/$i.new"
+		    rm -f $DEST/$i.new
+		fi
+	   else
+		echo "Error: cannot read $ZONES/$i and/or $DEST/$i"
+	   fi
 	fi
 done
 

@@ -33,13 +33,23 @@ require "$DNSCONF/msg-access";
 # on stdin.
 #
 
+sub myprint {
+    local ($handle, @list) = @_;
+    if (print $handle @list) { $err = 1; }
+}
+
+sub myprintf {
+    local ($handle, @list) = @_;
+    if (printf $handle @list) { $err = 1; }
+}
+
 &zauth_read;    
 
 $LOCK_EX = 2;
 $LOCK_UN = 8;
 
 require "getopts.pl";
-do Getopts("ca:u:t:");
+&Getopts("ca:u:t:");
 
 if ($opt_a) {
 	$action = $opt_a;
@@ -95,7 +105,8 @@ if ($action ne "show" && !$opt_c) {
 	$do_out = 1;
 	open(OF, ">$outfile") || die("Cannot open outfile $outfile: $!\n");
 	flock(OF, $LOCK_EX);
-	print OF ";! updated by $opt_u, $date\n" unless $action eq 'soa';
+	&myprint (OF, ";! updated by $opt_u, $date\n")
+		unless $action eq 'soa';
 }
 
 $was_updated = 0;
@@ -126,10 +137,12 @@ while (<ZF>) {
 	    $oldsoa = $1;
 	    $oldser = $2;
 	    if ($oldsoa ne $newsoa) {
-		print OF "\t\t".$newsoa."01\t; Serial number\n" if $do_out;
+		&myprint (OF, "\t\t".$newsoa."01\t; Serial number\n")
+			if $do_out;
 	    } else {
 		$oldser++;
-		printf OF "\t\t$newsoa%02d\t; Serial number\n",$oldser if $do_out;
+		&myprintf (OF, "\t\t$newsoa%02d\t; Serial number\n",$oldser)
+			if $do_out;
 	    }
 	    next;
 	}
@@ -151,13 +164,14 @@ while (<ZF>) {
 		if ($curd eq $domain) {
 		    $indomain = 1;
 		    $found = 1;
-		    if ($action eq "modify") { &modifyzone; }
+		    if ($action eq "modify") { &modify_zone; }
 		    elsif ($action eq "show") { print; next }
 		    elsif ($action eq "new") {
 			unlink($outfile);
 			die sprintf($MSG_ALLOC, $domain);
 		    } elsif ($action eq "lock") {
-			print OF "; lock $subdom\n" if $do_out;
+			&myprint (OF, "; lock $subdom\n")
+				if $do_out;
 			next;
 		    }
 		}
@@ -168,7 +182,8 @@ while (<ZF>) {
 	if (?^; lock $subdom$?) {
 		$found = 1;
 		if ($action eq "unlock") {
-			print OF "; domain $subdom\n" if $do_out;
+			&myprint (OF, "; domain $subdom\n")
+				if $do_out;
 			next;
 		}
 		unlink($outfile) unless $action eq "show";
@@ -177,7 +192,7 @@ while (<ZF>) {
 	if (?^; domain $subdom$?) {
 		$createdline = <ZF>;
 		if (!$createdline) {
-			break;
+			last;
 		}
 		$svline = $createdline;
 		if ($createdline !~ /^; created: /) {
@@ -186,11 +201,12 @@ while (<ZF>) {
 		$inheaders = 1;
 		$indomain = 1;
 		$found = 1;
-		if ($action eq "modify") { &modifyzone; }
-		elsif ($action eq "new") { break }
+		if ($action eq "modify") { &modify_zone; }
+		elsif ($action eq "new") { last }
 		elsif ($action eq "show") { print; print $svline; next }
 		elsif ($action eq "lock") {
-			print OF "; lock $subdom\n" if $do_out;
+			&myprint (OF, "; lock $subdom\n")
+				if $do_out;
 			next;
 		}
 	} elsif ($indomain && !$inheaders && /^\s*;/) {
@@ -201,7 +217,8 @@ while (<ZF>) {
 	} elsif ($indomain && $action eq "show") { print }
 
 	next if $indomain;
-	print OF if $do_out;
+	&myprint (OF, $_)
+		if $do_out;
 }
 close(ZF);
 
@@ -210,7 +227,7 @@ if ($action eq 'new') {
 		unlink($outfile);
 		die sprintf($MSG_EXIST, $domain);
 	}
-	&createzone;
+	&create_zone;
 } elsif (!$found && $action ne 'soa') {
 	unlink($outfile) unless $action eq "show";
 	die sprintf($MSG_NODOM, $domain, $action);
@@ -231,27 +248,28 @@ if ($do_out) {
 		unlink($outfile);
 		die sprintf($MSG_NUSER, $opt_u);
 	}
+	if ($err) { die "Can't write $zonefile\n" };
 	rename($outfile, $zonefile) || die "rename failed:\!\n";
 	#close(OF);
 }
 exit 0;
 
-sub modifyzone {
+sub modify_zone {
     if ($do_out) {
-	print OF "; domain $subdom\n";
-	print OF $createdline;
-	print OF "; updated: by $opt_u, $date\n";
+	&myprint (OF, "; domain $subdom\n");
+	&myprint (OF, $createdline);
+	&myprint (OF, "; updated: by $opt_u, $date\n");
 	while (<STDIN>) {
-		print OF
+		&myprint (OF, $_)
 	}
     }
 }
 
-sub createzone {
+sub create_zone {
     if ($do_out) {
-	print OF "; domain $subdom\n; created: by $opt_u, $date\n";
+	&myprint (OF, "; domain $subdom\n; created: by $opt_u, $date\n");
 	while (<STDIN>) {
-		print OF
+		&myprint (OF, $_)
 	}
     }
 }
