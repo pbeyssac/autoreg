@@ -301,7 +301,7 @@ sub dodisplay {
   print "<HR>\n";
 
   $act='accept';
-  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\">\n";
+  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
 #  print ":$mymd5:$ENV{'REMOTE_USER'}:$act:$rq<BR>\n";
 #  print "<INPUT NAME=\"md5val\" SIZE=34> MD5<BR>\n";
   print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
@@ -312,7 +312,7 @@ sub dodisplay {
   print "<P>\n";
 
   $act='reject';
-  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\">\n";
+  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
   print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
   print "Reason:<TEXTAREA NAME=\"reason\" ROWS=10 COLS=77></TEXTAREA>\n";
   print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
@@ -322,7 +322,7 @@ sub dodisplay {
   print "<P>\n";
 
   $act='delete';
-  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\">\n";
+  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
   print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
   print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
   print "<INPUT TYPE=\"submit\" VALUE=\"Delete quietly\">\n";
