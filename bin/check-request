@@ -2,11 +2,14 @@
 #
 # $Id$
 #
+# Option -s is used by receive-mail and means we have to output a
+# Subject: header with our request id.
+#
 
 require "getopts.pl";
-do Getopts("l:");
+do Getopts("l:s");
 
-if ($#ARGV !=0) { die "Usage: check-request request-id.\n"; }
+if ($#ARGV !=0) { die "Usage: check-request [-l language-iso-code] [-s] request-id.\n"; }
 
 if ($opt_l) {
 	$ENV{'LANG'}=$opt_l;
@@ -17,14 +20,19 @@ if ($opt_l) {
 # local configuration
 require "/usr/local/dns-manager/conf/config";
 require "$DNSCONF/msg-check";
+require "$DNSLIB/auth.pl";
+require "$DNSLIB/errors.pl";
+require "$DNSLIB/misc.pl";
+require "$DNSLIB/requests.pl";
 
 &zauth_read;
 
-$REQID=`date +%Y%m%d%H%M%S`; chop $REQID;
-$REQID=$REQID."-$ARGV[0]-$$";
-$VALREQ="$VALDIR/$REQID";
+$REQID=&rq_make_id($ARGV[0]);
+
 $YMD=`date +%Y%m%d`; chop $YMD;
 $date=`date`; chop $date;
+
+if ($opt_s) { print "Subject: your request [$REQID]\n\n"; };
 
 local ($k)=0;
 local ($onect)=0;
@@ -330,9 +338,6 @@ if (system("$AZPATH -c -a$req -t$rectype $domain 2>&1")) {
 	exit 1;
 }
 
-open(VR, ">$VALREQ") || die ("Cannot open $VALREQ: $!\n");
-print VR "$replyto\n";
-
 if ($req eq 'M') {
   if ($makerr && !$makewhois) {
     $req = 'MZ';
@@ -341,15 +346,17 @@ if ($req eq 'M') {
   }
 }
 
-print VR "$req $domain $ENV{'LANG'} Open\n";
+$vr = &rq_create($REQID, $replyto, $req, $domain, $ENV{'LANG'})
+		|| die ("Cannot open $REQID: $!\n");
+
 if ($makerr) {
-	&valdata(VR);
+	&valdata($vr);
 }
 if ($makewhois) {
-	print VR ";;\n";
-	&whodata(VR);
+	&rq_end_dns($REQID, $vr");
+	&whodata($vr);
 }
-close(VR);
+&rq_end_create($REQID, $vr);
 
 print $MSG_ENDCK;
 printf $MSG_RQOK1, $REQID;
@@ -374,54 +381,6 @@ sub checkname {
             &pr_error($ERR_BADDE, $_[0]);
 	    return;
 	}
-}
-
-# isasubdomain(subdomain, domain)
-# Returns :
-#	0 if subdomain is not in domain
-#	1 if subdomain is not directly under domain
-#	2 if subdomain is directly under domain
-#
-sub isasubdomain {
-	local ($sub)= $_[0];
-	local ($dom)= $_[1];
-	local ($ls)= 0;
-	local ($ld)= 0;
-	local ($comp);
-
-	$sub =~ tr/A-Z/a-z/;
-	$dom =~ tr/A-Z/a-z/;
-
-	$stripone=$sub;
-	if (chop($stripone) eq '.') {
-		$sub=$stripone;
-	}
-	$stripone=$dom;
-	if (chop($stripone) eq '.') {
-		$dom=$stripone;
-	}
-
-	if ($dom[0] ne '.') {
-		$dom = '.' . $dom;
-	}
-
-	$ls = length($sub) - length($dom);
-	if ($ls <= 0) {
-		return 0;
-	}
-	$comp = (substr($sub, $ls) eq $dom);
-	if ($comp && $ls == index($sub, ".")) { $comp++ }
-
-	return $comp;
-}
-
-sub pr_error {
-	printf @_;
-	$numerrs++;
-}
-sub stoperrs {
-	select(STDOUT); $| = 1; print ""; $| = 0;
-	die sprintf($MSG_NBERR, $numerrs) if $numerrs;
 }
 
 sub whodata_person {
