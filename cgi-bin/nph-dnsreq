@@ -47,7 +47,10 @@ sub content {
   close(CHECKREQ);
 } 
 
-#print "Content-Type: text/html\n\n<HTML><HEAD>";
+print "HTTP/1.0 200 OK\n";
+print "Content-type: text/html\n";
+print "Server: $ENV{'SERVER_SOFTWARE'}\n\n";
+
 print "<HTML><HEAD>";
 print "<TITLE>DNS query result</TITLE>\n";
 print "</HEAD><BODY><PRE>\n";
