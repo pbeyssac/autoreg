@@ -69,7 +69,7 @@ sub dodir {
     local ($error, $replyto, $action, $domain, $lang, $state)
 	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
 
-    if (!$error) {
+    if (!$error && $state ne 'WaitAck') {
       $foundone = 1;
 
       if ($action eq 'N') {
