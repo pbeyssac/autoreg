@@ -1,0 +1,71 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+
+# local configuration.
+$whois="/usr/bin/whois";
+
+#
+# This function stolen and adapted from webdns.pl.
+# Originally written by Chris Lindblad <cjl@lcs.mit.edu>.
+#
+sub content { 
+  local($buffer,@pairs,$key,$val);
+  if ($ENV{'CONTENT_LENGTH'}) {
+    if ($ENV{'CONTENT_TYPE'} ne 'application/x-www-form-urlencoded') {
+      die('Unknown content type ',$ENV{'CONTENT_TYPE'},"\n");
+    } 
+    read(STDIN,$buffer,$ENV{'CONTENT_LENGTH'});
+  } elsif ($ENV{'QUERY_STRING'}) { $buffer = $ENV{'QUERY_STRING'}; }
+  else { $buffer = ''; }
+  @pairs = split(/&/,$buffer);
+  foreach $pair (@pairs) {
+    ($key,$val) = split(/=/,$pair);
+    $val =~ tr/+/ /;
+    $val =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+    if (defined($content{$key})) { $content{$key} .= ';'.$val; }
+    else { $content{$key} = $val; }
+  } 
+} 
+
+sub doform {
+   print <<EOF;
+<FORM ACTION="$ENV{'SCRIPT_NAME'}" METHOD="GET">
+Server: <INPUT NAME="server" VALUE="$content{'server'}"><P>
+Request: <INPUT NAME="request" VALUE="$content{'request'}"><P>
+<INPUT TYPE="submit" VALUE="Submit">
+</FORM>
+EOF
+
+}
+
+sub dowhois {
+   print "<HR>\n";
+   $content{'server'} =~ s/["';&]//g;
+   $content{'request'} =~ s/["';&]//g;
+
+   if (!open(WHOIS, "whois -h \"$content{'server'}\" \"$content{'request'}\"|")) {
+      print "<STRONG>Can't execute whois: $!</STRONG>\n";
+      return;
+   }
+   print "<TT>whois -h $content{'server'} $content{'request'}</TT>\n";
+   print "<HR><PRE>\n";
+   while (<WHOIS>) {
+      s/</&lt;/g;
+      s/>/&gt;/g;
+      print;
+   }
+   print "</PRE><HR>\n";
+   close(WHOIS);
+}
+
+print "Content-Type: text/html\n\n<HTML><HEAD>";
+print "</HEAD><BODY>\n";
+
+&content;
+&doform;
+
+if ($content{'request'}) { &dowhois; }
+
+print "</BODY></HTML>\n";

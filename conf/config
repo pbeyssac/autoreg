@@ -9,6 +9,9 @@ $PIDPATH="/var/run/named.pid";
 $DIGPATH="/usr/bin/dig";
 $SENDMAIL="/usr/sbin/sendmail";
 
+# local URLs
+$WHOISCGI="/adm/whois.cgi";
+
 # local config location
 $DNSDIR="/usr/local/dns-manager";
 

@@ -1,4 +1,8 @@
 $Id$
 
+Mon Jan 27 22:20:32 MET 1997
+HTTP user name added as info to state=Answered
+whois gateway added, with pointers in the validation form.
+
 Thu Aug 22 22:37:42 MET DST 1996
 bin/access-zone: fixed end of domain detection.
