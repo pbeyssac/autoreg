@@ -6,7 +6,7 @@ AZ=/usr/local/dns-manager/bin/access-zone
 # The directory for zone files
 ZONES=/usr/local/dns-manager/zones
 # The directory where "master" zone files are located
-DEST=/etc/namedb/
+DEST=/etc/namedb
 # Command to reload the nameserver. Used only if option -r is provided.
 NDC=/usr/sbin/ndc
 
