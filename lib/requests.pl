@@ -141,9 +141,9 @@ sub rq_get_info {
     $dns .= $_;
   }
 
-  while (<F>) { if (/^$/) { $dbrecords.="CHANGED: \n\n"; next }
-		elsif (/^mnt-by:/) { $dbrecords .="MNT-BY: \n"; next }
-		elsif (/^;;$/) { last }
+  while (<F>) { if (/^$/) { $dbrecords .= "CHANGED: \n\n"; next }
+		elsif (/^mnt-by:/) { $dbrecords .= "MNT-BY: \n"; next }
+		elsif (/^;;$/) { $dbrecords .= "CHANGED: \n"; last }
                 $dbrecords .= $_; }
 
   close(F);

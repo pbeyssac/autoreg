@@ -390,6 +390,15 @@ if ($opt_s) {
   print  SMU $MSG_RQOKR;
   print  SMU "\n";
 
+  if ($req =~ /^M/) {
+    printf SMU $MSG_RQM, $domain;
+  } elsif ($req =~ /^N/) {
+    printf SMU $MSG_RQN, $domain;
+  } elsif ($req =~ /^D/) {
+    printf SMU $MSG_RQD, $domain;
+  }
+  print SMU "\n";
+
   if ($makerr) {
     print SMU $MSG_RQOKD;
     &valdata(SMU);
