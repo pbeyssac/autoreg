@@ -135,7 +135,7 @@ while (<CHECK>) {
 }
 close(CHECK);
 
-close(VF)
+close(VF);
 die "Error sending mail: $!\n" if $?;
 
 unlink($REQFILE);
