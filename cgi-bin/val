@@ -164,6 +164,23 @@ sub doreject {
   printf SMU $MSG_BDYRJ, $content{'rq'}, $domain, $content{'reason'};
   print  SMU $MSG_BYE;
 
+  if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
+    print SMU $MSG_BDYWR;
+    foreach $line (split('\n', $dbrecords)) {
+      if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
+	  if ($1 eq "CHANGED") { $line = "changed: $user_mail $date"; }
+	  elsif ($1 eq "MNT-BY") { $line = "mnt-by:  $user_mntby"; }
+      }
+      print SMU $line."\n";
+    }
+    print SMU "\n";
+  }
+  if ($action eq 'N' || $action eq 'M' || $action eq 'MZ') {
+    print SMU $MSG_BDYZR;
+    print SMU $dns;
+    print SMU "\n";
+  }
+
   close(SMU);
   if ($? != 0) {
     print "<STRONG>sendmail returned an error !</STRONG><P>\n";
