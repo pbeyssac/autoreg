@@ -48,7 +48,8 @@ $MSG_RQOK1="Votre requête est correcte, mais vous allez devoir la confirmer.\n";
 $MSG_RQOK2="Pour cela, vous allez devoir répondre au courrier qui va\nvous être envoyé à l'adresse :\n\t%s\n\n";
 $MSG_RQOKM="Vous devez envoyer un courrier électronique à %s,\navec un Subject: contenant :\n\t[%s]\nNormalement il vous suffit de répondre au présent message.\n";
 $MSG_RQSUB="Subject: votre requete [%s]\n\n";
-$MSG_TMPLT="Veuillez remplir et renvoyer le formulaire suivant :\n\n";
+$MSG_TPSUB="Subject: votre message\n\n";
+$MSG_TMPLT="Aucune requête n'a pu être trouvée dans votre message.\nVeuillez remplir et renvoyer le formulaire suivant :\n\n";
 $MSG_WHOIS="\n---- Génération des informations WHOIS pour le domaine \"%s\"\n\n";
 
 # for check-ns
@@ -131,7 +132,8 @@ $MSG_RQOK1="Your request is correct, but you will be requested an e-mail acknowl
 $MSG_RQOK2="You will have to reply to the message sent to:\n\t%s\n\n";
 $MSG_RQOKM="You just need to send an e-mail to %s, with a Subject: containing:\n\t[%s]\nSimply replying to this current message should be enough.\n";
 $MSG_RQSUB="Subject: your request [%s]\n\n";
-$MSG_TMPLT="Please fill-in and resend the following template:\n\n";
+$MSG_TPSUB="Subject: your message\n\n";
+$MSG_TMPLT="No valid request has been found in your message.\nPlease fill-in and resend the following template:\n\n";
 $MSG_WHOIS="\n---- Generating WHOIS info for domain \"%s\"\n\n";
 
 # for check-ns

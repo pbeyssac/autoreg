@@ -102,9 +102,10 @@ if ($rqid) {
 
   if (!&rq_exists($rqid)) {
     # The request does not exist
-    #
     printf VF $MSG_ACKKO, $rqid;
-    print  VF $MSG_BYE;
+
+    # Continue anyway, to find out if it's a valid form and process it
+
   } else {
     # The request exists: read it and check its state
     ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
@@ -134,7 +135,7 @@ while (<CHECK>) {
 }
 close(CHECK);
 
-close(VF);
+close(VF)
 die "Error sending mail: $!\n" if $?;
 
 unlink($REQFILE);

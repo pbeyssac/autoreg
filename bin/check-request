@@ -33,8 +33,6 @@ $REQID=&rq_make_id($ARGV[0]);
 $YMD=`date +%Y%m%d`; chop $YMD;
 $date=`date`; chop $date;
 
-if ($opt_s) { printf $MSG_RQSUB, $REQID; };
-
 local ($k)=0;
 local ($onect)=0;
 local ($v)="";
@@ -132,12 +130,19 @@ if ($replyto !~ /.+@[A-Za-z0-9-]+\..*[A-Za-z0-9-]+/) {
 	die sprintf($ERR_BADRP, $replyto);
 }
 
+# Put the ID in the Subject: only when it's a valid request.
+# This is to avoid confusing ourselves (and the user...) by trying
+# to find a nonexistent request if he replies to the mail we are sending.
+
 if (! $formatok ) {
+	if ($opt_s) { print $MSG_TPSUB; };
 	print $MSG_TMPLT;
 	$| = 1; print;
 	system "cat $DOMTEMP";
 	exit 1;
 }
+
+if ($opt_s) { printf $MSG_RQSUB, $REQID; };
 
 $req =~ tr/a-z/A-Z/;
 $domain =~ tr/a-z/A-Z/;
