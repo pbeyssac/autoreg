@@ -121,7 +121,7 @@ sub doinfo {
     return;
   }
 
-  print SMU $VALHEADERS, $MSG_ADDR;
+  printf SMU $VALHEADERS, $MSG_ADDR;
   printf SMU $MSG_SUBIN, $content{'rq'}, $domain;
   print SMU "To: $replyto\n\n";
   printf SMU $MSG_BDYIN, $content{'rq'}, $domain, $content{'reason'};
@@ -236,7 +236,7 @@ sub doaccept {
     return;
   }
 
-  print  SMU $VALHEADERS, $MSG_ADDR;
+  printf SMU $VALHEADERS, $MSG_ADDR;
   printf SMU $MSG_SUBAC, $content{'rq'}, $domain;
   print  SMU "To: $replyto\nCc: $user_mail\n\n";                
   printf SMU $MSG_BDYAC, $content{'rq'}, $domain;
