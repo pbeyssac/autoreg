@@ -34,6 +34,7 @@ $ERR_NOTAM="Erreur: pas d'adresse de courrier électronique pour le contact techn
 $ERR_NOTNM="Erreur: pas de nom pour le contact technique.\n";
 $ERR_TWICE="Erreur: champ \"%s\" trouvé plus d'une fois.\n";
 $ERR_UNKFT="Erreur: version de format inconnue.\n";
+$ERR_UREPL="Erreur: \"%s\" n'est pas une des adresses de contact.\n";
 
 $MSG_BASCK="---- Vérifications de base\n\n";
 $MSG_CNTCK="\n---- Vérification des contacts\n\n";
@@ -125,6 +126,7 @@ $MSG_RQOK1="Your request is correct.\nIt has been allocated id [%s].\n\n";
 $MSG_RQOK2="E-mail notification will be sent when processed to:\n\t%s\n\n";
 $MSG_TMPLT="Please fill-in and resend the following template:\n\n";
 $MSG_WHOIS="\n---- Generating WHOIS info for domain \"%s\"\n\n";
+$ERR_UREPL="Error: reply address \"%s\" is not one of the contact addresses.\n";
 
 # for check-ns
 
