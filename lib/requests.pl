@@ -141,10 +141,18 @@ sub rq_get_info {
     $dns .= $_;
   }
 
-  while (<F>) { if (/^$/) { $dbrecords .= "CHANGED: \n\n"; next }
-		elsif (/^mnt-by:/) { $dbrecords .= "MNT-BY: \n"; next }
-		elsif (/^;;$/) { $dbrecords .= "CHANGED: \n"; last }
-                $dbrecords .= $_; }
+  local ($in_obj);
+  while (<F>) {
+    if (/^;;$/ && $in_obj) {
+      $dbrecords .= "CHANGED: \n\n"; $in_obj = 0; last
+    } elsif (/^$/ && $in_obj) {
+      $dbrecords .= "CHANGED: \n\n"; $in_obj = 0; next
+    } elsif (/^mnt-by:/) {
+      $dbrecords .= "MNT-BY: \n"; next
+    }
+    $dbrecords .= $_; $in_obj = 1;
+  }
+  if ($in_obj) { $dbrecords .= "CHANGED: \n\n"; }
 
   close(F);
 
