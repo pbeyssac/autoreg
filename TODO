@@ -3,3 +3,4 @@ $Id$
 	- auto validation by the user
 	- better handling of additional user information sent by mail
 	- be able to finger to get current request status
+	- better handling of "remote" zones.
