@@ -111,9 +111,10 @@ if ($rqid) {
     ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
 	= &rq_get_info($rqid, "DNSADMIN");
     if ($state eq "WaitAck") {
-      # Change its state to "Open" and notify the user
+      # Change its state to "Open"
       &rq_set_state($rqid, "DNSADMIN", "Open");
     }
+    # notify the requester
 
     printf VF $MSG_ACKOK, $rqid;
     print  VF $MSG_BYE;
