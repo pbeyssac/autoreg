@@ -239,7 +239,7 @@ while (<ZF>) {
 	&myprint (OF, $_)
 		if $do_out;
 }
-close(ZF);
+# Don't close ZF: we would lose our lock.
 
 if ($action eq 'new') {
 	if ($found) {
