@@ -52,6 +52,8 @@ sub dowhoisforms {
     &dowhoisform($WHOISHOST, $request, "EU.org");
     &dowhoisform("whois.ripe.net", $request, "RIPE");
     &dowhoisform("whois.internic.net", $request, "InterNIC");
+    &dowhoisform("whois.aunic.net", $request, "AUNIC");
+    &dowhoisform("whois.apnic.net", $request, "APNIC");
     print "<BR>\n";
 }
 
