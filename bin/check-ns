@@ -26,6 +26,9 @@
 die "Usage: check-ns {domain}\n" if ($#ARGV > 0);
 
 require "/usr/local/dns-manager/conf/config";
+require "$DNSLIB/dns.pl";
+require "$DNSLIB/errors.pl";
+require "$DNSLIB/misc.pl";
 require "$DNSCONF/msg-check";
 
 if ($#ARGV == 0) {
@@ -148,7 +151,7 @@ sub checkip {
 	printf $MSG_CHKIP, $_[1], $_[0];
 	
 	if (!(($name, $aliases, $addrtype, $length, @addrs)=gethostbyname($_[0])) && !$?) {
-		&pr_error($ERR_GHBN, $_[0], $!);
+		&pr_error($ERR_GHBN, $_[0], "$!");
 	} else {
 		if (!$name) {
 			&pr_error($ERR_HOSTU);
@@ -169,7 +172,7 @@ sub getip {
 	local (@dec);
 	printf $MSG_GETIP, $_[0];
 	if (!(($name, $aliases, $addrtype, $length, @addrs)=gethostbyname($_[0])) && !$?) {
-		&pr_error($ERR_GHBN, $_[0], $!);
+		&pr_error($ERR_GHBN, $_[0], "$!");
 	} else {
 		if (!$name) {
 			&pr_error($ERR_HOSTU);
@@ -250,36 +253,10 @@ sub checklamer {
 #
 # getnsauth(domain, server)
 sub getnsauth {
-    local ($isauth)=0;
-    local ($inns)=0;
-    local ($thisns);
-    local (@nslist);
-
-    open(DIG,"$DIGPATH ns +noaa $_[0]. \@$_[1] 2>/dev/null|");
-    while (<DIG>) {
-        if (/status: NXDOMAIN/) { $isauth=0; last; }
-        if (/status: SERVFAIL/) { $isauth=0; last; }
-        if (/;; flags.*aa.*;/) { $isauth=1; }
-	if (/^;; ANSWERS:$/) { $inns=1; last; }
-    }
-    if (!$isauth) {
+    local (@nslist) = &dns_get_type($_[0], "NS", $_[1]);
+    if (!@nslist) {
     	&pr_error($ERR_LAMEN);
     }
-    if (!$inns || !$isauth) { close(DIG); return "" }
-
-    while (<DIG>) {
-	if (/^;; AUTHORITY/) { last }
-
-	chop; split(/\t/);
-
-	if ($_[2] eq "NS") {
-		$thisns = $_[3];
-		chop $thisns;
-		$thisns =~ tr/a-z/A-Z/;
-		push(@nslist, $thisns);
-	}
-    }
-    close(DIG);
     return sort @nslist;
 }
 
@@ -289,60 +266,7 @@ sub getnsauth {
 #
 # getns(domain)
 sub getns {
-    local ($isauth)=0;
-    local ($inns)=0;
-    local ($thisns);
-    local (@nslist);
-
-    open(DIG,"$DIGPATH ns $_[0]. 2>/dev/null|");
-    while (<DIG>) {
-        if (/status: NXDOMAIN/) { $isauth=0; last; }
-        if (/status: SERVFAIL/) { $isauth=0; last; }
-        if (/;; flags.*aa.*;/) { $isauth=1; }
-	if (/^;; ANSWERS:$/) { $inns=1; last; }
-    }
-
-    while (<DIG>) {
-	if (/^;; AUTHORITY/) { last }
-
-	chop; split(/\t/);
-
-	if ($_[2] eq "NS") {
-		$thisns = $_[3];
-		chop $thisns;
-		$thisns =~ tr/a-z/A-Z/;
-		push(@nslist, $thisns);
-	}
-    }
-    close(DIG);
-    return sort @nslist;
-}
-
-# isasubdomain(subdomain, domain)
-# Returns :
-#	0 if subdomain is not in domain
-#	1 if subdomain is not directly under domain
-#	2 if subdomain is directly under domain
-#
-sub isasubdomain {
-	local ($sub)= $_[0];
-	local ($dom)= $_[1];
-	local ($ls)= 0;
-	local ($ld)= 0;
-	local ($comp);
-
-	$sub = &fqdncanon($sub);
-	$dom = &fqdncanon($dom);
-
-	$dom = '.' . $dom;
-
-	$ls = length($sub) - length($dom);
-	if ($ls <= 0) {
-		return 0;
-	}
-	$comp = (substr($sub, $ls) eq $dom);
-	if ($comp && $ls == index($sub, ".")) { $comp++ }
-	return $comp;
+    return sort &dns_get_type($_[0], "NS");
 }
 
 sub equal {
@@ -377,22 +301,4 @@ sub decodeip {
 	push(@dec, join('.', unpack('C4', $i)));
     }
     return @dec;
-}
-
-sub pr_error {
-	printf @_;
-	$numerrs++;
-}
-
-sub stoperrs {
-	$| = 1; print ""; $| = 0;
-	die sprintf($MSG_NBERR, $numerrs) if $numerrs;
-}
-
-sub fqdncanon {
-	local ($fqdn)=$_[0];
-	if ($fqdn =~ /^\.(.*)/)	{ $fqdn = $1 }
-	if ($fqdn =~ /\.$/)	{ chop $fqdn }
-	$fqdn =~ tr/a-z/A-Z/;
-	return $fqdn;
 }
