@@ -10,6 +10,11 @@ require "/usr/local/dns-manager/conf/config";
 require "$DNSLIB/auth.pl";
 require "$DNSLIB/misc.pl";
 
+# for flock()
+$LOCK_SH = 1;
+$LOCK_EX = 2;
+$LOCK_UN = 8;
+
 sub rq_set_state {
   local ($rq, $user, $newstate) = ($_[0], $_[1], $_[2]);
   local ($replyto, $action, $domain, $lang, $line, $state);
@@ -17,6 +22,7 @@ sub rq_set_state {
   if (!open (F, "$VALDIR/$rq")) {
     return "Cannot find request $rq.";
   }
+  flock(F, $LOCK_EX);
 
   $replyto = <F>; chop $replyto;
   $line = <F>; chop $line;
@@ -31,18 +37,24 @@ sub rq_set_state {
     close(F);
     return "Unable to update request file.";
   }
+  flock(NF, $LOCK_EX);
 
   print NF "$replyto\n$action $domain $lang $newstate\n";
   while (<F>) {
     print NF $_;
   }
-  close(F);
-  close(NF);
+
+  # We need to keep the locks until after the rename.
 
   if (!rename("$VALDIR/$rq.new", "$VALDIR/$rq")) {
-    return "Unable to update request file: $!";
+    local ($err) = $!;
     unlink("$VALDIR/$rq.new");
+    close(F);
+    close(NF);
+    return "Unable to update request file: $err";
   } else {
+    close(F);
+    close(NF);
     return ("", $replyto, $action, $domain, $lang, $state);
   }
 }
@@ -54,6 +66,8 @@ sub rq_get_info {
   if (!open (F, "$VALDIR/$rq")) {
     return "Cannot find request $rq.";
   }
+  flock(F, $LOCK_SH);
+
   $replyto = <F>; chop $replyto;
   $line = <F>; chop $line;
 
@@ -86,6 +100,7 @@ sub rq_remove {
   if (!open (F, "$VALDIR/$rq")) {
     return "Cannot find request $rq.";
   }
+  flock(F, $LOCK_EX);
   $replyto = <F>; chop $replyto;
   $line = <F>; chop $line;
   ($action, $domain, $lang, $state) = split(/ /, $line);
@@ -94,11 +109,15 @@ sub rq_remove {
     close(F);
     return "Access to request $rq not authorized.";
   }
-  close(F);
+
+  # We need to keep the lock until after the unlink
 
   if (!unlink("$VALDIR/$rq")) {
-    return "unlink: $!";
+    local ($err) = $!;
+    close(F);
+    return "unlink: $err";
   }
+  close(F);
 
   return;
 }
@@ -125,7 +144,8 @@ sub rq_create {
 	= ($_[0], $_[1], $_[2], $_[3], $_[4]);
   local ($dns, $dbrecords);
 
-  open(VR, ">$VALDIR/$rq") || die ("Cannot open $VALDIR/$rq: $!\n");
+  open(VR, ">$VALDIR/$rq.tmp") || die "Cannot open $VALDIR/$rq.tmp: $!\n";
+  flock(VR, $LOCK_EX);
   print VR "$replyto\n";
   print VR "$req $domain $lang WaitAck\n";
   return "VR";
@@ -139,6 +159,8 @@ sub rq_end_dns {
 sub rq_end_create {
   local ($rq, $fh) = ($_[0], $_[1]);
   print $fh ";;\n";
+  rename("$VALDIR/$rq.tmp", "$VALDIR/$rq")
+	|| die "Cannot rename $VALDIR/$rq.tmp: $!\n";
   close($fh);
 }
 
