@@ -646,7 +646,7 @@ if ($content{'action'} eq 'editwhois') {
 } elsif ($content{'action'} eq 'setanswered') {
   &dostate($content{'rq'}, "Answered", $ENV{'REMOTE_USER'});
 } elsif ($content{'action'} eq 'accept') {
-#  local ($err) = &md5_check("$user_pass:".&getmd5($content{'rq'}).
+#  local ($err) = &md5_check("$user_pass:".&md5_get($content{'rq'}).
 #			     ":$ENV{'REMOTE_USER'}:accept:$content{'rq'}",
 #			     $content{'md5val'});
 #  if (!$err) {
