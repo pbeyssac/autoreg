@@ -5,42 +5,14 @@
 
 # local configuration.
 require "/usr/local/dns-manager/conf/config";
+require "$DNSLIB/misc.pl";
+require "$DNSLIB/cgi.pl";
+require "$DNSLIB/auth.pl";
+require "$DNSLIB/requests.pl";
 
 &zauth_read;
 
 $date=`date +%y%m%d`; chop $date;
-
-sub parent_of { 
-  local ($domain) = @_;  
-  local ($i) = index($domain, ".");
-  if ($i < 0) { 
-    return "";
-  }   
-  return substr($domain, $i+1);
-}     
-
-#
-# This function stolen and adapted from webdns.pl.
-# Originally written by Chris Lindblad <cjl@lcs.mit.edu>.
-#
-sub content { 
-  local($buffer,@pairs,$key,$val);
-  if ($ENV{'CONTENT_LENGTH'}) {
-    if ($ENV{'CONTENT_TYPE'} ne 'application/x-www-form-urlencoded') {
-      die('Unknown content type ',$ENV{'CONTENT_TYPE'},"\n");
-    } 
-    read(STDIN,$buffer,$ENV{'CONTENT_LENGTH'});
-  } elsif ($ENV{'QUERY_STRING'}) { $buffer = $ENV{'QUERY_STRING'}; }
-  else { $buffer = ''; }
-  @pairs = split(/&/,$buffer);
-  foreach $pair (@pairs) {
-    ($key,$val) = split(/=/,$pair);
-    $val =~ tr/+/ /;
-    $val =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-    if (defined($content{$key})) { $content{$key} .= ';'.$val; }
-    else { $content{$key} = $val; }
-  } 
-} 
 
 sub getmd5 {
   local ($file) = $_[0];
@@ -66,41 +38,35 @@ sub dowhoisform {
     print "<A HREF=\"$WHOISCGI?server=$server&request=$request\">$label</A>\n";
 }
 
+sub dolocalwhoisform {
+    local ($request) = $_[0];
+    print "Whois \"$request\" at ";
+    &dowhoisform($WHOISHOST, $request, "EU.org");
+    print "<BR>\n";
+}
+
 sub dowhoisforms {
     local ($request) = $_[0];
     print "Whois \"$request\" at ";
-    &dowhoisform("whois.eu.org", $request, "EU.org");
+    &dowhoisform($WHOISHOST, $request, "EU.org");
     &dowhoisform("whois.ripe.net", $request, "RIPE");
     &dowhoisform("whois.internic.net", $request, "InterNIC");
-    print "<P>\n";
+    print "<BR>\n";
 }
 
 sub dodir {
-  opendir(D, '.') || die "Can't open $VALDIR: $!";
-  local (@dirlist) = readdir(D);
+  local (@dirlist) = &rq_list();
   local ($foundone) = 0;
 
-  closedir(D);
-
-  local ($fname, $replyto, $domain, $line, $lang);
+  local ($rq);
 
   print "\n";
 
-  @dirlist = sort(@dirlist);
+  foreach $rq (@dirlist) {
+    local ($error, $replyto, $action, $domain, $lang, $state)
+	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
 
-  for (@dirlist) {
-    next if $_ =~ /^\./;
-
-    $fname = $_;
-    if (!open(F, $fname)) {
-      print "<TT>$fname</TT> ***<BR>\n";
-    } else {
-      $replyto = <F>; chop $replyto;
-      $line = <F>; chop $line;
-      ($action, $domain, $lang, $state) = split(/ /, $line);
-
-      next if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'}));
-
+    if (!$error) {
       $foundone = 1;
 
       if ($action eq 'N') {
@@ -115,11 +81,10 @@ sub dodir {
 	$action = "DEL";
       }
       if ($state eq 'Open') {
-        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$fname\"><TT>$fname</TT></A> $action $lang $domain<BR>\n";
+        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain<BR>\n";
       } else {
-        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$fname\"><TT>$fname</TT></A> $action $lang $domain ($state)<BR>\n";
+        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain ($state)<BR>\n";
       }
-      close(F);
     }
   }
   if (!$foundone) {
@@ -128,121 +93,96 @@ sub dodir {
 }
 
 sub dostate {
-  local ($replyto, $domain, $rq, $line, $state, $newstate);
+  local ($rq, $newstate) = ($_[0], $_[1]);
 
-  $rq=$_[0];
-  $newstate=$_[1];
+  local ($error, $replyto, $action, $domain, $lang, $state)
+	= &rq_set_state($rq, $ENV{'REMOTE_USER'}, $newstate);
 
-  if (!open (F, $rq)) {
-    print "Unable to find $rq.\n";
-    return;
-  }
-  $replyto = <F>; chop $replyto;
-  $line = <F>; chop $line;
-  ($action, $domain, $ENV{'LANG'}, $state) = split(/ /, $line);
-
-  if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'})) {
-    print "You are not authorized for this request.\n";
-    close(F);
-    return;
-  }
-
-  if (!open(NF, ">$rq.new")) {
-    print "Unable to update $rq.\n";
-    close(F);
-    return;
-  }
-
-  print NF "$replyto\n$action $domain $ENV{'LANG'} $newstate\n";
-  while (<F>) {
-    print NF $_;
-  }
-  close(F);
-  close(NF);
-
-  if (!rename($rq.'.new', $rq)) {
-    print "Cannot modify request.<P>\n";
-    unlink("$rq.new");
+  if ($error) {
+    print "Error: $error.<P>\n";
   } else {
     print "State changed from $state to $newstate.<P>\n";
   }
 }
 
-sub doreject {
-  local ($replyto, $domain, $rq, $line);
+sub doinfo {
+  local ($rq) = $_[0];
 
-  $rq=$_[0];
+  local ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
+	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
+  if ($error) { print "Error: $error.<P>\n"; return; }
 
-  if (!open (F, $rq)) {
-    print "Unable to find $rq.\n";
-    return;
-  }
-  $replyto = <F>; chop $replyto;
-  $line = <F>; chop $line;
-  ($action, $domain, $ENV{'LANG'}) = split(/ /, $line);
-
-  if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'})) {
-    print "You are not authorized for this request.\n";
-    close(F);
-    return;
-  }
-
+  $ENV{'LANG'} = $lang;
   do "$DNSCONF/msg-val";
 
   if (!open(SMU, "|$SENDMAIL -t")) {
-    print "Unable to send mail.\n";
-    close (F);
+    print "Unable to send mail.<P>\n";
     return;
   }
 
   print SMU $VALHEADERS;
-  printf SMU $MSG_SUBRJ, $content{'rq'};
+  printf SMU $MSG_SUBIN, $content{'rq'}, $domain;
   print SMU "To: $replyto\n\n";
-  printf SMU $MSG_BDYRJ, $content{'rq'}, $content{'reason'};
-  print SMU $MSG_KOBYE;
+  printf SMU $MSG_BDYIN, $content{'rq'}, $domain, $content{'reason'};
+  print SMU $MSG_BYE;
 
-  close (F);
+  close(SMU);
+
+  if ($? != 0) {
+    print "<STRONG>sendmail returned an error !</STRONG><P>\n";
+  }
+}
+
+sub doreject {
+  local ($rq) = $_[0];
+
+  local ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
+	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
+  if ($error) { print "Error: $error.<P>\n"; return; }
+
+  $ENV{'LANG'} = $lang;
+  do "$DNSCONF/msg-val";
+
+  if (!open(SMU, "|$SENDMAIL -t")) {
+    print "Unable to send mail.<P>\n";
+    return;
+  }
+
+  print SMU $VALHEADERS;
+  printf SMU $MSG_SUBRJ, $content{'rq'}, $domain;
+  print SMU "To: $replyto\n\n";
+  printf SMU $MSG_BDYRJ, $content{'rq'}, $domain, $content{'reason'};
+  print SMU $MSG_BYE;
+
   close(SMU);
   if ($? != 0) {
     print "<STRONG>sendmail returned an error !</STRONG><P>\n";
     print "Request kept.\n";
   } else {
-    unlink($rq);
+    &rq_remove($rq, $ENV{'REMOTE_USER'});
     print "End of processing.<P>\n";
   }
 }
 
 sub doaccept {
-  local ($replyto, $domain, $rq, $line);
+  local ($rq) = $_[0];
 
-  $rq=$_[0];
+  local ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
+	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
+  if ($error) { print "Error: $error.<P>\n"; return; }
 
-  if (!open (F, $rq)) {
-    print "Unable to find $rq.\n";
-    return;
-  }
-  $replyto = <F>; chop $replyto;
-  $line = <F>; chop $line;
-  ($action, $domain, $ENV{'LANG'}) = split(/ /, $line);
-
-  if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'})) {
-    print "You are not authorized for this request.\n";
-    close(F);
-    return;
-  }
-
+  $ENV{'LANG'} = $lang;
   do "$DNSCONF/msg-val";
 
   if (!open(SMU, "|$SENDMAIL -t")) {
-    print "Unable to send mail.\n";
-    close (F);
+    print "Unable to send mail.<P>\n";
     return;
   }
 
   print SMU $VALHEADERS;
-  printf SMU $MSG_SUBAC, $content{'rq'};
+  printf SMU $MSG_SUBAC, $content{'rq'}, $domain;
   print SMU "To: $replyto\nCc: $user_mail\n\n";                
-  printf SMU $MSG_BDYAC, $content{'rq'};
+  printf SMU $MSG_BDYAC, $content{'rq'}, $domain;
 
   if ($action eq 'M' || $action eq 'MZ' || $action eq 'D') {
     print SMU $MSG_BDYZD;
@@ -270,11 +210,8 @@ sub doaccept {
       print SMU $MSG_NOINS;
       print "<STRONG>Unable to insert records.</STRONG><P>\n";
     } else {
-      while (<F>) {
-        last if ($_ eq ";;\n");
-        print AZ;
-        print SMU;
-      }
+      print AZ $dns;
+      print SMU $dns;
       close (AZ);
       if ($? != 0) {
 	print "<STRONG>Error when trying to insert records.</STRONG>\n";
@@ -284,71 +221,85 @@ sub doaccept {
   }
   if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
     print SMU $MSG_BDYWI;
-    while (<F>) { if (/^$/) { print SMU "changed: $user_mail $date\n" }
-		  elsif (/^mnt-by:/) { print SMU "mnt-by:  $user_mntby\n"; next }
-		  print SMU; }
+    local ($line);
+    foreach $line (split('\n', $dbrecords)) {
+      if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
+	  if ($1 eq "CHANGED") { $line = "changed: $user_mail $date"; }
+	  elsif ($1 eq "MNT-BY") { $line = "mnt-by:  $user_mntby"; }
+      }
+      print SMU $line."\n";
+    }
     print SMU "\n";
   }
 
-  close (F);
   print SMU $MSG_OKBYE;
   close(SMU);
   if ($? != 0) {
     print "<STRONG>sendmail returned an error !</STRONG><P>\n";
     print "Request kept.\n";
   } else {
-    unlink($rq);
+    &rq_remove($rq, $ENV{'REMOTE_USER'});
     print "End of processing.<P>\n";
   }
 }
 
 sub dodisplay {
-  local ($replyto, $domain, $rq);
+  local ($rq) = $_[0];
 
-  $rq=$_[0];
+  local ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
+	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
+  if ($error) { print "Error: $error.<P>\n"; return; }
 
-  if (!open (F, $rq)) {
-    print "Unable to find $rq.\n";
-    return;
-  }
-  $replyto = <F>; chop $replyto;
-  $line = <F>; chop $line;
-  ($action, $domain, $ENV{'LANG'}) = split(/ /, $line);
-
-  if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'})) {
-    print "You are not authorized for this request.\n";
-    close(F);
-    return;
-  }
-
+  $ENV{'LANG'} = $lang;
   do "$DNSCONF/msg-val";
 
   if ($action eq 'N' || $action eq 'M' || $action eq 'MZ') {
     print "<HR><H2>Records to be inserted in zone file:</H2><PRE>\n";
-    while (<F>) {
-      last if ($_ eq ";;\n");
-      print;
-    }
+    print $dns;
     print "</PRE>\n";
   }
 
   if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
     $nh = "";
     print "<HR><H2>Records to be inserted in WHOIS base:</H2><PRE>\n";
-    while (<F>) { s/>/&gt;/g; s/</&lt;/g;
-		  if (/^$/) { print "changed: $user_mail $date\n\n" }
-		  elsif (/^mnt-by:/) { print "mnt-by:  $user_mntby\n"; next }
-		  elsif (/^nic-hdl:\s*(.+)$/) { $nh = $1; print; next; }
-		  elsif (/^tech-c:\s*(.+)$/) { $tc = $1; print; next; }
-		  elsif (/^admin-c:\s*(.+)$/) { $ac = $1; print; next; }
-		  else { print }
-		}
-    close (F);
+
+    local ($line);
+    foreach $line (split('\n', $dbrecords)) {
+      if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
+	  if ($1 eq "CHANGED") { $line = "changed: $user_mail $date"; }
+	  elsif ($1 eq "MNT-BY") { $line = "mnt-by:  $user_mntby"; }
+	  elsif ($1 eq "nic-hdl" && $nh1) { $nh2 = $2; }
+	  elsif ($1 eq "nic-hdl") { $nh1 = $2; }
+	  elsif ($1 eq "tech-c") { $tc = $2; }
+	  elsif ($1 eq "admin-c") { $ac = $2; }
+	  elsif ($1 eq "person" && $pn1) { $pn2 = $2; }
+	  elsif ($1 eq "person") { $pn1 = $2; };
+      }
+      $line =~ s/>/&gt;/g; s/</&lt;/g;
+      print $line."\n";
+    }
     print "</PRE><HR>\n";
 
-    if ($nh) { &dowhoisforms($nh); }
-    if ($tc && $tc ne $nh) { &dowhoisforms($tc); }
-    if ($ac && $ac ne $tc && $ac ne $nh) { &dowhoisforms($ac); }
+    #
+    # Local form only for whois on domain name
+    #
+    &dolocalwhoisform($domain);
+    #
+    # Forms for whois on NIC handles
+    #
+    if ($nh1) { &dowhoisforms($nh1); }
+    if ($nh2 && $nh1 ne $nh2) { &dowhoisforms($nh2); }
+    #
+    # Forms for whois on technical/admin contacts and person names
+    #
+    if ($tc && $tc ne $nh1 && $tc ne $nh2)
+	{ &dowhoisforms($tc); }
+    if ($ac && $ac ne $tc && $ac ne $nh1 && $ac ne $nh2)
+	{ &dowhoisforms($ac); }
+    if ($pn1 && $pn1 ne $tc && $pn1 ne $ac)
+	{ &dolocalwhoisform($pn1); }
+    if ($pn2 && $pn2 ne $pn1 && pn2 ne $tc && pn2 ne $ac)
+	{ &dolocalwhoisform($pn2); }
   }
 
   if ($action eq 'MZ' || $action eq 'D') {
@@ -361,13 +312,12 @@ sub dodisplay {
     }
     print "</PRE>\n";
   }
-  close(F);
 
-  $mymd5 = &getmd5($rq);
-
-  if (!$mymd5) {
-    print "<STRONG>Unable to compute MD5 for \"$rq\"</STRONG><P>\n";
-  }
+#  $mymd5 = &getmd5($rq);
+#
+#  if (!$mymd5) {
+#    print "<STRONG>Unable to compute MD5 for \"$rq\"</STRONG><P>\n";
+#  }
 
   print "<HR>\n";
 
@@ -402,6 +352,16 @@ sub dodisplay {
 
   print "<P>\n";
 
+#  $act='info';
+#  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
+#  print "<INPUT TYPE=\"submit\" VALUE=\"Ask more info to $replyto\"><BR>\n";
+#  print "Reason:<TEXTAREA NAME=\"reason\" ROWS=10 COLS=77></TEXTAREA>\n";
+#  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+#  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+#  print "</FORM>\n";
+#
+#  print "<P>\n";
+
   $act='delete';
   print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
   print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
@@ -411,8 +371,8 @@ sub dodisplay {
 }
 
 sub getuser {
-  local ($remuser, $user, $pass, $mntby);
-  $remuser = $_[0];
+  local ($remuser) = $_[0];
+  local ($user, $pass, $mntby);
 
   if (!open(UP, $PASSFILE)) {
 	return;
@@ -479,6 +439,9 @@ if ($content{'action'} eq 'display') {
   &dodisplay($content{'rq'});
 } elsif ($content{'action'} eq 'reject') {
   &doreject($content{'rq'});
+} elsif ($content{'action'} eq 'info') {
+  &doinfo($content{'rq'});
+  &dostate($content{'rq'}, "Answered");
 } elsif ($content{'action'} eq 'setanswered') {
   &dostate($content{'rq'}, "Answered");
 } elsif ($content{'action'} eq 'accept') {
@@ -490,7 +453,7 @@ if ($content{'action'} eq 'display') {
 #    print "The MD5 you have provided is incorrect, or the file has been deleted.<P>\n";
 #  }
 } elsif ($content{'action'} eq 'delete') {
-  if (!unlink($content{'rq'})) {
+  if (!&rq_remove($content{'rq'}, $ENV{'REMOTE_USER'})) {
     print "Unable to delete $content{'rq'}: $!<P>\n";
   } else {
     print "Deleted $content{'rq'}<P>\n";
