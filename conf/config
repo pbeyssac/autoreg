@@ -64,7 +64,7 @@ $MAILHEADERS="From: hostmaster\@EU.org\nReply-To: %s\nBcc: pb\n";
 $VALHEADERS="From: hostmaster\@EU.org\nReply-To: %s\nBcc: pb\n";
 #
 # address to send whois database updates to
-$WHOISDBM="auto-dbm@EU.org";
+$WHOISDBM="auto-dbm\@EU.org";
 #
 # name of database in generated objects ("source:" line)
 $DBNAME="FREENIC";
