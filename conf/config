@@ -9,6 +9,9 @@ $PIDPATH="/var/run/named.pid";
 $DIGPATH="/usr/bin/dig";
 $SENDMAIL="/usr/sbin/sendmail";
 
+# MD5 seed -- CHANGE THIS!
+$MD5SEED="bf9bb421ef836495aa79ecd6ab6ca531";
+
 # local URLs
 $WHOISCGI="/adm/whois.cgi";
 
