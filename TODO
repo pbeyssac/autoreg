@@ -5,10 +5,12 @@ Just ideas...
 	- auto validation by the user
 	- better handling of additional user information sent by mail
 	- be able to finger to get current request status
-	- better handling of "remote" zones.
+	- resend mail to user (for still unack'ed requests)
 	- add A+MX to possible user requests
+	- check given mail addresses for MX record
 	- be able to edit zone records in user requests
 	- be able to add a Cc: in a rejection/info mail
+	- be able to change destination e-mail in requests
 	- handle user-info through a CGI
 	- handle any record in the zone through a CGI
 	- PGP mails
