@@ -14,7 +14,8 @@ $MSG_BDYAC="Bonjour,\n\nVotre requête [%s] a été acceptée.\n\n";
 $MSG_BDYZD="Les enregistrements suivants seront détruits du fichier de zone :\n\n";
 $MSG_BDYZI="Les enregistrements suivants seront insérés dans le fichier de zone :\n\n";
 $MSG_BDYWI="Les enregistrements suivants seront insérés dans la base WHOIS :\n\n";
-$MSG_BDYBY="\nLeur propagation prendra environ une demi-journée.\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
+$MSG_OKBYE="\nLeur propagation prendra environ une demi-journée.\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
+$MSG_KOBYE="\n\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
 
 } else {
 
@@ -25,6 +26,7 @@ $MSG_BDYAC="Hello,\n\nYour request [%s] has been accepted.\n\n";
 $MSG_BDYZD="The following records will be deleted from the zone file:\n\n";
 $MSG_BDYZI="The following records will be inserted in the zone file:\n\n";
 $MSG_BDYWI="The following records will be inserted in the WHOIS base:\n\n";
-$MSG_BDYBY="\nPlease allow about half a day for propagation.\n\tVirtually yours,\n\tEU.org management.\n\n";
+$MSG_OKBYE="\nPlease allow about half a day for propagation.\n\tVirtually yours,\n\tEU.org management.\n\n";
+$MSG_KOBYE="\n\n\tVirtually yours,\n\tEU.org management.\n\n";
 
 }

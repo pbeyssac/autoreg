@@ -138,7 +138,7 @@ sub doreject {
   printf SMU $MSG_SUBRJ, $content{'rq'};
   print SMU "To: $replyto\n\n";
   printf SMU $MSG_BDYRJ, $content{'rq'}, $content{'reason'};
-  print SMU $MSG_BDYBY;
+  print SMU $MSG_KOBYE;
 
   close (F);
   close(SMU);
@@ -230,7 +230,7 @@ sub doaccept {
   }
 
   close (F);
-  print SMU $MSG_BDYBY;
+  print SMU $MSG_OKBYE;
   close(SMU);
   if ($? != 0) {
     print "<STRONG>sendmail returned an error !</STRONG><P>\n";
