@@ -5,6 +5,7 @@
 
 # local configuration.
 require "/usr/local/dns-manager/conf/config";
+#require "$DNSLIB/md5.pl";
 require "$DNSLIB/misc.pl";
 require "$DNSLIB/whois.pl";
 require "$DNSLIB/cgi.pl";
@@ -14,23 +15,6 @@ require "$DNSLIB/requests.pl";
 &zauth_read;
 
 $date=`date +%y%m%d`; chop $date;
-
-sub getmd5 {
-  local ($file) = $_[0];
-  local ($mymd5);
-  if (!open(MD5, "$MD5PATH < $file |")) {
-    return "";
-  } else {
-    if (!($mymd5 = <MD5>)) {
-      close(MD5);
-      return;
-    } else {
-      chop $mymd5;
-      close(MD5);
-      return $mymd5;
-    }
-  }
-}
 
 sub dowhoisform {
     local ($server, $request, $label) = ($_[0], $_[1], $_[2]);
@@ -540,7 +524,7 @@ sub dodisplay {
     &whois_html($WHOISHOST, $domain);
   }
 
-#  $mymd5 = &getmd5($rq);
+#  $mymd5 = &md5_get($rq);
 #
 #  if (!$mymd5) {
 #    print "<STRONG>Unable to compute MD5 for \"$rq\"</STRONG><P>\n";
@@ -629,27 +613,6 @@ sub getuser {
   return;
 }
 
-sub checkmd5 {
-  local ($string, $gotmd5) = @_;
-
-  if ($string !~ /^[a-zA-Z0-9\-\/;!:]+$/) {
-	print "<STRONG>Illegal characters in MD5 string $string.</STRONG><P>\n";
-	return 0;
-  }
-
-  if (!open(MD5, "(echo \'$string\') | $MD5PATH |")) {
-    print "<STRONG>Cannot compute MD5: $!</STRONG><P>\n";
-  } else {
-    if (!($mymd5 = <MD5>)) {
-      print "<STRONG>Cannot compute MD5</STRONG><P>";
-    } else {
-      chop $mymd5;
-    }
-  }
-  close(MD5);
-  return $mymd5 eq $gotmd5;
-}
-
 print "Content-Type: text/html\n\n<HTML><HEAD>";
 print "</HEAD><BODY>\n";
 
@@ -694,11 +657,13 @@ if ($content{'action'} eq 'editwhois') {
 } elsif ($content{'action'} eq 'setanswered') {
   &dostate($content{'rq'}, "Answered", $ENV{'REMOTE_USER'});
 } elsif ($content{'action'} eq 'accept') {
-#  if (&checkmd5("$user_pass:".&getmd5($content{'rq'}).
-#		":$ENV{'REMOTE_USER'}:accept:$content{'rq'}",
-#		$content{'md5val'})) {
+#  local ($err) = &md5_check("$user_pass:".&getmd5($content{'rq'}).
+#			     ":$ENV{'REMOTE_USER'}:accept:$content{'rq'}",
+#			     $content{'md5val'});
+#  if (!$err) {
     &doaccept($content{'rq'}, $user_mail);
 #  } else {
+#    print "<STRONG>$err</STRONG></P>\n";
 #    print "The MD5 you have provided is incorrect, or the file has been deleted.<P>\n";
 #  }
 } elsif ($content{'action'} eq 'delete') {
