@@ -1,9 +1,13 @@
 #!/bin/sh
 # $Id$
 
+# Where to find the "access-zone" script
 AZ=/usr/local/dns-manager/bin/access-zone
+# The directory for zone files
 ZONES=/usr/local/dns-manager/zones
+# The directory where "master" zone files are located
 DEST=/etc/namedb/
+# Used only for the final message (should be called by hand)
 NDC=/usr/sbin/ndc
 
 cd $ZONES

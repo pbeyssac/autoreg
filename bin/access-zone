@@ -6,6 +6,32 @@
 require "/usr/local/dns-manager/conf/config";
 require "$DNSCONF/msg-access";
 
+#
+# Usage:
+#  access-zone [-c] [-t type] -u user -a{soa|new|modify|delete|show} domainname
+#
+# -c -> check only, don't update any file (used for request check)
+# -a -> action.
+#		new:	create the entry for domainname in the parent zone,
+#			if not already there
+#		modify: modify the entry for domainname in the parent zone,
+#			if already there
+#		delete: delete the entry for domainname in the parent zone,
+#			if already there
+#		soa:	update the SOA for domainname in the zonefile of
+#			the same name, if the file has previously changed
+#			with one of the above actions
+#		show:	display the entry for domainname in the parent zone
+#
+# -u -> username, used to check access permissions with respect to the
+#	zones-auth config file
+# -t -> type of record (for "new" or "modify"), checked with respect to
+#	the ";! type" lines for the types of allowed records in the zone.
+#
+# For actions "new" and "modify", the records to be inserted are provided
+# on stdin.
+#
+
 &zauth_read;    
 
 $LOCK_EX = 2;
@@ -38,11 +64,11 @@ if ($action ne "lock" && $action ne 'unlock'
 	 && $action ne 'show'
 	 && $action ne 'soa'
 	 && $action ne 'new' && $action ne 'delete' && $action ne 'modify') {
-	die("Usage: [-c] [-t type] -a action domainname\n");
+  die("Usage: [-c] [-t type] -u user -a{soa|new|modify|delete|show} domainname\n");
 }
 
 if ($#ARGV != 0) {
-  die("Usage: [-c] [-t type] -a action domainname\n");
+  die("Usage: [-c] [-t type] -u user -a{soa|new|modify|delete|show} domainname\n");
 }
 
 if ($action eq 'soa') {
