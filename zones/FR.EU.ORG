@@ -1,0 +1,98 @@
+;! minlen 2
+;! maxlen 24
+;! type NS
+;! type CNAME
+;! type MX
+;! type WMX
+
+@	IN	SOA	ns.eu.org.	hostmaster.eu.org. (
+		1996071202	; Serial number
+		3600		; Refresh 1 hour
+		900		; Retry 15 min
+		12096000	; Expires 20 weeks
+		259200 )	; Minimum 3 days
+			IN 	NS 	ns.brainstorm.eu.org.
+			IN 	NS 	ns.eu.org.
+			IN	NS	ns.patriots.net.
+			IN	NS	ns.tnix.net.
+			IN	NS	ns.lf.net.
+			IN	NS	ftel.ftel.co.uk.
+			IN	NS	elorn.infini.fr.
+;
+AF-TOOLS		IN	MX	10 laureline.freenix.fr.
+*.AF-TOOLS		IN	MX	10 laureline.freenix.fr.
+;
+EOWYN			IN	NS	HUMANUS.IBP.FR.
+			IN	NS	APTINFO.IBP.FR.
+;
+HWI			IN	CNAME	I207.resI.insa-lyon.fr.
+;
+MPC			IN	NS	HUMANUS.IBP.FR.
+			IN	NS	APTINFO.IBP.FR.
+;
+NATAA			IN CNAME	nataa.frmug.fr.net.
+;
+; domain NORMANDIE
+; created: by pb, Thu Jun 13 19:00:45 MET DST 1996
+NORMANDIE		IN NS	NS.CALVACOM.FR.
+			IN NS	ASGARD2.CALVACOM.FR.
+; domain GALLAND
+; created: by pb, Thu Jun 13 19:02:09 MET DST 1996
+GALLAND			IN CNAME	INT-EVRY.FR.
+; domain NICOLAS
+; created: by pb, Fri Jun 14 02:39:09 MET DST 1996
+NICOLAS			IN CNAME	IWAY.FR.
+; domain MEGALAND
+; created: by pb, Fri Jun 14 12:30:23 MET DST 1996
+MEGALAND		IN CNAME	TEASER.FR.
+; domain P-INGENIERIE
+; created: by pb, Fri Jun 14 12:36:10 MET DST 1996
+P-INGENIERIE		IN CNAME	WORLDNET.FR.
+; domain TOMBEUR
+; created: by pb, Sat Jun 15 00:24:51 MET DST 1996
+TOMBEUR			IN CNAME	ATELIER.FR.
+; domain SUGIX
+; created: by pb, Sun Jun 16 23:20:27 MET DST 1996
+SUGIX			IN CNAME	SUGIX.FRMUG.FR.NET.
+; domain ANKH
+; created: by pb, Tue Jun 18 17:42:18 MET DST 1996
+ANKH			IN NS	NS.ANKH.FR.EU.ORG.
+			IN NS	TURNER.EFREI.FR.
+NS.ANKH.FR.EU.ORG.	IN A	194.2.204.4
+; domain IRC
+; created: by pb, Thu Jun 20 14:23:03 MET DST 1996
+IRC			IN NS	NS.IRC.FR.EU.ORG.
+NS.IRC.FR.EU.ORG.	IN A	137.194.2.81
+; domain GLOUPS
+; created: by fcb, Fri Jun 28 19:38:51 MET DST 1996
+GLOUPS			IN CNAME	GLOUPS.FDN.FR.
+; domain CIGOGNE
+; created: by pb, Wed Jul  3 14:17:08 MET DST 1996
+CIGOGNE			IN CNAME	SDV.FR.
+; domain TAUNTA
+; created: by pb, Sat Jul  6 01:41:53 MET DST 1996
+TAUNTA			IN CNAME	GLOUPS.FDN.FR.
+; domain SHERLOCK
+; created: by pb, Mon Jul  8 01:50:46 MET DST 1996
+SHERLOCK		IN CNAME	INTERPC1.INTERPC.FR.
+; domain WILD-WIND
+; created: by pb, Mon Jul  8 22:02:04 MET DST 1996
+WILD-WIND		IN CNAME	GLOUPS.FDN.FR.
+; domain ENTERPRISE
+; created: by pb, Tue Jul  9 19:30:59 MET DST 1996
+ENTERPRISE		IN CNAME	COMPUSERVE.COM.
+; domain JURISNET
+; created: by pb, Wed Jul 10 14:12:47 MET DST 1996
+JURISNET		IN NS	NS.CALVACOM.FR.
+			IN NS	ASGARD2.CALVACOM.FR.
+; domain EMC
+; created: by pb, Fri Jul 12 14:53:27 MET DST 1996
+EMC			IN CNAME	BONDY.ORSTOM.FR.
+; domain CUBLAND
+; created: by pb, Fri Jul 12 16:10:14 MET DST 1996
+CUBLAND			IN NS	NS.PRESSIMAGE.FR.
+			IN NS	NS2.PRESSIMAGE.FR.
+; domain CHAOS
+; created: by pb, Fri Jul 12 16:13:37 MET DST 1996
+CHAOS			IN NS	NS.PRESSIMAGE.FR.
+			IN NS	NS2.PRESSIMAGE.FR.

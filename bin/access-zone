@@ -1,0 +1,227 @@
+#!/usr/bin/perl
+
+# $Id$
+
+# local configuration.
+require "/usr/local/dns-manager/conf/config";
+require "$DNSCONF/msg-access";
+
+&zauth_read;    
+
+$LOCK_EX = 2;
+$LOCK_UN = 8;
+
+require "getopts.pl";
+do Getopts("ca:u:t:");
+
+if ($opt_a) {
+	$action = $opt_a;
+	$action =~ tr/A-Z/a-z/;
+
+	if ($action =~ /^n/) {
+		$action = 'new';
+	} elsif ($action =~ /^m/) {
+		$action = 'modify';
+	} elsif ($action =~ /^d/) {
+		$action = 'delete';
+	}
+	if ($action eq 'soa') {
+		$newsoa = `date +%Y%m%d`; chop $newsoa;
+	}
+}
+if ($opt_t) {
+	$type = $opt_t;
+	$type =~ tr/a-z/A-Z/;
+}
+
+if ($action ne "lock" && $action ne 'unlock'
+	 && $action ne 'show'
+	 && $action ne 'soa'
+	 && $action ne 'new' && $action ne 'delete' && $action ne 'modify') {
+	die("Usage: [-c] [-t type] -a action domainname\n");
+}
+
+if ($#ARGV != 0) {
+  die("Usage: [-c] [-t type] -a action domainname\n");
+}
+
+if ($action eq 'soa') {
+  $parent = $ARGV[0];
+  $parent =~ tr/a-z/A-Z/;
+} else {
+  $domain = $ARGV[0];
+  $domain =~ tr/a-z/A-Z/;
+  $parent=substr($domain, index($domain, ".")+1);
+  $subdom=substr($domain, 0, index($domain, "."));
+}
+
+$zonefile="$ZONEDIR/$parent";
+$outfile="$zonefile.new";
+
+$date=`date`; chop $date;
+
+open(ZF, $zonefile) || die("Cannot open zonefile $zonefile: $!\n");
+flock(ZF, $LOCK_EX);
+
+if ($action ne "show") {
+	open(OF, ">$outfile") || die("Cannot open outfile $outfile: $!\n");
+	flock(OF, $LOCK_EX);
+	print OF ";! updated by $opt_u, $date\n" unless $action eq 'soa';
+}
+
+$was_updated = 0;
+while (<ZF>) {
+	if (/^;!/) {
+		if (/^;! updated / && $action ne 'show') {
+			$was_updated = 1;
+			next;
+		} elsif (/^;! minlen ([0-9]+)/ && $action eq 'new') {
+			if (length($subdom) < $1) {
+				unlink($outfile) unless $action eq "show";
+				die sprintf($MSG_SHORT, $parent, $1);
+			}
+		} elsif (/^;! maxlen ([0-9]+)/ && $action eq 'new') {
+			if (length($subdom) > $1) {
+				unlink($outfile) unless $action eq "show";
+				die sprintf($MSG_LONG, $parent, $1);
+			}
+		} elsif (/^;! type ([a-zA-Z0-9]+)/) {
+			if ($opt_t eq $1) {
+				$typeok = $1;
+			}
+		}
+	}
+	if ($action eq 'soa'
+	    && $was_updated
+	    && ?^\s+([0-9]+)([0-9][0-9])\s*;\s*[Ss]erial?) {
+		$oldsoa = $1;
+		$oldser = $2;
+		if ($oldsoa ne $newsoa) {
+		  print OF "\t\t".$newsoa."01\t; Serial number\n";
+		  next;
+		} else {
+		  $oldser++;
+		  printf OF "\t\t$newsoa%02d\t; Serial number\n",$oldser;
+		  next;
+		}
+	}
+
+	if ($skip) {
+		$skip = 0;
+		if ($_ eq ";\n") { next }
+	}
+
+	if (/^([A-Za-z0-9-.]+)\s/) {
+	    if (!$indomain) {
+		$curd = $1;
+		if ($curd !~ /\.$/) {
+			$curd .= ".".$parent
+		} else {
+			chop $curd;
+		}
+		$curd =~ tr/a-z/A-Z/;
+		if ($curd eq $domain) {
+		    $indomain = 1;
+		    $found = 1;
+		    if ($action eq "modify") { &modifyzone; }
+		    elsif ($action eq "show") { print; next }
+		    elsif ($action eq "new") {
+			unlink($outfile);
+			die sprintf($MSG_ALLOC, $domain);
+		    } elsif ($action eq "lock") {
+			print OF "; lock $subdom\n";
+			next;
+		    }
+		}
+	    } else {
+		$inheaders = 0;
+	    }
+	}
+	if (?^; lock $subdom$?) {
+		$found = 1;
+		if ($action eq "unlock") {
+			print OF "; domain $subdom\n";
+			next;
+		}
+		unlink($outfile) unless $action eq "show";
+		die sprintf($MSG_LOCKD, $domain);
+	}
+	if (?^; domain $subdom$?) {
+		$createdline = <ZF>;
+		if (!$createdline) {
+			break;
+		}
+		$svline = $createdline;
+		if ($createdline !~ /^; created: /) {
+			$createdline = "";
+		}
+		$inheaders = 1;
+		$indomain = 1;
+		$found = 1;
+		if ($action eq "modify") { &modifyzone; }
+		elsif ($action eq "new") { break }
+		elsif ($action eq "show") { print; print $svline; next }
+		elsif ($action eq "lock") {
+			print OF "; lock $subdom\n";
+			next;
+		}
+	} elsif ($indomain && !$inheaders && /^;$/) {
+		$indomain = 0;
+		if ($action eq "delete") { $skip = 1; next }
+	} elsif ($indomain && $inheaders && !/^\s*;/) {
+		$inheaders = 0;
+	} elsif ($indomain && $action eq "show") { print }
+
+	next if $indomain;
+	print OF unless $action eq "show";
+}
+close(ZF);
+
+if ($action eq 'new') {
+	if ($found) {
+		unlink($outfile);
+		die sprintf($MSG_EXIST, $domain);
+	}
+	&createzone;
+} elsif (!$found && $action ne 'soa') {
+	unlink($outfile) unless $action eq "show";
+	die sprintf($MSG_NODOM, $domain, $action);
+}
+
+# don't close OF now : we want to keep the lock during the rename !
+
+if ($opt_t && !$typeok && ($action eq 'new' || $action eq 'modify')) {
+	unlink($outfile);
+	die sprintf($MSG_NOTYP, $opt_t);
+}
+
+if ($opt_c) {
+	unlink($outfile) unless $action eq "show";
+	#close(OF) unless $action eq "show";
+} elsif ($action ne "show") {
+	if (!$opt_c) {
+		if (!&zauth_check($parent, $opt_u)) {
+			unlink($outfile) unless $action eq "show";
+			die sprintf($MSG_NUSER, $opt_u);
+		}
+	}
+	rename($outfile, $zonefile) || die "rename failed:\!\n";
+	#close(OF);
+}
+exit;
+
+sub modifyzone {
+	print OF "; domain $subdom\n";
+	print OF $createdline;
+	print OF "; updated: by $opt_u, $date\n";
+	while (<STDIN>) {
+		print OF
+	}
+}
+
+sub createzone {
+	print OF "; domain $subdom\n; created: by $opt_u, $date\n";
+	while (<STDIN>) {
+		print OF
+	}
+}

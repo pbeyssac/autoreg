@@ -1,0 +1,398 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+# Gets on stdin :
+# 1)	a domain name
+# 2)	lines giving, for each server, its fqdn and
+#	(optionally) its IP address.
+#
+#	-- OR --
+#
+# Gets a domain name in argument then retrieves the NS list on the Internet.
+#
+# Checks :
+# 1)	IP addresses of servers not in domain
+# 2)	primary and secondaries are authoritative for the domain
+# 3)	NS records for domain on the first listed server match the
+#	provided list.
+#
+
+#
+# calls to "dig" more or less stolen from dnswalk, originally written
+# by Dave Barr.
+#
+
+die "Usage: check-ns {domain}\n" if ($#ARGV > 0);
+
+require "/usr/local/dns-manager/conf/config";
+require "$DNSCONF/msg-check";
+
+if ($#ARGV == 0) {
+	$domain	= &fqdncanon($ARGV[0]);
+	@fqdn = &getns($domain), "\n";
+} else {
+	$gotstdin = 1;
+	$domain = <STDIN>; chop $domain;
+	$domain	= &fqdncanon($domain);
+
+	while (<STDIN>) {
+		chop; split;
+		$i = &fqdncanon($_[0]);
+		push(@fqdn, $i);
+		$ip{$i} = $_[1];
+	}
+}
+
+print $MSG_CHKNM;
+
+if ($k = index($domain, '.')) {
+	$parentdom = substr($domain, $k+1);
+	$newdom = substr($domain, 0, $k);
+} else {
+	$parentdom="";
+	$newdom = $domain;
+}
+
+&checkname($domain);
+
+if (!@fqdn) { &pr_error($ERR_NOSRV); }
+&stoperrs;
+
+foreach $i (@fqdn) { &checkname($i); }
+&stoperrs;
+
+if ($gotstdin) {
+	foreach $i (@ip) { &checkipname($i); }
+	print $MSG_CSERV;
+
+	foreach $i (@fqdn) {
+		if ($ip{$i}) {
+			if (&isasubdomain($i, $domain)) {
+				printf $MSG_ACCIP, $ip{$i}, $i;
+				$refaddr{$i} = $ip{$i}
+			} else {
+				&checkip($i,$ip{$i});
+				$refaddr{$i} = $i
+			}
+		} else {
+			if (&isasubdomain($i, $domain)) {
+				&pr_error($ERR_MISIP, $i);
+			} else {
+				$ip{$i} = &getip($i);
+			}
+			$refaddr{$i} = $i
+		}
+	}
+} else {
+	foreach $i (@fqdn) { $ip{$i} = &getip($i) }
+	foreach $i (@fqdn) { $refaddr{$i} = $i }
+}
+&stoperrs;
+
+print $MSG_CZSRV;
+
+@sernolist=();
+$rmaster = $fqdn[0];
+
+foreach $i (@fqdn) {
+	($aserno, $amaster) = &checklamer($domain, $refaddr{$i});
+	if ($aserno) {
+		printf $MSG_SERNO, $aserno, $i;
+		push(@sernolist, $aserno);
+		$sernofrom{$i} = $aserno;
+		if (!$maxserno || $aserno > $maxserno) {
+			$maxserno = $aserno;
+			$pmaster = $amaster;
+		}
+	}
+}
+if ($maxserno) {
+	$nums = 0;
+	foreach $i (@sernolist) { $nums += ($i ne $maxserno) }
+	if ($nums) {
+	    printf $MSG_MAXSN, $maxserno, $nums;
+	}
+	if ($pmaster) {
+		printf $MSG_PRSOA, $pmaster;
+		if ($ip{$pmaster}) {
+			$rmaster = $pmaster;
+			if ($sernofrom{$pmaster} != $maxserno) {
+				&pr_error ($ERR_PROLD, $pmaster);
+			}
+		} else {
+			printf $MSG_PRNNS, $pmaster;
+			$ip{$pmaster} = &getip($pmaster);
+		}
+		print "\n";
+	}
+}
+&stoperrs;
+
+printf $MSG_CNSRR, $domain, $rmaster;
+
+@nslist = &getnsauth($domain, $refaddr{$rmaster});
+
+if (join('/', sort @nslist) eq join('/', sort @fqdn)) {
+	printf $NSLOK, $domain, $rmaster;
+} else {
+	&pr_error($ERR_NSMIS, $rmaster);
+}
+
+&stoperrs;
+exit;
+
+# Check that the provided FQDN and IP address match.
+# checkip(fqdn, ip)
+sub checkip {
+	printf $MSG_CHKIP, $_[1], $_[0];
+	
+	if (!(($name, $aliases, $addrtype, $length, @addrs)=gethostbyname($_[0])) && !$?) {
+		&pr_error($ERR_GHBN, $_[0], $!);
+	} else {
+		if (!$name) {
+			&pr_error($ERR_HOSTU);
+		} elsif (!&equal($name,$_[0])) {
+			&pr_error($ERR_CNAME, $name);
+		} elsif (!&matchip($_[1])) {
+			&pr_error($ERR_NOARR);
+		} else {
+			print $MSG_OK;
+		}
+	}
+}
+
+# Return the list of IP addresses for the given FQDN.
+#
+# getip(fqdn)
+sub getip {
+	local (@dec);
+	printf $MSG_GETIP, $_[0];
+	if (!(($name, $aliases, $addrtype, $length, @addrs)=gethostbyname($_[0])) && !$?) {
+		&pr_error($ERR_GHBN, $_[0], $!);
+	} else {
+		if (!$name) {
+			&pr_error($ERR_HOSTU);
+		} elsif (!&equal($name,$_[0])) {
+			&pr_error($ERR_CNAME, $name);
+		} else {
+			@dec = &decodeip(@addrs);
+			print "@dec\n";
+			return @dec;
+		}
+	}
+}
+
+# Check FQDN syntax.
+sub checkname {
+        if ($_[0] =~ /[^-A-Za-z0-9.]/) {
+            &pr_error($ERR_INVCH, $_[0]);
+        }
+}
+
+# Check IP quad syntax.
+sub checkipname {
+	local ($IP)=$_[0];
+	if (join('.', unpack("C4", pack("C4", split(/\./, $IP, 4)))) ne $IP) {
+            	&pr_error($ERR_INVIP, $_[0]);
+		return;
+	}
+}
+
+# checklamer(domain, server)
+#
+# Check that the given server is authoritative for the given domain.
+# From the SOA, return the serial number and the zone primary.
+#
+sub checklamer {
+    local ($isauth)=0;
+    local ($error)=0;
+    local ($master)="";
+    local ($serno)="";
+    # must check twice, since first query may be authoritative
+    # trap stderr here and print if non-empty
+    open(DIG,"$DIGPATH soa +noaa $_[0]. \@$_[1] 2>&1 1>/dev/null |");
+    while (<DIG>) {
+        &pr_error($ERR_ERRNS, $_[1]) if !$error;
+	$error=1;
+    }
+    close(DIG);
+    return if $error;
+    open(DIG,"$DIGPATH soa +noaa $_[0]. \@$_[1] 2>/dev/null|");
+    while (<DIG>) {
+        if (/status: NXDOMAIN/) { 
+            $isauth=0;
+	    last;
+        }
+        if (/status: SERVFAIL/) { 
+            $isauth=0;
+	    last;
+        }
+        if (/;; flags.*aa.*;/) { 
+            $isauth=1;
+        }
+        if (/.*\t\d+\tSOA\t(\S+) /) { 
+            $master= &fqdncanon($1);
+        }
+        if (/(\d+)\s*; ?serial/) { 
+            $serno=$1;
+        }
+    }
+    close(DIG);
+    if (!$isauth) {
+	&pr_error($ERR_NOAUT, $_[1], $_[0]);
+	$serno="";
+    }
+    return ($serno, $master);
+}
+
+# Try to get a NS list for a domain from one of the authoritative servers.
+#
+# getnsauth(domain, server)
+sub getnsauth {
+    local ($isauth)=0;
+    local ($inns)=0;
+    local ($thisns);
+    local (@nslist);
+
+    open(DIG,"$DIGPATH ns +noaa $_[0]. \@$_[1] 2>/dev/null|");
+    while (<DIG>) {
+        if (/status: NXDOMAIN/) { $isauth=0; last; }
+        if (/status: SERVFAIL/) { $isauth=0; last; }
+        if (/;; flags.*aa.*;/) { $isauth=1; }
+	if (/^;; ANSWERS:$/) { $inns=1; last; }
+    }
+    if (!$isauth) {
+    	&pr_error($ERR_LAMEN);
+    }
+    if (!$inns || !$isauth) { close(DIG); return "" }
+
+    while (<DIG>) {
+	if (/^;; AUTHORITY/) { last }
+
+	chop; split(/\t/);
+
+	if ($_[2] eq "NS") {
+		$thisns = $_[3];
+		chop $thisns;
+		$thisns =~ tr/a-z/A-Z/;
+		push(@nslist, $thisns);
+	}
+    }
+    close(DIG);
+    return sort @nslist;
+}
+
+# Try to get a NS list for a domain in the usual way (i.e., unless the
+# domain we're checking is directly managed by the nameserver getting
+# our requests, we'll get the NS list from the _parent_ zone).
+#
+# getns(domain)
+sub getns {
+    local ($isauth)=0;
+    local ($inns)=0;
+    local ($thisns);
+    local (@nslist);
+
+    open(DIG,"$DIGPATH ns $_[0]. 2>/dev/null|");
+    while (<DIG>) {
+        if (/status: NXDOMAIN/) { $isauth=0; last; }
+        if (/status: SERVFAIL/) { $isauth=0; last; }
+        if (/;; flags.*aa.*;/) { $isauth=1; }
+	if (/^;; ANSWERS:$/) { $inns=1; last; }
+    }
+
+    while (<DIG>) {
+	if (/^;; AUTHORITY/) { last }
+
+	chop; split(/\t/);
+
+	if ($_[2] eq "NS") {
+		$thisns = $_[3];
+		chop $thisns;
+		$thisns =~ tr/a-z/A-Z/;
+		push(@nslist, $thisns);
+	}
+    }
+    close(DIG);
+    return sort @nslist;
+}
+
+# isasubdomain(subdomain, domain)
+# Returns :
+#	0 if subdomain is not in domain
+#	1 if subdomain is not directly under domain
+#	2 if subdomain is directly under domain
+#
+sub isasubdomain {
+	local ($sub)= $_[0];
+	local ($dom)= $_[1];
+	local ($ls)= 0;
+	local ($ld)= 0;
+	local ($comp);
+
+	$sub = &fqdncanon($sub);
+	$dom = &fqdncanon($dom);
+
+	$dom = '.' . $dom;
+
+	$ls = length($sub) - length($dom);
+	if ($ls <= 0) {
+		return 0;
+	}
+	$comp = (substr($sub, $ls) eq $dom);
+	if ($comp && $ls == index($sub, ".")) { $comp++ }
+	return $comp;
+}
+
+sub equal {
+    # Do case-insensitive string comparisons
+    local ($one)= $_[0];
+    local ($two)= $_[1];
+    $stripone=$one;
+    if (chop($stripone) eq '.') {
+	$one=$stripone;
+    }
+    $striptwo=$two;
+    if (chop($striptwo) eq '.') {
+	$two=$striptwo;
+    }
+    $one =~ tr/A-Z/a-z/;
+    $two =~ tr/A-Z/a-z/;
+    return ($one eq $two);
+}
+
+sub matchip {
+    local($match)=pack('C4', split(/\./,$_[0],4));
+    local($found)=0;
+    foreach $i (@addrs) {
+        $found=1 if ($i eq $match);
+    }
+    return $found;
+}
+
+sub decodeip {
+    local(@dec);
+    foreach $i (@addrs) {
+	push(@dec, join('.', unpack('C4', $i)));
+    }
+    return @dec;
+}
+
+sub pr_error {
+	printf @_;
+	$numerrs++;
+}
+
+sub stoperrs {
+	$| = 1; print ""; $| = 0;
+	die sprintf($MSG_NBERR, $numerrs) if $numerrs;
+}
+
+sub fqdncanon {
+	local ($fqdn)=$_[0];
+	if ($fqdn =~ /^\.(.*)/)	{ $fqdn = $1 }
+	if ($fqdn =~ /\.$/)	{ chop $fqdn }
+	$fqdn =~ tr/a-z/A-Z/;
+	return $fqdn;
+}

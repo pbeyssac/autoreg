@@ -1,0 +1,19 @@
+$Id$
+
+			AR41 0.8 beta
+
+AR41 currently runs on the following software configuration:
+
+	Perl 4
+	Apache httpd
+	dig
+	sendmail
+	named 4.9.4
+
+In this distribution you'll find the following directories:
+
+	./html			sample HTML
+	./zones			sample zones (EU.ORG)
+	./bin			scripts
+	./cgi-bin		CGI scripts
+	./conf			config files

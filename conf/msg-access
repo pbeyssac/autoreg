@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+
+# Messages for access-zone
+
+if ($ENV{'LANG'} eq 'fr') {
+
+$MSG_ALLOC="Erreur: le domaine %s est déjà alloué.\n";
+$MSG_SHORT="Erreur: la longueur minimale pour les sous-domaines dans %s est %d.\n";
+$MSG_LONG="Erreur: la longueur maximale pour les sous-domaines dans %s est %d.\n";
+$MSG_LOCKD="Erreur: le domaine %s est verrouillé.\n";
+$MSG_EXIST="Erreur: le domaine %s existe déjà, création impossible.\n";
+$MSG_NODOM="Erreur: le domaine %s n'existe pas, \"%s\" impossible.\n";
+$MSG_NOTYP="Erreur: les enregistrements %s ne sont pas permis dans cette zone.\n";
+$MSG_NUSER="Erreur: l'utilisateur %s n'a pas la permission de modifier la zone.\n";
+
+} else {
+
+$MSG_ALLOC="Error: domain %s is already allocated.\n";
+$MSG_SHORT="Error: minimal length for subdomains in %s is %d.\n";
+$MSG_LONG="Error: maximal length for subdomains in %s is %d.\n";
+$MSG_LOCKD="Error: domain %s is locked.\n";
+$MSG_EXIST="Error: domain %s already exists, cannot create.\n";
+$MSG_NODOM="Error: domain %s not found, cannot %s.\n";
+$MSG_NOTYP="Error: %s records are not permitted in zone.\n";
+$MSG_NUSER="Error: user %s is not permitted to modify zone.\n";
+
+}

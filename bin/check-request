@@ -1,0 +1,525 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+
+require "getopts.pl";
+do Getopts("l:");
+
+if ($#ARGV !=0) { die "Usage: check-request request-id.\n"; }
+
+if ($opt_l) {
+	$ENV{'LANG'}=$opt_l;
+} else {
+	$ENV{'LANG'}="en";
+}
+
+# local configuration
+require "/usr/local/dns-manager/conf/config";
+require "$DNSCONF/msg-check";
+
+&zauth_read;
+
+$REQID=`date +%Y%m%d%H%M%S`; chop $REQID;
+$REQID=$REQID."-$ARGV[0]-$$";
+$VALREQ="$VALDIR/$REQID";
+$YMD=`date +%Y%m%d`; chop $YMD;
+$date=`date`; chop $date;
+
+local ($k)=0;
+local ($onect)=0;
+local ($v)="";
+local ($domain)="";
+local (@fqdn);
+local (@ip);
+local (@got);
+local ($nums)=1;
+local ($rectype)="NS";
+
+$multi = 0;
+
+while (<STDIN>) {
+	chop;
+	if (?^Domain Version Number:?) {
+		$v = substr($_, index($_, ":") + 1);
+		if ($v =~ /^\s*(\S+)\s*$/) { $v = $1 } else { $v = "" }
+		if ($v ne "E1.0") {
+			die $ERR_UNKFT;
+		}
+		$formatok=1;
+	}
+	if (?^mr\.: ?) {
+		$replyto = substr($_, index($_, ":") + 1);
+		if ($replyto =~ /^\s*(.*\S)\s*$/) {
+			$replyto = $1
+		} else {
+			$replyto = ""
+		}
+	}
+	if (?^ln\.: ?) {
+		$LANG = substr($_, index($_, ":") + 1);
+		if ($LANG =~ /^\s*(.*\S)\s*$/) {
+			$ENV{'LANG'} = $1;
+		} else {
+			$ENV{'LANG'} = "en";
+		}
+		do "$DNSCONF/msg-check";
+	}
+	next unless $formatok;
+
+	$k = index($_, ":");
+	if ($k && /^[a-z][0-9a-z]\./) {
+		if ($multi) {
+			$ref{$refid} = $line;
+			$multi = 0;
+		}
+		$v = substr($_, $k+1);
+		if ($v =~ /^\s*(.*\S)\s*$/) { $v = $1 } else { next }
+		$refid = substr($_, 0, index($_, "."));
+		if ($got{$refid} && $refid !~ /^[if]/) {
+			&pr_error($ERR_TWICE, $refid);
+		}
+		$got{$refid} = 1;
+	} elsif ($multi) {
+		# Glue multiple lines together (for addresses)
+		$v = $_;
+		if ($v =~ /^\s*(.*\S)\s*$/) { $v = $1 } else { $v = "" }
+		if ($v eq "") { next }
+		$line .= "\n\t" . $v; next
+	}
+
+	if (/^rt\./) {
+		$req = substr($v, 0, 1)
+	} elsif (/^mr\./) {
+		$replyto = $v;
+	} elsif (/^pp\./ || /^[oat]a\./) {
+		$line = $v;
+		$multi = 1;
+	} elsif (/^dm\./) {
+		$domain = $v;
+	} elsif (/^rr\./) {
+		$rectype = $v;
+	} elsif (/^om\./ || /^[at][hmte]\./ || /^[oat][cspn]\./) {
+		$ref{$refid} = $v;
+	} elsif (/^f1\./) {
+		push(@fqdn, $v);
+	} elsif (/^i1\./) {
+		$ip[0] = $v;
+	} elsif (/^f[2-9]\./) {
+		push(@fqdn, $v);
+		$numfqdn = $nums;
+		$nums++;
+	} elsif (/^i[2-9]\./) {
+		if ($numfqdn) { $ip[$numfqdn] = $v; $numfqdn = 0 }
+	}
+}
+
+if ($multi) {
+	$ref{$refid} = $line;
+	$multi = 0;
+}
+
+if ($replyto !~ /.+@[A-Za-z0-9-]+\..*[A-Za-z0-9-]+/) {
+	die sprintf($ERR_BADRP, $replyto);
+}
+
+if (! $formatok ) {
+	print $MSG_TMPLT;
+	$| = 1; print;
+	system "cat $DOMTEMP";
+	exit 1;
+}
+
+$req =~ tr/a-z/A-Z/;
+$domain =~ tr/a-z/A-Z/;
+if ($ref{"ah"}) { $ref{"ah"} =~ tr/a-z/A-Z/ }
+if ($ref{"th"}) { $ref{"th"} =~ tr/a-z/A-Z/ }
+for ($i=0; $fqdn[$i]; $i++) { $fqdn[$i] =~ tr/a-z/A-Z/ }
+
+&stoperrs;
+
+print $MSG_BASCK;
+
+if ($req =~ /[^a-zA-Z]/) {
+	&pr_error($ERR_BADRT, $req);
+}
+if ($rectype =~ /[^a-zA-Z -]/) {
+	&pr_error($ERR_BADRR, $rectype);
+}
+
+if (!$domain) {
+	&pr_error($ERR_NODOM);
+} else {
+	while ($domain =~ /^\.(.*)/) { $domain = $1; }
+	while ($domain =~ /(.*)\.$/) { $domain = $1; }
+
+	if ($k = index($domain, '.')) {
+		$parentdom = substr($domain, $k+1);
+		$newdom = substr($domain, 0, $k);
+	} else {
+		$parentdom="";
+		$newdom = $domain;
+	}
+
+	&checkname($domain);
+}
+
+if (!$req) { &pr_error($ERR_MISRQ); }
+elsif ($req !~ /^[NMD]/ ) { &pr_error($ERR_BADRT, $req); }
+
+if (!$rectype) { &pr_error($ERR_MISRC); }
+elsif ($rectype =~ /^N/) { $rectype = 'NS' }
+elsif ($rectype =~ /^M/) { $rectype = 'MX' }
+elsif ($rectype =~ /^C/) { $rectype = 'CNAME' }
+elsif ($rectype =~ /^W/) { $rectype = 'WMX' }
+else { &pr_error($ERR_BADRR, $rectype); }
+
+for ($i = 0; $fqdn[$i]; $i++) {
+    &checkname($fqdn[$i]);
+}
+
+$makerr=1;
+if (!@fqdn) {
+	if ($req =~ /^N/) {
+		&pr_error($ERR_NOSRV);
+	} else {
+		$makerr=0;
+	}
+}
+
+&stoperrs;
+
+if ($makerr && $do_checkns) {
+  if ($rectype =~ /^N/) {
+    open(CHECKNS, "|$CHECKNSPATH") || die "Cannot start check-ns: $!\n";
+
+    print CHECKNS "$domain\n";
+
+    for ($i = 0; $fqdn[$i]; $i++) {
+      print CHECKNS $fqdn[$i];
+      if ($ip[$i]) { print CHECKNS " $ip[$i]" }
+      print CHECKNS "\n";
+    }
+    close(CHECKNS);
+    exit $? if ($?);
+  } elsif ($rectype =~ /^C/) {
+    if (system("$CHECKCNAMEPATH $fqdn[0] 2>&1")) {
+      exit 1;
+    }
+  } else {
+    for ($i = 0; $fqdn[$i]; $i++) {
+      if (system("$CHECKMXPATH $fqdn[$i] 2>&1")) { $doexit=1; }
+    }
+    if ($doexit) { exit }
+  }
+}
+
+print $MSG_CNTCK;
+
+$makewhois = 1;
+
+if ($ref{"am"} && $ref{"am"} !~ /^[A-Z][a-zA-Z -]*$/) {
+	&pr_error($ERR_INVCH, $ref{"am"});
+}
+if ($ref{"tm"} && $ref{"tm"} !~ /^[A-Z][a-zA-Z -]*$/) {
+	&pr_error($ERR_INVCH, $ref{"tm"});
+}
+
+if ($ref{"ah"} && $ref{"ah"} !~ /^[A-Z]+[0-9]*(-[A-Z]+)?$/) {
+	&pr_error($ERR_BADNH, $ref{"ah"});
+}
+if ($ref{"th"} && $ref{"th"} !~ /^[A-Z]+[0-9]*(-[A-Z]+)?$/) {
+	&pr_error($ERR_BADNH, $ref{"th"});
+}
+if ($ref{"ae"} && $ref{"ae"} !~ /^.+@[A-Za-z0-9-]+\..*[A-Za-z0-9-]+$/) {
+	&pr_error($ERR_BADEM, $ref{"ae"});
+}
+if ($ref{"te"} && $ref{"te"} !~ /^.+@[A-Za-z0-9-]+\..*[A-Za-z0-9-]+$/) {
+	&pr_error($ERR_BADEM, $ref{"te"});
+}
+
+if ($ref{"at"} && $ref{"at"} !~ /^\+[0-9 ]*$/) {
+	&pr_error($ERR_BADPH, $ref{"at"});
+}
+if ($ref{"tt"} && $ref{"tt"} !~ /^\+[0-9 ]*$/) {
+	&pr_error($ERR_BADPH, $ref{"tt"});
+}
+
+if (!$ref{"ah"} && !$ref{"am"} && !$ref{"th"} && !$ref{"tm"}) {
+	if ($req eq "N") {
+		&pr_error($ERR_MISCT);
+	} else {
+		$makewhois=0
+	}
+}
+	
+if ($makewhois) {
+	$onect=0;
+	if (!$ref{"ah"} && !$ref{"am"}) {
+	    if (!$ref{"th"} && !$ref{"tm"}) {
+		    &pr_error($ERR_NOCTC);
+	    } else {
+		print $MSG_NOADM;
+		foreach $i ('h', 'm', 'o', 'a', 'c', 's', 'p', 'n', 't', 'e') {
+		    $ref{"a".$i} = $ref{"t".$i};
+		}
+		$onect=1;
+	    }
+	    &pr_error($ERR_NONAM) unless $ref{"am"};
+	    &pr_error($ERR_NOEML) unless $ref{"ae"};
+	} elsif (!$ref{"th"} && !$ref{"tm"}) {
+	    print $MSG_NOTEC;
+	    foreach $i ('h', 'm', 'o', 'a', 'c', 's', 'p', 'n', 't', 'e') {
+		$ref{"t".$i} = $ref{"a".$i};
+	    }
+	    $onect=1;
+	    &pr_error($ERR_NONAM) unless $ref{"am"};
+	    &pr_error($ERR_NOEML) unless $ref{"ae"};
+	} else {
+	    &pr_error($ERR_NOANM) unless $ref{"am"};
+	    &pr_error($ERR_NOAEM) unless $ref{"ae"};
+	    &pr_error($ERR_NOTNM) unless $ref{"tm"};
+	    &pr_error($ERR_NOTEM) unless $ref{"te"};
+	}
+
+	&pr_error($ERR_NOORG) unless $ref{"om"};
+	&pr_error($ERR_NOOAD) unless $ref{"oa"};
+}
+&stoperrs;
+
+if ($makewhois) {
+	printf $MSG_WHOIS, $domain;
+	&whodata(STDOUT);
+	&stoperrs;
+}
+
+if ($makerr) {
+	printf $MSG_GENRC, $parentdom;
+
+	foreach $i (keys %ZAUTH) {
+		if ($parentdom eq $i) {
+			# direct subdomain
+			$parentok = 1;
+			last
+		}
+	}
+	if (!$parentok) {
+		&pr_error($ERR_NOPAR, $parentdom);
+	}
+
+	&valdata(STDOUT);
+
+	#select(STDOUT); $| = 1; print ""; $| = 0;
+	#select(STDERR); $| = 1; print ""; $| = 0;
+
+	&stoperrs;
+
+}
+
+select(STDOUT); $| = 1; print ""; $| = 0;
+
+if (system("$AZPATH -c -a$req -t$rectype $domain 2>&1")) {
+	exit 1;
+}
+
+open(VR, ">$VALREQ") || die ("Cannot open $VALREQ: $!\n");
+print VR "$replyto\n";
+
+if ($req eq 'M') {
+  if ($makerr && !$makewhois) {
+    $req = 'MZ';
+  } elsif ($makewhois && !$makerr) {
+    $req = 'MC';
+  }
+}
+
+print VR "$req $domain $ENV{'LANG'}\n";
+if ($makerr) {
+	&valdata(VR);
+}
+if ($makewhois) {
+	print VR ";;\n";
+	&whodata(VR);
+}
+close(VR);
+
+print $MSG_ENDCK;
+printf $MSG_RQOK1, $REQID;
+printf $MSG_RQOK2, $replyto;
+
+exit;
+
+sub checkname {
+        if ($_[0] =~ /[^-A-Za-z0-9.]/) {
+            &pr_error($ERR_BADDM, $_[0]);
+	    return;
+	}
+        if ($_[0] =~ /\.\./ || $_[0] =~ /^\./) {
+            &pr_error($ERR_BADD0, $_[0]);
+	    return;
+	}
+        if ($_[0] =~ /^[^A-Za-z]/ || $_[0] =~ /\.[^A-Za-z]/) {
+            &pr_error($ERR_BADDB, $_[0]);
+	    return;
+	}
+        if ($_[0] =~ /[^A-Za-z0-9]\./ || $_[0] =~ /[^A-Za-z0-9]$/) {
+            &pr_error($ERR_BADDE, $_[0]);
+	    return;
+	}
+}
+
+# isasubdomain(subdomain, domain)
+# Returns :
+#	0 if subdomain is not in domain
+#	1 if subdomain is not directly under domain
+#	2 if subdomain is directly under domain
+#
+sub isasubdomain {
+	local ($sub)= $_[0];
+	local ($dom)= $_[1];
+	local ($ls)= 0;
+	local ($ld)= 0;
+	local ($comp);
+
+	$sub =~ tr/A-Z/a-z/;
+	$dom =~ tr/A-Z/a-z/;
+
+	$stripone=$sub;
+	if (chop($stripone) eq '.') {
+		$sub=$stripone;
+	}
+	$stripone=$dom;
+	if (chop($stripone) eq '.') {
+		$dom=$stripone;
+	}
+
+	if ($dom[0] ne '.') {
+		$dom = '.' . $dom;
+	}
+
+	$ls = length($sub) - length($dom);
+	if ($ls <= 0) {
+		return 0;
+	}
+	$comp = (substr($sub, $ls) eq $dom);
+	if ($comp && $ls == index($sub, ".")) { $comp++ }
+
+	return $comp;
+}
+
+sub pr_error {
+	printf @_;
+	$numerrs++;
+}
+sub stoperrs {
+	select(STDOUT); $| = 1; print ""; $| = 0;
+	die sprintf($MSG_NBERR, $numerrs) if $numerrs;
+}
+
+sub whodata_person {
+	local ($hdl) = $_[0];
+	local ($pfx) = $_[1];
+	print $hdl "person:  ", $ref{$pfx."m"}, "\n";
+	print $hdl "nic-hdl: ", $ref{$pfx."h"}, "\n" if $ref{$pfx."h"};
+	print $hdl "e-mail:  ", $ref{$pfx."e"}, "\n" if $ref{$pfx."e"};
+	print $hdl "address: ", $ref{$pfx."a"}, "\n" if $ref{$pfx."a"};
+	print $hdl "address: ", $ref{$pfx."p"}, "\n" if $ref{$pfx."p"};
+	print $hdl "address: ", $ref{$pfx."c"}, "\n" if $ref{$pfx."c"};
+	print $hdl "address: ", $ref{$pfx."s"}, "\n" if $ref{$pfx."s"};
+	print $hdl "address: ", $ref{$pfx."n"}, "\n" if $ref{$pfx."n"};
+	print $hdl "phone:   ", $ref{$pfx."t"}, "\n" if $ref{$pfx."t"};
+	print $hdl "source:  $DBNAME\n";
+	print $hdl "\n";
+}
+
+sub whodata_domain {
+	local ($hdl) = $_[0];
+	local ($pfx) = $_[1];
+	print $hdl "domain:  ", $domain, "\n";
+	print $hdl "address: ", $ref{"om"}, "\n" if $ref{"om"};
+	print $hdl "address: ", $ref{"oa"}, "\n" if $ref{"oa"};
+	print $hdl "address: ", $ref{"op"}, "\n" if $ref{"op"};
+	print $hdl "address: ", $ref{"oc"}, "\n" if $ref{"oc"};
+	print $hdl "address: ", $ref{"os"}, "\n" if $ref{"os"};
+	print $hdl "address: ", $ref{"on"}, "\n" if $ref{"on"};
+
+	if ($ref{"am"}) {
+	    if ($ref{"ah"}) {
+		print $hdl "admin-c: ", $ref{"ah"}, "\n";
+	    } else {
+		print $hdl "admin-c: ", $ref{"am"}, "\n";
+	    }
+	}
+
+	if ($ref{"tm"}) {
+	    if ($ref{"th"}) {
+		print $hdl "tech-c:  ", $ref{"th"}, "\n";
+	    } else {
+		print $hdl "tech-c:  ", $ref{"tm"}, "\n";
+	    }
+	}
+
+	#print $hdl "mnt-by:  $MNTBY\n";
+	print $hdl "mnt-by:  \n";
+	print $hdl "source:  $DBNAME\n";
+	print $hdl "\n";
+}
+
+sub whodata {
+	local ($hdl) = $_[0];
+
+	&whodata_domain($hdl);
+	&whodata_person($hdl, "a");
+	&whodata_person($hdl, "t") unless $onect;
+}
+
+sub tabify {
+	local ($f1) = $_[0];
+	local ($f2) = $_[1];
+	local ($tabto) = $_[2];
+	local ($chto) = 8+(length($f1) & ~7);
+	local ($tab);
+
+	$tab = "\t";
+	while ($chto < $tabto) { $tab = $tab."\t"; $chto += 8; }
+	return $f1.$tab.$f2
+}
+
+#
+# output records for zone
+#
+sub valdata {
+	local ($hdl) = $_[0];
+
+	if ($rectype =~ /^N/) {
+	    print $hdl &tabify($newdom, "IN NS\t$fqdn[0].\n", 24);
+	    for ($i=1; $fqdn[$i]; $i++) {
+		print $hdl "\t\t\tIN NS\t$fqdn[$i].\n";
+	    }
+
+	    for ($i=0; $fqdn[$i]; $i++) {
+		if ($ip[$i] && &isasubdomain($fqdn[$i], $domain)) {
+		    print $hdl &tabify("$fqdn[$i].", "IN A\t$ip[$i]\n", 24);
+		}
+	    }
+	} elsif ($rectype =~ /^M/) {
+	    print $hdl &tabify($newdom, "IN MX\t 0 $fqdn[0].\n", 24);
+	    for ($i=1; $fqdn[$i]; $i++) {
+		$pri=$i * 10;
+		print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+	    }
+	} elsif ($rectype =~ /^C/) {
+	    print $hdl &tabify($newdom, "IN CNAME\t$fqdn[0].\n", 24);
+	} else {
+	    print $hdl &tabify($newdom, "IN MX\t 0 $fqdn[0].\n", 24);
+	    for ($i=1; $fqdn[$i]; $i++) {
+		$pri=$i * 10;
+		print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+	    }
+	    print $hdl &tabify("*.$newdom", "IN MX\t 0 $fqdn[0].\n", 24);
+	    for ($i=1; $fqdn[$i]; $i++) {
+		$pri=$i * 10;
+		print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+	    }
+	}
+}

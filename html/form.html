@@ -1,0 +1,130 @@
+<HTML>
+<HEAD>
+<TITLE>Domain Registration Form</TITLE>
+</HEAD>
+<BODY>
+<H1>Domain Registration Form</H1>
+
+Before applying, be sure you know <A HREF="register.html">how to
+register</A> and especially that you agree with the
+<A HREF="policy.html">domain policy</A>.
+<HR>
+<FORM ACTION="/cgi-bin/nph-dnsreq" METHOD="POST">
+
+E-mail address where you want to receive the results of your request.<BR>
+It must <STRONG>already</STRONG> be valid and thus can <STRONG>not</STRONG>
+be in a new domain you request:<BR>
+<INPUT NAME="mr" SIZE=40>
+
+<HR>
+Complete domain name: <INPUT NAME="dm"><P>
+
+Type of request:
+<SELECT NAME="rt">
+<OPTION>New domain
+<OPTION>Modify domain
+<OPTION>Delete domain
+</SELECT>
+
+<HR>
+<H2>Organization</H2>
+<STRONG>Fill only for new domains or contact change</STRONG><P>
+The organization requesting the domain:<BR>
+(If you are an individual, fill the organization name with your name)<P>
+
+<INPUT NAME="om"> Organization Name<P>
+<INPUT NAME="oa"> Address (line 1)<BR>
+<INPUT NAME="op"> Address (line 2)<BR>
+<INPUT NAME="oc"> Address (line 3)<BR>
+<INPUT NAME="os"> Address (line 4)<BR>
+<INPUT NAME="on"> Country
+
+<HR>
+<H2>Administrative contact</H2>
+<STRONG>Fill only for new domains or contact change</STRONG><P>
+
+The person in charge of administrative matters regarding the domain.<P>
+
+<INPUT NAME="am"> Name (First Last), <STRONG>mandatory</STRONG><BR>
+<INPUT NAME="ae"> E-Mail, <STRONG>mandatory</STRONG><BR>
+<INPUT NAME="ah"> NIC Handle (if any)<P>
+
+<INPUT NAME="ao"> Organization<BR>
+<INPUT NAME="aa"> Address (line 1)<BR>
+<INPUT NAME="ap"> Address (line 2)<BR>
+<INPUT NAME="ac"> Address (line 3)<BR>
+<INPUT NAME="as"> Address (line 4)<BR>
+<INPUT NAME="an"> Country<P>
+<INPUT NAME="at"> Phone Number<BR>
+
+<HR>
+<H2>Technical contact</H2>
+<STRONG>Fill only for new domains or contact change</STRONG><P>
+
+The person in charge of technical matters regarding the domain.<P>
+
+<STRONG>Skip all the section if same as administrative contact.</STRONG><P>
+
+<INPUT NAME="tm"> Name (First Last), <STRONG>mandatory</STRONG><BR>
+<INPUT NAME="te"> E-Mail, <STRONG>mandatory</STRONG><BR>
+<INPUT NAME="th"> NIC Handle (if any)<P>
+
+<INPUT NAME="to"> Organization<BR>
+<INPUT NAME="ta"> Address (line 1)<BR>
+<INPUT NAME="tp"> Address (line 2)<BR>
+<INPUT NAME="tc"> Address (line 3)<BR>
+<INPUT NAME="ts"> Address (line 4)<BR>
+<INPUT NAME="tn"> Country<P>
+<INPUT NAME="tt"> Phone Number<BR>
+
+<HR>
+<H2>Technical information</H2>
+<STRONG>Fill only for new domains or technical change</STRONG><P>
+Type of resource record:
+<SELECT NAME="rr">
+<OPTION>NS
+<OPTION>CNAME
+<OPTION>MX
+<OPTION>Wildcard-MX
+</SELECT>
+<P>
+See the <A HREF="rrtypes.html">explanation</A> to choose the type,
+then fill the following list.<P>
+<DL>
+<DT>If you are requesting a <STRONG>NS</STRONG> record
+<DD>Fill <EM>Name1...NameX</EM> and <EM>IP1...IPX</EM> respectively with the
+fully qualified domain names and (only if necessary) the IP addresses for your
+domain servers; put the primary at the top of the list.
+You don't need to fill all lines.
+IP addresses are only needed when the domain names for the servers are
+within the requested domain.
+<DT>If you are requesting a <STRONG>MX</STRONG> (or wildcard-MX) record
+<DD>Fill <EM>Name1</EM>..<EM>NameX</EM>. The names you supply <EM>must</EM>
+point to an address (<STRONG>A</STRONG> type) record. The lowest precedence
+<STRONG>MX</STRONG> should be listed first.
+<DT>If you are requesting a <STRONG>CNAME</STRONG> record
+<DD>Only fill <EM>Name1</EM>. It <EM>must</EM> exist and must not point
+to a <STRONG>CNAME</STRONG> record.
+</DL>
+
+Name1: <INPUT NAME="f1" SIZE=32> IP1: <INPUT NAME="i1" SIZE=18> <BR>
+Name2: <INPUT NAME="f2" SIZE=32> IP2: <INPUT NAME="i2" SIZE=18> <BR>
+Name3: <INPUT NAME="f3" SIZE=32> IP3: <INPUT NAME="i3" SIZE=18> <BR>
+Name4: <INPUT NAME="f4" SIZE=32> IP4: <INPUT NAME="i4" SIZE=18> <BR>
+Name5: <INPUT NAME="f5" SIZE=32> IP5: <INPUT NAME="i5" SIZE=18> <BR>
+Name6: <INPUT NAME="f6" SIZE=32> IP6: <INPUT NAME="i6" SIZE=18> <BR>
+<HR>
+<STRONG>Remember: submitting the query means that you agree with
+the <A HREF="policy.html">domain policy</A>.</STRONG><P>
+
+Press this button to submit the query: 
+<INPUT TYPE="submit" VALUE="Submit"><BR>
+To reset the form, press this button: <INPUT TYPE="reset" VALUE="Reset"><BR>
+</FORM>
+<HR>
+<A HREF="index.html">Home</A>
+<A HREF="opendomains.html">Open domains</A>
+<A HREF="policy.html">General Policy</A>
+<A HREF="register.html">How to register</A>
+</BODY>
+</HTML>

@@ -1,0 +1,134 @@
+$Id$
+
+* Choose an installation path, for example /usr/local/dns-manager
+  and cd to it.
+
+* Create the following directories
+
+	bin		scripts
+
+	cgi-bin		CGI scripts
+
+	conf		config files
+
+	val		spool for correct requests
+			should have write permission for the CGI scripts
+			should have write permission for the mail scripts
+
+	zones		for zone files, names in uppercase
+			should have write permission for the CGI scripts
+			should have write permission for the mail scripts
+
+			THIS MUST BE DIFFERENT FROM THE ACTUAL FILES
+			USED BY YOUR NAMESERVER !
+
+	spool		temp spool for mail forms
+			should have write permission for the mail scripts
+
+* Create the following file
+
+	log		Form POST log
+			should have write permission for the CGI scripts
+			no log for mails (put a Cc: or Bcc: in the replies)
+
+* Copy the distributed directories to their local equivalent
+	(conf, bin)
+
+* Edit conf/config for your system paths and mail addresses
+
+* Adapt the path for /usr/local/bin/dns-manager/conf/config
+	in every script (bin/* and cgi-bin/*):
+
+	bin/access-zone:require "/usr/local/dns-manager/conf/config";
+	bin/check-cname:require "/usr/local/dns-manager/conf/config";
+	bin/check-mx:require "/usr/local/dns-manager/conf/config";
+	bin/check-ns:require "/usr/local/dns-manager/conf/config";
+	bin/check-request:require "/usr/local/dns-manager/conf/config";
+	bin/receive-mail:require "/usr/local/dns-manager/conf/config";
+	cgi-bin/nph-dnsreq:require "/usr/local/dns-manager/conf/config";
+	cgi-bin/val:require "/usr/local/dns-manager/conf/config";
+
+* Put the following in your HTTP server pages:
+
+	html/form.html		-> user request form
+	html/adm		-> admin directory
+	html/adm/index.html	-> admin help
+
+   WARNING : the adm directory should be protected with a .htaccess file !
+	     An example is provided.
+
+* Install the CGI scripts and update the Web pages accordingly:
+
+	nph-dnsreq	(user request processing) -> /cgi-bin/nph-dnsreq
+
+	val		-> in your HTML admin directory as val.cgi
+			   (this implies that you enable this in your HTTP
+			   server)
+
+					OR
+
+			   as /cgi-bin/dns/val
+
+   WARNING : the val script should be protected with a .htaccess in
+	     the same directory !
+
+* If you want to allow mail form processing, add the following to
+  your mail aliases. The different addresses are for different languages.
+
+dns-manager:	"| /usr/local/dns-manager/bin/receive-mail"
+dns-manager-fr:	"| /usr/local/dns-manager/bin/receive-mail -lfr"
+
+* Create the required zone files (see the examples)
+  The following special tokens are recognized at the top:
+
+;! minlen 2
+	-> minimum length allowed for a name
+
+;! maxlen 24
+	-> maximum length allowed for a name
+
+;! type NS
+;! type CNAME
+;! type MX
+;! type WMX
+	-> allowable types of records for new requests.
+	   WMX is a MX + a wildcard MX for the same domain.
+
+
+   *IMPORTANT*NOTICE* when reusing existing files created by hand:
+
+   The system tries to be clever when reading zone files
+   and modifying them, but does not always succeed.
+
+   It assumes that:
+	- all records for a domain are on consecutive lines, INCLUDING
+	  possible glue records;
+	- a ';' in the first column separates domains.
+   Edit your zone files to add ";" where needed to separate domains.
+
+* Configure:
+	conf/user-info	with your administrator info
+   	conf/zones-auth	with your zones info
+	your HTTP server's htpasswd file with the administrators passwords
+
+* DO NOT CONFIGURE THE SYSTEM TO DIRECTLY MODIFY THE "MASTER" ZONE FILES !
+  MAKE BACKUPS !
+
+  To take modifications into account:
+
+	- run "access-zone -u USERNAME -asoa ZONENAME" to update the
+	  serial number in the SOA if it needs to.
+
+	  For example:
+
+		access-zone -upb -asoa EU.ORG
+		access-zone -upb -asoa FR.EU.ORG
+
+	  etc...
+
+	- make a "diff" (-U4 is a good idea) between the zone file
+	  and the master copy and check nothing's wrong in the diffs
+	  (in particular, nothing must disappear when it shouldn't)
+
+	- copy the file to the master directory and reload named.
+

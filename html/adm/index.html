@@ -1,0 +1,49 @@
+<HTML>
+<HEAD>
+<TITLE>How to validate a domain request</TITLE>
+</HEAD>
+<BODY>
+
+<H1>How to validate a domain request</H1>
+
+<OL>
+<LI>Choose a request in the <A HREF="val.cgi">request list</A>;
+<LI>Check that it seems to comply with the <A HREF="../policy.html">policy</A>
+    of EU.org and of the relevant subdomain.
+<LI>If you decide to reject the request, fill the appropriate explanation
+    field <STRONG>Reason</STRONG> and click <STRONG>Reject</STRONG>. That's all.
+<LI>If you want to accept the request, check that the WHOIS info is correct
+  and well formatted.
+  If you detect a formatting error, correct it in the next step when
+  sending the database update.
+  <OL>
+  <LI>correctly formatted address
+  <LI>correctly formatted name (<STRONG>John Smith</STRONG> and
+      not <STRONG>Smith John</STRONG> nor <STRONG>John SMITH</STRONG>)
+  <LI>check NIC handle or RIPE handle if provided, and that it points
+      to the right person
+  </OL>
+<LI>If modifications to the EU.org WHOIS base are necessary,
+    send a mail to <A HREF="mailto:auto-dbm@eu.org">auto-dbm@eu.org</A>.
+    This mail should be <STRONG>ASCII or 8 bits ISO-Latin-1</STRONG> and
+    above all <STRONG>not</STRONG> quoted-printable encoded !<P>
+    Copy necessary WHOIS info in it: the list of
+    <TT>attribute: value</TT> pairs of the object to be created or
+    deleted with an empty line between objects.<P>
+    Fill or add the relevant <TT>password:</TT> field to all objects
+    having a <TT>mnt-by:</TT> attribute.<P>
+    To delete an object, get an exact copy of the object via
+    <TT>whois -h whois.eu.org</TT> and send it by mail after
+    adding a <TT>delete: your-email reason</TT>.
+<LI>Validate the request by clicking on <STRONG>Accept</STRONG>.
+<LI>Check that the database update succeeded by looking at the mail answer
+    from the database automaton. Correct and resubmit if necessary.
+    <STRONG>There should be a WHOIS entry for every domain !</STRONG>
+</OL>
+<HR>
+<A HREF="../index.html">Home</A>
+<A HREF="../opendomains.html">Open domains</A>
+<A HREF="../policy.html">General Policy</A>
+<A HREF="../register.html">How to register</A>
+</BODY>
+</HTML>

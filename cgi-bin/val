@@ -1,0 +1,419 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+
+# local configuration.
+require "/usr/local/dns-manager/conf/config";
+
+&zauth_read;
+
+$date=`date +%y%m%d`; chop $date;
+
+sub parent_of { 
+  local ($domain) = @_;  
+  local ($i) = index($domain, ".");
+  if ($i < 0) { 
+    return "";
+  }   
+  return substr($domain, $i+1);
+}     
+
+#
+# This function stolen and adapted from webdns.pl.
+# Originally written by Chris Lindblad <cjl@lcs.mit.edu>.
+#
+sub content { 
+  local($buffer,@pairs,$key,$val);
+  if ($ENV{'CONTENT_LENGTH'}) {
+    if ($ENV{'CONTENT_TYPE'} ne 'application/x-www-form-urlencoded') {
+      die('Unknown content type ',$ENV{'CONTENT_TYPE'},"\n");
+    } 
+    read(STDIN,$buffer,$ENV{'CONTENT_LENGTH'});
+  } elsif ($ENV{'QUERY_STRING'}) { $buffer = $ENV{'QUERY_STRING'}; }
+  else { $buffer = ''; }
+  @pairs = split(/&/,$buffer);
+  foreach $pair (@pairs) {
+    ($key,$val) = split(/=/,$pair);
+    $val =~ tr/+/ /;
+    $val =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+    if (defined($content{$key})) { $content{$key} .= ';'.$val; }
+    else { $content{$key} = $val; }
+  } 
+} 
+
+sub getmd5 {
+  local ($file) = $_[0];
+  local ($mymd5);
+  if (!open(MD5, "$MD5PATH < $file |")) {
+    return "";
+  } else {
+    if (!($mymd5 = <MD5>)) {
+      close(MD5);
+      return;
+    } else {
+      chop $mymd5;
+      close(MD5);
+      return $mymd5;
+    }
+  }
+}
+
+sub dodir {
+  opendir(D, '.') || die "Can't open $VALDIR: $!";
+  local (@dirlist) = readdir(D);
+  local ($foundone) = 0;
+
+  closedir(D);
+
+  local ($fname, $replyto, $domain, $line, $lang);
+
+  print "\n";
+
+  @dirlist = sort(@dirlist);
+
+  for (@dirlist) {
+    next if $_ =~ /^\./;
+
+    $fname = $_;
+    if (!open(F, $fname)) {
+      print "<TT>$fname</TT> ***<BR>\n";
+    } else {
+      $replyto = <F>; chop $replyto;
+      $line = <F>;
+      ($action, $domain, $lang) = split(/ /, $line);
+
+      next if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'}));
+
+      $foundone = 1;
+
+      if ($action eq 'N') {
+	$action = "New       ";
+      } elsif ($action eq 'M') {
+	$action = "Modify    ";
+      } elsif ($action eq 'MZ') {
+	$action = "Mod Zone  ";
+      } elsif ($action eq 'MC') {
+	$action = "Mod Contact";
+      } elsif ($action eq 'D') {
+	$action = "DEL";
+      }
+      print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$fname\"><TT>$fname</TT></A> $action $lang $domain <BR>\n";
+      close(F);
+    }
+  }
+  if (!$foundone) {
+      print "Sorry, no request found...<BR>\n";
+  }
+}
+
+sub doreject {
+  local ($replyto, $domain, $rq, $line);
+
+  $rq=$_[0];
+
+  if (!open (F, $rq)) {
+    print "Unable to find $rq.\n";
+    return;
+  }
+  $replyto = <F>; chop $replyto;
+  $line = <F>; chop $line;
+  ($action, $domain, $ENV{'LANG'}) = split(/ /, $line);
+
+  if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'})) {
+    print "You are not authorized for this request.\n";
+    close(F);
+    return;
+  }
+
+  do "$DNSCONF/msg-val";
+
+  if (!open(SMU, "|$SENDMAIL -t")) {
+    print "Unable to send mail.\n";
+    close (F);
+    return;
+  }
+
+  print SMU $VALHEADERS;
+  printf SMU $MSG_SUBRJ, $content{'rq'};
+  print SMU "To: $replyto\n\n";
+  printf SMU $MSG_BDYRJ, $content{'rq'}, $content{'reason'};
+  print SMU $MSG_BDYBY;
+
+  close (F);
+  close(SMU);
+  if ($? != 0) {
+    print "<STRONG>sendmail returned an error !</STRONG><P>\n";
+    print "Request kept.\n";
+  } else {
+    unlink($rq);
+    print "End of processing.<P>\n";
+  }
+}
+
+sub doaccept {
+  local ($replyto, $domain, $rq, $line);
+
+  $rq=$_[0];
+
+  if (!open (F, $rq)) {
+    print "Unable to find $rq.\n";
+    return;
+  }
+  $replyto = <F>; chop $replyto;
+  $line = <F>; chop $line;
+  ($action, $domain, $ENV{'LANG'}) = split(/ /, $line);
+
+  if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'})) {
+    print "You are not authorized for this request.\n";
+    close(F);
+    return;
+  }
+
+  do "$DNSCONF/msg-val";
+
+  if (!open(SMU, "|$SENDMAIL -t")) {
+    print "Unable to send mail.\n";
+    close (F);
+    return;
+  }
+
+  print SMU $VALHEADERS;
+  printf SMU $MSG_SUBAC, $content{'rq'};
+  print SMU "To: $replyto\nCc: $user_mail\n\n";                
+  printf SMU $MSG_BDYAC, $content{'rq'};
+
+  if ($action eq 'M' || $action eq 'MZ' || $action eq 'D') {
+    print SMU $MSG_BDYZD;
+    if (!open(AZ, "$AZPATH -a show -u$ENV{'REMOTE_USER'} $domain 2>&1 |")) {
+      print SMU $MSG_NOREC;
+      print "<STRONG>Unable to show existing records.</STRONG><P>\n";
+    } else {
+      while (<AZ>) { print SMU $_; }
+      close(AZ);
+      print SMU "\n";
+    }
+  }
+  if ($action eq 'D') {
+    if (!open(AZ, "$AZPATH -a delete -u$ENV{'REMOTE_USER'} $domain 2>&1 |")) {
+      print "<STRONG>Unable to delete zone records.</STRONG><P>\n";
+    } else {
+      close(AZ);
+      if ($? != 0) {
+	print "<STRONG>Error when trying to delete zone records.</STRONG><P>\n";
+      }
+    }
+  } elsif ($action eq 'N' || $action eq 'M' || $action eq 'MZ') {
+    print SMU $MSG_BDYZI;
+    if (!open(AZ, "| $AZPATH -a $action -u$ENV{'REMOTE_USER'} $domain")) {
+      print SMU $MSG_NOINS;
+      print "<STRONG>Unable to insert records.</STRONG><P>\n";
+    } else {
+      while (<F>) {
+        last if ($_ eq ";;\n");
+        print AZ;
+        print SMU;
+      }
+      close (AZ);
+      if ($? != 0) {
+	print "<STRONG>Error when trying to insert records.</STRONG>\n";
+      }
+      print SMU "\n";
+    }
+  }
+  if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
+    print SMU $MSG_BDYWI;
+    while (<F>) { if (/^$/) { print SMU "changed: $user_mail $date\n" }
+		  elsif (/^mnt-by:/) { print SMU "mnt-by:  $user_mntby\n"; next }
+		  print SMU; }
+    print SMU "\n";
+  }
+
+  close (F);
+  print SMU $MSG_BDYBY;
+  close(SMU);
+  if ($? != 0) {
+    print "<STRONG>sendmail returned an error !</STRONG><P>\n";
+    print "Request kept.\n";
+  } else {
+    unlink($rq);
+    print "End of processing.<P>\n";
+  }
+}
+
+sub dodisplay {
+  local ($replyto, $domain, $rq);
+
+  $rq=$_[0];
+
+  if (!open (F, $rq)) {
+    print "Unable to find $rq.\n";
+    return;
+  }
+  $replyto = <F>; chop $replyto;
+  $line = <F>; chop $line;
+  ($action, $domain, $ENV{'LANG'}) = split(/ /, $line);
+
+  if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'})) {
+    print "You are not authorized for this request.\n";
+    close(F);
+    return;
+  }
+
+  do "$DNSCONF/msg-val";
+
+  if ($action eq 'N' || $action eq 'M' || $action eq 'MZ') {
+    print "<HR><H2>Records to be inserted in zone file:</H2><PRE>\n";
+    while (<F>) {
+      last if ($_ eq ";;\n");
+      print;
+    }
+    print "</PRE>\n";
+  }
+  if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
+    print "<HR><H2>Records to be inserted in WHOIS base:</H2><PRE>\n";
+    while (<F>) { if (/^$/) { print "changed: $user_mail $date\n\n" }
+		  elsif (/^mnt-by:/) { print "mnt-by:  $user_mntby\n"; next }
+		  else { print }
+		}
+    close (F);
+    print "</PRE>\n";
+  }
+
+  if ($action eq 'MZ' || $action eq 'D') {
+    print "<HR><H2>Records to be deleted from zone file:</H2><PRE>\n";
+    if (!open(AZ, "$AZPATH -a show -u$ENV{'REMOTE_USER'} $domain 2>&1 |")) {
+      print "Unable to show existing records.\n";
+    } else {
+      while (<AZ>) { print $_; }
+      close(AZ);
+    }
+    print "</PRE>\n";
+  }
+  close(F);
+
+  $mymd5 = &getmd5($rq);
+
+  if (!$mymd5) {
+    print "<STRONG>Unable to compute MD5 for \"$rq\"</STRONG><P>\n";
+  }
+
+  print "<HR>\n";
+
+  $act='accept';
+  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\">\n";
+#  print ":$mymd5:$ENV{'REMOTE_USER'}:$act:$rq<BR>\n";
+#  print "<INPUT NAME=\"md5val\" SIZE=34> MD5<BR>\n";
+  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+  print "<INPUT TYPE=\"submit\" VALUE=\"Accept and mail to $replyto\">\n";
+  print "</FORM>\n";
+
+  print "<P>\n";
+
+  $act='reject';
+  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\">\n";
+  print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
+  print "Reason:<TEXTAREA NAME=\"reason\" ROWS=10 COLS=77></TEXTAREA>\n";
+  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+  print "</FORM>\n";
+
+  print "<P>\n";
+
+  $act='delete';
+  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\">\n";
+  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+  print "<INPUT TYPE=\"submit\" VALUE=\"Delete quietly\">\n";
+  print "</FORM>\n";
+}
+
+sub getuser {
+  local ($remuser, $user, $pass, $mntby);
+  $remuser = $_[0];
+
+  if (!open(UP, $PASSFILE)) {
+	return;
+  }
+  while (<UP>) {
+	next if /^#/;
+	chop;
+	($user, $pass, $email, $mntby) = split(/:/);
+	if ($user eq $remuser) { close UP; return ($pass, $email, $mntby); }
+  }
+  close (UP);
+  return;
+}
+
+sub checkmd5 {
+  local ($string, $gotmd5) = @_;
+
+  if ($string !~ /^[a-zA-Z0-9\-\/;!:]+$/) {
+	print "<STRONG>Illegal characters in MD5 string $string.</STRONG><P>\n";
+	return 0;
+  }
+
+  if (!open(MD5, "(echo \'$string\') | $MD5PATH |")) {
+    print "<STRONG>Cannot compute MD5: $!</STRONG><P>\n";
+  } else {
+    if (!($mymd5 = <MD5>)) {
+      print "<STRONG>Cannot compute MD5</STRONG><P>";
+    } else {
+      chop $mymd5;
+    }
+  }
+  close(MD5);
+  return $mymd5 eq $gotmd5;
+}
+
+print "Content-Type: text/html\n\n<HTML><HEAD>";
+print "</HEAD><BODY>\n";
+
+&content;
+
+if ($content{'rq'} && $content{'rq'} !~ /[a-zA-Z0-9-_]/) {
+  print "Bad filename: $contents{'rq'}\n";
+  print "</BODY></HTML>\n";
+  exit;
+} elsif (!$ENV{'REMOTE_USER'}) {
+  print "You need to authenticate to use this script.\n";
+  print "</BODY></HTML>\n";
+  exit;
+} elsif (!chdir($VALDIR)) {
+  print "Can't cd to $VALDIR: $!\n";
+  print "</BODY></HTML>\n";
+  exit;
+}
+
+($user_pass, $user_mail, $user_mntby) = &getuser($ENV{'REMOTE_USER'});
+
+if (!$user_mail) {
+  print "<STRONG>Cannot find user info for $ENV{'REMOTE_USER'}</STRONG><P>\n";
+  print "</BODY></HTML>\n";
+  exit;
+}
+
+if ($content{'action'} eq 'display') {
+  &dodisplay($content{'rq'});
+} elsif ($content{'action'} eq 'reject') {
+  &doreject($content{'rq'});
+} elsif ($content{'action'} eq 'accept') {
+#  if (&checkmd5("$user_pass:".&getmd5($content{'rq'}).
+#		":$ENV{'REMOTE_USER'}:accept:$content{'rq'}",
+#		$content{'md5val'})) {
+    &doaccept($content{'rq'}, $user_mail);
+#  } else {
+#    print "The MD5 you have provided is incorrect, or the file has been deleted.<P>\n";
+#  }
+} elsif ($content{'action'} eq 'delete') {
+  if (!unlink($content{'rq'})) {
+    print "Unable to delete $content{'rq'}: $!<P>\n";
+  } else {
+    print "Deleted $content{'rq'}<P>\n";
+  }
+} else {
+    &dodir();
+}
+
+print "</BODY></HTML>\n";

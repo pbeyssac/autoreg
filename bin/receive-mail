@@ -1,0 +1,83 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+# script to handle a mailed form and pipe it to $CRPATH
+#
+
+require "getopts.pl";
+do Getopts("l:");
+
+if ($#ARGV != -1) { die "Usage: receive-mail\n"; }
+
+if ($opt_l eq 'fr') {
+	$LANG="fr";
+} else {
+	$LANG="en";
+}
+
+# local configuration
+require "/usr/local/dns-manager/conf/config";
+
+$REQID="mail-$$";
+$REQFILE="$REQDIR/$REQID";
+
+$headers = 1;
+
+open(WF, ">$REQFILE") || die "Cannot open $REQFILE: $!\n";
+open(VF, "| $SENDMAIL -t") || die "Cannot start sendmail: $!\n";
+
+$thdrs = "";
+
+while (<STDIN>) {
+	$thdrs .= $_;
+
+	last unless $headers;
+	chop;
+
+	if (/^\s/)	{ $line .= $_; next; }
+	if (/^$/)	{ $headers = 0; }
+
+	$lline = $line; $line = $_;
+
+	if ($lline =~ /^([A-Za-z0-9-]+):\s/) {
+		$hd = $1;
+		$hd =~ tr/A-Z/a-z/;
+	} else {
+		$hd = "";
+	}
+
+	if ($hd eq "from")		{ $from=substr($lline, 6); }
+	elsif ($hd eq "reply-to")	{ $replyto=substr($lline, 10); }
+}
+
+if ($headers) {
+	die "Premature end of mail.\n";
+}
+
+if ($replyto) {
+	print VF $MAILHEADERS;
+	print VF "To: $replyto\n";
+	print WF "mr.: $replyto\n";
+} elsif ($from) {
+	$replyto = $from;
+	print VF $MAILHEADERS;
+	print VF "To: $from\n";
+	print WF "mr.: $from\n";
+} else {
+	close(WF);
+	unlink($REQFILE);
+	die "Error: no identified sender.\n";
+}
+print VF "Subject: [$REQID]\n\n";
+
+print WF $thdrs;
+while (<STDIN>) { print WF; }
+close(WF);
+
+open(CHECK, "$CRPATH -l$LANG < $REQFILE $REQID 2>&1 |") || die "Cannot start $CRPATH: $!\n";
+while (<CHECK>) {
+	print VF;
+}
+close(CHECK);
+unlink($REQFILE) if $?;

@@ -1,0 +1,35 @@
+#
+# $Id$
+#
+# Zone authorizations file
+#
+# contains lines of the form:
+#
+#	zone-fqdn:user-list
+#
+# zone-fqdn		the zone name and name of the file in $ZONEDIR
+#
+# user-list		a comma-separated (NO SPACE) list of http users
+#			having the right to validate/reject/view requests
+#			for that zone.
+#
+EU.ORG:pb,fcb,roberto
+AT.EU.ORG:pb,fcb,roberto
+BE.EU.ORG:pb,fcb,roberto
+DK.EU.ORG:pb,fcb,roberto
+ES.EU.ORG:pb,fcb,roberto
+FI.EU.ORG:pb,fcb,roberto
+FR.EU.ORG:pb,fcb,roberto
+GR.EU.ORG:pb,fcb,roberto
+IE.EU.ORG:pb,fcb,roberto
+IT.EU.ORG:pb,fcb,roberto
+LU.EU.ORG:pb,fcb,roberto
+NO.EU.ORG:pb,fcb,roberto
+PT.EU.ORG:pb,fcb,roberto
+SE.EU.ORG:pb,fcb,roberto
+UK.EU.ORG:pb,fcb,roberto
+EDU.EU.ORG:pb,fcb,roberto
+INT.EU.ORG:pb,fcb,roberto
+NET.EU.ORG:pb,fcb,roberto
+MT.EU.ORG:pb,fcb,roberto
+PL.EU.ORG:poland,pb,fcb,roberto

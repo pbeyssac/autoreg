@@ -1,0 +1,340 @@
+********************* NE PAS ENLEVER la ligne suivante *********************
+Domain Version Number: E1.0
+ln..: fr
+
+***** Envoyer rempli par courrier électronique à DNS-MANAGER-FR@EU.org *****
+
+                           ENREGISTREMENT DE DOMAINE
+                                       
+   Avant de commencer, n'oubliez pas de lire les instructions
+   d'enregistrement et vérifiez que vous êtes d'accord avec la charte.
+     _________________________________________________________________
+
+   Compléter en ajoutant du texte à la fin de chaque ligne, après les ':'
+
+dm.  Nom complet du domaine.....:
+rt.  (N)ouv (M)odif (D)étruire..:
+
+Organisme utilisateur du domaine
+(Remplir uniquement si nouveau domaine ou changement de contacts)
+
+(Si vous êtes un particulier, mettez votre nom à la place de celui de
+l'organisme)
+
+om.  Nom de l'organisme.........:
+oa.  Adresse (ligne 1)..........:
+op.  Adresse (ligne 2)..........:
+oc.  Adresse (ligne 3)..........:
+os.  Adresse (ligne 4)..........:
+on.  Pays.......................:
+
+Contact administratif
+(Remplir uniquement si nouveau domaine ou changement de contacts)
+
+ah.  NIC Handle (s'il existe)...:
+am.  Prénom Nom.................:
+ao.  Nom de l'organisme.........:
+aa.  Adresse (ligne 1)..........:
+ap.  Adresse (ligne 2)..........:
+ac.  Adresse (ligne 3)..........:
+as.  Adresse (ligne 4)..........:
+an.  Pays.......................:
+at.  Téléphone..................:
+ae.  Courrier électronique......:
+
+Contact technique
+(Remplir uniquement si nouveau domaine ou changement de contacts)
+(Ignorer si identique au contact administratif)
+
+th.  NIC Handle (s'il existe)...:
+tm.  Prénom Nom.................:
+to.  Nom de l'organisme.........:
+ta.  Adresse (ligne 1)..........:
+tp.  Adresse (ligne 2)..........:
+tc.  Adresse (ligne 3)..........:
+ts.  Adresse (ligne 4)..........:
+tn.  Pays.......................:
+tt.  Téléphone..................:
+te.  Courrier électronique......:
+
+Informations techniques
+(Remplir uniquement si nouveau domaine ou changement technique)
+   
+Type d'enregistrement
+rr.  NS, CNAME, MX, Wilcard MX..:
+
+   Si vous demandez un enregistrement _NS_
+          Remplissez _f1...fX_ et _i1...iX_ respectivement avec les
+          noms domaine complets et (seulement si nécessaire) les adresses
+          IP de vos serveurs de noms ; mettez le serveur primaire en tête
+          de liste. Vous n'avez pas besoin de remplir toutes les lignes.
+          Les adresses IP ne sont nécessaires que quand les noms domaine
+          des serveurs sont à l'intérieur du domaine demandé.
+          
+   Si vous demandez un enregistrement _MX_ (ou wildcard-MX)
+          Remplissez _f1_.._fX_. Les noms fournis _doivent_ pointer
+          sur un enregistrement d'adresse (type _A_). Le _MX_ de priorité
+          la plus faible devra être en tête de liste.
+          
+   Si vous demandez un enregistrement _CNAME_
+          Ne remplissez que _f1_. Il _doit_ exister et ne doit pas
+          pointer vers un enregistrement de type _CNAME_.
+          
+Serveur primaire
+f1.  Nom DNS du serveur.........:
+i1.  Adresse IP du serveur......:
+
+Serveur(s) secondaire(s)
+(recopier autant de fois que nécessaire)
+f2.  Nom DNS du serveur.........:
+i2.  Adresse IP du serveur......:
+
+     Le demandeur de ce nom certifie qu'à sa connaissance, l'utilisation
+     de ce nom ne viole aucune marque déposée ou autres statuts.
+
+     L'enregistrement d'un nom de domaine ne confère aucun droit légal
+     sur ce nom et tout litige sur le droit d'utilisation d'un nom
+     particulier devra être résolu par les parties concernées en
+     utilisant les méthodes légales (voir RFC 1591).
+
+---------------------------------- couper ----------------------------------
+
+                           CHARTE GÉNÉRALE DE EU.ORG
+                                       
+   Ce qui suit s'applique récursivement à _tous_ les sous-domaines de
+   EU.org.
+   
+   Il existe des règles supplémentaires pour les sous-domaines directs.
+   
+Sites commerciaux
+
+   Bien que ce service soit principalement destiné aux associations sans
+   but lucratif et aux utilisateurs individuels, les petits sites
+   commerciaux peuvent s'inscrire mais il leur est _TRÈS FORTEMENT_
+   recommandé d'avoir recours si possible à un NIC payant, à moins bien
+   sûr qu'ils souhaitent promouvoir EU.org.
+   
+Sites non européens
+
+   Étant donné que l'Europe n'est pas le seul endroit où les NICs
+   nationaux abusent de leur monopole, les sites non européens sont les
+   bienvenus.
+   
+Autorisations administratives
+
+   Il est conseillé aux possesseurs de sous-domaines de demander les
+   autorisations administratives nécessaires aux sites hébergeant leurs
+   serveurs de noms ou les machines de leur domaine.
+   
+Sous-domaines
+
+   Les possesseurs de sous-domaines souhaitant fournir à des tiers un
+   enregistrement dans leur domaine ont l'obligation :
+   
+   de fournir cet enregistrement gratuitement ou pour une somme faible
+          Cette somme, si elle existe, _DOIT_ être minimale et ne doit
+          couvrir que les coûts en _RAPPORT DIRECT_ avec l'enregistrement
+          et la gestion des fichier(s) et serveur(s) de zone. Est exclue
+          la facturation destinée au financement de :
+          
+          + travaux de développement de logiciel (même lié au DNS) ;
+          + salaires ;
+          + paperasserie.
+            
+   L'enregistrement dans un sous-domaine donné peut être réservé aux
+          membres d'une association avec une cotisation, mais
+          l'enregistrement de sous-domaine ne doit pas être le service
+          principal fourni par l'association à ses membres payants.
+          
+   d'être équitables entre les différents demandeurs de noms dans leur
+          domaine
+          
+Conformité aux standards Internet
+
+   Les possesseurs de sous-domaines doivent se conformer aux standards
+   Internet (RFCs). Cela inclut (mais n'est pas limité à) :
+     * noms de sous-domaines
+     * logiciel de courrier électronique
+     * logiciel de serveurs de noms
+       
+Marques déposées
+
+   Les règles appliquées sont celles d'InterNIC:
+   
+     L'enregistrement d'un nom de domaine ne confère aucun droit légal
+     sur ce nom et tout litige sur le droit d'utilisation d'un nom
+     particulier devra être résolu par les parties concernées en
+     utilisant les méthodes légales (voir RFC 1591).
+     
+   
+     _________________________________________________________________
+   
+
+                               CHARTE DE EU.ORG
+                                       
+   Ce qui suit ne s'applique qu'aux domaines enregistrés _directement_
+   dans EU.org.
+   
+   La charte générale s'applique également.
+   
+Non-prolifération
+
+   Le gestionnaire du domaine EU.org se réserve le droit de refuser toute
+   création de domaine directement dans EU.org s'il estime que
+   l'enregistrement dans un sous-domaine (délégation par pays, par
+   exemple) serait acceptable.
+   
+   Le but est d'éviter la création d'un espace de noms plat et ingérable.
+   
+Type d'enregistrements
+
+   Pour minimiser le travail d'administration, seule la délégation de
+   domaine (enregistrements _NS_) est fournie.
+   
+   Si vous désirez d'autres types d'enregistrements, vous devrez
+   commencer par demander une délégation pour le domaine désiré et gérer
+   vous-même la nouvelle zone.
+   
+   Cela implique que vous avez besoin d'avoir accès à une machine
+   connectée en permanence et faisant tourner un serveur de noms. Les
+   sites souhaitant fournir ce service à des tiers peuvent contacter
+   hostmaster@EU.org.
+   
+Noms de sous-domaines
+
+   Seuls les sous-domaines de 4 caractères ou plus seront enregistrés
+   automatiquement.
+   
+   Les noms de 3 caractères sont normalement réservés pour usage interne
+   et extensions futures, mais peuvent êtres alloués au cas par cas, de
+   préférence à des associations à but non lucratif, organisations
+   européennes, etc...
+   
+   Les noms de 2 caractères sont réservés pour les codes de pays ISO
+   (délégation par pays) et pour usage interne.
+   
+   Écrivez à hostmaster@EU.org si vous avez de bonnes raisons pour
+   demander un tel domaine (par exemple si vous voulez la délégation pour
+   un pays).
+     _________________________________________________________________
+   
+
+                       DOMAINES OUVERTS ET LEURS CHARTES
+                                       
+   En supplément de _EU.org_ lui-même, les sous-domaines suivants sont
+   déjà réservés et ouverts à l'enregistrement.
+   
+   L'idée est d'éviter la création d'un espace de noms plat et ingérable
+   dans EU.org. L'enregistrement direct dans EU.org est possible mais il
+   est conseillé de choisir plutôt un des domaines suivants.
+   
+   Les chartes pour ces domaines sont les mêmes que la charte générale
+   pour EU.org, à une différence près : les enregistrements _MX_,
+   _wildcard MX_ et _CNAME_ y sont acceptés.
+   
+   Si le pays (ou domaine international) de vos rêves n'est pas dans la
+   liste ci-dessous, n'hésitez pas à écrire à hostmaster@EU.org pour
+   demander qu'il soit créé et ouvert à l'enregistrement. La raison de
+   son absence est probablement qu'encore personne ne l'a réclamé.
+   
+   Domaines internationaux
+          
+        EDU.eu.org
+                sites académiques, écoles, universités...
+                
+        NET.eu.org
+                en rapport avec le réseau
+                
+        eu.org
+                organisations
+                
+   Il n'existe pas de ORG.eu.org pour les organisations ; EU.org lui-même
+          en tient lieu.
+          
+   Pays de la CEE déjà délégués :
+          
+          + FR.eu.org
+          + NL.eu.org
+          + D'autres pays seront ouverts sur demande.
+            
+   
+     _________________________________________________________________
+   
+
+                            TYPES D'ENREGISTREMENT
+                                       
+   Lorsque vous enregistrez votre domaine, vous pouvez choisir entre les
+   types suivants. Ils sont cités par ordre croissant de complexité et de
+   ressources nécessaires.
+   
+   CNAME
+          Un _CNAME_ est un alias vers un nom de votre choix que vous
+          pouvez changer à n'importe quel moment. Il peut être utilisé,
+          par exemple, pour obtenir une adresse indépendante du
+          fournisseur, pour les utilisateurs connectés par téléphone. Il
+          a l'inconvénient d'être « caché », par exemple votre adresse de
+          courrier électronique sera réécrite avec le « vrai » nom, pas
+          l'alias que vous avez demandé dans EU.org. Par contre, il ne
+          nécessite aucun changement de configuration sauf ici dans
+          EU.org.
+          
+          Par exemple, supposons que votre adresse soit
+          _vous@superette100f.fr_ et vous voudriez qu'elle soit
+          _vous@monsite.fr.eu.org_ (notez bien que le nom d'utilisateur,
+          à gauche du @, sera inchangé). Il vous suffit de remplir une
+          demande pour _monsite.fr.eu.org_ et de mettre _superette100f.fr_
+          dans Name1.
+          
+   MX
+          Il s'agit d'un enregistrement « échangeur de courrier » (Mail
+          eXchanger) utilisé pour diriger le courrier vers une machine
+          précise. Pour l'utiliser, il faut que cette machine destination
+          soit configurée pour reconnaître votre nouvelle adresse. Cela
+          implique évidemment que l'administrateur de cette machine soit
+          d'accord.
+          
+   Wildcard MX
+          Exactement identique au précédent, sauf que le courrier
+          arrivera aussi pour tous les sous-domaines de votre domaine. La
+          machine destination devra le savoir, évidemment.
+          
+   NS
+          Délégation complète, la méthode qui vous donne le plus de
+          souplesse sur votre domaine. Pour l'utiliser, il vous faut au
+          moins deux machines connectées en permanence et sur lesquelles
+          tourne un serveur de nom configuré avec votre domaine.
+          
+   
+     _________________________________________________________________
+   
+
+                       COMMENT ENREGISTRER VOTRE DOMAINE
+                                       
+   Enregistrer un domaine signifie que vous être d'accord pour vous
+   conformer à la charte qui s'applique au domaine dans lequel vous
+   voulez réserver.
+   
+    1. Lisez la charte générale ;
+    2. Choisissez un type d'enregistrement adapté à vos besoins et à vos
+       possibilités ;
+    3. Choisissez un domaine ouvert où réserver, suivant le type
+       d'enregistrement désiré.
+       _Essayez d'éviter de réserver directement dans EU.org_ ;
+    4. Si vous tenez vraiment à tout prix à réserver directement dans
+       EU.org, lisez la charte des sous-domaines directs, les contraintes
+       sont intentionnellement plus nombreuses ;
+    5. Si vous souhaitez une délégation complète, configurez vos serveurs
+       de noms ;
+    6. Remplissez et soumettez le formulaire.
+       Le formulaire (et la configuration de vos serveurs de noms, si
+       nécessaire) sera vérifié et les résultats vous seront communiqués
+       directement ;
+    7. Corrigez les erreurs si nécessaire, et recommencez jusqu'à ce que
+       votre requête soit acceptée ;
+    8. Attendez une réponse par courrier électronique vous signalant la
+       validation de votre demande. Cette étape nécessite une
+       intervention manuelle et peut durer plusieurs jours.
+       
+   
+     _________________________________________________________________
+

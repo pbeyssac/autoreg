@@ -1,0 +1,63 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+# Gets a name in argument and checks there's a correct record for it,
+# not a CNAME.
+#
+
+# calls to "dig" more or less stolen from dnswalk, originally written
+# by Dave Barr.
+
+require "/usr/local/dns-manager/conf/config";
+require "$DNSCONF/msg-check";
+
+if ($#ARGV == 0) {
+	$domain	= &fqdncanon($ARGV[0]);
+} else {
+	die "Usage: check-cname {domain}\n";
+}
+
+$res = &checkcname($domain);
+if ($res) {
+	if ($res ne "not found") {
+		die sprintf($ERR_ISCAN, $domain, $res);
+	} else {
+		die sprintf($ERR_NOTF, $domain, $res);
+	}
+}
+exit;
+
+# Check that a CNAME does not point to another CNAME.
+#
+# checkcname(domain)
+sub checkcname {
+    open(DIG,"$DIGPATH any $_[0]. 2>/dev/null|");
+    while (<DIG>) {
+        if (/status: NXDOMAIN/) { close(DIG); return "not found"; }
+        if (/status: SERVFAIL/) { last; }
+#        if (/;; flags.*aa.*;/) { $isauth=1; }
+	if (/^;; ANSWERS:$/) { last; }
+    }
+
+    while (<DIG>) {
+	if (/^;; AUTHORITY/) { last }
+
+	chop; split(/\t/);
+
+	if ($_[2] eq "CNAME") {
+    		close(DIG);
+		return $_[3];
+	}
+    }
+    close(DIG);
+    return "";
+}
+
+sub fqdncanon {
+	local ($fqdn)=$_[0];
+	if ($fqdn =~ /^\.(.*)/)	{ $fqdn = $1 }
+	if ($fqdn =~ /\.$/)	{ chop $fqdn }
+	$fqdn =~ tr/a-z/A-Z/;
+	return $fqdn;
+}

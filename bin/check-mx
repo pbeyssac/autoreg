@@ -1,0 +1,92 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+# Gets a name in argument and checks there's a correct A record for it.
+#
+
+# calls to "dig" more or less stolen from dnswalk, originally written
+# by Dave Barr.
+
+require "/usr/local/dns-manager/conf/config";
+require "$DNSCONF/msg-check";
+
+if ($#ARGV == 0) {
+	$domain	= &fqdncanon($ARGV[0]);
+} else {
+	die "Usage: check-mx {domain}\n";
+}
+
+$res = &checkcname($domain);
+if ($res) {
+	die sprintf($ERR_ISCAN, $domain, $res);
+}
+
+$res = &checka($domain);
+if (!$res) {
+	die sprintf($ERR_DOMNA, $domain);
+}
+exit;
+
+# Check that a CNAME does not point to another CNAME.
+#
+# checkcname(domain)
+sub checkcname {
+    local ($isauth)=0;
+
+    open(DIG,"$DIGPATH any $_[0]. 2>/dev/null|");
+    while (<DIG>) {
+        if (/status: NXDOMAIN/) { $isauth=0; last; }
+        if (/status: SERVFAIL/) { $isauth=0; last; }
+        if (/;; flags.*aa.*;/) { $isauth=1; }
+	if (/^;; ANSWERS:$/) { last; }
+    }
+
+    while (<DIG>) {
+	if (/^;; AUTHORITY/) { last }
+
+	chop; split(/\t/);
+
+	if ($_[2] eq "CNAME") {
+    		close(DIG);
+		return $_[3];
+	}
+    }
+    close(DIG);
+    return "";
+}
+
+#
+# checka(domain)
+sub checka {
+    local ($isauth)=0;
+
+    open(DIG,"$DIGPATH a $_[0]. 2>/dev/null|");
+    while (<DIG>) {
+        if (/status: NXDOMAIN/) { $isauth=0; last; }
+        if (/status: SERVFAIL/) { $isauth=0; last; }
+        if (/;; flags.*aa.*;/) { $isauth=1; }
+	if (/^;; ANSWERS:$/) { last; }
+    }
+
+    while (<DIG>) {
+	if (/^;; AUTHORITY/) { last }
+
+	chop; split(/\t/);
+
+	if ($_[2] eq "A") {
+    		close(DIG);
+		return $_[3];
+	}
+    }
+    close(DIG);
+    return "";
+}
+
+sub fqdncanon {
+	local ($fqdn)=$_[0];
+	if ($fqdn =~ /^\.(.*)/)	{ $fqdn = $1 }
+	if ($fqdn =~ /\.$/)	{ chop $fqdn }
+	$fqdn =~ tr/a-z/A-Z/;
+	return $fqdn;
+}

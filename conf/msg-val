@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+
+# Messages for the administrator validation CGI script
+
+if ($ENV{'LANG'} eq 'fr') {
+
+$MSG_SUBRJ="Subject: votre requete [%s] a ete rejetee.\n";
+$MSG_BDYRJ="Bonjour,\n\nMalheureusement, votre requête [%s] a été rejetée\npour la raison suivante :\n\n%s\n";
+$MSG_SUBAC="Subject: votre requete [%s] a ete acceptee.\n";
+$MSG_BDYAC="Bonjour,\n\nVotre requête [%s] a été acceptée.\n\n";
+$MSG_BDYZD="Les enregistrements suivants seront détruits du fichier de zone :\n\n";
+$MSG_BDYZI="Les enregistrements suivants seront insérés dans le fichier de zone :\n\n";
+$MSG_BDYWI="Les enregistrements suivants seront insérés dans la base WHOIS :\n\n";
+$MSG_BDYBY="\nLeur propagation prendra environ une demi-journée.\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
+
+} else {
+
+$MSG_SUBRJ="Subject: your request [%s] has been rejected.\n";
+$MSG_BDYRJ="Hello,\n\nSorry, your request [%s] has been rejected\nfor the following reason:\n\n%s\n";
+$MSG_SUBAC="Subject: your request [%s] has been accepted.\n";
+$MSG_BDYAC="Hello,\n\nYour request [%s] has been accepted.\n\n";
+$MSG_BDYZD="The following records will be deleted from the zone file:\n\n";
+$MSG_BDYZI="The following records will be inserted in the zone file:\n\n";
+$MSG_BDYWI="The following records will be inserted in the WHOIS base:\n\n";
+$MSG_BDYBY="\nPlease allow about half a day for propagation.\n\tVirtually yours,\n\tEU.org management.\n\n";
+
+}

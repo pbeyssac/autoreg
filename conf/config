@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+
+# system utilities paths
+$MD5PATH="/sbin/md5";	# currently disabled
+$PIDPATH="/var/run/named.pid";
+$DIGPATH="/usr/bin/dig";
+$SENDMAIL="/usr/sbin/sendmail";
+
+# local config location
+$DNSDIR="/usr/local/dns-manager";
+
+$DNSBIN="$DNSDIR/bin";		# scripts directory
+$DNSCONF="$DNSDIR/conf";	# configuration files directory
+$ZONEDIR="$DNSDIR/zones";	# zone files directory
+$VALDIR="$DNSDIR/val";		# spool directory for waiting requests
+$REQDIR="$DNSDIR/spool";	# temp spool directory for e-mail forms
+
+$DNSLOG="$DNSDIR/log";		# log file
+
+# scripts
+$AZPATH="$DNSBIN/access-zone";
+$CHECKNSPATH="$DNSBIN/check-ns";
+$CHECKCNAMEPATH="$DNSBIN/check-cname";
+$CHECKMXPATH="$DNSBIN/check-mx";
+$CRPATH="$DNSBIN/check-request";
+
+$PASSFILE="$DNSCONF/user-info";		# user info file
+$ZAUTFILE="$DNSCONF/zones-auth";	# zone authorizations file
+
+# templates for mail requests
+if ($ENV{'LANG'} eq 'en') {
+	$DOMTEMP="$DNSCONF/domain-template.txt";
+} else {
+	$DOMTEMP="$DNSCONF/domain-template-$ENV{'LANG'}.txt";
+}
+
+# Enable real nameserver checking.
+# Set this to 0 if you want to test while you're not connected.
+$do_checkns=1;
+
+# TO AVOID MAIL LOOPS, DON'T PUT dns-manager IN ANY ADDRESS !
+
+# headers for replies to mail queries
+$MAILHEADERS="From: hostmaster\@EU.org\nReply-To: dns-manager\@EU.org\nBcc: pb\n";
+#
+# headers for validation/rejection mail to the requester
+$VALHEADERS="From: hostmaster\@EU.org\nBcc: pb\n";
+#
+# address to send whois database updates to (not currently used)
+$WHOISDBM="auto-dbm@EU.org";
+#
+# name of database in generated objects ("source:" line)
+$DBNAME="FREENIC";
+
+# The following definitely should be elsewhere.
+sub zauth_read {
+  local ($zname, $users);
+  open(ZA, "$ZAUTFILE") || return;
+  while (<ZA>) {
+    next if /^#/;
+    if (/^([^:]+):(.*)$/) {
+      $zname = $1;
+      $users = $2;
+      $zname =~ tr/a-z/A-Z/;
+      $ZAUTH{$zname} = $users;
+    }
+  }
+  close ZA;
+  return;
+}
+
+sub zauth_check {
+  local ($zone, $user) = @_;
+  $zone =~ tr/a-z/A-Z/;
+  foreach (split(/,/, $ZAUTH{$zone})) {
+    return $_ if $_ eq $user;
+  }
+  return "";
+}

@@ -1,0 +1,59 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+#
+# CGI script to handle a POSTed form and pipe it to $CRPATH
+#
+
+# local configuration.
+require "/usr/local/dns-manager/conf/config";
+
+#
+# This function stolen and adapted from webdns.pl.
+# Originally written by Chris Lindblad <cjl@lcs.mit.edu>.
+#
+sub content { 
+  local($buffer,@pairs,$key,$val);
+  if ($ENV{'CONTENT_LENGTH'}) {
+    if ($ENV{'CONTENT_TYPE'} ne 'application/x-www-form-urlencoded') {
+      die('Unknown content type ',$ENV{'CONTENT_TYPE'},"\n");
+    } 
+    read(STDIN,$buffer,$ENV{'CONTENT_LENGTH'});
+  } elsif ($ENV{'QUERY_STRING'}) { $buffer = $ENV{'QUERY_STRING'}; }
+  else { $buffer = ''; }
+
+  select(STDOUT); $| = 1; print ""; $| = 0;
+
+  system("date >> $DNSLOG");
+
+  if (!open(CHECKREQ, "|$CRPATH w3 2>&1 | tee -a $DNSLOG")) {
+    print "Can't start $CRPATH: $!\n";
+    return;
+  }
+  print CHECKREQ "REMOTE_USER: $ENV{'REMOTE_USER'}\n";
+  print CHECKREQ "REMOTE_HOST: $ENV{'REMOTE_HOST'}\n";
+  print CHECKREQ "\nDomain Version Number: E1.0\n\n";
+
+  @pairs = split(/&/,$buffer);
+  foreach $pair (@pairs) {
+    ($key,$val) = split(/=/,$pair);
+    $val =~ tr/+/ /;
+    $val =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+
+    #print "found $key.: $val\n";
+    print CHECKREQ "$key.: $val\n";
+  } 
+  close(CHECKREQ);
+} 
+
+#print "Content-Type: text/html\n\n<HTML><HEAD>";
+print "<HTML><HEAD>";
+print "<TITLE>DNS query result</TITLE>\n";
+print "</HEAD><BODY><PRE>\n";
+print "<H1>DNS query result</H1>\n";
+print "<PRE>\n";
+
+&content;
+
+print "</PRE></BODY></HTML>\n";
