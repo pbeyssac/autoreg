@@ -27,8 +27,13 @@ do
 	if $AZ -u$USER -asoa $i; then
 		echo $i updated
 		diff -U2 $DEST/$i $i
+		(
+		echo "; AUTOMATICALLY GENERATED -- DON'T EDIT THIS FILE"
+		echo "; edit $ZONES/$i instead"
+		echo ";"
+		cat $i) > $DEST/$i.new
 		mv -f $DEST/$i $DEST/$i.old
-		cp $i $DEST
+		mv -f $DEST/$i.new $DEST/$i
 		echo ----
 		mod=1
 	fi
