@@ -97,7 +97,7 @@ sub rq_set_state {
   }
   flock(NF, $LOCK_EX);
 
-  print NF "$replyto\n$action $domain $lang $newstate\n";
+  print NF "$replyto\n$action $domain $lang $newstate $user\n";
   while (<F>) {
     print NF $_;
   }
