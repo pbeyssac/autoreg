@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# $Id$
+#
+# Cleanup unacknowledged requests after 30 days.
+#
+DIR=/usr/local/dns-manager/val
+
+find $DIR -type f -mtime +30 |
+while read filename; do
+	(read email; read type domain lang status
+	if [ "$status" = "WaitAck" ]; then echo $filename; fi) < $filename
+done
