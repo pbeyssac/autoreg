@@ -36,6 +36,7 @@ $ERR_TWICE="Erreur: champ \"%s\" trouvé plus d'une fois.\n";
 $ERR_UNKFT="Erreur: version de format inconnue.\n";
 $ERR_UREPL="Erreur: \"%s\" n'est pas une des adresses de contact.\n";
 $ERR_EMPTY="Erreur: requête vide.\n";
+$ERR_ONENS="Erreur: vous devez donner au moins 2 serveurs de noms.\n";
 
 $MSG_BASCK="---- Vérifications de base\n\n";
 $MSG_CNTCK="\n---- Vérification des contacts\n\n";
@@ -121,6 +122,7 @@ $ERR_TWICE="Error: id \"%s\" found twice.\n";
 $ERR_UNKFT="Error: unknown format version.\n";
 $ERR_UREPL="Error: reply address \"%s\" is not one of the contact addresses.\n";
 $ERR_EMPTY="Error: empty request.\n";
+$ERR_ONENS="Error: you should provide at least 2 nameservers.\n";
 
 $MSG_BASCK="---- Basic checks\n\n";
 $MSG_CNTCK="\n---- Contacts checks\n\n";
