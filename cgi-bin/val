@@ -6,6 +6,7 @@
 # local configuration.
 require "/usr/local/dns-manager/conf/config";
 require "$DNSLIB/misc.pl";
+require "$DNSLIB/whois.pl";
 require "$DNSLIB/cgi.pl";
 require "$DNSLIB/auth.pl";
 require "$DNSLIB/requests.pl";
@@ -120,7 +121,7 @@ sub doinfo {
     return;
   }
 
-  print SMU $VALHEADERS;
+  print SMU $VALHEADERS, $MSG_ADDR;
   printf SMU $MSG_SUBIN, $content{'rq'}, $domain;
   print SMU "To: $replyto\n\n";
   printf SMU $MSG_BDYIN, $content{'rq'}, $domain, $content{'reason'};
@@ -148,11 +149,11 @@ sub doreject {
     return;
   }
 
-  print SMU $VALHEADERS;
+  printf SMU $VALHEADERS, $MSG_ADDR;
   printf SMU $MSG_SUBRJ, $content{'rq'}, $domain;
-  print SMU "To: $replyto\n\n";
+  print  SMU "To: $replyto\n\n";
   printf SMU $MSG_BDYRJ, $content{'rq'}, $domain, $content{'reason'};
-  print SMU $MSG_BYE;
+  print  SMU $MSG_BYE;
 
   close(SMU);
   if ($? != 0) {
@@ -179,9 +180,9 @@ sub doaccept {
     return;
   }
 
-  print SMU $VALHEADERS;
+  print  SMU $VALHEADERS;
   printf SMU $MSG_SUBAC, $content{'rq'}, $domain;
-  print SMU "To: $replyto\nCc: $user_mail\n\n";                
+  print  SMU "To: $replyto\nCc: $user_mail\n\n";                
   printf SMU $MSG_BDYAC, $content{'rq'}, $domain;
 
   if ($action eq 'M' || $action eq 'MZ' || $action eq 'D') {
@@ -302,15 +303,24 @@ sub dodisplay {
 	{ &dolocalwhoisform($pn2); }
   }
 
-  if ($action eq 'MZ' || $action eq 'D') {
+  if ($action eq 'MZ' || $action eq 'D' || $action eq 'M') {
     print "<HR><H2>Records to be deleted from zone file:</H2><PRE>\n";
     if (!open(AZ, "$AZPATH -a show -u$ENV{'REMOTE_USER'} $domain 2>&1 |")) {
       print "Unable to show existing records.\n";
     } else {
-      while (<AZ>) { print $_; }
+      while (<AZ>) {
+	s/</&lt;/g;
+	s/>/&gt;/g;
+	print;
+      }
       close(AZ);
     }
     print "</PRE>\n";
+  }
+
+  if ($action ne 'N') {
+    print "<HR><H2>Current whois records for domain:</H2>\n";
+    &whois_html($WHOISHOST, $domain);
   }
 
 #  $mymd5 = &getmd5($rq);
@@ -321,36 +331,40 @@ sub dodisplay {
 
   print "<HR>\n";
 
-  $act='accept';
-  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
-#  print ":$mymd5:$ENV{'REMOTE_USER'}:$act:$rq<BR>\n";
-#  print "<INPUT NAME=\"md5val\" SIZE=34> MD5<BR>\n";
-  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-  print "<INPUT TYPE=\"submit\" VALUE=\"Accept and mail to $replyto\">\n";
-  print "</FORM>\n";
+  if ($state ne 'WaitAck') {
+    $act='accept';
+    print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
+#    print ":$mymd5:$ENV{'REMOTE_USER'}:$act:$rq<BR>\n";
+#    print "<INPUT NAME=\"md5val\" SIZE=34> MD5<BR>\n";
+    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+    print "<INPUT TYPE=\"submit\" VALUE=\"Accept and mail to $replyto\">\n";
+    print "</FORM>\n";
 
-  print "<P>\n";
+    print "<P>\n";
 
-  $act='setanswered';
-  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
-  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-  print "<INPUT TYPE=\"submit\" VALUE=\"Set state = Answered\"><BR>\n";
-  print "(to mark the request as waiting for more details from the requester)<BR>\n";
-  print "</FORM>\n";
+    $act='setanswered';
+    print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
+    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+    print "<INPUT TYPE=\"submit\" VALUE=\"Set state = Answered\"><BR>\n";
+    print "(to mark the request as waiting for more details from the requester)<BR>\n";
+    print "</FORM>\n";
 
-  print "<P>\n";
+    print "<P>\n";
 
-  $act='reject';
-  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
-  print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
-  print "Reason:<TEXTAREA NAME=\"reason\" ROWS=10 COLS=77></TEXTAREA>\n";
-  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-  print "</FORM>\n";
+    $act='reject';
+    print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
+    print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
+    print "Reason:<TEXTAREA NAME=\"reason\" ROWS=10 COLS=77></TEXTAREA>\n";
+    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+    print "</FORM>\n";
 
-  print "<P>\n";
+    print "<P>\n";
+  } else {
+    print "(request not yet confirmed by user)<P>\n";
+  }
 
 #  $act='info';
 #  print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";

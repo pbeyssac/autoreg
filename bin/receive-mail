@@ -11,13 +11,14 @@ do Getopts("l:");
 if ($#ARGV != -1) { die "Usage: receive-mail [-l language-iso-code]\n"; }
 
 if ($opt_l eq 'fr') {
-	$LANG="fr";
+	$ENV{'LANG'}="fr";
 } else {
-	$LANG="en";
+	$ENV{'LANG'}="en";
 }
 
 # local configuration
 require "/usr/local/dns-manager/conf/config";
+require "$DNSCONF/msg-val";
 require "$DNSLIB/requests.pl";
 
 #
@@ -60,12 +61,12 @@ if ($headers) {
 }
 
 if ($replyto) {
-	print VF $MAILHEADERS;
+	printf VF $MAILHEADERS, $MSG_ADDR;
 	print VF "To: $replyto\n";
 	print WF "mr.: $replyto\n";
 } elsif ($from) {
 	$replyto = $from;
-	print VF $MAILHEADERS;
+	printf VF $MAILHEADERS, $MSG_ADDR;
 	print VF "To: $from\n";
 	print WF "mr.: $from\n";
 } else {
@@ -92,9 +93,18 @@ close(WF);
 local ($rqid) = &rq_extract($subject);
 if ($rqid) {
   # A valid request id has been found in the Subject:
+
+  if ($subject =~ /^R[eE]: /) {
+    print VF "Subject: $subject\n";
+  } else {
+    print VF "Subject: Re: $subject\n";
+  }
+
   if (!&rq_exists($rqid)) {
     # The request does not exist
     #
+    printf VF $MSG_ACKKO, $rqid;
+    print  VF $MSG_BYE;
   } else {
     # The request exists: read it and check its state
     ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
@@ -104,19 +114,27 @@ if ($rqid) {
       &rq_set_state($rqid, "DNSADMIN", "Open");
     }
 
-    unlink($REQFILE);
+    printf VF $MSG_ACKOK, $rqid;
+    print  VF $MSG_BYE;
     close(VF);
+
     die "Error sending mail: $!\n" if $?;
+
+    unlink($REQFILE);
     exit 0;
   }
 }
 
-open(CHECK, "$CRPATH -s -l$LANG < $REQFILE mail 2>&1 |") || die "Cannot start $CRPATH: $!\n";
+#
+# No valid request id found in the subject, assume it's a new request
+#
+open(CHECK, "$CRPATH -s -l$ENV{'LANG'} < $REQFILE mail 2>&1 |") || die "Cannot start $CRPATH: $!\n";
 while (<CHECK>) {
 	print VF;
 }
 close(CHECK);
-unlink($REQFILE) if $?;
 
 close(VF);
 die "Error sending mail: $!\n" if $?;
+
+unlink($REQFILE);

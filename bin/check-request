@@ -20,6 +20,7 @@ if ($opt_l) {
 # local configuration
 require "/usr/local/dns-manager/conf/config";
 require "$DNSCONF/msg-check";
+require "$DNSCONF/msg-val";
 require "$DNSLIB/auth.pl";
 require "$DNSLIB/errors.pl";
 require "$DNSLIB/misc.pl";
@@ -32,7 +33,7 @@ $REQID=&rq_make_id($ARGV[0]);
 $YMD=`date +%Y%m%d`; chop $YMD;
 $date=`date`; chop $date;
 
-if ($opt_s) { print "Subject: your request [$REQID]\n\n"; };
+if ($opt_s) { printf $MSG_RQSUB, $REQID; };
 
 local ($k)=0;
 local ($onect)=0;
@@ -260,7 +261,7 @@ if (!$ref{"ah"} && !$ref{"am"} && !$ref{"th"} && !$ref{"tm"}) {
 		$makewhois=0
 	}
 }
-	
+
 if ($makewhois) {
 	$onect=0;
 	if (!$ref{"ah"} && !$ref{"am"}) {
@@ -298,9 +299,10 @@ if ($makewhois) {
 	&pr_error($ERR_NOOAD) unless $ref{"oa"};
 
 	if ($replyto ne $ref{"ae"} && $replyto ne $ref{"te"}) {
-	    &pr_error($ERR_UREPL);
+	    &pr_error($ERR_UREPL, $replyto);
 	}
 }
+
 &stoperrs;
 
 if ($makewhois) {
@@ -332,6 +334,11 @@ if ($makerr) {
 
 }
 
+if ($req ne 'D' && !$makewhois && !$makerr) {
+  &pr_error($ERR_EMPTY);
+}
+&stoperrs;
+
 select(STDOUT); $| = 1; print ""; $| = 0;
 
 if (system("$AZPATH -c -a$req -t$rectype $domain 2>&1")) {
@@ -353,15 +360,49 @@ if ($makerr) {
 	&valdata($vr);
 }
 if ($makewhois) {
-	&rq_end_dns($REQID, $vr");
+	&rq_end_dns($REQID, $vr);
 	&whodata($vr);
 }
 &rq_end_create($REQID, $vr);
 
 print $MSG_ENDCK;
-printf $MSG_RQOK1, $REQID;
-printf $MSG_RQOK2, $replyto;
+print $MSG_RQOK1;
 
+if ($opt_s) {
+  # We're called from a mail request, put the acknowledge request directly
+  # there (this will get sent by e-mail)
+  printf $MSG_RQOKM, $MSG_ADDR, $REQID;
+  print  $MSG_BYE;
+} else {
+  # Called from a Web form: don't disclose the request id on the Web
+  # to ensure the e-mail address is not phoney. Send it by e-mail instead.
+
+  printf $MSG_RQOK2, $replyto;
+
+  open(SMU, "| $SENDMAIL -t") || die "Cannot start sendmail: $!\n";
+  print  SMU "From: $MSG_ADDR\n";
+  print  SMU "To: $replyto\n";
+  printf SMU $MSG_RQSUB, $REQID;
+  print  SMU $MSG_RQOK0;
+  print  SMU $MSG_RQOK1;
+  printf SMU $MSG_RQOKM, $MSG_ADDR, $REQID;
+  print  SMU $MSG_BYE;
+  print  SMU $MSG_RQOKR;
+  print  SMU "\n";
+
+  if ($makerr) {
+    print SMU $MSG_RQOKD;
+    &valdata(SMU);
+    print  SMU "\n";
+  }
+  if ($makewhois) {
+    print SMU $MSG_RQOKW;
+    &whodata(SMU);
+    print  SMU "\n";
+  }
+
+  close(SMU);
+}
 exit;
 
 sub checkname {
@@ -384,8 +425,7 @@ sub checkname {
 }
 
 sub whodata_person {
-	local ($hdl) = $_[0];
-	local ($pfx) = $_[1];
+	local ($hdl, $pfx) = ($_[0], $_[1]);
 	print $hdl "person:  ", $ref{$pfx."m"}, "\n";
 	print $hdl "nic-hdl: ", $ref{$pfx."h"}, "\n" if $ref{$pfx."h"};
 	print $hdl "e-mail:  ", $ref{$pfx."e"}, "\n" if $ref{$pfx."e"};
@@ -400,8 +440,7 @@ sub whodata_person {
 }
 
 sub whodata_domain {
-	local ($hdl) = $_[0];
-	local ($pfx) = $_[1];
+	local ($hdl, $pfx) = ($_[0], $_[1]);
 	print $hdl "domain:  ", $domain, "\n";
 	print $hdl "address: ", $ref{"om"}, "\n" if $ref{"om"};
 	print $hdl "address: ", $ref{"oa"}, "\n" if $ref{"oa"};
@@ -441,9 +480,7 @@ sub whodata {
 }
 
 sub tabify {
-	local ($f1) = $_[0];
-	local ($f2) = $_[1];
-	local ($tabto) = $_[2];
+	local ($f1, $f2, $tabto) = ($_[0], $_[1], $_[2]);
 	local ($chto) = 8+(length($f1) & ~7);
 	local ($tab);
 
