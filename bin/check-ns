@@ -253,8 +253,9 @@ sub checklamer {
 #
 # getnsauth(domain, server)
 sub getnsauth {
-    local (@nslist) = &dns_get_type($_[0], "NS", $_[1]);
-    if (!@nslist) {
+    local ($domain, $server) = ($_[0], $_[1]);
+    local ($err, @nslist) = &dns_get_type($domain, "NS", $server);
+    if ($err || !@nslist) {
     	&pr_error($ERR_LAMEN);
     }
     return sort @nslist;
@@ -266,13 +267,17 @@ sub getnsauth {
 #
 # getns(domain)
 sub getns {
-    return sort &dns_get_type($_[0], "NS");
+    local ($domain) = $_[0];
+    local ($err, @nslist) = &dns_get_type($domain, "NS");
+    if ($err || !@nslist) {
+    	&pr_error($ERR_NOTF, $domain, $err);
+    }
+    return sort @nslist;
 }
 
 sub equal {
     # Do case-insensitive string comparisons
-    local ($one)= $_[0];
-    local ($two)= $_[1];
+    local ($one, $two)= ($_[0], $_[1]);
     $stripone=$one;
     if (chop($stripone) eq '.') {
 	$one=$stripone;

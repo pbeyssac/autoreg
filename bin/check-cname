@@ -20,18 +20,16 @@ if ($#ARGV == 0) {
 	die "Usage: check-cname {domain}\n";
 }
 
-$res = &checkcname($domain);
-if ($res) {
-	if ($res ne "not found") {
+local ($err, $res) = &checkcname($domain);
+if ($err) {
+	die sprintf($ERR_NOTF, $domain, $err);
+} else {
+	if ($res) {
 		die sprintf($ERR_ISCAN, $domain, $res);
-	} else {
-		die sprintf($ERR_NOTF, $domain, $res);
 	}
 }
 exit;
 
-# Check that a CNAME does not point to another CNAME.
-#
 # checkcname(domain)
 sub checkcname {
     return &dns_get_type($_[0], "CNAME");

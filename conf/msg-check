@@ -85,7 +85,7 @@ $ERR_ERRNS="Erreur: impossible d'obtenir une réponse du serveur de noms %s.\n";
 
 $ERR_ISCAN="Erreur: %s est un CNAME vers %s\n";
 $ERR_DOMNA="Erreur: %s n'a pas d'enregistrement A.\n";
-$ERR_NOTF="Erreur: %s n'existe pas.\n";
+$ERR_NOTF="Erreur: %s non trouvé (%s).\n";
 
 } else {
 
@@ -168,5 +168,5 @@ $ERR_ERRNS="Error: no answer from nameserver on %s.\n";
 
 $ERR_ISCAN="Error: %s is a CNAME to %s\n";
 $ERR_DOMNA="Error: %s has no A record.\n";
-$ERR_NOTF="Error: %s does not exist.\n";
+$ERR_NOTF="Error: %s not found (%s).\n";
 }

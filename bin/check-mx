@@ -19,14 +19,22 @@ if ($#ARGV == 0) {
 	die "Usage: check-mx {domain}\n";
 }
 
-$res = &checkcname($domain);
-if ($res) {
-	die sprintf($ERR_ISCAN, $domain, $res);
+local ($err, $res) = &checkcname($domain);
+if ($err) {
+	die sprintf($ERR_NOTF, $domain, $err);
+} else {
+	if ($res) {
+		die sprintf($ERR_ISCAN, $domain, $res);
+	}
 }
 
-$res = &checka($domain);
-if (!$res) {
-	die sprintf($ERR_DOMNA, $domain);
+($err, $res) = &checka($domain);
+if ($err) {
+	die sprintf($ERR_NOTF, $domain, $err);
+} else {
+	if (!$res) {
+		die sprintf($ERR_DOMNA, $domain);
+	}
 }
 exit;
 

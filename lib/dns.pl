@@ -6,9 +6,9 @@
 #
 
 sub dns_get_type_aa {
+    local ($domain, $type, $server) = ($_[0], $_[1], $_[2]);
     local ($isauth) = 0;
     local ($inns) = 0;
-    local ($domain, $type, $server) = ($_[0], $_[1], $_[2]);
     local (@answers);
 
     $type =~ tr/a-z/A-Z/;
@@ -25,7 +25,7 @@ sub dns_get_type_aa {
 
     if (!$isauth) {
       close(DIG);
-      return;
+      return "Cannot resolve";
     }
 
     while (<DIG>) {
@@ -39,12 +39,12 @@ sub dns_get_type_aa {
 	}
     }
     close(DIG);
-    return sort @answers;
+    return ("", sort @answers);
 }
 
 sub dns_get_type {
-    local ($isauth) = 1;
     local ($domain, $type, $server) = ($_[0], $_[1], $_[2]);
+    local ($isauth) = 1;
     local (@answers);
 
     $type =~ tr/a-z/A-Z/;
@@ -64,7 +64,7 @@ sub dns_get_type {
 
     if (!$isauth) {
       close(DIG);
-      return;
+      return "Cannot resolve";
     }
 
     while (<DIG>) {
@@ -78,7 +78,7 @@ sub dns_get_type {
 	}
     }
     close(DIG);
-    return sort @answers;
+    return ("", sort @answers);
 }
 
 1;

@@ -185,7 +185,7 @@ sub rq_remove {
   }
   close(F);
 
-  return;
+  return "";
 }
 
 sub rq_list {
