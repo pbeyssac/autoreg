@@ -5,10 +5,10 @@ $Id$
 AR41 currently runs on the following software configuration:
 
 	Perl 4
-	Apache httpd
+	Apache httpd 1.1.1
 	dig
 	sendmail
-	named 4.9.4
+	named 4.9.4 P1
 
 In this distribution you'll find the following directories:
 
