@@ -27,6 +27,7 @@ die "Usage: check-ns {domain}\n" if ($#ARGV > 0);
 
 require "/usr/local/dns-manager/conf/config";
 require "$DNSLIB/dns.pl";
+require "$DNSLIB/misc.pl";
 require "$DNSLIB/errors.pl";
 require "$DNSLIB/misc.pl";
 require "$DNSCONF/msg-check";
@@ -137,7 +138,7 @@ printf $MSG_CNSRR, $domain, $rmaster;
 @nslist = &getnsauth($domain, $refaddr{$rmaster});
 
 if (join('/', sort @nslist) eq join('/', sort @fqdn)) {
-	printf $NSLOK, $domain, $rmaster;
+	printf $MSG_NSLOK, $domain, $rmaster;
 } else {
 	&pr_error($ERR_NSMIS, $rmaster);
 }
@@ -258,7 +259,11 @@ sub getnsauth {
     if ($err || !@nslist) {
     	&pr_error($ERR_LAMEN);
     }
-    return sort @nslist;
+    local (@answer);
+    foreach $i (@nslist) {
+      push(@answer, &fqdncanon($i));
+    }
+    return sort @answer;
 }
 
 # Try to get a NS list for a domain in the usual way (i.e., unless the
@@ -272,7 +277,11 @@ sub getns {
     if ($err || !@nslist) {
     	&pr_error($ERR_NOTF, $domain, $err);
     }
-    return sort @nslist;
+    local (@answer);
+    foreach $i (@nslist) {
+      push(@answer, &fqdncanon($i));
+    }
+    return sort @answer;
 }
 
 sub equal {
