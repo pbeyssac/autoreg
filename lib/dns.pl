@@ -33,7 +33,6 @@ sub dns_get_type_aa {
 
         if (/\s+$type\s+(.*)$/) {  
 	    local ($this) = $1;
-    	    close(DIG);
 	    $this =~ tr/a-z/A-Z/;
 	    push(@answers, $this);
 	}
@@ -72,7 +71,6 @@ sub dns_get_type {
 
         if (/\s+$type\s+(.*)$/) {  
 	    local ($this) = $1;
-    	    close(DIG);
 	    $this =~ tr/a-z/A-Z/;
 	    push(@answers, $this);
 	}
