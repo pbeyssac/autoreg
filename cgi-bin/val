@@ -595,7 +595,7 @@ if ($content{'action'} eq 'editwhois') {
 } elsif ($content{'action'} eq 'delete') {
   local ($err) = &rq_remove($content{'rq'}, $ENV{'REMOTE_USER'});
   if ($err) {
-    print "Unable to delete $content{'rq'}: $!<P>\n";
+    print "Unable to delete $content{'rq'}: $err<P>\n";
   } else {
     print "Deleted $content{'rq'}<P>\n";
   }
