@@ -12,9 +12,13 @@ $SENDMAIL="/usr/sbin/sendmail";
 # local URLs
 $WHOISCGI="/adm/whois.cgi";
 
-# local config location
+# hostname for whois
+$WHOISHOST="whois.eu.org";
+
+# local dns-manager location
 $DNSDIR="/usr/local/dns-manager";
 
+$DNSLIB="$DNSDIR/lib";		# libraries directory
 $DNSBIN="$DNSDIR/bin";		# scripts directory
 $DNSCONF="$DNSDIR/conf";	# configuration files directory
 $ZONEDIR="$DNSDIR/zones";	# zone files directory
@@ -50,39 +54,10 @@ $do_checkns=1;
 $MAILHEADERS="From: hostmaster\@EU.org\nReply-To: dns-manager\@EU.org\nBcc: pb\n";
 #
 # headers for validation/rejection mail to the requester
-$VALHEADERS="From: hostmaster\@EU.org\nBcc: pb\n";
+$VALHEADERS="From: hostmaster\@EU.org\nReply-To: dns-manager\@EU.org\nBcc: pb\n";
 #
 # address to send whois database updates to (not currently used)
 $WHOISDBM="auto-dbm@EU.org";
 #
 # name of database in generated objects ("source:" line)
 $DBNAME="FREENIC";
-
-# The following definitely should be elsewhere.
-
-# read the zone authorization file
-sub zauth_read {
-  local ($zname, $users);
-  open(ZA, "$ZAUTFILE") || return;
-  while (<ZA>) {
-    next if /^#/;
-    if (/^([^:]+):(.*)$/) {
-      $zname = $1;
-      $users = $2;
-      $zname =~ tr/a-z/A-Z/;
-      $ZAUTH{$zname} = $users;
-    }
-  }
-  close ZA;
-  return;
-}
-
-# check that a given user has the rights to access a given zone.
-sub zauth_check {
-  local ($zone, $user) = @_;
-  $zone =~ tr/a-z/A-Z/;
-  foreach (split(/,/, $ZAUTH{$zone})) {
-    return $_ if $_ eq $user;
-  }
-  return "";
-}
