@@ -35,8 +35,6 @@ $thdrs = "";
 
 while (<STDIN>) {
 	$thdrs .= $_;
-
-	last unless $headers;
 	chop;
 
 	if (/^\s/)	{ $line .= $_; next; }
@@ -44,21 +42,27 @@ while (<STDIN>) {
 
 	$lline = $line; $line = $_;
 
-	if ($lline =~ /^([A-Za-z0-9-]+):\s/) {
+	if ($lline =~ /^([A-Za-z0-9-]+):\s+(.*)\s*$/) {
 		$hd = $1;
+		$cn = $2;
 		$hd =~ tr/A-Z/a-z/;
 	} else {
 		$hd = "";
 	}
 
-	if ($hd eq "from")		{ $from=substr($lline, 6); }
-	elsif ($hd eq "reply-to")	{ $replyto=substr($lline, 10); }
-	elsif ($hd eq "subject")	{ $subject=substr($lline, 9); }
+	if ($hd eq "from")		{ $from=$cn; }
+	elsif ($hd eq "reply-to")	{ $replyto=$cn; }
+	elsif ($hd eq "subject")	{ $subject=$cn; }
+	elsif ($hd eq "x-loop")		{ die "Loop detected\n"; }
+
+	last unless $headers;
 }
 
 if ($headers) {
 	die "Premature end of mail.\n";
 }
+
+print VF "X-Loop: ns.eu.org\n";
 
 if ($replyto) {
 	printf VF $MAILHEADERS, $MSG_ADDR;
