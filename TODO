@@ -1,6 +1,14 @@
 $Id$
 
+Just ideas...
+
 	- auto validation by the user
 	- better handling of additional user information sent by mail
 	- be able to finger to get current request status
 	- better handling of "remote" zones.
+	- add A+MX to possible user requests
+	- be able to edit zone records in user requests
+	- be able to add a Cc: in a rejection/info mail
+	- handle user-info through a CGI
+	- handle any record in the zone through a CGI
+	- PGP mails
