@@ -35,12 +35,12 @@ require "$DNSCONF/msg-access";
 
 sub myprint {
     local ($handle, @list) = @_;
-    if (print $handle @list) { $err = 1; }
+    if (!print $handle @list) { $err = 1; }
 }
 
 sub myprintf {
     local ($handle, @list) = @_;
-    if (printf $handle @list) { $err = 1; }
+    if (!printf $handle @list) { $err = 1; }
 }
 
 &zauth_read;    
@@ -248,7 +248,10 @@ if ($do_out) {
 		unlink($outfile);
 		die sprintf($MSG_NUSER, $opt_u);
 	}
-	if ($err) { die "Can't write $zonefile\n" };
+	if ($err) {
+		unlink($outfile);
+		die "Can't write $zonefile\n"
+	}
 	rename($outfile, $zonefile) || die "rename failed:\!\n";
 	#close(OF);
 }
