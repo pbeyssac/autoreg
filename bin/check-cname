@@ -10,6 +10,7 @@
 # by Dave Barr.
 
 require "/usr/local/dns-manager/conf/config";
+require "$DNSLIB/dns.pl";
 require "$DNSCONF/msg-check";
 
 if ($#ARGV == 0) {
@@ -32,32 +33,5 @@ exit;
 #
 # checkcname(domain)
 sub checkcname {
-    open(DIG,"$DIGPATH any $_[0]. 2>/dev/null|");
-    while (<DIG>) {
-        if (/status: NXDOMAIN/) { close(DIG); return "not found"; }
-        if (/status: SERVFAIL/) { last; }
-#        if (/;; flags.*aa.*;/) { $isauth=1; }
-	if (/^;; ANSWERS:$/) { last; }
-    }
-
-    while (<DIG>) {
-	if (/^;; AUTHORITY/) { last }
-
-	chop; split(/\t/);
-
-	if ($_[2] eq "CNAME") {
-    		close(DIG);
-		return $_[3];
-	}
-    }
-    close(DIG);
-    return "";
-}
-
-sub fqdncanon {
-	local ($fqdn)=$_[0];
-	if ($fqdn =~ /^\.(.*)/)	{ $fqdn = $1 }
-	if ($fqdn =~ /\.$/)	{ chop $fqdn }
-	$fqdn =~ tr/a-z/A-Z/;
-	return $fqdn;
+    return &dns_get_type($_[0], "CNAME");
 }
