@@ -49,6 +49,7 @@ sub myprintf {
 
 $LOCK_SH = 1;
 $LOCK_EX = 2;
+$LOCK_NB = 4;
 $LOCK_UN = 8;
 
 require "getopts.pl";
@@ -97,22 +98,29 @@ if ($action eq 'soa' || $action eq 'cat') {
 }
 
 $zonefile="$ZONEDIR/$parent";
+$zonelock="$ZONEDIR/$parent.lock";
 $outfile="$zonefile.new";
 
 $date=`date`; chop $date;
+
+$oldum = umask 0;
+open(LF, ">$zonelock") || die("Cannot open lockfile $zonelock: $!\n");
+umask $oldum;
 
 open(ZF, $zonefile) || die("Cannot open zonefile $zonefile: $!\n");
 
 $do_out = 0;
 if ($action ne "show" && $action ne "cat" && !$opt_c) {
-	flock(ZF, $LOCK_EX);
+	flock(LF, $LOCK_EX) || die "flock lock: $!\n";
+	flock(ZF, $LOCK_EX) || die "flock zone: $!\n";
 	$do_out = 1;
 	open(OF, ">$outfile") || die("Cannot open outfile $outfile: $!\n");
 	flock(OF, $LOCK_EX);
 	&myprint (OF, ";! updated by $opt_u, $date\n")
 		unless $action eq 'soa';
 } else {
-	flock(ZF, $LOCK_SH);
+	flock(LF, $LOCK_EX) || die "flock lock: $!\n";
+	flock(ZF, $LOCK_SH) || die "flock zone: $!\n";
 }
 
 if ($action eq "cat") {
