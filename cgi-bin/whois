@@ -3,9 +3,8 @@
 # $Id$
 #
 
-# local configuration.
-$whois="/usr/bin/whois";
 require "/usr/local/dns-manager/lib/cgi.pl";
+require "/usr/local/dns-manager/lib/whois.pl";
 
 sub doform {
    print <<EOF;
@@ -18,32 +17,14 @@ EOF
 
 }
 
-sub dowhois {
-   print "<HR>\n";
-   $content{'server'} =~ s/["';&]//g;
-   $content{'request'} =~ s/["';&]//g;
-
-   if (!open(WHOIS, "whois -h \"$content{'server'}\" \"$content{'request'}\"|")) {
-      print "<STRONG>Can't execute whois: $!</STRONG>\n";
-      return;
-   }
-   print "<TT>whois -h $content{'server'} $content{'request'}</TT>\n";
-   print "<HR><PRE>\n";
-   while (<WHOIS>) {
-      s/</&lt;/g;
-      s/>/&gt;/g;
-      print;
-   }
-   print "</PRE><HR>\n";
-   close(WHOIS);
-}
-
 print "Content-Type: text/html\n\n<HTML><HEAD>";
 print "</HEAD><BODY>\n";
 
 &content;
 &doform;
 
-if ($content{'request'}) { &dowhois; }
+if ($content{'request'}) {
+  &whois_html($content{'server'}, $content{'request'});
+}
 
 print "</BODY></HTML>\n";
