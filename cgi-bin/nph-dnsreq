@@ -16,7 +16,7 @@ print "Server: $ENV{'SERVER_SOFTWARE'}\n\n";
 
 print "<HTML><HEAD>";
 print "<TITLE>DNS query result</TITLE>\n";
-print "</HEAD><BODY><PRE>\n";
+print "</HEAD><BODY>\n";
 print "<H1>DNS query result</H1>\n";
 print "<PRE>\n";
 
