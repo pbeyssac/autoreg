@@ -295,8 +295,11 @@ if ($makewhois) {
 	    &pr_error($ERR_NOTNM) unless $ref{"tm"};
 	    &pr_error($ERR_NOTEM) unless $ref{"te"};
 	    $onect=1;
-	    foreach $i ('h', 'm', 'o', 'a', 'c', 's', 'p', 'n', 't', 'e') {
+	    foreach $i ('h', 'm') {
 		if ($ref{"t".$i} ne $ref{"a".$i}) { $onect=0; break; }
+	    }
+	    if ($onect) {
+		print $MSG_ONECT;
 	    }
 	}
 
