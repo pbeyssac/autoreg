@@ -69,8 +69,9 @@ sub rq_get_info {
     $dns .= $_;
   }
 
-  while (<F>) { if (/^$/) { $dbrecords.="CHANGED: \n"; next }
+  while (<F>) { if (/^$/) { $dbrecords.="CHANGED: \n\n"; next }
 		elsif (/^mnt-by:/) { $dbrecords .="MNT-BY: \n"; next }
+		elsif (/^;;$/) { last }
                 $dbrecords .= $_; }
 
   close(F);
@@ -137,6 +138,7 @@ sub rq_end_dns {
 
 sub rq_end_create {
   local ($rq, $fh) = ($_[0], $_[1]);
+  print $fh ";;\n";
   close($fh);
 }
 
