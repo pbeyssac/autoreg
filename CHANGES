@@ -1,0 +1,4 @@
+$Id$
+
+Thu Aug 22 22:37:42 MET DST 1996
+bin/access-zone: fixed end of domain detection.
