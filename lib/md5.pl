@@ -27,28 +27,37 @@ sub md5_get {
 }
 
 #
-# Check MD5 of the given string against the MD5 we received.
-# Return 0 if ok, else 1 or error string.
+# Compute MD5 of the given string.
+# Return MD5 if ok, else return nothing.
 #
-sub md5_check {
-  local ($string, $gotmd5) = @_;
+sub md5_compute {
+  local ($string) = @_;
 
   if ($string !~ /^[a-zA-Z0-9\-\/;!:]+$/) {
-	return "Illegal characters in MD5 string $string.";
+	return "";
   }
 
   if (!open(MD5, "(echo \'$string\') | $MD5PATH |")) {
-    return "Cannot compute MD5: $!";
+    return "";
   } else {
     if (!($mymd5 = <MD5>)) {
       close(MD5);
-      return "Cannot compute MD5";
+      return "";
     } else {
       chop $mymd5;
     }
   }
   close(MD5);
-  return $mymd5 ne $gotmd5;
+  return $mymd5;
+}
+
+#
+# Check MD5 of the given string against the MD5 we received.
+# Return 0 if ok, else 1 or error string.
+#
+sub md5_check {
+  local ($string, $gotmd5) = @_;
+  return &md5_compute($string) ne $gotmd5;
 }
 
 1;
