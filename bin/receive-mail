@@ -75,7 +75,7 @@ print WF $thdrs;
 while (<STDIN>) { print WF; }
 close(WF);
 
-open(CHECK, "$CRPATH -l$LANG < $REQFILE $REQID 2>&1 |") || die "Cannot start $CRPATH: $!\n";
+open(CHECK, "$CRPATH -l$LANG < $REQFILE mail 2>&1 |") || die "Cannot start $CRPATH: $!\n";
 while (<CHECK>) {
 	print VF;
 }
