@@ -198,8 +198,7 @@ sub doaccept {
     }
 
     print SMU "From: $user_mail\n";
-    print SMU "To: pb\n";
-    #print SMU "To: $WHOISDBM\n";
+    print SMU "To: $WHOISDBM\n";
     print SMU "Cc: $user_mail\n";
     print SMU "Subject: whois update request for [$rq]\n";
     print SMU "\n";
