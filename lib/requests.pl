@@ -15,6 +15,9 @@ $LOCK_SH = 1;
 $LOCK_EX = 2;
 $LOCK_UN = 8;
 
+#
+# Update whois info in request
+#
 sub rq_set_whois {
   local ($rq, $user, $newwhois) = ($_[0], $_[1], $_[2]);
   local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo);
@@ -40,18 +43,23 @@ sub rq_set_whois {
   flock(NF, $LOCK_EX);
 
   print NF "$replyto\n$line\n";
-
+  # add zone tag, if not yet converted
+  if ($_ = <F>) {
+     if (!/^;;zone/) { print NF ";;zone\n"; print NF $_; }
+     else { print NF $_; }
+  }
   # Copy zone info
   while (<F>) {
+    if (/^;;/) { last; };
     print NF $_;
-    if (/^;;$/) { last; };
   }
   # Skip old whois info
   while (<F>) {
-    if (/^;;$/) { last; };
+    if (/^;;/) { last; };
   }
+  print NF ";;whois\n";
   print NF $newwhois;
-  print NF ";;\n";
+  print NF ";;attr\n";
 
   # Copy additional info
   while (<F>) {
@@ -73,6 +81,109 @@ sub rq_set_whois {
   }
 }
 
+#
+# Update attribute in request
+#
+sub rq_set_attr {
+  local ($rq, $user, $newattr, $newval) = ($_[0], $_[1], $_[2], $_[3]);
+  local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo);
+
+  if (!open (F, "$VALDIR/$rq")) {
+    return "Cannot find request $rq.";
+  }
+  flock(F, $LOCK_EX);
+
+  $replyto = <F>; chop $replyto;
+  $line = <F>; chop $line;
+  ($action, $domain, $lang, $state, $stateinfo) = split(/ /, $line);
+
+  if (!&zauth_check(&parent_of($domain), $user)) {
+    close(F);
+    return "Access to request $rq not authorized.";
+  }
+
+  if (!open(NF, ">$VALDIR/.$rq.new")) {
+    close(F);
+    return "Unable to update request file.";
+  }
+  flock(NF, $LOCK_EX);
+
+  print NF "$replyto\n$line\n";
+  # add zone tag, if not yet converted
+  if ($_ = <F>) {
+     if (!/^;;zone/) { print NF ";;zone\n"; print NF $_; }
+     else { print NF $_; }
+  }
+
+  # Copy zone info
+  while (<F>) {
+    if (/^;;/) { last; };
+    print NF $_;
+  }
+  # force whois tag
+  print NF ";;whois\n";
+  # Copy old whois info
+  while (<F>) {
+    if (/^;;/) { last; };
+    print NF $_;
+  }
+
+  if (/^;;attr/) {
+    # attr section found, update the attribute we're looking for
+    local ($found) = 0;
+    print NF $_;
+    while (<F>) {
+      if (/^;;/) { last }
+      if (!$found && /^$newattr:/) {
+	print NF "$newattr: $newval\n";
+        $found = 1;
+      } else {
+	print NF $_;
+      }
+    }
+    if (!$found) {
+      print NF "$newattr: $newval\n";
+    }
+    print NF $_;
+  } elsif (/^;;$/) {
+    # no attr section, old format:
+    # convert format, insert attr section
+    print NF ";;attr\n";
+    print NF "$newattr: $newval\n";
+    # force additional info tag
+    print NF ";;add\n";
+  } else {
+    # no attr section, new format: insert attr section
+    local ($savetag) = $_;
+    # no attribute yet
+    print NF ";;attr\n";
+    print NF "$newattr: $newval\n";
+    print NF "$savetag";
+  }
+
+  # Copy additional info
+  while (<F>) {
+    print NF $_;
+  }
+
+  # We need to keep the locks until after the rename.
+
+  if (!rename("$VALDIR/.$rq.new", "$VALDIR/$rq")) {
+    local ($err) = $!;
+    unlink("$VALDIR/.$rq.new");
+    close(F);
+    close(NF);
+    return "Unable to update request file: $err";
+  } else {
+    close(F);
+    close(NF);
+    return ("", $replyto, $action, $domain, $lang, $state, $stateinfo);
+  }
+}
+
+#
+# Update state
+#
 sub rq_set_state {
   local ($rq, $user, $newstate, $newstateinfo) = ($_[0], $_[1], $_[2], $_[3]);
   local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo);
@@ -98,6 +209,11 @@ sub rq_set_state {
   flock(NF, $LOCK_EX);
 
   print NF "$replyto\n$action $domain $lang $newstate $newstateinfo\n";
+  # add zone tag, if not yet converted
+  if ($_ = <F>) {
+     if (!/^;;zone/) { print NF ";;zone\n"; print NF $_; }
+     else { print NF $_; }
+  }
   while (<F>) {
     print NF $_;
   }
@@ -117,6 +233,9 @@ sub rq_set_state {
   }
 }
 
+#
+# Return request info
+#
 sub rq_get_info {
   local ($rq, $user) = ($_[0], $_[1]);
   local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo,
@@ -137,14 +256,20 @@ sub rq_get_info {
     return "Access to request $rq not authorized.";
   }
 
+  if ($_ = <F>) {
+    if (!/^;;zone/) { $dns = $_; }
+  }
+
+  # Read zone info
   while (<F>) {
-    last if ($_ eq ";;\n");
+    last if (/^;;/);
     $dns .= $_;
   }
 
+  # Read whois info
   local ($in_obj);
   while (<F>) {
-    if (/^;;$/) {
+    if (/^;;/) {
       if ($in_obj) { $dbrecords .= "CHANGED: \n\n"; }
       $in_obj = 0; last
     } elsif (/^$/) {
@@ -163,6 +288,9 @@ sub rq_get_info {
 	  $dns, $dbrecords);
 }
 
+#
+# Delete request
+#
 sub rq_remove {
   local ($rq, $user) = ($_[0], $_[1]);
   local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo,
@@ -193,6 +321,9 @@ sub rq_remove {
   return "";
 }
 
+#
+# Return list of current requests
+#
 sub rq_list {
   local (@rqlist);
    
@@ -210,6 +341,9 @@ sub rq_list {
   return @rqlist;
 }
 
+#
+# Create a new request
+#
 sub rq_create {
   local ($rq, $replyto, $action, $domain, $lang)
 	= ($_[0], $_[1], $_[2], $_[3], $_[4]);
@@ -218,23 +352,26 @@ sub rq_create {
   open(VR, ">$VALDIR/.$rq.tmp") || die "Cannot open $VALDIR/.$rq.tmp: $!\n";
   flock(VR, $LOCK_EX);
   print VR "$replyto\n";
-  print VR "$req $domain $lang WaitAck\n";
+  print VR "$req $domain $lang WaitAck\n;;zone\n";
   return "VR";
 }
 
 sub rq_end_dns {
   local ($rq, $fh) = ($_[0], $_[1]);
-  print $fh ";;\n";
+  print $fh ";;whois\n";
 }
 
 sub rq_end_create {
   local ($rq, $fh) = ($_[0], $_[1]);
-  print $fh ";;\n";
+  print $fh ";;add\n";
   rename("$VALDIR/.$rq.tmp", "$VALDIR/$rq")
 	|| die "Cannot rename $VALDIR/.$rq.tmp: $!\n";
   close($fh);
 }
 
+#
+# Generate a request id
+#
 sub rq_make_id {
   local ($origin) = $_[0];
   local ($reqid);
@@ -243,13 +380,19 @@ sub rq_make_id {
   return $reqid;
 }
 
+#
+# Check given request exists
+#
 sub rq_exists {
   local ($rq) = $_[0];
-  if (!open(REQFILE, "$VALDIR/$rq")) { return; }
+  if (!open(REQFILE, "$VALDIR/$rq")) { return ""; }
   close(REQFILE);
   return 1;
 }
 
+#
+# Extract a request id from a string
+#
 sub rq_extract {
   local ($rq) = $_[0];
   if ($rq =~
