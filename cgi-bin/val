@@ -175,6 +175,63 @@ sub doaccept {
   $ENV{'LANG'} = $lang;
   do "$DNSCONF/msg-val";
 
+
+  if ($action ne 'MZ') {
+    # send e-mail to whois db manager
+
+    local ($error, $output);
+
+    if ($action eq 'D') {
+      ($error, $output) = &whois_domain($WHOISHOST, $domain);
+
+      if ($error) {
+        print "Unable to run whois: $error<P>\n";
+        return;
+      }
+    } else {
+      $output = $dbrecords;
+    }
+
+    if (!open(SMU, "|$SENDMAIL -t")) {
+      print "Unable to send mail.<P>\n";
+      return;
+    }
+
+    print SMU "From: $user_mail\n";
+    print SMU "To: pb\n";
+    #print SMU "To: $WHOISDBM\n";
+    print SMU "Cc: $user_mail\n";
+    print SMU "Subject: whois update request for [$rq]\n";
+    print SMU "\n";
+
+    local ($line);
+
+    foreach $line (split('\n', $output)) {
+      if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
+	if ($1 eq "CHANGED") {
+	  $line = "changed: $user_mail $date";
+	} elsif ($1 eq "MNT-BY") {
+	  $line = "mnt-by:  $user_mntby";
+	  if ($user_pmnt) { print SMU "password: $user_pmnt\n" }
+	} elsif ($1 eq "mnt-by") {
+	  if ($user_pmnt) { print SMU "password: $user_pmnt\n" }
+	} elsif ($1 eq "domain") {
+	  if ($action eq 'D') { print SMU "delete: $user_mail $date\n" }
+	}
+      }
+      print SMU $line."\n";
+    }
+
+    print SMU "\n";
+    close(SMU);
+
+    if ($? != 0) {
+      print "<STRONG>sendmail for Whois update returned an error !</STRONG>\n";
+      print "<BR>\n";
+      print "Request kept.<P>\n";
+    }
+  }
+
   if (!open(SMU, "|$SENDMAIL -t")) {
     print "Unable to send mail.<P>\n";
     return;
@@ -237,7 +294,7 @@ sub doaccept {
   close(SMU);
   if ($? != 0) {
     print "<STRONG>sendmail returned an error !</STRONG><P>\n";
-    print "Request kept.\n";
+    print "Request kept.<P>\n";
   } else {
     &rq_remove($rq, $ENV{'REMOTE_USER'});
     print "End of processing.<P>\n";
@@ -451,7 +508,6 @@ sub dodisplay {
 
 sub getuser {
   local ($remuser) = $_[0];
-  local ($user, $pass, $mntby);
 
   if (!open(UP, $PASSFILE)) {
 	return;
@@ -459,8 +515,10 @@ sub getuser {
   while (<UP>) {
 	next if /^#/;
 	chop;
-	($user, $pass, $email, $mntby) = split(/:/);
-	if ($user eq $remuser) { close UP; return ($pass, $email, $mntby); }
+	local ($user, $pass, $email, $mntby, $passmnt) = split(/:/);
+	if ($user eq $remuser) {
+	  close UP;
+	  return ($pass, $email, $mntby, $passmnt); }
   }
   close (UP);
   return;
@@ -506,7 +564,8 @@ if ($content{'rq'} && $content{'rq'} !~ /[a-zA-Z0-9-_]/) {
   exit;
 }
 
-($user_pass, $user_mail, $user_mntby) = &getuser($ENV{'REMOTE_USER'});
+($user_pass, $user_mail, $user_mntby, $user_pmnt)
+	= &getuser($ENV{'REMOTE_USER'});
 
 if (!$user_mail) {
   print "<STRONG>Cannot find user info for $ENV{'REMOTE_USER'}</STRONG><P>\n";

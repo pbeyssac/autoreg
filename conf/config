@@ -60,7 +60,7 @@ $MAILHEADERS="From: hostmaster\@EU.org\nReply-To: %s\nBcc: pb\n";
 # headers for validation/rejection mail to the requester
 $VALHEADERS="From: hostmaster\@EU.org\nReply-To: %s\nBcc: pb\n";
 #
-# address to send whois database updates to (not currently used)
+# address to send whois database updates to
 $WHOISDBM="auto-dbm@EU.org";
 #
 # name of database in generated objects ("source:" line)

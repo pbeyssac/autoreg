@@ -39,7 +39,7 @@ sub rq_set_whois {
   }
   flock(NF, $LOCK_EX);
 
-  print NF "$line\n";
+  print NF "$replyto\n$line\n";
 
   # Copy zone info
   while (<F>) {
