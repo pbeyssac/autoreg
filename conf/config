@@ -50,11 +50,15 @@ $do_checkns=1;
 
 # TO AVOID MAIL LOOPS, DON'T PUT dns-manager IN ANY ADDRESS !
 
+# Address for the user to send acknowledges to
+$MAILACK="dns-manager\@eu.org";
+$MAILACKFR="dns-manager-fr\@eu.org";
+
 # headers for replies to mail queries
-$MAILHEADERS="From: hostmaster\@EU.org\nReply-To: dns-manager\@EU.org\nBcc: pb\n";
+$MAILHEADERS="From: hostmaster\@EU.org\nReply-To: %s\nBcc: pb\n";
 #
 # headers for validation/rejection mail to the requester
-$VALHEADERS="From: hostmaster\@EU.org\nReply-To: dns-manager\@EU.org\nBcc: pb\n";
+$VALHEADERS="From: hostmaster\@EU.org\nReply-To: %s\nBcc: pb\n";
 #
 # address to send whois database updates to (not currently used)
 $WHOISDBM="auto-dbm@EU.org";

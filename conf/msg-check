@@ -35,6 +35,7 @@ $ERR_NOTNM="Erreur: pas de nom pour le contact technique.\n";
 $ERR_TWICE="Erreur: champ \"%s\" trouvé plus d'une fois.\n";
 $ERR_UNKFT="Erreur: version de format inconnue.\n";
 $ERR_UREPL="Erreur: \"%s\" n'est pas une des adresses de contact.\n";
+$ERR_EMPTY="Erreur: requête vide.\n";
 
 $MSG_BASCK="---- Vérifications de base\n\n";
 $MSG_CNTCK="\n---- Vérification des contacts\n\n";
@@ -43,8 +44,10 @@ $MSG_GENRC="\n---- Génération des enregistrements pour la zone %s\n\n";
 $MSG_NBERR="%d erreur(s), arrêt.\n";
 $MSG_NOADM="Pas de contact administratif, utilisation du contact technique.\n";
 $MSG_NOTEC="Pas de contact technique, utilisation du contact administratif.\n";
-$MSG_RQOK1="Votre requête est correcte.\nElle a reçu l'identification [%s].\n\n";
-$MSG_RQOK2="Après traitement, notification sera envoyée à :\n\t%s\n\n";
+$MSG_RQOK1="Votre requête est correcte, mais vous allez devoir la confirmer.\n";
+$MSG_RQOK2="Pour cela, vous allez devoir répondre au courrier qui va\nvous être envoyé à l'adresse :\n\t%s\n\n";
+$MSG_RQOKM="Vous devez envoyer un courrier électronique à %s,\navec un Subject: contenant :\n\t[%s]\nNormalement il vous suffit de répondre au présent message.\n";
+$MSG_RQSUB="Subject: votre requete [%s]\n\n";
 $MSG_TMPLT="Veuillez remplir et renvoyer le formulaire suivant :\n\n";
 $MSG_WHOIS="\n---- Génération des informations WHOIS pour le domaine \"%s\"\n\n";
 
@@ -114,6 +117,8 @@ $ERR_NOTAM="Error: no e-mail for tech contact.\n";
 $ERR_NOTNM="Error: no name for tech contact.\n";
 $ERR_TWICE="Error: id \"%s\" found twice.\n";
 $ERR_UNKFT="Error: unknown format version.\n";
+$ERR_UREPL="Error: reply address \"%s\" is not one of the contact addresses.\n";
+$ERR_EMPTY="Error: empty request.\n";
 
 $MSG_BASCK="---- Basic checks\n\n";
 $MSG_CNTCK="\n---- Contacts checks\n\n";
@@ -122,11 +127,12 @@ $MSG_GENRC="\n---- Generating records for %s zonefile\n\n";
 $MSG_NBERR="%d error(s), stopping.\n";
 $MSG_NOADM="No administrative contact given, using technical contact.\n";
 $MSG_NOTEC="No technical contact given, using administrative contact.\n";
-$MSG_RQOK1="Your request is correct.\nIt has been allocated id [%s].\n\n";
-$MSG_RQOK2="E-mail notification will be sent when processed to:\n\t%s\n\n";
+$MSG_RQOK1="Your request is correct, but you will be requested an e-mail acknowledge.\n\n";
+$MSG_RQOK2="You will have to reply to the message sent to:\n\t%s\n\n";
+$MSG_RQOKM="You just need to send an e-mail to %s, with a Subject: containing:\n\t[%s]\nSimply replying to this current message should be enough.\n";
+$MSG_RQSUB="Subject: your request [%s]\n\n";
 $MSG_TMPLT="Please fill-in and resend the following template:\n\n";
 $MSG_WHOIS="\n---- Generating WHOIS info for domain \"%s\"\n\n";
-$ERR_UREPL="Error: reply address \"%s\" is not one of the contact addresses.\n";
 
 # for check-ns
 
