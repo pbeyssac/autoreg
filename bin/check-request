@@ -296,7 +296,7 @@ if ($makewhois) {
 	}
 
 	&pr_error($ERR_NOORG) unless $ref{"om"};
-	&pr_error($ERR_NOOAD) unless $ref{"oa"};
+	#&pr_error($ERR_NOOAD) unless $ref{"oa"};
 
 	if ($replyto ne $ref{"ae"} && $replyto ne $ref{"te"}) {
 	    &pr_error($ERR_UREPL, $replyto);
