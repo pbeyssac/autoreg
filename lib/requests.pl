@@ -396,7 +396,7 @@ sub rq_exists {
 sub rq_extract {
   local ($rq) = $_[0];
   if ($rq =~
-   /\[(\d\d\d\d\d\d\d\d\d\d\d\d\d\d-[a-zA-Z0-9]+-\d+)\]/) {
+   /(\d\d\d\d\d\d\d\d\d\d\d\d\d\d-[a-zA-Z0-9]+-\d+)/) {
     $rq = $1;
     $rq =~ tr/A-Z/a-z/;
     return $rq;
