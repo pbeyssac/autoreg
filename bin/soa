@@ -7,6 +7,7 @@ AZ=/usr/local/dns-manager/bin/access-zone
 ZONES=/usr/local/dns-manager/zones
 # The directory where "master" zone files are located
 DEST=/etc/namedb
+DEST=/tmp
 # Command to reload the nameserver. Used only if option -r is provided.
 NDC=/usr/sbin/ndc
 
@@ -39,14 +40,23 @@ do
 	if $AZ -u$USER -asoa $i; then
 	    if [ -r $ZONES/$i -a -r $DEST/$i ]; then
 		echo $i updated
-		(
-		echo "; AUTOMATICALLY GENERATED -- DON'T EDIT THIS FILE"
-		echo "; edit $ZONES/$i instead"
-		echo ";"
-		cat $i) > $DEST/$i.new
-
-		# Check the copy
-		if tail +4 $DEST/$i.new | cmp -s - $ZONES/$i; then
+		if (
+		  echo "; AUTOMATICALLY GENERATED -- DON'T EDIT THIS FILE"
+		  echo "; edit $ZONES/$i instead"
+		  echo ";"
+		  # access-zone is used to get a read lock on
+		  # the file during the copy.
+		  # If it returns false, the copy to stdout failed.
+		  $AZ -u$USER -acat $i) > $DEST/$i.new
+		&&
+		#
+		# Copy apparently ok, check it.
+		#
+		# It can differ from the original if the latter
+		# has been modified just after the copy,
+		# or if the disk is full.
+		#
+		(tail +4 $DEST/$i.new | cmp -s - $ZONES/$i); then
 		    # Copy ok, show diffs
 		    diff -U2 $DEST/$i $DEST/$i.new
 		    # replace the older file

@@ -9,10 +9,12 @@ require "$DNSCONF/msg-access";
 
 #
 # Usage:
-#  access-zone [-c] [-t type] -u user -a{soa|new|modify|delete|show} domainname
+#  access-zone [-c] [-t type] -u user
+#		-a{cat|soa|new|modify|delete|show} domainname
 #
 # -c -> check only, don't update any file (used for request check)
 # -a -> action.
+#		cat:	just print out the zone file
 #		new:	create the entry for domainname in the parent zone,
 #			if not already there
 #		modify: modify the entry for domainname in the parent zone,
@@ -45,6 +47,7 @@ sub myprintf {
 
 &zauth_read;    
 
+$LOCK_SH = 1;
 $LOCK_EX = 2;
 $LOCK_UN = 8;
 
@@ -73,16 +76,17 @@ if ($opt_t) {
 
 if ($action ne "lock" && $action ne 'unlock'
 	 && $action ne 'show'
+	 && $action ne 'cat'
 	 && $action ne 'soa'
 	 && $action ne 'new' && $action ne 'delete' && $action ne 'modify') {
-  die("Usage: [-c] [-t type] -u user -a{soa|new|modify|delete|show} domainname\n");
+  die("Usage: [-c] [-t type] -u user -a{cat|soa|new|modify|delete|show} domainname\n");
 }
 
 if ($#ARGV != 0) {
-  die("Usage: [-c] [-t type] -u user -a{soa|new|modify|delete|show} domainname\n");
+  die("Usage: [-c] [-t type] -u user -a{cat|soa|new|modify|delete|show} domainname\n");
 }
 
-if ($action eq 'soa') {
+if ($action eq 'soa' || $action eq 'cat') {
   $parent = $ARGV[0];
   $parent =~ tr/a-z/A-Z/;
 } else {
@@ -98,15 +102,30 @@ $outfile="$zonefile.new";
 $date=`date`; chop $date;
 
 open(ZF, $zonefile) || die("Cannot open zonefile $zonefile: $!\n");
-flock(ZF, $LOCK_EX);
 
 $do_out = 0;
-if ($action ne "show" && !$opt_c) {
+if ($action ne "show" && $action ne "cat" && !$opt_c) {
+	flock(ZF, $LOCK_EX);
 	$do_out = 1;
 	open(OF, ">$outfile") || die("Cannot open outfile $outfile: $!\n");
 	flock(OF, $LOCK_EX);
 	&myprint (OF, ";! updated by $opt_u, $date\n")
 		unless $action eq 'soa';
+} else {
+	flock(ZF, $LOCK_SH);
+}
+
+if ($action eq "cat") {
+    while (<ZF>) {
+	if (!print $_) {
+	    die "print: $!\n"
+	}
+    }
+    if (!close(STDOUT)) {
+	# Probably disk full
+	die "close: $!\n"
+    }
+    exit 0
 }
 
 $was_updated = 0;
@@ -236,8 +255,6 @@ if ($action eq 'new') {
 	exit 1;
 }
 
-# don't close OF now : we want to keep the lock during the rename !
-
 if ($opt_t && !$typeok && ($action eq 'new' || $action eq 'modify')) {
 	unlink($outfile);
 	die sprintf($MSG_NOTYP, $opt_t);
@@ -252,8 +269,15 @@ if ($do_out) {
 		unlink($outfile);
 		die "Can't write $zonefile\n"
 	}
-	rename($outfile, $zonefile) || die "rename failed:\!\n";
-	#close(OF);
+	if (!close(OF)) {
+	    # Probably no space left
+	    unlink($outfile);
+	    die "$outfile: $!\n";
+	}
+	# We don't have a lock on outfile anymore since it's closed.
+	# It doesn't matter since we don't need to read or write it by now.
+	# It's ok since we still have the lock on the old $zonefile.
+	rename($outfile, $zonefile) || die "rename failed: $!\n";
 }
 exit 0;
 
