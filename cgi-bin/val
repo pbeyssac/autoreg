@@ -66,7 +66,7 @@ sub dodir {
   print "\n";
 
   foreach $rq (@dirlist) {
-    local ($error, $replyto, $action, $domain, $lang, $state)
+    local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo)
 	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
 
     if (!$error && $state ne 'WaitAck') {
@@ -85,6 +85,8 @@ sub dodir {
       }
       if ($state eq 'Open') {
         print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain<BR>\n";
+      } elsif ($state eq 'Answered' && $stateinfo) {
+        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain ($state by $stateinfo)<BR>\n";
       } else {
         print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain ($state)<BR>\n";
       }
@@ -96,10 +98,10 @@ sub dodir {
 }
 
 sub dostate {
-  local ($rq, $newstate) = ($_[0], $_[1]);
+  local ($rq, $newstate, $newstateinfo) = ($_[0], $_[1], $_[2]);
 
   local ($error, $replyto, $action, $domain, $lang, $state)
-	= &rq_set_state($rq, $ENV{'REMOTE_USER'}, $newstate);
+	= &rq_set_state($rq, $ENV{'REMOTE_USER'}, $newstate, $newstateinfo);
 
   if ($error) {
     print "Error: $error.<P>\n";
@@ -111,7 +113,8 @@ sub dostate {
 sub doinfo {
   local ($rq) = $_[0];
 
-  local ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
+  local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo,
+	 $dns, $dbrecords)
 	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
   if ($error) { print "Error: $error.<P>\n"; return; }
 
@@ -139,7 +142,8 @@ sub doinfo {
 sub doreject {
   local ($rq) = $_[0];
 
-  local ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
+  local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo,
+	 $dns, $dbrecords)
 	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
   if ($error) { print "Error: $error.<P>\n"; return; }
 
@@ -172,7 +176,8 @@ sub doaccept {
 
   local ($line);
 
-  local ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
+  local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo,
+	 $dns, $dbrecords)
 	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
   if ($error) { print "Error: $error.<P>\n"; return; }
 
@@ -432,7 +437,8 @@ sub doeditwhois {
 sub dodisplay {
   local ($rq) = $_[0];
 
-  local ($error, $replyto, $action, $domain, $lang, $state, $dns, $dbrecords)
+  local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo,
+	 $dns, $dbrecords)
 	= &rq_get_info($rq, $ENV{'REMOTE_USER'});
   if ($error) { print "Error: $error.<P>\n"; return; }
 
@@ -681,12 +687,12 @@ if ($content{'action'} eq 'editwhois') {
   &doreject($content{'rq'});
 } elsif ($content{'action'} eq 'info') {
   &doinfo($content{'rq'});
-  &dostate($content{'rq'}, "Answered");
+  &dostate($content{'rq'}, "Answered", $ENV{'REMOTE_USER'});
 } elsif ($content{'action'} eq 'setopen') {
-  &dostate($content{'rq'}, "Open");
+  &dostate($content{'rq'}, "Open", $ENV{'REMOTE_USER'});
   &dodisplay($content{'rq'});
 } elsif ($content{'action'} eq 'setanswered') {
-  &dostate($content{'rq'}, "Answered");
+  &dostate($content{'rq'}, "Answered", $ENV{'REMOTE_USER'});
 } elsif ($content{'action'} eq 'accept') {
 #  if (&checkmd5("$user_pass:".&getmd5($content{'rq'}).
 #		":$ENV{'REMOTE_USER'}:accept:$content{'rq'}",

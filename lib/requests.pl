@@ -17,7 +17,7 @@ $LOCK_UN = 8;
 
 sub rq_set_whois {
   local ($rq, $user, $newwhois) = ($_[0], $_[1], $_[2]);
-  local ($replyto, $action, $domain, $lang, $line, $state);
+  local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo);
 
   if (!open (F, "$VALDIR/$rq")) {
     return "Cannot find request $rq.";
@@ -26,7 +26,7 @@ sub rq_set_whois {
 
   $replyto = <F>; chop $replyto;
   $line = <F>; chop $line;
-  ($action, $domain, $lang, $state) = split(/ /, $line);
+  ($action, $domain, $lang, $state, $stateinfo) = split(/ /, $line);
 
   if (!&zauth_check(&parent_of($domain), $user)) {
     close(F);
@@ -69,13 +69,13 @@ sub rq_set_whois {
   } else {
     close(F);
     close(NF);
-    return ("", $replyto, $action, $domain, $lang, $state);
+    return ("", $replyto, $action, $domain, $lang, $state, $stateinfo);
   }
 }
 
 sub rq_set_state {
-  local ($rq, $user, $newstate) = ($_[0], $_[1], $_[2]);
-  local ($replyto, $action, $domain, $lang, $line, $state);
+  local ($rq, $user, $newstate, $newstateinfo) = ($_[0], $_[1], $_[2], $_[3]);
+  local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo);
 
   if (!open (F, "$VALDIR/$rq")) {
     return "Cannot find request $rq.";
@@ -84,7 +84,7 @@ sub rq_set_state {
 
   $replyto = <F>; chop $replyto;
   $line = <F>; chop $line;
-  ($action, $domain, $lang, $state) = split(/ /, $line);
+  ($action, $domain, $lang, $state, $stateinfo) = split(/ /, $line);
 
   if (!&zauth_check(&parent_of($domain), $user)) {
     close(F);
@@ -97,7 +97,7 @@ sub rq_set_state {
   }
   flock(NF, $LOCK_EX);
 
-  print NF "$replyto\n$action $domain $lang $newstate $user\n";
+  print NF "$replyto\n$action $domain $lang $newstate $newstateinfo\n";
   while (<F>) {
     print NF $_;
   }
@@ -113,13 +113,14 @@ sub rq_set_state {
   } else {
     close(F);
     close(NF);
-    return ("", $replyto, $action, $domain, $lang, $state);
+    return ("", $replyto, $action, $domain, $lang, $state, $stateinfo);
   }
 }
 
 sub rq_get_info {
   local ($rq, $user) = ($_[0], $_[1]);
-  local ($replyto, $action, $domain, $lang, $line, $state, $dns, $dbrecords);
+  local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo,
+	 $dns, $dbrecords);
 
   if (!open (F, "$VALDIR/$rq")) {
     return "Cannot find request $rq.";
@@ -129,7 +130,7 @@ sub rq_get_info {
   $replyto = <F>; chop $replyto;
   $line = <F>; chop $line;
 
-  ($action, $domain, $lang, $state) = split(/ /, $line);
+  ($action, $domain, $lang, $state, $stateinfo) = split(/ /, $line);
 
   if (!&zauth_check(&parent_of($domain), $user)) {
     close(F);
@@ -158,12 +159,14 @@ sub rq_get_info {
 
   close(F);
 
-  return ("", $replyto, $action, $domain, $lang, $state, $dns, $dbrecords);
+  return ("", $replyto, $action, $domain, $lang, $state, $stateinfo,
+	  $dns, $dbrecords);
 }
 
 sub rq_remove {
   local ($rq, $user) = ($_[0], $_[1]);
-  local ($replyto, $action, $domain, $lang, $line, $state, $dns, $dbrecords);
+  local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo,
+	 $dns, $dbrecords);
 
   if (!open (F, "$VALDIR/$rq")) {
     return "Cannot find request $rq.";
@@ -171,7 +174,7 @@ sub rq_remove {
   flock(F, $LOCK_EX);
   $replyto = <F>; chop $replyto;
   $line = <F>; chop $line;
-  ($action, $domain, $lang, $state) = split(/ /, $line);
+  ($action, $domain, $lang, $state, $stateinfo) = split(/ /, $line);
 
   if (!&zauth_check(&parent_of($domain), $user)) {
     close(F);
