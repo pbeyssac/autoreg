@@ -18,3 +18,5 @@ Just ideas...
 	- handle user-info and/or zone-auth through a CGI
 	- handle any record in the zone through a CGI
 	- PGP mails
+	- autoconfig zone (get NS list from indicated nameserver)
+	- allow numeric domains
