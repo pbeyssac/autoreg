@@ -25,6 +25,11 @@ $Id$
 	spool		temp spool for mail forms
 			should have write permission for the mail scripts
 
+  NOTE: CGI scripts run under the httpd process userid, generally "nobody".
+	Mail scripts are run by sendmail generally as "daemon".
+	There should be a clean way to handle this, for example
+	a "autoreg" user. Someday I'll think about it.
+
 * Create the following file
 
 	log		Form POST log
@@ -118,6 +123,9 @@ dns-manager-fr:	"| /usr/local/dns-manager/bin/receive-mail -lfr"
 
 	- run "access-zone -u USERNAME -asoa ZONENAME" to update the
 	  serial number in the SOA if it needs to.
+
+	  USERNAME is used to check permissions and is kept in
+	  logs.
 
 	  For example:
 

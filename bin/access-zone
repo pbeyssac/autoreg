@@ -63,7 +63,9 @@ $date=`date`; chop $date;
 open(ZF, $zonefile) || die("Cannot open zonefile $zonefile: $!\n");
 flock(ZF, $LOCK_EX);
 
-if ($action ne "show") {
+$do_out = 0;
+if ($action ne "show" && !$opt_c) {
+	$do_out = 1;
 	open(OF, ">$outfile") || die("Cannot open outfile $outfile: $!\n");
 	flock(OF, $LOCK_EX);
 	print OF ";! updated by $opt_u, $date\n" unless $action eq 'soa';
@@ -94,16 +96,15 @@ while (<ZF>) {
 	if ($action eq 'soa'
 	    && $was_updated
 	    && ?^\s+([0-9]+)([0-9][0-9])\s*;\s*[Ss]erial?) {
-		$oldsoa = $1;
-		$oldser = $2;
-		if ($oldsoa ne $newsoa) {
-		  print OF "\t\t".$newsoa."01\t; Serial number\n";
-		  next;
-		} else {
-		  $oldser++;
-		  printf OF "\t\t$newsoa%02d\t; Serial number\n",$oldser;
-		  next;
-		}
+	    $oldsoa = $1;
+	    $oldser = $2;
+	    if ($oldsoa ne $newsoa) {
+		print OF "\t\t".$newsoa."01\t; Serial number\n" if $do_out;
+	    } else {
+		$oldser++;
+		printf OF "\t\t$newsoa%02d\t; Serial number\n",$oldser if $do_out;
+	    }
+	    next;
 	}
 
 	if ($skip) {
@@ -129,7 +130,7 @@ while (<ZF>) {
 			unlink($outfile);
 			die sprintf($MSG_ALLOC, $domain);
 		    } elsif ($action eq "lock") {
-			print OF "; lock $subdom\n";
+			print OF "; lock $subdom\n" if $do_out;
 			next;
 		    }
 		}
@@ -140,7 +141,7 @@ while (<ZF>) {
 	if (?^; lock $subdom$?) {
 		$found = 1;
 		if ($action eq "unlock") {
-			print OF "; domain $subdom\n";
+			print OF "; domain $subdom\n" if $do_out;
 			next;
 		}
 		unlink($outfile) unless $action eq "show";
@@ -162,7 +163,7 @@ while (<ZF>) {
 		elsif ($action eq "new") { break }
 		elsif ($action eq "show") { print; print $svline; next }
 		elsif ($action eq "lock") {
-			print OF "; lock $subdom\n";
+			print OF "; lock $subdom\n" if $do_out;
 			next;
 		}
 	} elsif ($indomain && !$inheaders && /^;/) {
@@ -173,7 +174,7 @@ while (<ZF>) {
 	} elsif ($indomain && $action eq "show") { print }
 
 	next if $indomain;
-	print OF unless $action eq "show";
+	print OF if $do_out;
 }
 close(ZF);
 
@@ -195,15 +196,10 @@ if ($opt_t && !$typeok && ($action eq 'new' || $action eq 'modify')) {
 	die sprintf($MSG_NOTYP, $opt_t);
 }
 
-if ($opt_c) {
-	unlink($outfile) unless $action eq "show";
-	#close(OF) unless $action eq "show";
-} elsif ($action ne "show") {
-	if (!$opt_c) {
-		if (!&zauth_check($parent, $opt_u)) {
-			unlink($outfile) unless $action eq "show";
-			die sprintf($MSG_NUSER, $opt_u);
-		}
+if ($do_out) {
+	if (!&zauth_check($parent, $opt_u)) {
+		unlink($outfile);
+		die sprintf($MSG_NUSER, $opt_u);
 	}
 	rename($outfile, $zonefile) || die "rename failed:\!\n";
 	#close(OF);
@@ -211,17 +207,21 @@ if ($opt_c) {
 exit;
 
 sub modifyzone {
+    if ($do_out) {
 	print OF "; domain $subdom\n";
 	print OF $createdline;
 	print OF "; updated: by $opt_u, $date\n";
 	while (<STDIN>) {
 		print OF
 	}
+    }
 }
 
 sub createzone {
+    if ($do_out) {
 	print OF "; domain $subdom\n; created: by $opt_u, $date\n";
 	while (<STDIN>) {
 		print OF
 	}
+    }
 }

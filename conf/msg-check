@@ -73,7 +73,7 @@ $ERR_CNAME="\nErreur: CNAME (vers %s).\n";
 $ERR_NOARR="\nErreur: enregistrement A introuvable ou non concordant.\n";
 $ERR_INVIP="\nErreur: %s: adresse IP invalide.\n";
 $ERR_NSERR="Erreur: %s NS %s: erreur de serveur de nom (lame?):\n";
-$ERR_NOAUT="Erreur: %s not authoritative for domain %s.\n";
+$ERR_NOAUT="Erreur: %s n'a pas autorité pour le domaine %s.\n";
 $ERR_LAMEN="Erreur: mauvaise délégation (n'a pas autorité pour le domaine).\n";
 $ERR_ERRNS="Erreur: impossible d'obtenir une réponse du serveur de noms %s.\n";
 
