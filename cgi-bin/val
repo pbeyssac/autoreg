@@ -66,7 +66,7 @@ sub dodir {
 
   closedir(D);
 
-  local ($fname, $replyto, $domain, $line, $lang);
+  local ($fname, $replyto, $domain, $line, $lang, $user);
 
   print "\n";
 
@@ -81,7 +81,7 @@ sub dodir {
     } else {
       $replyto = <F>; chop $replyto;
       $line = <F>; chop $line;
-      ($action, $domain, $lang, $state) = split(/ /, $line);
+      ($action, $domain, $lang, $state, $user) = split(/ /, $line);
 
       next if (!&zauth_check(&parent_of($domain), $ENV{'REMOTE_USER'}));
 
@@ -101,7 +101,7 @@ sub dodir {
       if ($state eq 'Open') {
         print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$fname\"><TT>$fname</TT></A> $action $lang $domain<BR>\n";
       } else {
-        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$fname\"><TT>$fname</TT></A> $action $lang $domain ($state)<BR>\n";
+        print "<A HREF=\"$ENV{'SCRIPT_NAME'}?action=display\&rq=$fname\"><TT>$fname</TT></A> $action $lang $domain ($state by $user)<BR>\n";
       }
       close(F);
     }
@@ -454,7 +454,7 @@ if ($content{'action'} eq 'display') {
 } elsif ($content{'action'} eq 'reject') {
   &doreject($content{'rq'});
 } elsif ($content{'action'} eq 'setanswered') {
-  &dostate($content{'rq'}, "Answered");
+  &dostate($content{'rq'}, "Answered $ENV{'REMOTE_USER'}");
 } elsif ($content{'action'} eq 'accept') {
 #  if (&checkmd5("$user_pass:".&getmd5($content{'rq'}).
 #		":$ENV{'REMOTE_USER'}:accept:$content{'rq'}",
