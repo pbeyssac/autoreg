@@ -593,7 +593,8 @@ if ($content{'action'} eq 'editwhois') {
 #    print "The MD5 you have provided is incorrect, or the file has been deleted.<P>\n";
 #  }
 } elsif ($content{'action'} eq 'delete') {
-  if (!&rq_remove($content{'rq'}, $ENV{'REMOTE_USER'})) {
+  local ($err) = &rq_remove($content{'rq'}, $ENV{'REMOTE_USER'});
+  if ($err) {
     print "Unable to delete $content{'rq'}: $!<P>\n";
   } else {
     print "Deleted $content{'rq'}<P>\n";
