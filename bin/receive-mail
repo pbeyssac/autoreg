@@ -112,7 +112,7 @@ if ($rqid) {
 	= &rq_get_info($rqid, "DNSADMIN");
     if ($state eq "WaitAck") {
       # Change its state to "Open"
-      &rq_set_state($rqid, "DNSADMIN", "Open");
+      &rq_set_state($rqid, "DNSADMIN", "Open", "");
     }
     # notify the requester
 
