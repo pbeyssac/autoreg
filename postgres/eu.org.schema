@@ -1,0 +1,132 @@
+-- $Id$
+
+CREATE TABLE rrtypes (
+	id SERIAL PRIMARY KEY,
+	label VARCHAR(10)
+);
+CREATE TABLE admins (
+	id SERIAL PRIMARY KEY,
+	login VARCHAR(16)
+);
+CREATE TABLE zones (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(255),
+	minlen INTEGER DEFAULT 4,
+	maxlen INTEGER DEFAULT 63,
+	ttl INTEGER DEFAULT 259200,
+	soaserial INTEGER NOT NULL,
+	soarefresh INTEGER DEFAULT 3600,
+	soaretry INTEGER DEFAULT 1800,
+	soaexpires INTEGER DEFAULT 604800,
+	soaminimum INTEGER DEFAULT 259200,
+	soaprimary VARCHAR(255) NOT NULL,
+	soaemail VARCHAR(255) NOT NULL
+);
+CREATE TABLE allowed_rr (
+	zone_id INTEGER REFERENCES zones(id),
+	rrtype_id INTEGER REFERENCES rrtypes(id),
+	PRIMARY KEY (zone_id, rrtype_id)
+);
+CREATE TABLE domains (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(64),
+	registry_hold BOOLEAN DEFAULT FALSE,
+	registry_lock BOOLEAN DEFAULT FALSE,
+	internal BOOLEAN DEFAULT FALSE,
+	zone_id INTEGER REFERENCES zones(id),
+	registrar_id INTEGER,
+	created_by INTEGER REFERENCES admins(id),
+	created_on TIMESTAMP,
+	updated_by INTEGER REFERENCES admins(id),
+	updated_on TIMESTAMP
+);
+CREATE TABLE admin_zone (
+	admin_id INTEGER REFERENCES admins(id),
+	zone_id INTEGER REFERENCES zones(id),
+	PRIMARY KEY (admin_id, zone_id)
+);
+CREATE TABLE rrs (
+	id SERIAL PRIMARY KEY,
+	label VARCHAR(64),
+	rrtype_id INTEGER REFERENCES rrtypes(id),
+	value VARCHAR(255),
+	created_on TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE domain_rr (
+	domain_id INTEGER REFERENCES domains(id),
+	rr_id INTEGER REFERENCES rrs(id),
+	PRIMARY KEY (domain_id, rr_id)
+);
+CREATE TABLE zone_rr (
+	zone_id INTEGER REFERENCES zones(id),
+	rr_id INTEGER REFERENCES rrs(id),
+	ttl INTEGER,
+	PRIMARY KEY (zone_id, rr_id)
+);
+
+-- keeping history
+
+CREATE TABLE domains_hist (
+	id INTEGER PRIMARY KEY,
+	name VARCHAR(64),
+	zone_id INTEGER REFERENCES zones(id),
+	registrar_id INTEGER,
+	created_by INTEGER REFERENCES admins(id),
+	created_on TIMESTAMP,
+	deleted_by INTEGER REFERENCES admins(id),
+	deleted_on TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE rrs_hist (
+	domain_id INTEGER,
+	label VARCHAR(64),
+	rrtype_id INTEGER REFERENCES rrtypes(id),
+	value VARCHAR(255),
+	created_on TIMESTAMP NOT NULL,
+	deleted_on TIMESTAMP DEFAULT NOW()
+);
+
+INSERT INTO rrtypes values (1, 'NS');
+INSERT INTO rrtypes values (2, 'MX');
+INSERT INTO rrtypes values (3, 'A');
+INSERT INTO rrtypes values (4, 'CNAME');
+INSERT INTO rrtypes values (5, 'AAAA');
+INSERT INTO rrtypes values (6, 'TXT');
+INSERT INTO rrtypes values (7, 'SRV');
+INSERT INTO rrtypes values (8, 'HINFO');
+INSERT INTO rrtypes values (1000, 'WMX');
+
+INSERT INTO admins (id,login) VALUES (0,'*unknown*');
+INSERT INTO admins (id,login) VALUES (1,'pb');
+INSERT INTO admins (id,login) VALUES (2,'gb');
+INSERT INTO admins (id,login) VALUES (3,'fcb');
+INSERT INTO admins (id,login) VALUES (4,'roberto');
+INSERT INTO admins (id,login) VALUES (5,'thomas');
+INSERT INTO admins (id,login) VALUES (6,'gdaci');
+INSERT INTO admins (id,login) VALUES (7,'schaefer');
+INSERT INTO admins (id,login) VALUES (8,'regnauld');
+INSERT INTO admins (id,login) VALUES (9,'aj');
+INSERT INTO admins (id,login) VALUES (10,'ck');
+INSERT INTO admins (id,login) VALUES (11,'zop12');
+INSERT INTO admins (id,login) VALUES (12,'patryk');
+INSERT INTO admins (id,login) VALUES (13,'david');
+INSERT INTO admins (id,login) VALUES (14,'rui');
+INSERT INTO admins (id,login) VALUES (15,'rmc');
+INSERT INTO admins (id,login) VALUES (16,'babafou');
+INSERT INTO admins (id,login) VALUES (17,'sam');
+INSERT INTO admins (id,login) VALUES (18,'vladek');
+INSERT INTO admins (id,login) VALUES (19,'jaclavi');
+INSERT INTO admins (id,login) VALUES (20,'pain');
+INSERT INTO admins (id,login) VALUES (21,'ino');
+INSERT INTO admins (id,login) VALUES (22,'jyb');
+INSERT INTO admins (id,login) VALUES (23,'phil');
+INSERT INTO admins (id,login) VALUES (24,'jld');
+INSERT INTO admins (id,login) VALUES (25,'nh');
+INSERT INTO admins (id,login) VALUES (26,'ricou');
+INSERT INTO admins (id,login) VALUES (27,'hrusca');
+INSERT INTO admins (id,login) VALUES (28,'benjamin');
+INSERT INTO admins (id,login) VALUES (29,'olive');
+INSERT INTO admins (id,login) VALUES (30,'erwan');
+INSERT INTO admins (id,login) VALUES (31,'blaudez');
+INSERT INTO admins (id,login) VALUES (32,'ob');
+INSERT INTO admins (id,login) VALUES (33,'lc');
+INSERT INTO admins (id,login) VALUES (34,'jertreg');
