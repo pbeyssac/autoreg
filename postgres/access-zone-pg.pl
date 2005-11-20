@@ -114,6 +114,43 @@ if ($action eq 'show') {
     }
     $st->finish;
     $dbh->commit;
+} elsif ($action eq 'new') {
+    $st = $dbh->prepare("SELECT domains.id,zones.id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id");
+    $st->execute($subdom,$parent);
+    if ($st->rows != 0) {
+	$st->finish;
+	$dbh->disconnect;
+	die sprintf($MSG_ALLOC, $domain);
+    }
+    $st->finish;
+    $st = $dbh->prepare("SELECT zones.id FROM zones WHERE zones.name=?");
+    $st->execute($parent);
+    if ($st->rows != 1) {
+	$st->finish;
+	$dbh->disconnect;
+	die "Zone $parent unknown";
+    }
+    @row = $st->fetchrow_array;
+    my ($zone_id) = @row;
+    $st->finish;
+
+    $st = $dbh->prepare("INSERT INTO domains (name,zone_id,created_by,created_on,updated_by,updated_on,internal) VALUES (?,?,(SELECT id FROM admins WHERE login=?),NOW(),(SELECT id FROM admins WHERE login=?),NOW(),FALSE)");
+    $st->execute($subdom,$zone_id,$opt_u,$opt_u);
+    $st->finish;
+
+    $st = $dbh->prepare("SELECT domains.id,zones.id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id");
+    $st->execute($subdom,$parent);
+    if ($st->rows != 1) {
+	die "Internal error when creating domain $subdom.$parent\n";
+    }
+    @row = $st->fetchrow_array;
+    my ($domain_id) = @row;
+    &insertrr($dbh,$subdom,$zone,$domain_id);
+
+    $st = $dbh->prepare("UPDATE zones SET updateserial=TRUE WHERE id=?");
+    $st->execute($zone_id);
+    $st->finish;
+    $dbh->commit;
 } elsif ($action eq 'modify') {
     $st = $dbh->prepare("SELECT domains.id,zones.id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id FOR UPDATE");
     $st->execute($subdom,$parent);
