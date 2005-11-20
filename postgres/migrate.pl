@@ -103,18 +103,21 @@ my $origin = $zone.'.';
 
 my $ins_rrs = $dbh->prepare("INSERT INTO rrs (domain_id,label,ttl,rrtype_id,value) VALUES (currval('domains_id_seq'),?,?,?,?)");
 my $ins_domains = $dbh->prepare("INSERT INTO domains (name,zone_id,created_by,created_on,updated_by,updated_on,internal) VALUES (?,currval('zones_id_seq'),?,?,?,?,?)");
-my $ins_domain_rr = $dbh->prepare("INSERT INTO domain_rr (domain_id,rr_id) VALUES (currval('domains_id_seq'),currval('rrs_id_seq'))");
+my $ins_allowed_rr = $dbh->prepare("INSERT INTO allowed_rr (zone_id,rrtype_id) VALUES (currval('zones_id_seq'),(SELECT id FROM rrtypes WHERE label=?))");
 my $minlen = 4;
 my $maxlen = 24;
 my $internal;
+my %allowed_rr;
 
 open(ZF, "<$file") || die "Cannot open $file: $!";
 while (<ZF>) {
 	my $ttl;
 	chop;
 	my $line = "";
+
 	if (/^;! minlen\s+(\d+)/) { $minlen = $1; next }
 	if (/^;! maxlen\s+(\d+)/) { $maxlen = $1; next }
+	if (/^;! type\s+(\S+)/) { $allowed_rr{uc($1)} = 1; next }
 	if (/^; BEGINNING OF USER-DELEGATED DOMAINS/) { $domainmode = 1; next }
 	if (/^; (i?)domain (\S+)$/) {
 		$internal = 0;
@@ -172,6 +175,9 @@ while (<ZF>) {
 
 			my $st = $dbh->prepare("INSERT INTO zones (name,ttl,soaserial,soarefresh,soaretry,soaexpires,soaminimum,soaprimary,soaemail,minlen,maxlen,updateserial) VALUES (?,?,?,?,?,?,?,?,?,?,?,FALSE)");
 			$st->execute($zone,$soattl,$soaserial,$soarefresh,$soaretry,$soaexpires,$soaminimum,$soaprimary,$soaemail,$minlen,$maxlen);
+			foreach my $t (keys %allowed_rr) {
+			    $ins_allowed_rr->execute(uc($t));
+			}
 			#print "INSERT INTO zones (name,ttl,soaserial,soarefresh,soaretry,soaexpires,soaminimum,soaprimary,soaemail) VALUES ('$zone',$soattl,$soaserial,$soarefresh,$soaretry,$soaexpires,$soaminimum,'$soaprimary','$soaemail');\n";
 			$ins_domains->execute("",undef,undef,undef,undef,1);
 			next;
@@ -214,7 +220,6 @@ while (<ZF>) {
 		$domain_created=1;
 	}
 	$ins_rrs->execute($label,$ttl,$typeid,$value);
-	$ins_domain_rr->execute();
 }
 close ZF;
 print "end, commiting...\n";
