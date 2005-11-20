@@ -14,6 +14,7 @@ CREATE TABLE zones (
 	minlen INTEGER DEFAULT 4,
 	maxlen INTEGER DEFAULT 63,
 	ttl INTEGER DEFAULT 259200,
+	updateserial BOOLEAN,
 	soaserial INTEGER NOT NULL,
 	soarefresh INTEGER DEFAULT 3600,
 	soaretry INTEGER DEFAULT 1800,
@@ -47,21 +48,18 @@ CREATE TABLE admin_zone (
 );
 CREATE TABLE rrs (
 	id SERIAL PRIMARY KEY,
-	label VARCHAR(64),
+	domain_id INTEGER REFERENCES domains(id),
+	ttl INTEGER,
 	rrtype_id INTEGER REFERENCES rrtypes(id),
-	value VARCHAR(255),
-	created_on TIMESTAMP DEFAULT NOW()
+	created_on TIMESTAMP DEFAULT NOW(),
+	label VARCHAR(64),
+	value VARCHAR(255)
 );
+CREATE INDEX rrs_domain_id_index ON rrs(domain_id);
 CREATE TABLE domain_rr (
 	domain_id INTEGER REFERENCES domains(id),
 	rr_id INTEGER REFERENCES rrs(id),
 	PRIMARY KEY (domain_id, rr_id)
-);
-CREATE TABLE zone_rr (
-	zone_id INTEGER REFERENCES zones(id),
-	rr_id INTEGER REFERENCES rrs(id),
-	ttl INTEGER,
-	PRIMARY KEY (zone_id, rr_id)
 );
 
 -- keeping history
