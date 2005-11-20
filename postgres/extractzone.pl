@@ -33,25 +33,18 @@ my ($zone_id,$ttl,$soaserial,$soarefresh,$soaretry,$soaexpires,$soaminimum,$soap
 print "; zone id=$zone_id\n";
 $sth->finish;
 
-print "\$TTL $ttl\n";
+if (defined($ttl)) { print "\$TTL $ttl\n"; }
 print "$zone.\t$ttl\tSOA\t$soaprimary $soaemail $soaserial $soarefresh $soaretry $soaexpires $soaminimum\n";
-$sth = $dbh->prepare("SELECT rrs.label,zone_rr.ttl,rrtypes.label,rrs.value FROM rrs,rrtypes,zone_rr WHERE rrs.id=zone_rr.rr_id AND zone_rr.zone_id=? AND rrtypes.id=rrs.rrtype_id ORDER BY rrs.label");
-$sth->execute($zone_id);
-while (@row = $sth->fetchrow_array) {
-	my ($label,$ttl,$type,$value) = @row;
-	if ($label eq "") { die "Error" }
-	if (defined($ttl)) { $ttl .= ' ' }
-	if ($type eq 'NS' || $type eq 'MX') { $value .= '.' }
-	print "$label\t$ttl$type\t$value\n";
-}
 
-$sth = $dbh->prepare("SELECT rrs.label,domains.name,rrtypes.label,rrs.value FROM domains,rrs,domain_rr,rrtypes WHERE domains.zone_id=? AND rrs.id=domain_rr.rr_id AND domains.id=domain_rr.domain_id AND rrtypes.id=rrs.rrtype_id ORDER BY domains.name");
+$sth = $dbh->prepare("SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value FROM domains,rrs,rrtypes WHERE domains.zone_id=? AND domains.id=rrs.domain_id AND rrtypes.id=rrs.rrtype_id ORDER BY domains.name,rrs.label");
 $sth->execute($zone_id);
 while (@row = $sth->fetchrow_array) {
-	my ($label,$domain,$type,$value) = @row;
-	if ($label ne "") { $label .= '.' }
-	if ($type eq 'NS' || $type eq 'MX') { $value .= '.' }
-	print "$label$domain\t$type\t$value\n";
+	my ($label,$domain,$ttl,$type,$value) = @row;
+	if ($label ne "" && $domain ne "") { $label .= '.' }
+	if ("$label$domain" eq "") { $domain = $zone.'.' }
+	if ($type eq 'NS' || $type eq 'MX' || $type eq 'CNAME') { $value .= '.' }
+	if (defined($ttl)) { $ttl .= " " }
+	print "$label$domain\t$ttl$type\t$value\n";
 }
 
 $dbh->disconnect;
