@@ -1,13 +1,17 @@
 -- $Id$
 
+-- id lookup table for RR types
 CREATE TABLE rrtypes (
 	id SERIAL PRIMARY KEY,
 	label VARCHAR(10)
 );
+-- id lookup table for admins
 CREATE TABLE admins (
 	id SERIAL PRIMARY KEY,
 	login VARCHAR(16)
 );
+
+-- zone table
 CREATE TABLE zones (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(255),
@@ -23,11 +27,15 @@ CREATE TABLE zones (
 	soaprimary VARCHAR(255) NOT NULL,
 	soaemail VARCHAR(255) NOT NULL
 );
+
+-- lists allowed RR types for each zone
 CREATE TABLE allowed_rr (
 	zone_id INTEGER REFERENCES zones(id),
 	rrtype_id INTEGER REFERENCES rrtypes(id),
 	PRIMARY KEY (zone_id, rrtype_id)
 );
+
+-- all domains in all zones
 CREATE TABLE domains (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(64),
@@ -41,13 +49,16 @@ CREATE TABLE domains (
 	updated_by INTEGER REFERENCES admins(id),
 	updated_on TIMESTAMP
 );
+
+-- lists allowed administrators for each zone
 CREATE TABLE admin_zone (
 	admin_id INTEGER REFERENCES admins(id),
 	zone_id INTEGER REFERENCES zones(id),
 	PRIMARY KEY (admin_id, zone_id)
 );
+
+-- all resource records for all domains and zones
 CREATE TABLE rrs (
-	id SERIAL PRIMARY KEY,
 	domain_id INTEGER REFERENCES domains(id),
 	ttl INTEGER,
 	rrtype_id INTEGER REFERENCES rrtypes(id),
@@ -56,14 +67,10 @@ CREATE TABLE rrs (
 	value VARCHAR(255)
 );
 CREATE INDEX rrs_domain_id_index ON rrs(domain_id);
-CREATE TABLE domain_rr (
-	domain_id INTEGER REFERENCES domains(id),
-	rr_id INTEGER REFERENCES rrs(id),
-	PRIMARY KEY (domain_id, rr_id)
-);
 
 -- keeping history
 
+-- deleted domains
 CREATE TABLE domains_hist (
 	id INTEGER PRIMARY KEY,
 	name VARCHAR(64),
@@ -74,12 +81,15 @@ CREATE TABLE domains_hist (
 	deleted_by INTEGER REFERENCES admins(id),
 	deleted_on TIMESTAMP DEFAULT NOW()
 );
+
+-- deleted RRs
 CREATE TABLE rrs_hist (
 	domain_id INTEGER,
-	label VARCHAR(64),
+	ttl INTEGER,
 	rrtype_id INTEGER REFERENCES rrtypes(id),
-	value VARCHAR(255),
 	created_on TIMESTAMP NOT NULL,
+	label VARCHAR(64),
+	value VARCHAR(255),
 	deleted_on TIMESTAMP DEFAULT NOW()
 );
 
