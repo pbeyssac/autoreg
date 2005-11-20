@@ -99,11 +99,11 @@ sub parsetime()
 my ($domain,$crby,$upby,$cron,$upon,$domain_created);
 my ($soaprimary, $soaemail, $soaserial, $soarefresh, $soaretry, $soaexpires, $soaminimum);
 my $soattl;
+my $origin = $zone.'.';
 
-my $ins_rrs = $dbh->prepare("INSERT INTO rrs (label,rrtype_id,value) VALUES (?,?,?)");
+my $ins_rrs = $dbh->prepare("INSERT INTO rrs (domain_id,label,ttl,rrtype_id,value) VALUES (currval('domains_id_seq'),?,?,?,?)");
 my $ins_domains = $dbh->prepare("INSERT INTO domains (name,zone_id,created_by,created_on,updated_by,updated_on,internal) VALUES (?,currval('zones_id_seq'),?,?,?,?,?)");
 my $ins_domain_rr = $dbh->prepare("INSERT INTO domain_rr (domain_id,rr_id) VALUES (currval('domains_id_seq'),currval('rrs_id_seq'))");
-my $ins_zone_rr = $dbh->prepare("INSERT INTO zone_rr (zone_id,rr_id,ttl) VALUES (currval('zones_id_seq'),currval('rrs_id_seq'),?)");
 my $minlen = 4;
 my $maxlen = 24;
 my $internal;
@@ -130,16 +130,20 @@ while (<ZF>) {
 	if (/^; updated: by (\S+), (.*)$/i) { $upby=&parseadm($1); $upon=&parsetime($2); next }
 	if (/^; created: by (\S+), (.*)$/i) { $crby=&parseadm($1); $cron=&parsetime($2); next }
 	if (/^\$TTL\s+(\d+)\s*$/) { $soattl = $1; next }
-	next if /^;/;
+	if (/^\$ORIGIN\s+(\S+)\s*$/) { $origin = $1; next }
+	next if /^\s*;/;
 	next if /^\s*$/;
 	if (/^(\S+)\s+(.*)$/) {
 		$curlabel = uc($1);
 		$line = $2;
 	} elsif (/^\s+(.*)$/) {
 		$line = $1;
+	} else {
+		die "Cannot parse: $line\n";
 	}
 	$label = $curlabel;
-	if ($label =~ /^(.*)\.$zone\.$/i) { $label = $1; }
+	if ($label eq '@') { $label = ""; }
+	elsif ($label =~ /^(.*)\.$zone\.$/i) { $label = $1; }
 	if ($line =~ /^(\d+)\s+(.*)$/) {
 		$ttl = $1;
 		$line = $2;
@@ -166,11 +170,12 @@ while (<ZF>) {
 			$line = <ZF>; if ($line !~ /^\s+(\d+)\s*\)\s*;\s*minimum/i) { die "Bad SOA minimum: $line"; }
 			$soaminimum = $1;
 
-			my $st = $dbh->prepare("INSERT INTO zones (name,ttl,soaserial,soarefresh,soaretry,soaexpires,soaminimum,soaprimary,soaemail,minlen,maxlen) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+			my $st = $dbh->prepare("INSERT INTO zones (name,ttl,soaserial,soarefresh,soaretry,soaexpires,soaminimum,soaprimary,soaemail,minlen,maxlen,updateserial) VALUES (?,?,?,?,?,?,?,?,?,?,?,FALSE)");
 			$st->execute($zone,$soattl,$soaserial,$soarefresh,$soaretry,$soaexpires,$soaminimum,$soaprimary,$soaemail,$minlen,$maxlen);
 			#print "INSERT INTO zones (name,ttl,soaserial,soarefresh,soaretry,soaexpires,soaminimum,soaprimary,soaemail) VALUES ('$zone',$soattl,$soaserial,$soarefresh,$soaretry,$soaexpires,$soaminimum,'$soaprimary','$soaemail');\n";
+			$ins_domains->execute("",undef,undef,undef,undef,1);
 			next;
-		} elsif ($type eq 'NS') {
+		} elsif ($type eq 'NS' || $type eq 'CNAME') {
 			$value = uc($value);
 			die "Not dot-terminated: $curlabel $value" if ($value !~ /\.$/);
 			chop $value;
@@ -185,7 +190,9 @@ while (<ZF>) {
 		}
 		elsif ($type eq 'SRV') { $value = uc($value); }
 		elsif ($type eq 'AAAA') { $value = uc($value); }
-
+		elsif ($type eq 'A') { }
+		elsif ($type eq 'TXT') { }
+		else { die "Unsupported RR type: $type\n"; }
 	} else {
 		print "Cannot parse: $line\n";
 		exit 1;
@@ -206,19 +213,8 @@ while (<ZF>) {
 		$ins_domains->execute($domain,$crby,$cron,$upby,$upon,$internal);
 		$domain_created=1;
 	}
-	#print "INSERT INTO rrs (label,rrtype_id,value) VALUES ('$label',$typeid,'$value');\n";
-	$ins_rrs->execute($label,$typeid,$value);
-	if ($domainmode) {
-		#print "INSERT INTO domain_rr (domain_id,rr_id) VALUES (currval('domains_id_seq'),currval('rrs_id_seq'));\n";
-		$ins_domain_rr->execute();
-	} else {
-#	    if (defined($ttl)) {
-#		print "INSERT INTO zone_rr (zone_id,rr_id,ttl) VALUES (currval('zones_id_seq'),currval('rrs_id_seq'),$ttl);\n";
-#	    } else {
-#		print "INSERT INTO zone_rr (zone_id,rr_id) VALUES (currval('zones_id_seq'),currval('rrs_id_seq'));\n";
-#	    }
-	    $ins_zone_rr->execute($ttl);
-	}
+	$ins_rrs->execute($label,$ttl,$typeid,$value);
+	$ins_domain_rr->execute();
 }
 close ZF;
 print "end, commiting...\n";
