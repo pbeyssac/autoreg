@@ -49,6 +49,7 @@ CREATE TABLE domains (
 	updated_by INTEGER REFERENCES admins(id),
 	updated_on TIMESTAMP
 );
+CREATE INDEX domains_name_index ON domains(name,zone_id);
 
 -- lists allowed administrators for each zone
 CREATE TABLE admin_zone (
