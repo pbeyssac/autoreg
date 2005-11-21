@@ -36,25 +36,6 @@ my %rrid = (
 	'TXT'=>6, 'SRV'=>7, 'HINFO'=>8
 );
 
-# grep -v ^# /local/dns-manager/conf/user-info | awk -F: '{ print "'\''" $1 "'\''=>" ++n "," }'
-my %adm = (
-'unknown'=>0,
-'pb'=>1, 'gb'=>2, 'fcb'=>3, 'roberto'=>4, 'thomas'=>5, 'gdaci'=>6,
-'schaefer'=>7, 'regnauld'=>8, 'aj'=>9, 'ck'=>10, 'zop12'=>11, 'patryk'=>12,
-'david'=>13, 'rui'=>14, 'rmc'=>15, 'babafou'=>16, 'sam'=>17, 'vladek'=>18,
-'jaclavi'=>19, 'pain'=>20, 'ino'=>21, 'jyb'=>22, 'phil'=>23, 'jld'=>24,
-'nh'=>25, 'ricou'=>26, 'hrusca'=>27, 'benjamin'=>28, 'olive'=>29, 'erwan'=>30,
-'blaudez'=>31, 'ob'=>32, 'lc'=>33,'jertreg'=>34
-);
-
-sub parseadm()
-{
-    my $a = shift;
-    my $id = $adm{$a};
-    die "Admin '$a' not found" if (!defined($id));
-    return $id;
-}
-
 sub parsetime()
 {
     my $c = shift;
@@ -102,7 +83,7 @@ my $soattl;
 my $origin = $zone.'.';
 
 my $ins_rrs = $dbh->prepare("INSERT INTO rrs (domain_id,label,ttl,rrtype_id,value) VALUES (currval('domains_id_seq'),?,?,?,?)");
-my $ins_domains = $dbh->prepare("INSERT INTO domains (name,zone_id,created_by,created_on,updated_by,updated_on,internal) VALUES (?,currval('zones_id_seq'),?,?,?,?,?)");
+my $ins_domains = $dbh->prepare("INSERT INTO domains (name,zone_id,created_by,created_on,updated_by,updated_on,internal) VALUES (?,currval('zones_id_seq'),(SELECT id FROM admins WHERE login=?),?,(SELECT id FROM admins WHERE login=?),?,?)");
 my $ins_allowed_rr = $dbh->prepare("INSERT INTO allowed_rr (zone_id,rrtype_id) VALUES (currval('zones_id_seq'),(SELECT id FROM rrtypes WHERE label=?))");
 my $minlen = 4;
 my $maxlen = 24;
@@ -132,8 +113,8 @@ while (<ZF>) {
 		if ($domain =~ /^(.*)\.$zone\.$/i) { $domain = $1; }
 		next
 	}
-	if (/^; updated: by (\S+), (.*)$/i) { $upby=&parseadm($1); $upon=&parsetime($2); next }
-	if (/^; created: by (\S+), (.*)$/i) { $crby=&parseadm($1); $cron=&parsetime($2); next }
+	if (/^; updated: by (\S+), (.*)$/i) { $upby=$1; $upon=&parsetime($2); next }
+	if (/^; created: by (\S+), (.*)$/i) { $crby=$1; $cron=&parsetime($2); next }
 	if (/^\$TTL\s+(\d+)\s*$/) { $soattl = $1; next }
 	if (/^\$ORIGIN\s+(\S+)\s*$/) { $origin = $1; next }
 	next if /^\s*;/;
