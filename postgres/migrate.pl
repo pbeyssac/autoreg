@@ -108,6 +108,8 @@ my $minlen = 4;
 my $maxlen = 24;
 my $internal;
 my %allowed_rr;
+my $ndom = 0;
+my $nrr = 0;
 
 open(ZF, "<$file") || die "Cannot open $file: $!";
 while (<ZF>) {
@@ -173,12 +175,38 @@ while (<ZF>) {
 			$line = <ZF>; if ($line !~ /^\s+(\d+)\s*\)\s*;\s*minimum/i) { die "Bad SOA minimum: $line"; }
 			$soaminimum = $1;
 
-			my $st = $dbh->prepare("INSERT INTO zones (name,ttl,soaserial,soarefresh,soaretry,soaexpires,soaminimum,soaprimary,soaemail,minlen,maxlen,updateserial) VALUES (?,?,?,?,?,?,?,?,?,?,?,FALSE)");
+			my $st = $dbh->prepare("SELECT id FROM zones WHERE name=? FOR UPDATE");
+			$st->execute($zone);
+			if ($st->rows > 1) { die "Internal error: several zones with name='$zone'\n"; }
+
+			$| = 1;
+			print "Zone $zone: ";
+
+			if ($st->rows == 1) {
+			    my @rows = $st->fetchrow_array;
+			    my ($zone_id) = @rows;
+			    print "cleaning up zone (id $zone_id) and history...";
+			    $st = $dbh->prepare("DELETE FROM rrs WHERE domain_id IN (SELECT id FROM domains WHERE zone_id=?)");
+			    $st->execute($zone_id);
+			    $st = $dbh->prepare("DELETE FROM domains WHERE zone_id=?");
+			    $st->execute($zone_id);
+			    $st = $dbh->prepare("DELETE FROM allowed_rr WHERE zone_id=?");
+			    $st->execute($zone_id);
+			    $st = $dbh->prepare("DELETE FROM rrs_hist WHERE domain_id IN (SELECT id FROM domains_hist WHERE zone_id=?)");
+			    $st->execute($zone_id);
+			    $st = $dbh->prepare("DELETE FROM domains_hist WHERE zone_id=?");
+			    $st->execute($zone_id);
+			    $st = $dbh->prepare("DELETE FROM zones WHERE id=?");
+			    $st->execute($zone_id);
+			}
+			$st->finish;
+
+			print "loading...";
+			$st = $dbh->prepare("INSERT INTO zones (name,ttl,soaserial,soarefresh,soaretry,soaexpires,soaminimum,soaprimary,soaemail,minlen,maxlen,updateserial) VALUES (?,?,?,?,?,?,?,?,?,?,?,FALSE)");
 			$st->execute($zone,$soattl,$soaserial,$soarefresh,$soaretry,$soaexpires,$soaminimum,$soaprimary,$soaemail,$minlen,$maxlen);
 			foreach my $t (keys %allowed_rr) {
 			    $ins_allowed_rr->execute(uc($t));
 			}
-			#print "INSERT INTO zones (name,ttl,soaserial,soarefresh,soaretry,soaexpires,soaminimum,soaprimary,soaemail) VALUES ('$zone',$soattl,$soaserial,$soarefresh,$soaretry,$soaexpires,$soaminimum,'$soaprimary','$soaemail');\n";
 			$ins_domains->execute("",undef,undef,undef,undef,1);
 			next;
 		} elsif ($type eq 'NS' || $type eq 'CNAME') {
@@ -205,7 +233,7 @@ while (<ZF>) {
 	}
 	my $typeid = $rrid{$type};
 	if (!defined($rrid{$type})) { die "unhandled RR type: $type\n"; }
-	if (defined($ttl) && $domainmode) {
+	if (defined($ttl) && $domainmode && !$internal) {
 		print "TTL not supported in domain mode, label $curlabel\n";
 		exit 1;
 	}
@@ -215,15 +243,15 @@ while (<ZF>) {
 	}
 	if ($domainmode && !$domain_created) {
 		if ($upby eq 0) { $upby=$crby; $upon=$cron; }
-		#print "INSERT INTO domains (name,zone_id,created_by,created_on,updated_by,updated_on,internal) VALUES ('$domain',currval('zones_id_seq'),$crby,$cron,$upby,$upon,$internal);\n";
 		$ins_domains->execute($domain,$crby,$cron,$upby,$upon,$internal);
+		$ndom++;
 		$domain_created=1;
 	}
 	$ins_rrs->execute($label,$ttl,$typeid,$value);
+	$nrr++;
 }
 close ZF;
-print "end, commiting...\n";
 $dbh->commit;
+print "done. $ndom domains, $nrr resource records.\n";
 $dbh->disconnect;
-print "done\n";
 exit 0;
