@@ -3,18 +3,18 @@
 -- id lookup table for RR types
 CREATE TABLE rrtypes (
 	id SERIAL PRIMARY KEY,
-	label VARCHAR(10)
+	label VARCHAR(10) UNIQUE
 );
 -- id lookup table for admins
 CREATE TABLE admins (
 	id SERIAL PRIMARY KEY,
-	login VARCHAR(16)
+	login VARCHAR(16) UNIQUE
 );
 
 -- zone table
 CREATE TABLE zones (
 	id SERIAL PRIMARY KEY,
-	name VARCHAR(255),
+	name VARCHAR(255) UNIQUE,
 	minlen INTEGER DEFAULT 4,
 	maxlen INTEGER DEFAULT 63,
 	ttl INTEGER DEFAULT 259200,
@@ -47,7 +47,8 @@ CREATE TABLE domains (
 	created_by INTEGER REFERENCES admins(id),
 	created_on TIMESTAMP,
 	updated_by INTEGER REFERENCES admins(id),
-	updated_on TIMESTAMP
+	updated_on TIMESTAMP,
+	UNIQUE (name, zone_id)
 );
 CREATE INDEX domains_name_index ON domains(name,zone_id);
 
@@ -72,6 +73,8 @@ CREATE INDEX rrs_domain_id_index ON rrs(domain_id);
 -- keeping history
 
 -- deleted domains
+-- no UNIQUE (name, zone_id) constraint here:
+-- a same domain can be created/deleted several times
 CREATE TABLE domains_hist (
 	id INTEGER PRIMARY KEY,
 	name VARCHAR(64),
