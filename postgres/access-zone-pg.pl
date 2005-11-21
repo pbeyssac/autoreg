@@ -122,15 +122,7 @@ if ($action eq 'show') {
 	$dbh->disconnect;
 	die sprintf($MSG_NUSER, $opt_u);
     }
-    $st = $dbh->prepare("SELECT domains.id,zones.id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id");
-    $st->execute($subdom,$parent);
-    if ($st->rows != 0) {
-	$st->finish;
-	$dbh->disconnect;
-	die sprintf($MSG_ALLOC, $domain);
-    }
-    $st->finish;
-    $st = $dbh->prepare("SELECT zones.id,minlen,maxlen FROM zones WHERE zones.name=?");
+    $st = $dbh->prepare("SELECT zones.id,minlen,maxlen FROM zones WHERE zones.name=? FOR UPDATE");
     $st->execute($parent);
     if ($st->rows != 1) {
 	$st->finish;
@@ -139,6 +131,15 @@ if ($action eq 'show') {
     }
     @row = $st->fetchrow_array;
     my ($zone_id,$minlen,$maxlen) = @row;
+    $st->finish;
+
+    $st = $dbh->prepare("SELECT id FROM domains WHERE name=? AND zone_id=?");
+    $st->execute($subdom,$zone_id);
+    if ($st->rows != 0) {
+	$st->finish;
+	$dbh->disconnect;
+	die sprintf($MSG_ALLOC, $domain);
+    }
     $st->finish;
 
     $st = $dbh->prepare("SELECT zone_id,rrtype_id FROM allowed_rr WHERE allowed_rr.zone_id=? AND allowed_rr.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label=?)");
@@ -163,8 +164,8 @@ if ($action eq 'show') {
     $st->execute($subdom,$zone_id,$opt_u,$opt_u);
     $st->finish;
 
-    $st = $dbh->prepare("SELECT domains.id,zones.id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id");
-    $st->execute($subdom,$parent);
+    $st = $dbh->prepare("SELECT currval('domains_id_seq')");
+    $st->execute();
     if ($st->rows != 1) {
 	$st->finish;
 	$dbh->disconnect;
