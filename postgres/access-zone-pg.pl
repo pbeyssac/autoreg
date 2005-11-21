@@ -90,7 +90,7 @@ my $st;
 my @row;
 
 if ($action eq 'show') {
-    $st = $dbh->prepare("SELECT domains.id,created_on,ad1.login,updated_on,ad2.login FROM domains,zones,admins AS ad1,admins AS ad2 WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id AND ad1.id=domains.created_by AND ad2.id=domains.updated_by");
+    $st = $dbh->prepare("SELECT domains.id,created_on,ad1.login,updated_on,ad2.login,registry_lock,registry_hold,internal FROM domains,zones,admins AS ad1,admins AS ad2 WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id AND ad1.id=domains.created_by AND ad2.id=domains.updated_by");
     $st->execute($subdom,$parent);
     if ($st->rows != 1) {
 	$st->finish;
@@ -98,10 +98,13 @@ if ($action eq 'show') {
 	die sprintf($MSG_NODOM, $domain, $action);
     }
     @row = $st->fetchrow_array;
-    my ($did,$cron,$crby,$upon,$upby) = @row;
+    my ($did,$cron,$crby,$upon,$upby,$registry_lock,$registry_hold,$internal) = @row;
     print "; domain $domain\n";
     print "; created: by $crby, $cron\n" if defined($cron);
     print "; updated: by $upby, $upon\n" if defined($upon);
+    if ($registry_lock) { print "; registry_lock\n" }
+    if ($registry_hold) { print "; registry_hold\n" }
+    if ($internal) { print "; internal\n" }
     $st->finish;
     $st = $dbh->prepare("SELECT rrs.label,domains.name,rrtypes.label,rrs.value FROM domains,rrs,rrtypes WHERE domains.id=? AND domains.id=rrs.domain_id AND rrtypes.id=rrs.rrtype_id");
     $st->execute($did);
@@ -109,12 +112,16 @@ if ($action eq 'show') {
     while (@row = $st->fetchrow_array) {
 	my ($label,$domain,$type,$value) = @row;
 	if ($label ne "") { $label .= '.' }
-	if ($type eq 'NS' || $type eq 'MX') { $value .= '.' }
+	if ($type eq 'NS' || $type eq 'MX' || $type eq 'CNAME') { $value .= '.' }
 	print "$label$domain\t$type\t$value\n";
     }
     $st->finish;
     $dbh->commit;
 } elsif ($action eq 'new') {
+    if (!&zauth_check($parent, $opt_u)) {
+	$dbh->disconnect;
+	die sprintf($MSG_NUSER, $opt_u);
+    }
     $st = $dbh->prepare("SELECT domains.id,zones.id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id");
     $st->execute($subdom,$parent);
     if ($st->rows != 0) {
@@ -123,7 +130,7 @@ if ($action eq 'show') {
 	die sprintf($MSG_ALLOC, $domain);
     }
     $st->finish;
-    $st = $dbh->prepare("SELECT zones.id FROM zones WHERE zones.name=?");
+    $st = $dbh->prepare("SELECT zones.id,minlen,maxlen FROM zones WHERE zones.name=?");
     $st->execute($parent);
     if ($st->rows != 1) {
 	$st->finish;
@@ -131,8 +138,26 @@ if ($action eq 'show') {
 	die "Zone $parent unknown";
     }
     @row = $st->fetchrow_array;
-    my ($zone_id) = @row;
+    my ($zone_id,$minlen,$maxlen) = @row;
     $st->finish;
+
+    $st = $dbh->prepare("SELECT zone_id,rrtype_id FROM allowed_rr WHERE allowed_rr.zone_id=? AND allowed_rr.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label=?)");
+    $st->execute($zone_id,$type);
+    if ($st->rows != 1) {
+	$st->finish;
+	$dbh->disconnect;
+	die sprintf($MSG_NOTYP, $type);
+    }
+    $st->finish;
+
+    if (length($subdom) < $minlen) {
+	$dbh->disconnect;
+	die sprintf($MSG_SHORT, $parent, $minlen);
+    }
+    if (length($subdom) > $maxlen) {
+	$dbh->disconnect;
+	die sprintf($MSG_LONG, $parent, $maxlen);
+    }
 
     $st = $dbh->prepare("INSERT INTO domains (name,zone_id,created_by,created_on,updated_by,updated_on,internal) VALUES (?,?,(SELECT id FROM admins WHERE login=?),NOW(),(SELECT id FROM admins WHERE login=?),NOW(),FALSE)");
     $st->execute($subdom,$zone_id,$opt_u,$opt_u);
@@ -141,6 +166,8 @@ if ($action eq 'show') {
     $st = $dbh->prepare("SELECT domains.id,zones.id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id");
     $st->execute($subdom,$parent);
     if ($st->rows != 1) {
+	$st->finish;
+	$dbh->disconnect;
 	die "Internal error when creating domain $subdom.$parent\n";
     }
     @row = $st->fetchrow_array;
@@ -152,7 +179,11 @@ if ($action eq 'show') {
     $st->finish;
     $dbh->commit;
 } elsif ($action eq 'modify') {
-    $st = $dbh->prepare("SELECT domains.id,zones.id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id FOR UPDATE");
+    if (!&zauth_check($parent, $opt_u)) {
+	$dbh->disconnect;
+	die sprintf($MSG_NUSER, $opt_u);
+    }
+    $st = $dbh->prepare("SELECT domains.id,zones.id,registry_lock,internal FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id FOR UPDATE");
     $st->execute($subdom,$parent);
     if ($st->rows != 1) {
 	$st->finish;
@@ -160,11 +191,28 @@ if ($action eq 'show') {
 	die sprintf($MSG_NODOM, $domain, $action);
     }
     @row = $st->fetchrow_array;
-    my ($domain_id,$zone_id) = @row;
+    my ($domain_id,$zone_id,$registry_lock,$internal) = @row;
     $st->finish;
-    $st = $dbh->prepare("DELETE FROM domain_rr WHERE domain_id=?");
+
+    if ($registry_lock || $internal) {
+	$dbh->disconnect;
+	die sprintf($MSG_LOCKD, $domain);
+    }
+
+    $st = $dbh->prepare("SELECT zone_id,rrtype_id FROM allowed_rr WHERE allowed_rr.zone_id=? AND allowed_rr.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label=?)");
+    $st->execute($zone_id,$type);
+    if ($st->rows != 1) {
+	$st->finish;
+	$dbh->disconnect;
+	die sprintf($MSG_NOTYP, $type);
+    }
+    $st->finish;
+
+    # save history
+    $st = $dbh->prepare("INSERT INTO rrs_hist (domain_id,ttl,rrtype_id,created_on,label,value,deleted_on) SELECT domain_id,ttl,rrtype_id,created_on,label,value,NOW() FROM rrs WHERE domain_id=?");
     $st->execute($domain_id);
     $st->finish;
+
     $st = $dbh->prepare("DELETE FROM rrs WHERE domain_id=?");
     $st->execute($domain_id);
     $st->finish;
@@ -179,7 +227,15 @@ if ($action eq 'show') {
     $st->execute($zone_id);
     $st->finish;
     $dbh->commit;
-} elsif ($action eq 'delete') {
+} elsif ($action eq 'lock' || $action eq 'unlock') {
+    if (!&zauth_check($parent, $opt_u)) {
+	$dbh->disconnect;
+	die sprintf($MSG_NUSER, $opt_u);
+    }
+
+    my $lock = 1;
+    if ($action eq 'unlock') { $lock = 0 }
+
     $st = $dbh->prepare("SELECT domains.id,zone_id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id FOR UPDATE");
     $st->execute($subdom,$parent);
     if ($st->rows < 1) {
@@ -191,9 +247,35 @@ if ($action eq 'show') {
     my ($domain_id,$zone_id) = @row;
     $st->finish;
 
-    $st = $dbh->prepare("DELETE FROM domain_rr WHERE domain_id=?");
+    $st = $dbh->prepare("UPDATE domains SET registry_lock=? WHERE id=?");
+    $st->execute($lock, $domain_id);
+    $st->finish;
+
+    $dbh->commit;
+} elsif ($action eq 'delete') {
+    if (!&zauth_check($parent, $opt_u)) {
+	$dbh->disconnect;
+	die sprintf($MSG_NUSER, $opt_u);
+    }
+    $st = $dbh->prepare("SELECT domains.id,zone_id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id FOR UPDATE");
+    $st->execute($subdom,$parent);
+    if ($st->rows < 1) {
+	$st->finish;
+	$dbh->disconnect;
+	die sprintf($MSG_NODOM, $domain, $action);
+    }
+    @row = $st->fetchrow_array;
+    my ($domain_id,$zone_id) = @row;
+    $st->finish;
+
+    # save history
+    $st = $dbh->prepare("INSERT INTO rrs_hist (domain_id,ttl,rrtype_id,created_on,label,value,deleted_on) SELECT domain_id,ttl,rrtype_id,created_on,label,value,NOW() FROM rrs WHERE domain_id=?");
     $st->execute($domain_id);
     $st->finish;
+    $st = $dbh->prepare("INSERT INTO domains_hist (id,name,zone_id,registrar_id,created_by,created_on,deleted_by,deleted_on) SELECT id,name,zone_id,registrar_id,created_by,created_on,(SELECT id FROM admins WHERE login=?),NOW() FROM domains WHERE id=?");
+    $st->execute($opt_u,$domain_id);
+    $st->finish;
+
     $st = $dbh->prepare("DELETE FROM rrs WHERE domain_id=?");
     $st->execute($domain_id);
     $st->finish;
@@ -208,15 +290,21 @@ if ($action eq 'show') {
     my $zone = $parent;
     $st = $dbh->prepare("SELECT id,ttl,soaserial,soarefresh,soaretry,soaexpires,soaminimum,soaprimary,soaemail FROM zones WHERE name=?");
     $st->execute($zone);
-    if ($st->rows < 1) { die "Zone '$zone' not found.\n"; }
-    if ($st->rows > 2) { die "Internal error: several zones for '$zone'!\n"; }
+    if ($st->rows < 1) {
+	$dbh->disconnect;
+	die "Zone '$zone' not found.\n";
+    }
+    if ($st->rows > 2) {
+	$dbh->disconnect;
+	die "Internal error: several zones for '$zone'!\n";
+    }
 
     @row = $st->fetchrow_array;
     my ($zone_id,$ttl,$soaserial,$soarefresh,$soaretry,$soaexpires,$soaminimum,$soaprimary,$soaemail) = @row;
     print "; zone name=$zone id=$zone_id\n";
     $st->finish;
 
-    print "\$TTL $ttl\n";
+    if (defined($ttl)) { print "\$TTL $ttl\n"; }
     print "$zone.\t$ttl\tSOA\t$soaprimary $soaemail $soaserial $soarefresh $soaretry $soaexpires $soaminimum\n";
 
     $st = $dbh->prepare("SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value FROM domains,rrs,rrtypes WHERE domains.zone_id=? AND domains.id=rrs.domain_id AND rrtypes.id=rrs.rrtype_id ORDER BY domains.name,rrs.label");
@@ -234,8 +322,14 @@ if ($action eq 'show') {
     my $zone = $parent;
     $st = $dbh->prepare("SELECT id,soaserial,updateserial FROM zones WHERE name=? FOR UPDATE");
     $st->execute($zone);
-    if ($st->rows < 1) { die "Zone '$zone' not found.\n"; }
-    if ($st->rows > 2) { die "Internal error: several zones for '$zone'!\n"; }
+    if ($st->rows < 1) {
+	$dbh->disconnect;
+	die "Zone '$zone' not found.\n";
+    }
+    if ($st->rows > 2) {
+	$dbh->disconnect;
+	die "Internal error: several zones for '$zone'!\n";
+    }
 
     @row = $st->fetchrow_array;
     my ($zone_id,$soaserial,$updateserial) = @row;
@@ -268,7 +362,6 @@ sub insertrr()
     my $domain_id = shift;
     my $label;
     my $ins_rrs = $dbh->prepare("INSERT INTO rrs (domain_id,label,ttl,rrtype_id,value) VALUES (?,?,?,(SELECT id FROM rrtypes WHERE label=?),?)");
-    my $ins_domain_rr = $dbh->prepare("INSERT INTO domain_rr (domain_id,rr_id) VALUES (?,currval('rrs_id_seq'))");
 
     while (<STDIN>) {
 	my ($ttl, $type, $value);
@@ -286,6 +379,7 @@ sub insertrr()
 	} elsif (/^\s+(.*)$/) {
 	    $line = $1;
 	} else {
+	    $dbh->disconnect;
 	    die "Cannot parse: $line\n";
 	}
 
@@ -308,15 +402,22 @@ sub insertrr()
 	    if ($value =~ /^(.*\S)\s+$/) { $value = $1; }
 	    if ($type eq 'NS' || $type eq 'CNAME') {
 		$value = uc($value);
-		die "Not dot-terminated: $curlabel $value" if ($value !~ /\.$/);
+		if ($value !~ /\.$/) {
+		    $dbh->disconnect;
+		    die "Not dot-terminated: $curlabel $value"
+		}
 		chop $value;
 	    } elsif ($type eq 'MX') {
 		$value = uc($value);
 		if ($value !~ /^(\d+)\s+(\S+)$/) {
+		    $dbh->disconnect;
 		    die "Bad syntax for MX record: $value";
 		}
 		$value = "$1 $2";
-		die "Not dot-terminated: $curlabel $value" if ($value !~ /\.$/);
+		if ($value !~ /\.$/) {
+		    $dbh->disconnect;
+		    die "Not dot-terminated: $curlabel $value";
+		}
 		chop $value;
 	    }
 	    elsif ($type eq 'SRV') { $value = uc($value); }
@@ -324,15 +425,15 @@ sub insertrr()
 	    elsif ($type eq 'A') { }
 	    elsif ($type eq 'TXT') { }
 	    else {
+		$dbh->disconnect;
 		die "Unsupported RR type: $type\n";
 	    }
 	} else {
+	    $dbh->disconnect;
 	    die "Cannot parse: $line\n";
 	}
 
 	# all done, insert in database
 	$ins_rrs->execute($domain_id,$label,$ttl,$type,$value);
-	# domain_rr will probably be deprecated someday
-	$ins_domain_rr->execute($domain_id);
     }
 }
