@@ -35,6 +35,7 @@ my %rrid = (
 	'NS'=>1, 'MX'=>2, 'A'=>3, 'CNAME'=>4, 'AAAA'=>5,
 	'TXT'=>6, 'SRV'=>7, 'HINFO'=>8
 );
+my %domains;
 
 sub parsetime()
 {
@@ -224,6 +225,10 @@ while (<ZF>) {
 	}
 	if ($domainmode && !$domain_created) {
 		if ($upby eq 0) { $upby=$crby; $upon=$cron; }
+		if (defined($domains{$domain})) {
+		    die "Duplicate domain entry: '$domain', aborting.\n";
+		}
+		$domains{$domain} = 1;
 		$ins_domains->execute($domain,$crby,$cron,$upby,$upon,$internal);
 		$ndom++;
 		$domain_created=1;
