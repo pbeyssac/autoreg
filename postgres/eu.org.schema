@@ -70,6 +70,34 @@ CREATE TABLE rrs (
 );
 CREATE INDEX rrs_domain_id_index ON rrs(domain_id);
 
+CREATE TABLE contacts (
+	id SERIAL PRIMARY KEY,
+	handle varchar(20) UNIQUE,
+	name varchar(255) NOT NULL,
+	email varchar(80) NOT NULL,
+	addr1 varchar(80),
+	addr2 varchar(80),
+	addr3 varchar(80),
+	addr4 varchar(80),
+	addr5 varchar(80),
+	addr6 varchar(80),
+	phone varchar(40),
+	fax varchar(40),
+	updated_on TIMESTAMP
+);
+CREATE INDEX contacts_handle_index ON contacts(handle);
+CREATE INDEX contacts_name_index ON contacts(name);
+
+CREATE TABLE contact_types (
+	id SERIAL PRIMARY KEY,
+	name varchar(20)
+);
+CREATE TABLE domain_contact (
+	domain_id INTEGER REFERENCES domains(id),
+	contact_id INTEGER REFERENCES contacts(id),
+	contact_type_id INTEGER REFERENCES contact_types(id)
+);
+
 -- keeping history
 
 -- deleted domains
@@ -106,6 +134,10 @@ INSERT INTO rrtypes values (6, 'TXT');
 INSERT INTO rrtypes values (7, 'SRV');
 INSERT INTO rrtypes values (8, 'HINFO');
 INSERT INTO rrtypes values (1000, 'WMX');
+
+INSERT INTO contact_types VALUES (1,'technical');
+INSERT INTO contact_types VALUES (2,'administrative');
+INSERT INTO contact_types VALUES (3,'zone');
 
 INSERT INTO admins (id,login) VALUES (0,'*unknown*');
 INSERT INTO admins (id,login) VALUES (1,'pb');
