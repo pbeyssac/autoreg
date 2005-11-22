@@ -82,36 +82,48 @@ my $ins_contacts = $dbh->prepare("INSERT INTO contacts (handle,name,email,addr1,
 my $del_contacts = $dbh->prepare("DELETE FROM contacts");
 $del_contacts->execute();
 
+sub ins_person()
+{
+    my %attr = @_;
+    my $ts = $attr{'ch0'};
+    if ($ts =~ /^\S+\s+(\d+)$/) { $ts = &parsetime($1); }
+    else { undef $ts };
+    $ins_contacts->execute($attr{'nh0'},
+	$attr{'pn0'},
+	$attr{'em0'},
+	$attr{'ad0'}, $attr{'ad1'}, $attr{'ad2'},
+	$attr{'ad3'}, $attr{'ad4'}, $attr{'ad5'},
+	$attr{'ph0'}, $attr{'fx0'},
+	$ts);
+    foreach my $i ('pn1', 'em1', 'ad6', 'rm2', 'ph1', 'fx1', 'ch1') {
+	if (defined $attr{$i}) {
+	    print "person $attr{'pn0'}: unhandled attribute $i\n";
+	    &dumpobj(%attr);
+	}
+    }
+}
+
+sub ins_obj()
+{
+    my %attr = @_;
+    if (defined $attr{'dn0'}) { $ndom++; }
+    elsif (defined $attr{'mt0'}) { }
+    elsif (defined $attr{'pn0'}) {
+	$nperson++;
+	&ins_person(%attr);
+    } else {
+	print "Unknown object type\n";
+	&dumpobj(%attr);
+	exit 1;
+    }
+}
+
 my $gotattr = 0;
 open(CF, "<$file") || die "Cannot open $file: $!";
 while (<CF>) {
     next if (/^\s*#/);
     if (/^\s*$/ && $gotattr) {
-	if (defined $attr{'dn0'}) { $ndom++; }
-	elsif (defined $attr{'mt0'}) { }
-	elsif (defined $attr{'pn0'}) {
-	    $nperson++;
-	    my $ts = $attr{'ch0'};
-	    if ($ts =~ /^\S+\s+(\d+)$/) { $ts = &parsetime($1); }
-	    else { undef $ts };
-	    $ins_contacts->execute($attr{'nh0'},
-		$attr{'pn0'},
-		$attr{'em0'},
-		$attr{'ad0'}, $attr{'ad1'}, $attr{'ad2'},
-		$attr{'ad3'}, $attr{'ad4'}, $attr{'ad5'},
-		$attr{'ph0'}, $attr{'fx0'},
-		$ts);
-	    foreach my $i ('pn1', 'em1', 'ad6', 'rm2', 'ph1', 'fx1', 'ch1') {
-		if (defined $attr{$i}) {
-		    print "person $attr{'pn0'}: unhandled attribute $i\n";
-		    &dumpobj(%attr);
-		}
-	    }
-	} else {
-	    print "Unknown object type\n";
-	    &dumpobj(%attr);
-	    exit 1;
-	}
+	&ins_obj(%attr);
 	undef %attr;
 	$gotattr = 0;
 	next;
@@ -130,6 +142,7 @@ while (<CF>) {
     }
     die "Cannot parse line: $_\n";
 }
+if ($gotattr) { &ins_obj(%attr); }
 close CF;
 $dbh->commit;
 print "$ndom domains, $nperson persons.\n";
