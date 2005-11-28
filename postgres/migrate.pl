@@ -208,6 +208,7 @@ while (<ZF>) {
 		elsif ($type eq 'AAAA') { $value = uc($value); }
 		elsif ($type eq 'A') { }
 		elsif ($type eq 'TXT') { }
+		elsif ($type eq 'HINFO') { }
 		else { die "Unsupported RR type: $type\n"; }
 	} else {
 		print "Cannot parse: $line\n";
