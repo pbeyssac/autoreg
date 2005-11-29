@@ -70,11 +70,13 @@ CREATE TABLE rrs (
 );
 CREATE INDEX rrs_domain_id_index ON rrs(domain_id);
 
+-- contact handling
+
 CREATE TABLE contacts (
 	id SERIAL PRIMARY KEY,
 	handle varchar(20) UNIQUE,
-	name varchar(255) NOT NULL,
-	email varchar(80) NOT NULL,
+	name varchar(255),
+	email varchar(80),
 	addr1 varchar(80),
 	addr2 varchar(80),
 	addr3 varchar(80),
@@ -138,6 +140,7 @@ INSERT INTO rrtypes values (1000, 'WMX');
 INSERT INTO contact_types VALUES (1,'technical');
 INSERT INTO contact_types VALUES (2,'administrative');
 INSERT INTO contact_types VALUES (3,'zone');
+INSERT INTO contact_types VALUES (4,'registrant');
 
 INSERT INTO admins (id,login) VALUES (0,'*unknown*');
 INSERT INTO admins (id,login) VALUES (1,'pb');
@@ -174,3 +177,9 @@ INSERT INTO admins (id,login) VALUES (31,'blaudez');
 INSERT INTO admins (id,login) VALUES (32,'ob');
 INSERT INTO admins (id,login) VALUES (33,'lc');
 INSERT INTO admins (id,login) VALUES (34,'jertreg');
+
+GRANT SELECT ON TABLE admins,allowed_rr,rrtypes TO www, nobody, autoreg;
+GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE domains TO www, nobody, autoreg;
+GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE rrs TO www, nobody, autoreg;
+GRANT INSERT,SELECT ON TABLE domains_hist,rrs_hist TO www, nobody, autoreg;
+GRANT SELECT,UPDATE ON TABLE zones TO www, nobody, autoreg;
