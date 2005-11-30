@@ -82,6 +82,8 @@ my %dom;
 
 my $sel_domain = $dbh->prepare("SELECT domains.id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id FOR UPDATE");
 my $ins_contacts = $dbh->prepare("INSERT INTO contacts (handle,name,email,addr1,addr2,addr3,addr4,addr5,addr6,phone,fax,updated_on) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+my $ins_domain_dummy = $dbh->prepare("INSERT INTO domains (name,zone_id) VALUES (?,(SELECT id FROM zones WHERE name=?))");
+my $sel_domain_id = $dbh->prepare("SELECT currval('domains_id_seq')");
 my $ins_dc = $dbh->prepare("INSERT INTO domain_contact (domain_id,contact_id,contact_type_id) VALUES (?,(SELECT currval('contacts_id_seq')),(SELECT id FROM contact_types WHERE name=?))");
 my $ins_dc2 = $dbh->prepare("INSERT INTO domain_contact (domain_id,contact_id,contact_type_id) (SELECT ?,id,(SELECT id FROM contact_types WHERE name=?) FROM contacts WHERE (lower(name)=? OR handle=?) AND email IS NOT NULL)");
 
@@ -142,9 +144,16 @@ sub ins_domain()
 	    last;
 	}
     }
+
     if (!defined($domain_id)) {
-	print "Domain $dn not found\n";
-	return;
+	print "Domain $dn not handled in DNS, inserting as dummy domain\n";
+	$ins_domain_dummy->execute($dn, '');
+	$sel_domain_id->execute();
+	if ($sel_domain_id->rows != 1) {
+	    die "Internal error while getting domain_id\n";
+	}
+	my @row = $sel_domain_id->fetchrow_array;
+	($domain_id) = @row;
     }
 
     $ins_contacts->execute(undef,
@@ -235,6 +244,7 @@ foreach my $i (sort keys %dom) {
 }
 
 $sel_domain->finish();
+$sel_domain_id->finish();
 $dbh->commit;
 print "$ndom domains, $nperson persons.\n";
 print "$nambig ambiguous, $ninval invalid contacts.\n";
