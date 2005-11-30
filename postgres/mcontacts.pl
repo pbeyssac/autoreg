@@ -75,12 +75,15 @@ sub dumpobj()
 
 my $ndom = 0;
 my $nperson = 0;
+my $nambig = 0;
+my $ninval = 0;
 my %attr;
 my %dom;
 
 my $sel_domain = $dbh->prepare("SELECT domains.id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id FOR UPDATE");
 my $ins_contacts = $dbh->prepare("INSERT INTO contacts (handle,name,email,addr1,addr2,addr3,addr4,addr5,addr6,phone,fax,updated_on) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
 my $ins_dc = $dbh->prepare("INSERT INTO domain_contact (domain_id,contact_id,contact_type_id) VALUES (?,(SELECT currval('contacts_id_seq')),(SELECT id FROM contact_types WHERE name=?))");
+my $ins_dc2 = $dbh->prepare("INSERT INTO domain_contact (domain_id,contact_id,contact_type_id) (SELECT ?,id,(SELECT id FROM contact_types WHERE name=?) FROM contacts WHERE (lower(name)=? OR handle=?) AND email IS NOT NULL)");
 
 my $del_dc = $dbh->prepare("DELETE FROM domain_contact");
 $del_dc->execute();
@@ -95,7 +98,7 @@ sub ins_person()
     my $ts = $attr{'ch0'};
     if ($ts =~ /^\S+\s+(\d+)$/) { $ts = &parsetime($1); }
     else { undef $ts };
-    $ins_contacts->execute($attr{'nh0'},
+    $ins_contacts->execute(uc($attr{'nh0'}),
 	$attr{'pn0'},
 	$attr{'em0'},
 	$attr{'ad0'}, $attr{'ad1'}, $attr{'ad2'},
@@ -157,6 +160,26 @@ sub ins_domain()
 	    # &dumpobj(%attr);
 	}
     }
+
+    foreach my $i ('tc', 'zc', 'ac') {
+	my $j = 0;
+	my $c;
+	if ($i eq 'tc') { $c = 'technical' }
+	elsif ($i eq 'zc') { $c = 'zone' }
+	elsif ($i eq 'ac') { $c = 'administrative' }
+	while (defined($$attr{$i.$j})) {
+	    $ins_dc2->execute($domain_id, $c, lc($$attr{$i.$j}),uc($$attr{$i.$j}));
+	    my $r = $ins_dc2->rows;
+	    if ($r == 0) {
+		print "Warning: invalid $c contact '$$attr{$i.$j}', domain $dn\n";
+		$ninval++;
+	    } elsif ($r > 1) {
+		print "Warning: ambiguous $c contact '$$attr{$i.$j}', domain $dn\n";
+		$nambig++;
+	    }
+	    $j++;
+	}
+    }
     $ins_dc->execute($domain_id, 'registrant');
 }
 
@@ -214,5 +237,6 @@ foreach my $i (sort keys %dom) {
 $sel_domain->finish();
 $dbh->commit;
 print "$ndom domains, $nperson persons.\n";
+print "$nambig ambiguous, $ninval invalid contacts.\n";
 $dbh->disconnect;
 exit 0;
