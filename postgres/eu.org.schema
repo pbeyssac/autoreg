@@ -74,7 +74,7 @@ CREATE INDEX rrs_domain_id_index ON rrs(domain_id);
 
 CREATE TABLE contacts (
 	id SERIAL PRIMARY KEY,
-	handle varchar(20) UNIQUE,
+	handle varchar(20),
 	name varchar(255),
 	email varchar(80),
 	addr1 varchar(80),
@@ -88,7 +88,7 @@ CREATE TABLE contacts (
 	updated_on TIMESTAMP
 );
 CREATE INDEX contacts_handle_index ON contacts(handle);
-CREATE INDEX contacts_name_index ON contacts(name);
+CREATE INDEX contacts_name_index ON contacts(lower(name));
 
 CREATE TABLE contact_types (
 	id SERIAL PRIMARY KEY,
