@@ -308,7 +308,7 @@ if ($action eq 'show') {
     if (defined($ttl)) { print "\$TTL $ttl\n"; }
     print "$zone.\t$ttl\tSOA\t$soaprimary $soaemail $soaserial $soarefresh $soaretry $soaexpires $soaminimum\n";
 
-    $st = $dbh->prepare("SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value FROM domains,rrs,rrtypes WHERE domains.zone_id=? AND domains.id=rrs.domain_id AND rrtypes.id=rrs.rrtype_id ORDER BY domains.name,rrs.label");
+    $st = $dbh->prepare("SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value FROM domains,rrs,rrtypes WHERE domains.zone_id=? AND domains.registry_lock=FALSE AND domains.id=rrs.domain_id AND rrtypes.id=rrs.rrtype_id ORDER BY domains.name,rrs.label");
     $st->execute($zone_id);
     while (@row = $st->fetchrow_array) {
 	my ($label,$domain,$ttl,$type,$value) = @row;
