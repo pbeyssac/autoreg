@@ -1,0 +1,80 @@
+#!/bin/sh
+# $Id$
+
+# options:
+#	-r to kill -1 named, if a zone has changed
+#	-c to be quiet if nothing has changed (useful in cron jobs)
+
+# Where to find the "access-zone" script
+AZ=/usr/local/dns-manager/bin/access-zone
+# The directory where "master" zone files are located
+DEST=/etc/namedb
+# Command to reload the nameserver. Used only if option -r is provided.
+NDC=/usr/local/sbin/rndc
+
+if [ "$USER" = "root" ]; then USER=DNSADMIN; fi
+
+if [ "$USER" = "" ]; then
+	echo '$USER not set'
+	exit 2
+fi
+
+if [ "$*" = "" ]; then
+	echo "usage: $0 [-c] [-r] zonelist"
+	exit 2
+fi
+
+optr=0
+optc=0
+
+while [ X$1 = X-r -o X$1 = X-c ]; do
+  case "$1" in
+  -r) optr=1; shift ;;
+  -c) optc=1; shift ;;
+  esac
+done
+
+for i in $*
+do
+	if $AZ -u$USER -asoa $i; then
+	    if [ -r $DEST/$i ]; then
+		echo $i updated
+		if (
+		  echo "; AUTOMATICALLY GENERATED -- DON'T EDIT THIS FILE"
+		  echo ";"
+		  # access-zone is used to get a ASCII dump of the zone.
+		  # If it returns false, the copy to stdout failed.
+		  $AZ -u$USER -acat $i) > $DEST/$i.new &&
+		#
+		# Copy apparently ok, check it.
+		#
+		(tail -5 $DEST/$i.new | grep -q ^_EU-ORG-END-MARKER); then
+		    # Copy ok, show diffs
+		    diff -U2 $DEST/$i $DEST/$i.new
+		    # replace the older file
+		    mv -f $DEST/$i $DEST/$i.old
+		    mv -f $DEST/$i.new $DEST/$i
+
+		    echo ----
+		    mod=1
+		else
+		    echo "Error: cannot dump zone $i to $DEST/$i.new"
+		    rm -f $DEST/$i.new
+		fi
+	   else
+		echo "Error: cannot read $DEST/$i"
+	   fi
+	fi
+done
+
+if [ "$mod" = "1" ]; then
+	if [ $optr = 1 ]; then
+		$NDC reload
+	else
+		if [ $optc = 0 ]; then echo "now:" echo "$NDC reload"; fi
+	fi
+	exit 1
+else
+	if [ $optc = 0 ]; then echo no change.; fi
+	exit 0
+fi
