@@ -12,7 +12,7 @@ ZONES=/usr/local/dns-manager/zones
 # The directory where "master" zone files are located
 DEST=/etc/namedb
 # Command to reload the nameserver. Used only if option -r is provided.
-NDC=/usr/sbin/ndc
+NDC=/usr/local/sbin/rndc
 
 cd $ZONES
 
@@ -50,8 +50,7 @@ do
 		  # access-zone is used to get a read lock on
 		  # the file during the copy.
 		  # If it returns false, the copy to stdout failed.
-		  $AZ -u$USER -acat $i) > $DEST/$i.new
-		&&
+		  $AZ -u$USER -acat $i) > $DEST/$i.new &&
 		#
 		# Copy apparently ok, check it.
 		#
