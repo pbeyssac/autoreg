@@ -127,6 +127,9 @@ CREATE TABLE rrs_hist (
 	deleted_on TIMESTAMP DEFAULT NOW()
 );
 
+-- dummy "root" zone used as a placeholder to catch domains for which we store only whois data
+INSERT INTO zones (name, minlen, maxlen, soaserial, soaprimary, soaemail) VALUES ('', 1, 255, 2005113000, 'DUMMY', 'DUMMY');
+
 INSERT INTO rrtypes values (1, 'NS');
 INSERT INTO rrtypes values (2, 'MX');
 INSERT INTO rrtypes values (3, 'A');
@@ -178,8 +181,8 @@ INSERT INTO admins (id,login) VALUES (32,'ob');
 INSERT INTO admins (id,login) VALUES (33,'lc');
 INSERT INTO admins (id,login) VALUES (34,'jertreg');
 
-GRANT SELECT ON TABLE admins,allowed_rr,rrtypes TO www, nobody, autoreg;
-GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE domains TO www, nobody, autoreg;
-GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE rrs TO www, nobody, autoreg;
-GRANT INSERT,SELECT ON TABLE domains_hist,rrs_hist TO www, nobody, autoreg;
-GRANT SELECT,UPDATE ON TABLE zones TO www, nobody, autoreg;
+GRANT SELECT ON TABLE admins,allowed_rr,rrtypes TO root, www, nobody, autoreg;
+GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE domains TO root, www, nobody, autoreg;
+GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE rrs TO root, www, nobody, autoreg;
+GRANT INSERT,SELECT ON TABLE domains_hist,rrs_hist TO root, www, nobody, autoreg;
+GRANT SELECT,UPDATE ON TABLE zones TO root, www, nobody, autoreg;
