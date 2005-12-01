@@ -318,6 +318,7 @@ if ($action eq 'show') {
 	if (defined($ttl)) { $ttl .= " " }
 	print "$label$domain\t$ttl$type\t$value\n";
     }
+    print "_EU-ORG-END-MARKER\tTXT\t\"$soaserial\"\n";
     $dbh->commit;
 } elsif ($action eq 'soa') {
     my $zone = $parent;
