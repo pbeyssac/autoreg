@@ -159,6 +159,10 @@ if ($action eq 'show') {
 	$dbh->disconnect;
 	die sprintf($MSG_LONG, $parent, $maxlen);
     }
+    if ($opt_c) {
+	$dbh->disconnect;
+	exit 0;
+    }
 
     $st = $dbh->prepare("INSERT INTO domains (name,zone_id,created_by,created_on,updated_by,updated_on,internal) VALUES (?,?,(SELECT id FROM admins WHERE login=?),NOW(),(SELECT id FROM admins WHERE login=?),NOW(),FALSE)");
     $st->execute($subdom,$zone_id,$opt_u,$opt_u);
@@ -209,6 +213,11 @@ if ($action eq 'show') {
     }
     $st->finish;
 
+    if ($opt_c) {
+	$dbh->disconnect;
+	exit 0;
+    }
+
     # save history
     $st = $dbh->prepare("INSERT INTO rrs_hist (domain_id,ttl,rrtype_id,created_on,label,value,deleted_on) SELECT domain_id,ttl,rrtype_id,created_on,label,value,NOW() FROM rrs WHERE domain_id=?");
     $st->execute($domain_id);
@@ -248,6 +257,11 @@ if ($action eq 'show') {
     my ($domain_id,$zone_id) = @row;
     $st->finish;
 
+    if ($opt_c) {
+	$dbh->disconnect;
+	exit 0;
+    }
+
     $st = $dbh->prepare("UPDATE domains SET registry_lock=? WHERE id=?");
     $st->execute($lock, $domain_id);
     $st->finish;
@@ -268,6 +282,11 @@ if ($action eq 'show') {
     @row = $st->fetchrow_array;
     my ($domain_id,$zone_id) = @row;
     $st->finish;
+
+    if ($opt_c) {
+	$dbh->disconnect;
+	exit 0;
+    }
 
     # save history
     $st = $dbh->prepare("INSERT INTO rrs_hist (domain_id,ttl,rrtype_id,created_on,label,value,deleted_on) SELECT domain_id,ttl,rrtype_id,created_on,label,value,NOW() FROM rrs WHERE domain_id=?");
@@ -341,6 +360,12 @@ if ($action eq 'show') {
 	$dbh->commit;
 	exit 1;
     }
+
+    if ($opt_c) {
+	$dbh->disconnect;
+	exit 0;
+    }
+
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
     my $newserial = sprintf("%04d%02d%02d00", $year+1900, $mon+1, $mday);
     if ($newserial le $soaserial) { $newserial = $soaserial+1 }
