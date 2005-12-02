@@ -45,9 +45,9 @@ CREATE TABLE domains (
 	zone_id INTEGER REFERENCES zones(id),
 	registrar_id INTEGER,
 	created_by INTEGER REFERENCES admins(id),
-	created_on TIMESTAMP,
+	created_on TIMESTAMP(2) WITH TIME ZONE,
 	updated_by INTEGER REFERENCES admins(id),
-	updated_on TIMESTAMP,
+	updated_on TIMESTAMP(2) WITH TIME ZONE,
 	UNIQUE (name, zone_id)
 );
 CREATE INDEX domains_name_index ON domains(name,zone_id);
@@ -64,7 +64,7 @@ CREATE TABLE rrs (
 	domain_id INTEGER REFERENCES domains(id),
 	ttl INTEGER,
 	rrtype_id INTEGER REFERENCES rrtypes(id),
-	created_on TIMESTAMP DEFAULT NOW(),
+	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
 	label VARCHAR(64),
 	value VARCHAR(255)
 );
@@ -85,7 +85,7 @@ CREATE TABLE contacts (
 	addr6 varchar(80),
 	phone varchar(40),
 	fax varchar(40),
-	updated_on TIMESTAMP
+	updated_on TIMESTAMP(2) WITH TIME ZONE
 );
 CREATE INDEX contacts_handle_index ON contacts(handle);
 CREATE INDEX contacts_name_index ON contacts(lower(name));
@@ -97,7 +97,8 @@ CREATE TABLE contact_types (
 CREATE TABLE domain_contact (
 	domain_id INTEGER REFERENCES domains(id),
 	contact_id INTEGER REFERENCES contacts(id),
-	contact_type_id INTEGER REFERENCES contact_types(id)
+	contact_type_id INTEGER REFERENCES contact_types(id),
+	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 
 -- keeping history
@@ -111,9 +112,9 @@ CREATE TABLE domains_hist (
 	zone_id INTEGER REFERENCES zones(id),
 	registrar_id INTEGER,
 	created_by INTEGER REFERENCES admins(id),
-	created_on TIMESTAMP,
+	created_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_by INTEGER REFERENCES admins(id),
-	deleted_on TIMESTAMP DEFAULT NOW()
+	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 
 -- deleted RRs
@@ -121,10 +122,19 @@ CREATE TABLE rrs_hist (
 	domain_id INTEGER,
 	ttl INTEGER,
 	rrtype_id INTEGER REFERENCES rrtypes(id),
-	created_on TIMESTAMP NOT NULL,
+	created_on TIMESTAMP(2) WITH TIME ZONE NOT NULL,
 	label VARCHAR(64),
 	value VARCHAR(255),
-	deleted_on TIMESTAMP DEFAULT NOW()
+	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+);
+
+-- deleted domain-contact associations
+CREATE TABLE domain_contact_hist (
+	domain_id INTEGER,
+	contact_id INTEGER,
+	contact_type_id INTEGER REFERENCES contact_types(id),
+	created_on TIMESTAMP(2) WITH TIME ZONE,
+	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 
 -- dummy "root" zone used as a placeholder to catch domains for which we store only whois data
