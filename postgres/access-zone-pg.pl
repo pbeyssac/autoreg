@@ -288,6 +288,11 @@ if ($action eq 'show') {
 	exit 0;
     }
 
+    # get a lock on contact information we're going to delete
+    $st = $dbh->prepare("SELECT NULL FROM domain_contact WHERE domain_id=? FOR UPDATE");
+    $st->execute($domain_id);
+    $st->finish;
+
     # save history
     $st = $dbh->prepare("INSERT INTO rrs_hist (domain_id,ttl,rrtype_id,created_on,label,value,deleted_on) SELECT domain_id,ttl,rrtype_id,created_on,label,value,NOW() FROM rrs WHERE domain_id=?");
     $st->execute($domain_id);
@@ -295,7 +300,13 @@ if ($action eq 'show') {
     $st = $dbh->prepare("INSERT INTO domains_hist (id,name,zone_id,registrar_id,created_by,created_on,deleted_by,deleted_on) SELECT id,name,zone_id,registrar_id,created_by,created_on,(SELECT id FROM admins WHERE login=?),NOW() FROM domains WHERE id=?");
     $st->execute($opt_u,$domain_id);
     $st->finish;
+    $st = $dbh->prepare("INSERT INTO domain_contact_hist (domain_id,contact_id,contact_type_id,created_on) SELECT domain_id,contact_id,contact_type_id,created_on FROM domain_contact WHERE domain_id=?");
+    $st->execute($domain_id);
+    $st->finish;
 
+    $st = $dbh->prepare("DELETE FROM domain_contact WHERE domain_id=?");
+    $st->execute($domain_id);
+    $st->finish;
     $st = $dbh->prepare("DELETE FROM rrs WHERE domain_id=?");
     $st->execute($domain_id);
     $st->finish;
