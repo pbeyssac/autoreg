@@ -142,14 +142,16 @@ if ($action eq 'show') {
     }
     $st->finish;
 
-    $st = $dbh->prepare("SELECT zone_id,rrtype_id FROM allowed_rr WHERE allowed_rr.zone_id=? AND allowed_rr.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label=?)");
-    $st->execute($zone_id,$type);
-    if ($st->rows != 1) {
+    if ($opt_t) {
+	$st = $dbh->prepare("SELECT zone_id,rrtype_id FROM allowed_rr WHERE allowed_rr.zone_id=? AND allowed_rr.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label=?)");
+	$st->execute($zone_id,$type);
+	if ($st->rows != 1) {
+	    $st->finish;
+	    $dbh->disconnect;
+	    die sprintf($MSG_NOTYP, $type);
+	}
 	$st->finish;
-	$dbh->disconnect;
-	die sprintf($MSG_NOTYP, $type);
     }
-    $st->finish;
 
     if (length($subdom) < $minlen) {
 	$dbh->disconnect;
@@ -204,14 +206,16 @@ if ($action eq 'show') {
 	die sprintf($MSG_LOCKD, $domain);
     }
 
-    $st = $dbh->prepare("SELECT zone_id,rrtype_id FROM allowed_rr WHERE allowed_rr.zone_id=? AND allowed_rr.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label=?)");
-    $st->execute($zone_id,$type);
-    if ($st->rows != 1) {
+    if ($opt_t) {
+	$st = $dbh->prepare("SELECT zone_id,rrtype_id FROM allowed_rr WHERE allowed_rr.zone_id=? AND allowed_rr.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label=?)");
+	$st->execute($zone_id,$type);
+	if ($st->rows != 1) {
+	    $st->finish;
+	    $dbh->disconnect;
+	    die sprintf($MSG_NOTYP, $type);
+	}
 	$st->finish;
-	$dbh->disconnect;
-	die sprintf($MSG_NOTYP, $type);
     }
-    $st->finish;
 
     if ($opt_c) {
 	$dbh->disconnect;
