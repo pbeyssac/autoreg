@@ -6,17 +6,11 @@ use strict;
 my ($label, $curlabel, $type, $value);
 my $usermode = 0;
 
-if ($#ARGV ne 0) {
-	die "Usage: ".$0." file";
+if ($#ARGV ne 1) {
+	die "Usage: ".$0."zone file";
 }
 
-my $zone;
-my $file = $ARGV[0];
-if ($file =~ /\/([^\/]+)$/) {
-	$zone = uc($1);
-} else {
-	$zone = uc($file);
-}
+my $zone = uc(shift @ARGV);
 
 my %rr;
 my %rrid = (
@@ -68,7 +62,7 @@ my $soattl;
 $origin = $zone.'.';
 
 #open(ZF, "<$file") || die "Cannot open $file: $!";
-while (<STDIN>) {
+while (<>) {
 	my $ttl;
 	chop;
 	my $line = "";
@@ -114,15 +108,15 @@ while (<STDIN>) {
 		} elsif ($value =~ /^(\S+)\s+(\S+)\s+\(\s*$/) {
 		    $soaprimary = $1;
 		    $soaemail = $2;
-		    $line = <STDIN>; if ($line !~ /^\s+(\d+)\s*;\s*serial/i) { die "Bad SOA serial: $line"; }
+		    $line = <>; if ($line !~ /^\s+(\d+)\s*;\s*serial/i) { die "Bad SOA serial: $line"; }
 		    $soaserial = $1;
-		    $line = <STDIN>; if ($line !~ /^\s+(\S+)\s*;\s*refresh/i) { die "Bad SOA refresh: $line"; }
+		    $line = <>; if ($line !~ /^\s+(\S+)\s*;\s*refresh/i) { die "Bad SOA refresh: $line"; }
 		    $soarefresh = &parsettl($1);
-		    $line = <STDIN>; if ($line !~ /^\s+(\S+)\s*;\s*retry/i) { die "Bad SOA retry: $line"; }
+		    $line = <>; if ($line !~ /^\s+(\S+)\s*;\s*retry/i) { die "Bad SOA retry: $line"; }
 		    $soaretry = &parsettl($1);
-		    $line = <STDIN>; if ($line !~ /^\s+(\S+)\s*;\s*expir/i) { die "Bad SOA expires: $line"; }
+		    $line = <>; if ($line !~ /^\s+(\S+)\s*;\s*expir/i) { die "Bad SOA expires: $line"; }
 		    $soaexpires = &parsettl($1);
-		    $line = <STDIN>; if ($line !~ /^\s+(\S+)\s*\)\s*;\s*minimum/i) { die "Bad SOA minimum: $line"; }
+		    $line = <>; if ($line !~ /^\s+(\S+)\s*\)\s*;\s*minimum/i) { die "Bad SOA minimum: $line"; }
 		    $soaminimum = &parsettl($1);
 		} else {
 		    die "Bad SOA line: $value\n";
@@ -146,6 +140,8 @@ while (<STDIN>) {
 	    } elsif ($type eq 'SRV') {
 		$value = uc($value);
 		if ($value !~ /\.$/) { $value .= '.'.$origin }
+	    } elsif ($type eq 'CNAME') {
+		$value = uc($value);
 	    } elsif ($type eq 'AAAA') {
 		$value = uc($value);
 	    }
