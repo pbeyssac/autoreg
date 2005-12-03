@@ -124,7 +124,7 @@ if ($action eq 'show') {
     $st->finish;
     $dbh->commit;
 } elsif ($action eq 'new') {
-    if (!&zauth_check($parent, $opt_u)) {
+    if (!$opt_c && !&zauth_check($parent, $opt_u)) {
 	$dbh->disconnect;
 	die sprintf($MSG_NUSER, $opt_u);
     }
@@ -192,7 +192,7 @@ if ($action eq 'show') {
     $st->finish;
     $dbh->commit;
 } elsif ($action eq 'modify') {
-    if (!&zauth_check($parent, $opt_u)) {
+    if (!$opt_c && !&zauth_check($parent, $opt_u)) {
 	$dbh->disconnect;
 	die sprintf($MSG_NUSER, $opt_u);
     }
