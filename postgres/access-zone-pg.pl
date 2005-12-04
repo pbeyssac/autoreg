@@ -31,6 +31,7 @@ use DBI;
 #	zones-auth config file
 # -t -> type of record (for "new" or "modify"), checked with respect to
 #	the types of allowed records in the zone.
+# -z -> domainname is a zone name, access records related to the zone itself.
 #
 # For actions "new" and "modify", the records to be inserted are provided
 # on stdin.
@@ -41,7 +42,7 @@ use DBI;
 my ($action,$subdom,$parent,$domain);
 
 require "getopts.pl";
-&Getopts("ca:u:t:");
+&Getopts("ca:u:t:z");
 
 if ($opt_a) {
 	$action = $opt_a;
@@ -75,9 +76,10 @@ if ($#ARGV != 0) {
   die("Usage: [-c] [-t type] -u user -a{cat|soa|new|modify|delete|show} domainname\n");
 }
 
-if ($action eq 'soa' || $action eq 'cat') {
+if ($action eq 'soa' || $action eq 'cat' || $opt_z) {
   $parent = $ARGV[0];
   $parent =~ tr/a-z/A-Z/;
+  $subdom = '';
 } else {
   $domain = $ARGV[0];
   $domain =~ tr/a-z/A-Z/;
