@@ -185,7 +185,7 @@ if ($action eq 'show') {
     }
     @row = $st->fetchrow_array;
     my ($domain_id) = @row;
-    &insertrr($dbh,$subdom,$zone,$domain_id);
+    &insertrr($dbh,$subdom,$parent,$domain_id);
 
     $st = $dbh->prepare("UPDATE zones SET updateserial=TRUE WHERE id=?");
     $st->execute($zone_id);
@@ -237,7 +237,7 @@ if ($action eq 'show') {
     $st->execute($domain_id);
     $st->finish;
 
-    &insertrr($dbh,$subdom,$zone,$domain_id);
+    &insertrr($dbh,$subdom,$parent,$domain_id);
 
     $st = $dbh->prepare("UPDATE domains SET updated_by=(SELECT id FROM admins WHERE login=?), updated_on=NOW() WHERE id=?");
     $st->execute($opt_u,$domain_id);
@@ -433,10 +433,10 @@ sub insertrr()
 	}
 
 	# handle label
-	if ($label =~ /^(.*)\.$zone\.$/i) { $label = $1; }
-	elsif ($label =~ /^$zone\.$/i) { $label = ''; }
+	if ($label =~ /^(.*)\.$subdom\.$zone\.$/i) { $label = $1; }
+	elsif ($label =~ /^$subdom\.$zone\.$/i) { $label = ''; }
 	elsif ($label =~ /^(.*)\.$subdom$/i) { $label = $1; }
-	elsif ($label eq $subdom) { $label = ''; }
+	elsif ($label =~ /^$subdom$/i) { $label = ''; }
 
 	# get ttl, if any
 	if ($line =~ /^(\d+)\s+(.*)$/) { $ttl = $1; $line = $2; }
