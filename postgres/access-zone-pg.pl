@@ -79,6 +79,7 @@ if ($#ARGV != 0) {
 if ($action eq 'soa' || $action eq 'cat' || $opt_z) {
   $parent = $ARGV[0];
   $parent =~ tr/a-z/A-Z/;
+  $domain = $parent;
   $subdom = '';
 } else {
   $domain = $ARGV[0];
