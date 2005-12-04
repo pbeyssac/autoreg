@@ -115,7 +115,7 @@ if ($action eq 'show') {
     my $lastlabel;
     while (@row = $st->fetchrow_array) {
 	my ($label,$domain,$type,$value) = @row;
-	if ($label ne "") { $label .= '.' }
+	if ($label ne "" && $domain ne "") { $label .= '.' }
 	if ($type eq 'NS' || $type eq 'MX' || $type eq 'CNAME') { $value .= '.' }
 	my $l = "$label$domain";
 	if ($l eq $lastlabel) { $l = '' } else { $lastlabel = $l }
