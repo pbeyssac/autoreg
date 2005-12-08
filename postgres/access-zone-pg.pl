@@ -111,12 +111,12 @@ if ($action eq 'show') {
     if ($registry_hold) { print "; registry_hold\n" }
     if ($internal) { print "; internal\n" }
     $st->finish;
-    $st = $dbh->prepare("SELECT rrs.label,domains.name,rrtypes.label,rrs.value FROM domains,rrs,rrtypes WHERE domains.id=? AND domains.id=rrs.domain_id AND rrtypes.id=rrs.rrtype_id ORDER BY domains.name,rrs.label,rrtypes.label,rrs.value");
+    $st = $dbh->prepare("SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value FROM domains,rrs,rrtypes WHERE domains.id=? AND domains.id=rrs.domain_id AND rrtypes.id=rrs.rrtype_id ORDER BY domains.name,rrs.label,rrtypes.label,rrs.value");
     $st->execute($did);
     if ($st->rows == 0) { print "; (NO RECORD)\n"; }
     my $lastlabel;
     while (@row = $st->fetchrow_array) {
-	my ($label,$domain,$type,$value) = @row;
+	my ($label,$domain,$ttl,$type,$value) = @row;
 	if ($label ne "" && $domain ne "") { $label .= '.' }
 	if ($type eq 'NS' || $type eq 'MX' || $type eq 'CNAME') { $value .= '.' }
 	my $l = "$label$domain";
@@ -124,7 +124,8 @@ if ($action eq 'show') {
 	if (length($l) > 15) { $l .= "" }
 	elsif (length($l) > 7) { $l .= "\t" }
 	else { $l .= "\t\t" }
-	print "$l\t$type\t$value\n";
+	if (defined($ttl)) { print "$l\t$ttl\t$type\t$value\n"; }
+	else { print "$l\t\t$type\t$value\n"; }
     }
     $st->finish;
     $dbh->commit;
