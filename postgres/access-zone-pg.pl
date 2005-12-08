@@ -32,6 +32,8 @@ use DBI;
 # -t -> type of record (for "new" or "modify"), checked with respect to
 #	the types of allowed records in the zone.
 # -z -> domainname is a zone name, access records related to the zone itself.
+# -i -> in 'modify' and 'delete', allow handling of "internal" domains.
+#	in 'new', set "internal" flag.
 #
 # For actions "new" and "modify", the records to be inserted are provided
 # on stdin.
@@ -42,7 +44,7 @@ use DBI;
 my ($action,$subdom,$parent,$domain);
 
 require "getopts.pl";
-&Getopts("ca:u:t:z");
+&Getopts("ca:iu:t:z");
 
 if ($opt_a) {
 	$action = $opt_a;
@@ -175,8 +177,8 @@ if ($action eq 'show') {
 	exit 0;
     }
 
-    $st = $dbh->prepare("INSERT INTO domains (name,zone_id,created_by,created_on,updated_by,updated_on,internal) VALUES (?,?,(SELECT id FROM admins WHERE login=?),NOW(),(SELECT id FROM admins WHERE login=?),NOW(),FALSE)");
-    $st->execute($subdom,$zone_id,$opt_u,$opt_u);
+    $st = $dbh->prepare("INSERT INTO domains (name,zone_id,created_by,created_on,updated_by,updated_on,internal) VALUES (?,?,(SELECT id FROM admins WHERE login=?),NOW(),(SELECT id FROM admins WHERE login=?),NOW(),?)");
+    $st->execute($subdom,$zone_id,$opt_u,$opt_u,defined($opt_i)?1:0);
     $st->finish;
 
     $st = $dbh->prepare("SELECT currval('domains_id_seq')");
@@ -210,11 +212,12 @@ if ($action eq 'show') {
     my ($domain_id,$zone_id,$registry_lock,$internal) = @row;
     $st->finish;
 
-    if ($registry_lock || $internal) {
+    if ($registry_lock || ($internal && !$opt_i)) {
 	$dbh->disconnect;
 	die sprintf($MSG_LOCKD, $domain);
     }
 
+    # check RR type if requested
     if ($opt_t) {
 	$st = $dbh->prepare("SELECT zone_id,rrtype_id FROM allowed_rr WHERE allowed_rr.zone_id=? AND allowed_rr.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label=?)");
 	$st->execute($zone_id,$type);
@@ -285,7 +288,7 @@ if ($action eq 'show') {
 	$dbh->disconnect;
 	die sprintf($MSG_NUSER, $opt_u);
     }
-    $st = $dbh->prepare("SELECT domains.id,zone_id FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id FOR UPDATE");
+    $st = $dbh->prepare("SELECT domains.id,zones.id,registry_lock,internal FROM domains,zones WHERE domains.name=? AND zones.name=? AND domains.zone_id=zones.id FOR UPDATE");
     $st->execute($subdom,$parent);
     if ($st->rows < 1) {
 	$st->finish;
@@ -293,8 +296,13 @@ if ($action eq 'show') {
 	die sprintf($MSG_NODOM, $domain, $action);
     }
     @row = $st->fetchrow_array;
-    my ($domain_id,$zone_id) = @row;
+    my ($domain_id,$zone_id,$registry_lock,$internal) = @row;
     $st->finish;
+
+    if ($registry_lock || ($internal && !$opt_i)) {
+	$dbh->disconnect;
+	die sprintf($MSG_LOCKD, $domain);
+    }
 
     if ($opt_c) {
 	$dbh->disconnect;
