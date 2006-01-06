@@ -4,7 +4,7 @@
 use DBI;
 use strict;
 
-my $dbh = DBI->connect("dbi:Pg:dbname=eu.org", "", "", {AutoCommit => 0});
+my $dbh = DBI->connect("dbi:Pg:dbname=eudevel", "", "", {AutoCommit => 0});
 my $sth;
 
 if ($#ARGV ne 0) {
@@ -94,6 +94,13 @@ my $del_contacts = $dbh->prepare("DELETE FROM contacts");
 $del_contacts->execute();
 $del_contacts->finish();
 
+my %shorts = ('person'=>'pn', 'address'=>'ad', 'tech-c'=>'tc', 'admin-c'=>'ac',
+	'phone'=>'ph', 'fax'=>'fx', 'e-mail'=>'em', 'changed'=>'ch',
+	'remark'=>'rm', 'nic-hdl'=>'nh', 'notify'=>'ny', 'mnt-by'=>'mb',
+	'source'=>'so', 'upd->to'=>'dt', 'auth'=>'at', 'mntner'=>'mt',
+	'domain'=>'dn'
+);
+
 sub ins_person()
 {
     my %attr = @_;
@@ -133,7 +140,7 @@ sub ins_domain()
     #
     my @p1;
     my @p2 = @d;
-    for (my $i; $i < $n-1; $i++) {
+    for (my $i; $i < $n; $i++) {
 	push @p1, shift @p2;
 	($d, $z) = (join('.',@p1), join('.',@p2));
 	$sel_domain->execute($d,$z);
@@ -224,8 +231,17 @@ while (<CF>) {
     } elsif (/^$/) {
 	next;
     }
+    my ($a, $v);
+    if (/^([a-z]+):\s+(.*\S)\s*$/i) {
+	($a, $v) = ($1, $2);
+	if (defined($shorts{$a})) {
+	    $a = $shorts{$a};
+	}
+    }
     if (/^\*([a-z][a-z]):\s+(.*\S)\s*$/i) {
-	my ($a, $v) = ($1, $2);
+	($a, $v) = ($1, $2);
+    }
+    if (defined($a)) {
 	my $i;
 	for ($i = 0; $i < 9; $i++) {
 	    last if (!defined $attr{"$a$i"});
