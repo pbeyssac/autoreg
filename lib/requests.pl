@@ -36,6 +36,7 @@ sub rq_set_whois {
     return "Access to request $rq not authorized.";
   }
 
+  umask 022;
   if (!open(NF, ">$VALDIR/.$rq.new")) {
     close(F);
     return "Unable to update request file.";
@@ -102,6 +103,7 @@ sub rq_set_attr {
     return "Access to request $rq not authorized.";
   }
 
+  umask 022;
   if (!open(NF, ">$VALDIR/.$rq.new")) {
     close(F);
     return "Unable to update request file.";
@@ -202,6 +204,7 @@ sub rq_set_state {
     return "Access to request $rq not authorized.";
   }
 
+  umask 022;
   if (!open(NF, ">$VALDIR/.$rq.new")) {
     close(F);
     return "Unable to update request file.";
@@ -349,6 +352,7 @@ sub rq_create {
 	= ($_[0], $_[1], $_[2], $_[3], $_[4]);
   local ($dns, $dbrecords);
 
+  umask 022;
   open(VR, ">$VALDIR/.$rq.tmp") || die "Cannot open $VALDIR/.$rq.tmp: $!\n";
   flock(VR, $LOCK_EX);
   print VR "$replyto\n";
