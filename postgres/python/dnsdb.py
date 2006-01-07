@@ -289,7 +289,7 @@ class _Domain:
 	if self._dbc.rowcount == 0:
 	    print '; (NO RECORD)'
     def show(self):
-	"""Combines show_head() and show_rrs()."""
+	"""Shorthand to call show_head() then show_rrs()."""
 	self.show_head()
 	self.show_rrs()
     def set_registry_lock(self, val):
