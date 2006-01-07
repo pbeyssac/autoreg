@@ -1,35 +1,34 @@
 #!/usr/bin/env python
 # $Id$
 #
-# Usage:
-#  access-zone [-c] [-t type] -u user
-#		-a{cat|soa|new|modify|delete|show} domainname
-#
-# -c -> check only, don't update any file (used for request check)
-# -a -> action.
-#		cat:	just print out the zone file
-#		new:	create the entry for domainname in the parent zone,
-#			if not already there
-#		modify: modify the entry for domainname in the parent zone,
-#			if already there
-#		delete: delete the entry for domainname in the parent zone,
-#			if already there
-#		soa:	update the SOA for domainname in the zonefile of
-#			the same name, if the file has previously changed
-#			with one of the above actions
-#		show:	display the entry for domainname in the parent zone
-#
-# -u -> username, used to check access permissions with respect to the
-#	zones-auth config file
-# -t -> type of record (for "new" or "modify"), checked with respect to
-#	the types of allowed records in the zone.
-# -z -> domainname is a zone name, access records related to the zone itself.
-# -i -> in 'modify' and 'delete', allow handling of "internal" domains.
-#	in 'new', set "internal" flag.
-#
-# For actions "new" and "modify", the records to be inserted are provided
-# on stdin.
-#
+
+"""Usage:
+	access-zone [-ci] [-t type] [-z zone] [-u user] -a action domainname
+
+-c: check only, don't update any file (used for request check)
+-a: action, one of:
+	new:	create the entry for domainname in the parent zone,
+		if not already there; use resource records on stdin.
+	modify: modify the entry for domainname in the parent zone,
+		if already there; use resource records on stdin.
+	delete: delete the entry for domainname in the parent zone,
+		if already there.
+	cat:	print the zone file on stdout.
+	soa:	update the SOA for domainname in the zonefile of
+		the same name, if the file has previously changed
+		due to one of the above actions.
+	show:	display entry for domainname.
+        lock:	protect domain from 'modify' or 'delete' unless forced with -i.
+        unlock:	unprotect domain.
+
+-u: username, used to check access permissions with respect to the
+    zones-auth config file. Defaults to USER environment variable.
+-t: type of resource record (for 'new' or 'modify'), checked with respect to
+    allowed record types in the zone.
+-z: specify zone, in case there is an ambiguity with respect to handled zones.
+-i: in 'modify' and 'delete', allow handling of "internal" domains.
+    in 'new', set "internal" flag.
+"""
 
 # standard modules
 import getopt
@@ -45,7 +44,7 @@ import msg
 action_list = ['cat', 'delete', 'lock', 'modify', 'unlock',
 		'new', 'show', 'soa']
 def usage():
-    print >> sys.stderr, "Usage: access-zone -a action -u user [-t type] [-ci] [-z zone] domain"
+    print >> sys.stderr, __doc__
 
 def errexit(msg, args):
     """Print a formatted error message on stderr and exit(1)."""
@@ -61,7 +60,7 @@ except getopt.GetoptError:
 action, type, zone = None, None, None
 nowrite, internal = False, False
 user = os.getenv('USER', None)
-lang=os.getenv('LANG', '')
+lang = os.getenv('LANG', '')
 
 amsg = msg.Msg('msg-access', lang)
 
