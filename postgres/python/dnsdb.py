@@ -209,6 +209,11 @@ class _Domain:
 		'(domain_id,label,ttl,rrtype_id,value) '
 		'VALUES (%d,%s,%s,(SELECT id FROM rrtypes WHERE label=%s),%s)',
 		(did, label, ttl, type, value))
+    def set_updated_by(self, login_id):
+        """Set updated_by and updated_on."""
+        self._dbc.execute('UPDATE domains '
+                          'SET updated_by=%d, updated_on=NOW() '
+                          'WHERE id=%d', (login_id, self._id))
     def move_hist(self, login_id, domains=False):
 	"""Move resource records to history tables, deleting
 	original records after copy.
@@ -436,6 +441,7 @@ class db:
 	d.move_hist(login_id=self._login_id, domains=False)
 	# add new resource records
 	d.add_rr(file)
+	d.set_updated_by(self._login_id)
 	z.set_updateserial()
 	self._dbh.commit()
     def new(self, domain, zone, type, file=None, internal=False):
