@@ -16,7 +16,7 @@ class DnsParser:
     # simplified expression for a regular line
     # (does not handle trailing comments, difficult because of string quoting)
     _label_re = sre.compile(
-	'^(\S+)?\s+(\d+)?\s+(?:[Ii][Nn]\s+)?(\S+)\s+(\S|\S.*\S)\s*$')
+	'^(\S+)?\s+(?:(\d+)\s+)?(?:[Ii][Nn]\s+)?(\S+)\s+(\S|\S.*\S)\s*$')
     # right-hand side for a MX record
     _mx_re = sre.compile('^(\d+)\s+(\S+)$')
 
