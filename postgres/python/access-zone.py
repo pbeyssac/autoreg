@@ -107,9 +107,9 @@ try:
   elif action == 'unlock':
     dd.set_registry_lock(domain, zone, False)
   elif action == 'cat':
-    dd.cat(domain, zone)
+    dd.cat(domain)
   elif action == 'soa':
-    dd.soa(domain, zone)
+    dd.soa(domain)
   else:
     usage()
     sys.exit(1)
