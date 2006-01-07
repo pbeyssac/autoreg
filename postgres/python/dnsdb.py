@@ -424,7 +424,7 @@ class db:
 	override_internal: if set, allow modifications to internal domains
 	"""
 	dname, zname, did, zid = self._find(domain, zone, wlock=True)
-	self._check_login_perm(z)
+	self._check_login_perm(zone)
 	z = _Zone(self._dbc, id=zid, name=zname, nowrite=self._nowrite)
 	z.checktype(type)
 	d = _Domain(self._dbc, id=did, name=dname, zone_name=zname)
