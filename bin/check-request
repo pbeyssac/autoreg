@@ -9,6 +9,11 @@
 require "getopts.pl";
 do Getopts("l:s");
 
+$ENV{PATH} = "/sbin:/bin:/usr/sbin:/usr/bin";
+
+#$) = 1025;
+#$> = 1025;
+
 if ($#ARGV !=0) { die "Usage: check-request [-l language-iso-code] [-s] request-id.\n"; }
 
 if ($opt_l) {
@@ -26,6 +31,7 @@ require "$DNSLIB/errors.pl";
 require "$DNSLIB/md5.pl";
 require "$DNSLIB/misc.pl";
 require "$DNSLIB/requests.pl";
+require "$DNSLIB/whois.pl";
 
 &zauth_read;
 
@@ -59,6 +65,8 @@ while (<STDIN>) {
 	if (?^mr\.: ?) {
 		$replyto = substr($_, index($_, ":") + 1);
 		if ($replyto =~ /^\s*(.*\S)\s*$/) {
+			$replyto = $1
+		} elsif ($replyto =~ /^\s*<.*\S>\s*$/) {
 			$replyto = $1
 		} else {
 			$replyto = ""
@@ -97,7 +105,7 @@ while (<STDIN>) {
 	}
 
 	if (/^rt\./) {
-		$req = substr($v, 0, 1)
+		$req = $v;
 	} elsif (/^mr\./) {
 		$replyto = $v;
 	} elsif (/^pp\./ || /^[oat]a\./) {
@@ -127,7 +135,7 @@ if ($multi) {
 	$multi = 0;
 }
 
-if ($replyto !~ /.+@[A-Za-z0-9-]+\..*[A-Za-z0-9-]+/) {
+if ($replyto !~ /^\S+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/) {
 	die sprintf($ERR_BADRP, $replyto);
 }
 
@@ -155,7 +163,7 @@ for ($i=0; $fqdn[$i]; $i++) { $fqdn[$i] =~ tr/a-z/A-Z/ }
 
 print $MSG_BASCK;
 
-if ($req =~ /[^a-zA-Z]/) {
+if ($req !~ /[a-zA-Z +]/) {
 	&pr_error($ERR_BADRT, $req);
 }
 if ($rectype =~ /[^a-zA-Z -]/) {
@@ -180,7 +188,12 @@ if (!$domain) {
 }
 
 if (!$req) { &pr_error($ERR_MISRQ); }
-elsif ($req !~ /^[NMD]/ ) { &pr_error($ERR_BADRT, $req); }
+elsif ($req =~ /^N/i ) { $req = 'N'; }
+elsif ($req =~ /^D/i ) { $req = 'D'; }
+elsif ($req =~ /^Modify domain contacts/i ) { $req = 'MC'; }
+elsif ($req =~ /^Modify domain servers/i ) { $req = 'MZ'; }
+elsif ($req =~ /^M/i ) { $req = 'M'; }
+else { &pr_error($ERR_BADRT, $req); }
 
 if (!$rectype) { &pr_error($ERR_MISRC); }
 elsif ($rectype =~ /^N/) { $rectype = 'NS' }
@@ -189,19 +202,22 @@ elsif ($rectype =~ /^C/) { $rectype = 'CNAME' }
 elsif ($rectype =~ /^W/) { $rectype = 'WMX' }
 else { &pr_error($ERR_BADRR, $rectype); }
 
-for ($i = 0; $fqdn[$i]; $i++) {
-    &checkname($fqdn[$i]);
-}
-
 $makerr=1;
 if (!@fqdn) {
-	if ($req =~ /^N/) {
+	if ($req =~ /^N/ || $req eq 'MZ') {
 		&pr_error($ERR_NOSRV);
 	} else {
 		$makerr=0;
 	}
+} else {
+    if ($req eq 'N' || $req eq 'MZ' || $req eq 'M') {
+	for ($i = 0; $fqdn[$i]; $i++) {
+	    &checkname($fqdn[$i]);
+	}
+    }
 }
-if ($nums < 2 && $req =~ /^N/ && $rectype eq 'NS') {
+
+if ($nums < 2 && ($req =~ /^N/ || $req eq 'MZ') && $rectype eq 'NS') {
 	&pr_error($ERR_ONENS);
 }
 
@@ -236,11 +252,29 @@ print $MSG_CNTCK;
 
 $makewhois = 1;
 
-if ($ref{"am"} && $ref{"am"} !~ /^[a-zA-Z -]*$/) {
+if (!$ref{"ah"} && !$ref{"am"} && !$ref{"th"} && !$ref{"tm"}) {
+	if ($req eq "N") {
+		&pr_error($ERR_MISCT);
+	} else {
+		$makewhois=0
+	}
+}
+if ($req eq 'MZ' && $makewhois) {
+  &pr_error($ERR_NOCON);
+  $makewhois=0;
+}
+
+if ($ref{"am"} && $ref{"am"} !~ /^[a-zA-Z \.-]*$/) {
 	&pr_error($ERR_INVCH, $ref{"am"});
 }
-if ($ref{"tm"} && $ref{"tm"} !~ /^[a-zA-Z -]*$/) {
+if ($ref{"am"} && $ref{"am"} !~ /^\S+\s+\S.*$/) {
+	&pr_error($ERR_INVCN, $ref{"am"});
+}
+if ($ref{"tm"} && $ref{"tm"} !~ /^[a-zA-Z \.-]*$/) {
 	&pr_error($ERR_INVCH, $ref{"tm"});
+}
+if ($ref{"tm"} && $ref{"tm"} !~ /^\S+\s+\S.*$/) {
+	&pr_error($ERR_INVCN, $ref{"tm"});
 }
 
 if ($ref{"ah"} && $ref{"ah"} !~ /^[A-Z]+[0-9]*(-[A-Z]+)?$/) {
@@ -249,26 +283,21 @@ if ($ref{"ah"} && $ref{"ah"} !~ /^[A-Z]+[0-9]*(-[A-Z]+)?$/) {
 if ($ref{"th"} && $ref{"th"} !~ /^[A-Z]+[0-9]*(-[A-Z]+)?$/) {
 	&pr_error($ERR_BADNH, $ref{"th"});
 }
-if ($ref{"ae"} && $ref{"ae"} !~ /^.+@[A-Za-z0-9-]+\..*[A-Za-z0-9-]+$/) {
+if ($ref{"ae"} && $ref{"ae"} !~ /^\S+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/) {
 	&pr_error($ERR_BADEM, $ref{"ae"});
 }
-if ($ref{"te"} && $ref{"te"} !~ /^.+@[A-Za-z0-9-]+\..*[A-Za-z0-9-]+$/) {
+if ($ref{"te"} && $ref{"te"} !~ /^\S+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/) {
 	&pr_error($ERR_BADEM, $ref{"te"});
 }
+if ($ref{"om"} && $ref{"om"} !~ /^\S+.*$/) {
+	&pr_error($ERR_BDORG, $ref{"om"});
+}
 
-if ($ref{"at"} && $ref{"at"} !~ /^\+[0-9 ]*$/) {
+if ($ref{"at"} && $ref{"at"} !~ /^\+?[0-9 -]*$/) {
 	&pr_error($ERR_BADPH, $ref{"at"});
 }
-if ($ref{"tt"} && $ref{"tt"} !~ /^\+[0-9 ]*$/) {
+if ($ref{"tt"} && $ref{"tt"} !~ /^\+?[0-9 -]*$/) {
 	&pr_error($ERR_BADPH, $ref{"tt"});
-}
-
-if (!$ref{"ah"} && !$ref{"am"} && !$ref{"th"} && !$ref{"tm"}) {
-	if ($req eq "N") {
-		&pr_error($ERR_MISCT);
-	} else {
-		$makewhois=0
-	}
 }
 
 if ($makewhois) {
@@ -325,6 +354,9 @@ if ($makewhois) {
 
 if ($makerr) {
 	printf $MSG_GENRC, $parentdom;
+	if ($req eq 'MC') {
+		&pr_error($ERR_NORR);
+	}
 
 	foreach $i (keys %ZAUTH) {
 		if ($parentdom eq $i) {
@@ -349,11 +381,26 @@ if ($makerr) {
 if ($req ne 'D' && !$makewhois && !$makerr) {
   &pr_error($ERR_EMPTY);
 }
+
+if ($req eq 'MZ' || $req eq 'D' || ($req eq 'M' && !$makewhois)) {
+	my $cok = 0;
+	foreach $i (&whois_email("whois.eu.org", $domain)) {
+		if ($i eq $replyto) { $cok = 1; last; }
+	}
+	if (!$cok) { &pr_error($ERR_UREPL, $replyto); }
+}
+
 &stoperrs;
 
 select(STDOUT); $| = 1; print ""; $| = 0;
 
-if (system("$AZPATH -c -a$req -t$rectype $domain 2>&1")) {
+my $azreq;
+$azreq = $req;
+if ($req =~ /^M/) { $azreq = 'M'; };
+if ($req =~ /^N/) { $azreq = 'N'; };
+if ($req =~ /^D/) { $azreq = 'D'; };
+
+if (system("$AZPATH -c -a$azreq -t$rectype $domain 2>&1")) {
 	exit 1;
 }
 
