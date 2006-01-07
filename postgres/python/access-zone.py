@@ -90,31 +90,26 @@ dbh = psycopg.connect(conf.dbstring)
 dd = dnsdb.db(dbh, nowrite)
 
 domain = args[0].upper()
-if action in ['cat', 'soa'] or zone != None:
-    parent = domain
-else:
-    d = domain.split('.')
-    parent = '.'.join(d[1:])
 
 dd.login(user)
 
 try:
   if action == 'show':
-    dd.show(domain)
+    dd.show(domain, zone)
   elif action == 'new':
-    dd.new(domain, type=type, file=sys.stdin, internal=internal)
+    dd.new(domain, zone, type, file=sys.stdin, internal=internal)
   elif action == 'modify':
-    dd.modify(domain, type=type, file=sys.stdin, override_internal=internal)
+    dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal)
   elif action == 'delete':
-    dd.delete(domain, override_internal=internal)
+    dd.delete(domain, zone, override_internal=internal)
   elif action == 'lock':
-    dd.set_registry_lock(domain, True)
+    dd.set_registry_lock(domain, zone, True)
   elif action == 'unlock':
-    dd.set_registry_lock(domain, False)
+    dd.set_registry_lock(domain, zone, False)
   elif action == 'cat':
-    dd.cat(parent)
+    dd.cat(domain, zone)
   elif action == 'soa':
-    dd.soa(domain)
+    dd.soa(domain, zone)
   else:
     usage()
     sys.exit(1)

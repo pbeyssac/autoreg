@@ -241,7 +241,10 @@ class _Domain:
     def show_head(self):
 	"""Show administrative data for domain."""
 	print "; zone", self._zone_name
-	print "; domain", '.'.join((self._name,self._zone_name))
+	if self._name == '':
+	    print "; domain", self._zone_name
+	else:
+	    print "; domain", '.'.join((self._name,self._zone_name))
 	if self._created_on:
 	    print "; created: by %s, %s" % (self._created_by, self._created_on)
 	if self._updated_on:
@@ -320,24 +323,36 @@ class db:
 	    self._zone_minlen[name] = minlen
 	    self._zone_maxlen[name] = maxlen
 	    t = self._dbc.fetchone()
-    def _split(self, domain):
+    def _split(self, domain, zone=None):
 	"""Split domain name according to known zones."""
-	n = domain.upper().split('.')
+	domain = domain.upper()
+	if zone != None:
+	    zone = zone.upper()
+	    if not zone in self._zone_id:
+		return (None, None, None)
+	    if domain.endswith('.'+zone):
+		dom = domain[:-len(zone)-1]
+	    elif domain == zone:
+		dom = ''
+	    else:
+		return (None, None, None)
+	    return (dom, zone, self._zone_id[zone])
+
+	n = domain.split('.')
 	for i in range(1, len(n)):
 	    zone = '.'.join(n[i:])
 	    if zone in self._zone_id:
 		dom = '.'.join(n[:i])
 		return (dom, zone, self._zone_id[zone])
-		break
-	return (domain, None, None)
-    def _find(self, domain, wlock=False, raise_nf=True):
+	return (None, None, None)
+    def _find(self, domain, zone, wlock=False, raise_nf=True):
 	"""Find domain and zone id.
 
 	If not found and raise_nf is True, raise an exception.
 	Lock zone and domain for update if wlock is True.
-	Return domain_name, zone_name, domain_id, zone_id
+	Return domain_name, zone_name, domain_id, zone_id.
 	"""
-	d, z, zid = self._split(domain)
+	d, z, zid = self._split(domain, zone)
 	if z == None or zid == None:
 	    raise DomainError(DomainError.ZNOTFOUND, domain)
 	if wlock:
@@ -376,20 +391,20 @@ class db:
 	"""Logout current user."""
 	self._check_logged()
 	self._login_id = None
-    def show(self, domain):
+    def show(self, domain, zone):
 	"""Show a pretty-printed zone excerpt for domain."""
-	d, z, did, zid = self._find(domain)
+	d, z, did, zid = self._find(domain, zone)
 	self._check_login_perm(z)
 	dom = _Domain(self._dbc, did)
 	dom.fetch()
 	dom.show()
-    def delete(self, domain, override_internal=False):
+    def delete(self, domain, zone, override_internal=False):
 	"""Delete domain.
 
 	domain: FQDN of domain name
 	override_internal: if set, allow modifications to internal domains
 	"""
-	d, z, did, zid = self._find(domain, wlock=True)
+	d, z, did, zid = self._find(domain, zone, wlock=True)
 	self._check_login_perm(z)
 	dom = _Domain(self._dbc, did)
 	dom.fetch(wlock=True)
@@ -400,7 +415,7 @@ class db:
 	dom.move_hist(login_id=self._login_id, domains=True)
 	_Zone(self._dbc, id=zid, nowrite=self._nowrite).set_updateserial()
 	self._dbh.commit()
-    def modify(self, domain, file, type=None, override_internal=False):
+    def modify(self, domain, zone, type, file, override_internal=False):
 	"""Modify domain.
 
 	domain: FQDN of domain name
@@ -408,7 +423,7 @@ class db:
 	type: string; if set, check zone allows this resource-record type
 	override_internal: if set, allow modifications to internal domains
 	"""
-	dname, zname, did, zid = self._find(domain, wlock=True)
+	dname, zname, did, zid = self._find(domain, zone, wlock=True)
 	self._check_login_perm(z)
 	z = _Zone(self._dbc, id=zid, name=zname, nowrite=self._nowrite)
 	z.checktype(type)
@@ -423,7 +438,7 @@ class db:
 	d.add_rr(file)
 	z.set_updateserial()
 	self._dbh.commit()
-    def new(self, domain, file=None, type=None, internal=False):
+    def new(self, domain, zone, type, file=None, internal=False):
 	"""Create domain.
 
 	domain: full domain name
@@ -431,7 +446,7 @@ class db:
 	type: string; if set, check zone allows this resource-record type
 	internal: if set, protect domain from user requests
 	"""
-	dname, zname, did, zid = self._find(domain, wlock=True, raise_nf=False)
+	dname, zname, did, zid = self._find(domain, zone, wlock=True, raise_nf=False)
 	self._check_login_perm(zname)
 	if did != None:
 	    raise DomainError(DomainError.DEXISTS, domain)
@@ -457,17 +472,17 @@ class db:
 	    d.add_rr(file)
 	z.set_updateserial()
 	self._dbh.commit()
-    def set_registry_lock(self, domain, val):
+    def set_registry_lock(self, domain, zone, val):
 	"""Set registry_lock flag for domain."""
-	d, z, did, zid = self._find(domain, wlock=True)
+	d, z, did, zid = self._find(domain, zone, wlock=True)
 	self._check_login_perm(z)
 	if self._nowrite: return
 	dom = _Domain(self._dbc, did)
 	dom.set_registry_lock(val)
 	self._dbh.commit()
-    def set_registry_hold(self, domain, val):
+    def set_registry_hold(self, domain, zone, val):
 	"""Set registry_hold flag for domain."""
-	d, z, did, zid = self._find(domain, wlock=True)
+	d, z, did, zid = self._find(domain, zone, wlock=True)
 	self._check_login_perm(z)
 	if self._nowrite: return
 	dom = _Domain(self._dbc, did)
