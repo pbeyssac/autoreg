@@ -138,6 +138,8 @@ except dnsdb.AccessError, e:
 except dnsdb.DomainError, e:
   if e.args[0] == dnsdb.DomainError.DNOTFOUND:
     errexit('MSG_NODOM', (domain, action))
+  if e.args[0] == dnsdb.DomainError.ZNOTFOUND:
+    errexit('MSG_NODOM', (domain, action))
   if e.args[0] == dnsdb.DomainError.DEXISTS:
     errexit('MSG_ALLOC', (domain))
   raise
