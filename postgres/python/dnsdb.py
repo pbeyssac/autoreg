@@ -389,7 +389,7 @@ class db:
 	    raise AccessError('Not authorized for zone', self._login, zone)
     def logout(self):
 	"""Logout current user."""
-	self._check_logged()
+	self._check_login_perm()
 	self._login_id = None
     def show(self, domain, zone):
 	"""Show a pretty-printed zone excerpt for domain."""
