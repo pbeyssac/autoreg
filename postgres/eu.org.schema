@@ -53,6 +53,7 @@ CREATE TABLE domains (
 CREATE INDEX domains_name_index ON domains(name,zone_id);
 
 -- lists allowed administrators for each zone
+-- not currently used
 CREATE TABLE admin_zone (
 	admin_id INTEGER REFERENCES admins(id),
 	zone_id INTEGER REFERENCES zones(id),
@@ -90,10 +91,16 @@ CREATE TABLE contacts (
 CREATE INDEX contacts_handle_index ON contacts(handle);
 CREATE INDEX contacts_name_index ON contacts(lower(name));
 
+-- mostly static table for mapping contact type integer to a string
+-- see example rows below
 CREATE TABLE contact_types (
 	id SERIAL PRIMARY KEY,
 	name varchar(20)
 );
+
+-- links domains with contacts
+-- note that the contact type is part of this relation, allowing
+-- a given contact record to be used as different contact types
 CREATE TABLE domain_contact (
 	domain_id INTEGER REFERENCES domains(id),
 	contact_id INTEGER REFERENCES contacts(id),
@@ -137,7 +144,8 @@ CREATE TABLE domain_contact_hist (
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 
--- dummy "root" zone used as a placeholder to catch domains for which we store only whois data
+-- dummy "root" zone used as a placeholder to catch domains
+-- for which we store only whois data
 INSERT INTO zones (name, minlen, maxlen, soaserial, soaprimary, soaemail) VALUES ('', 1, 255, 2005113000, 'DUMMY', 'DUMMY');
 
 INSERT INTO rrtypes values (1, 'NS');
