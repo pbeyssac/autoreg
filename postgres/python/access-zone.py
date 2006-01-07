@@ -47,6 +47,11 @@ action_list = ['cat', 'delete', 'lock', 'modify', 'unlock',
 def usage():
     print >> sys.stderr, "Usage: access-zone -a action -u user [-t type] [-ci] [-z zone] domain"
 
+def errexit(msg, args):
+    """Print a formatted error message on stderr and exit(1)."""
+    print >> sys.stderr, amsg.f(msg, args),
+    sys.exit(1)
+
 try:
     opts, args = getopt.getopt(sys.argv[1:], "a:cit:u:z:")
 except getopt.GetoptError:
@@ -113,7 +118,28 @@ try:
   else:
     usage()
     sys.exit(1)
+except dnsdb.AccessError, e:
+  if e.args[0] == dnsdb.AccessError.NOAUTH:
+    errexit('MSG_NUSER', (user))
+  if e.args[0] == dnsdb.AccessError.UNKLOGIN:
+    errexit('MSG_NUSER', (user))
+  if e.args[0] == dnsdb.AccessError.NOTLOGGED:
+    errexit('MSG_NUSER', (user))
+  if e.args[0] == dnsdb.AccessError.DLOCKED:
+    errexit('MSG_LOCKD', (domain))
+  if e.args[0] == dnsdb.AccessError.DINTERNAL:
+    errexit('MSG_LOCKD', (domain))
+  if e.args[0] == dnsdb.AccessError.ILLRR:
+    errexit('MSG_NOTYP', (type))
+  if e.args[0] == dnsdb.AccessError.DLENSHORT:
+    errexit('MSG_SHORT', (parent, e.args[1]))
+  if e.args[0] == dnsdb.AccessError.DLENLONG:
+    errexit('MSG_LONG', (parent, e.args[1]))
+  raise
 except dnsdb.DomainError, e:
-    if e.args[0] == dnsdb.DomainError.DNOTFOUND:
-	print >> sys.stderr, amsg.f('MSG_NODOM', (domain, action)),
-	sys.exit(1)
+  if e.args[0] == dnsdb.DomainError.DNOTFOUND:
+    errexit('MSG_NODOM', (domain, action))
+  if e.args[0] == dnsdb.DomainError.DEXISTS:
+    errexit('MSG_ALLOC', (domain))
+  raise
+
