@@ -24,6 +24,10 @@ class AccessError(DnsDbError):
     DLENLONG = 'Domain length too long'
     DLOCKED = 'Domain is locked'
     DINTERNAL = 'Domain is internal'
+    NOAUTH = 'Not authorized for zone'
+    ILLRR = 'Illegal record type in zone'
+    UNKLOGIN = 'Unknown login'
+    NOTLOGGED = 'Not logged in'
     pass
 
 class _Zone:
@@ -84,7 +88,7 @@ class _Zone:
 		(zid, rrtype))
 	if self._dbc.rowcount == 1: return
 	assert self._dbc.rowcount == 0
-	raise AccessError('Illegal record type in zone', rrtype, zid)
+	raise AccessError(AccessError.ILLRR, rrtype, zid)
     def cat(self):
 	"""Output zone file to stdout."""
 	print "; zone name=%s id=%d" % (self._name, self._id)
@@ -378,7 +382,7 @@ class db:
 	"""Login requested user."""
 	self._dbc.execute('SELECT id FROM admins WHERE login=%s', (login,))
 	if self._dbc.rowcount == 0:
-	    raise AccessError('Unknown login', login)
+	    raise AccessError(AccessError.UNKLOGIN, login)
 	assert self._dbc.rowcount == 1
 	id, = self._dbc.fetchone()
 	self._login_id = id
@@ -387,11 +391,11 @@ class db:
     def _check_login_perm(self, zone=None):
 	"""Check someone has logged-in and has permission for the zone."""
 	if self._login_id == None:
-	    raise AccessError('Not logged in')
+	    raise AccessError(AccessError.NOTLOGGED)
 	if self._nowrite:
 	    return
 	if zone != None and not self._za.check(zone, self._login):
-	    raise AccessError('Not authorized for zone', self._login, zone)
+	    raise AccessError(AccessError.NOAUTH, self._login, zone)
     def logout(self):
 	"""Logout current user."""
 	self._check_login_perm()
@@ -460,9 +464,9 @@ class db:
 	z.checktype(type)
 	z.fetch()
 	if len(dname) < self._zone_minlen[zname]:
-	    raise AccessError(AccessError.DLENSHORT)
+	    raise AccessError(AccessError.DLENSHORT, self._zone_minlen[zname])
 	if len(dname) > self._zone_maxlen[zname]:
-	    raise AccessError(AccessError.DLENLONG)
+	    raise AccessError(AccessError.DLENLONG, self._zone_maxlen[zname])
 	if self._nowrite: return
 	self._dbc.execute(
 	  'INSERT INTO domains '
