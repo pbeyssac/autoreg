@@ -174,7 +174,7 @@ class _Domain:
 	assert dom != None and zone != None and did != None
 	dp = dnsparser.DnsParser()
 	# convenient default label if none provided on first line of file
-	label = '.'.join((self._name, self._zone_name))
+	label = '.'.join((self._name, self._zone_name)) + '.'
 	for l in f:
 	    t = dp.parseline(l)
 	    if t == None:
