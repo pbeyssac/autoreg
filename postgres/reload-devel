@@ -1,0 +1,11 @@
+#!/bin/sh
+# $Id$
+#
+# delete development database and recreate from a copy of production database
+#
+psql template1 << EOF
+drop database eudevel;
+create database eudevel;
+EOF
+
+pg_dump eu.org | psql eudevel
