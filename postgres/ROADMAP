@@ -11,7 +11,7 @@ I. get rid of RIPE-db stuff. It is currently accessed through 2 interfaces :
 	   called by slightly updated legacy Perl scripts; several modes:
 		- new domain with existing contacts designated by their
 		  contact handle
-		- new domain with new contacts, attribute new handles
+		- new domain with new contacts, assign new handles
 		- modify domain contacts
 		- modify contact designated by its handle
 
