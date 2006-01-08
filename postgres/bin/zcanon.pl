@@ -1,8 +1,5 @@
 #!/usr/bin/perl
 # $Id$
-#
-# Convert a zone file to a "mostly-canonicalized" version on stdout
-#
 
 use strict;
 
