@@ -1,0 +1,60 @@
+$Id$
+
+I. get rid of RIPE-db stuff. It is currently accessed through 2 interfaces :
+
+	* whois server
+	  whois <domain_name>, whois <contact_handle>, whois <person_name>
+	=> should be reimplemented as a whois server accessing the SQL database
+
+	* email to auto-dbm@eu.org containing new objects or updates
+	=> should be deprecated and replaced with a command-line client
+	   called by slightly updated legacy Perl scripts; several modes:
+		- new domain with existing contacts designated by their
+		  contact handle
+		- new domain with new contacts, attribute new handles
+		- modify domain contacts
+		- modify contact designated by its handle
+
+	   On input, preferably use a format compatible with the RIPE format
+	   currently used by eu.org
+
+	* see migration-scripts/ for quick and dirty examples:
+		mcontacts.pl
+		mkhandle.pl
+	* current RIPE whois database file:
+		- ASCII file /local/dns-db/data/freenic/freenic.db
+		- Berkely db index file /local/dns-db/data/freenic/freenic.db.db
+
+	* note: big cleanup job to do before migration == disambiguate
+	  all existing domain -> contacts, assign handles to each contact
+	  (action => pb)
+
+
+	Implementation suggestion: similar to (or even part of) dnsdb.py
+
+	class Contact
+		__init__: just keep the contact id and/or handle
+		fetch: read from database, based on information obtained above
+		set: get contact info from file
+		update: write back to database and commit
+		listdom: return a list of domains
+		assign: add contact to domain and commit
+		unassign: remove contact from domain
+			(prevent pathological cases such as no more
+			contact for a domain) and commit
+		delete: delete contact (assuming is isn't pointed to anymore,
+			or database constraints will prevent removal) and commit
+
+	class DomainContact
+		... relates a contact and a contact type to a domain
+
+II. once the RIPE database is gone and each domain has an unambiguous
+    set of contacts, rewrite a web-based contact interface, allowing:
+		- migration form: setting of a password (use
+		  email-sent password as a simple authentifcation means)
+		- initial authentication through contact handle +
+		  password
+		- available functions after auth:
+			- see all domains related to a contact
+			- changing a domain contacts
+			- changing a domain contents
