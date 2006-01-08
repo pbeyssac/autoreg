@@ -64,20 +64,31 @@ if ($headers) {
 
 print VF "X-Loop: ns.eu.org\n";
 
-if ($replyto) {
-	printf VF $MAILHEADERS, $MSG_ADDR;
-	print VF "To: $replyto\n";
-	print WF "mr.: $replyto\n";
-} elsif ($from) {
-	$replyto = $from;
-	printf VF $MAILHEADERS, $MSG_ADDR;
-	print VF "To: $from\n";
-	print WF "mr.: $from\n";
-} else {
+
+if (!$replyto) { $replyto = $from; }
+if (!$replyto) {
 	close(WF);
 	unlink($REQFILE);
 	die "Error: no identified sender.\n";
 }
+
+# quick & dirty RFC822 comment parsing
+if ($replyto =~ /[^<]*<([^>]+)>/) {
+	$replyto = $1;
+}
+if ($replyto =~ /^(.*\S)\s*\(.*\)/) {
+	$replyto = $1;
+}
+if ($replyto =~ /^majordomo/i || $replyto =~ /^mailer-daemon/i) {
+	open(LO, ">> /tmp/dns-manager.log");
+	print LO "from=$from\nreplyto=$replyto\n";
+	close LO;
+	exit 0;
+}
+
+printf VF $MAILHEADERS, $MSG_ADDR;
+print VF "To: $replyto\n";
+print WF "mr.: $replyto\n";
 
 print WF $thdrs;
 
