@@ -1,6 +1,9 @@
 #!/usr/bin/perl
-# $Id$
-
+# $Id: mcontacts.pl 268 2006-01-08 12:05:36Z pb $
+#
+# Contact migration script, from old RIPE whois database format
+# to SQL database.
+#
 use DBI;
 use strict;
 
