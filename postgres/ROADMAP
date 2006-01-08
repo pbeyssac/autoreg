@@ -62,7 +62,7 @@ I. get rid of RIPE-db stuff. It is currently accessed through 2 interfaces :
 II. once the RIPE database is gone and each domain has an unambiguous
     set of contacts, rewrite a web-based contact interface, allowing:
 		- migration form: setting of a password (use
-		  email-sent password as a simple authentifcation means)
+		  email-sent password as a simple authentication means)
 		- initial authentication through contact handle +
 		  password
 		- available functions after auth:
