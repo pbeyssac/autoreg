@@ -227,7 +227,7 @@ class _Domain:
 	did = self._id
 	if domains:
 	    # get a lock on contact information we're going to delete
-	    self._dbc.execute('SELECT NULL FROM domain_contact'
+	    self._dbc.execute('SELECT NULL FROM domain_contact '
 		'WHERE domain_id=%d FOR UPDATE', (did,))
 	self._dbc.execute('INSERT INTO rrs_hist '
 		'(domain_id,ttl,rrtype_id,created_on,label,value,deleted_on) '
