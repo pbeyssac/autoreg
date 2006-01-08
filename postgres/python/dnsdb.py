@@ -463,9 +463,11 @@ class db:
 	z.checktype(type)
 	z.fetch()
 	if len(dname) < self._zone_minlen[zname]:
-	    raise AccessError(AccessError.DLENSHORT, self._zone_minlen[zname])
+	    raise AccessError(AccessError.DLENSHORT,
+			      (zname, self._zone_minlen[zname]))
 	if len(dname) > self._zone_maxlen[zname]:
-	    raise AccessError(AccessError.DLENLONG, self._zone_maxlen[zname])
+	    raise AccessError(AccessError.DLENLONG,
+			      (zname, self._zone_maxlen[zname]))
 	if self._nowrite: return
 	self._dbc.execute(
 	  'INSERT INTO domains '

@@ -143,9 +143,9 @@ except dnsdb.AccessError, e:
   if e.args[0] == dnsdb.AccessError.ILLRR:
     errexit('MSG_NOTYP', (type))
   if e.args[0] == dnsdb.AccessError.DLENSHORT:
-    errexit('MSG_SHORT', (parent, e.args[1]))
+    errexit('MSG_SHORT', e.args[1])
   if e.args[0] == dnsdb.AccessError.DLENLONG:
-    errexit('MSG_LONG', (parent, e.args[1]))
+    errexit('MSG_LONG', e.args[1])
   logging.exception("Unexpected exception in access-zone:\n")
   logging.error("variables:\n%s", str(locals()))
   raise
