@@ -18,6 +18,8 @@
 		the same name, if the file has previously changed
 		due to one of the above actions.
 	show:	display entry for domainname.
+        hold:	put domain on hold.
+        unhold:	unhold domain.
         lock:	protect domain from 'modify' or 'delete' unless forced with -i.
         unlock:	unprotect domain.
 
@@ -47,6 +49,7 @@ logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
 		    datefmt="%Y%m%d %H:%M:%S")
 
 action_list = ['cat', 'delete', 'lock', 'modify', 'unlock',
+		'hold', 'unhold',
 		'new', 'show', 'soa']
 def usage():
     print >> sys.stderr, __doc__
@@ -115,6 +118,10 @@ try:
     dd.set_registry_lock(domain, zone, True)
   elif action == 'unlock':
     dd.set_registry_lock(domain, zone, False)
+  elif action == 'hold':
+    dd.set_registry_hold(domain, zone, True)
+  elif action == 'unhold':
+    dd.set_registry_hold(domain, zone, False)
   elif action == 'cat':
     dd.cat(domain)
   elif action == 'soa':
