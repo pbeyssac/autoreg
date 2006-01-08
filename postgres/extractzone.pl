@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 # $Id$
+#
+# Test script to generate zone file from database; deprecated
+#
 
 use DBI;
 use strict;

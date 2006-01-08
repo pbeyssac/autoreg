@@ -1,10 +1,13 @@
 #!/usr/bin/perl
 # $Id$
+#
+# Zone migration script, deprecated -- DOT NOT RUN
+#
 
 use DBI;
 use strict;
 
-my $dbh = DBI->connect("dbi:Pg:dbname=eu.org", "", "", {AutoCommit => 0});
+my $dbh = DBI->connect("dbi:Pg:dbname=eudevel", "", "", {AutoCommit => 0});
 my $sth;
 my @row;
 
