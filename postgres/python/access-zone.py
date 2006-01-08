@@ -32,6 +32,7 @@
 
 # standard modules
 import getopt
+import logging
 import os
 import psycopg
 import sys
@@ -40,6 +41,10 @@ import sys
 import conf
 import dnsdb
 import msg
+
+logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
+		    format='%(asctime)s %(levelname)-8s %(message)s',
+		    datefmt="%Y%m%d %H:%M:%S")
 
 action_list = ['cat', 'delete', 'lock', 'modify', 'unlock',
 		'new', 'show', 'soa']
@@ -134,6 +139,8 @@ except dnsdb.AccessError, e:
     errexit('MSG_SHORT', (parent, e.args[1]))
   if e.args[0] == dnsdb.AccessError.DLENLONG:
     errexit('MSG_LONG', (parent, e.args[1]))
+  logging.exception("Unexpected exception in access-zone:\n")
+  logging.error("variables:\n%s", str(locals()))
   raise
 except dnsdb.DomainError, e:
   if e.args[0] == dnsdb.DomainError.DNOTFOUND:
@@ -142,5 +149,10 @@ except dnsdb.DomainError, e:
     errexit('MSG_NODOM', (domain, action))
   if e.args[0] == dnsdb.DomainError.DEXISTS:
     errexit('MSG_ALLOC', (domain))
+  logging.exception("Unexpected exception in access-zone:\n")
+  logging.error("variables:\n%s", str(locals()))
   raise
-
+except:
+  logging.exception("Unexpected exception in access-zone:\n")
+  logging.error("variables:\n%s", str(locals()))
+  raise
