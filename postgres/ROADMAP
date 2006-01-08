@@ -45,8 +45,19 @@ I. get rid of RIPE-db stuff. It is currently accessed through 2 interfaces :
 		delete: delete contact (assuming is isn't pointed to anymore,
 			or database constraints will prevent removal) and commit
 
+	Keep history in all updates!
+
 	class DomainContact
 		... relates a contact and a contact type to a domain
+
+	class Whois
+		lookupdomain
+		lookuphandle
+		lookupname
+		lookupany
+		newobject
+		updateobject
+		deleteobject
 
 II. once the RIPE database is gone and each domain has an unambiguous
     set of contacts, rewrite a web-based contact interface, allowing:
