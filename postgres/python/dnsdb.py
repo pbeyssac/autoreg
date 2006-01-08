@@ -208,7 +208,6 @@ class _Domain:
 		pass
 	    else:
 		raise DomainError(Domain.RRUNSUP, type)
-	    print (did, label, ttl, type, value)
 	    self._dbc.execute('INSERT INTO rrs '
 		'(domain_id,label,ttl,rrtype_id,value) '
 		'VALUES (%d,%s,%s,(SELECT id FROM rrtypes WHERE label=%s),%s)',
