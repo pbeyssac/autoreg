@@ -145,6 +145,15 @@ class _Domain:
 	self._id = id
 	self._name = name
 	self._zone_name = zone_name
+    def new(self, z, login_id, internal=False):
+	self._dbc.execute(
+	  'INSERT INTO domains '
+	  '(name,zone_id,created_by,created_on,updated_by,updated_on,internal)'
+	  ' VALUES (%s,%d,%d,NOW(),%d,NOW(),%s)',
+	  (self._name, z.id, login_id, login_id, internal))
+	self._dbc.execute("SELECT currval('domains_id_seq')")
+	assert self._dbc.rowcount == 1
+	self._id, = self._dbc.fetchone()
     def fetch(self, wlock=False):
 	"""Fetch domain information in memory.
 
@@ -465,17 +474,10 @@ class db:
 	if len(dname) > z.maxlen:
 	    raise AccessError(AccessError.DLENLONG, z.maxlen)
 	if self._nowrite: return
-	self._dbc.execute(
-	  'INSERT INTO domains '
-	  '(name,zone_id,created_by,created_on,updated_by,updated_on,internal)'
-	  ' VALUES (%s,%d,%d,NOW(),%d,NOW(),%s)',
-	  (dname, z.id, self._login_id, self._login_id, internal))
-	self._dbc.execute("SELECT currval('domains_id_seq')")
-	assert self._dbc.rowcount == 1
-	did, = self._dbc.fetchone()
+        d = _Domain(self._dbc, name=dname, zone_name=z.name)
+        d.new(z, self._login_id, internal)
 	# add resource records, if provided
 	if file:
-	    d = _Domain(self._dbc, id=did, name=dname, zone_name=z.name)
 	    d.add_rr(file)
 	z.set_updateserial()
 	self._dbh.commit()
