@@ -31,15 +31,13 @@ class AccessError(DnsDbError):
     pass
 
 class _Zone:
-    def __init__(self, dbc, name=None, id=None, nowrite=False):
+    def __init__(self, dbc, name=None, id=None):
 	self._dbc = dbc
 	self.name = name
 	self.id = id
-	self._nowrite = nowrite
     def set_updateserial(self):
 	"""Mark zone for serial update in SOA."""
 	assert self.id != None
-	if self._nowrite: return
 	self._updateserial = True
 	self._dbc.execute('UPDATE zones SET updateserial=TRUE WHERE id=%d',
 			  (self.id,))
@@ -49,7 +47,6 @@ class _Zone:
 	serial = self._soaserial
 	assert zid != None and serial != None
 	if not self._updateserial: return
-	if self._nowrite: return
 	year, month, day, h, m, s, wd, yd, dst = time.localtime()
 	newserial = int("%04d%02d%02d00"%(year,month,day))
 	if serial < newserial:
@@ -322,14 +319,14 @@ class _Domain:
 
 class _ZoneList:
     """Cache zone list from database."""
-    def __init__(self, dbc, nowrite=False):
+    def __init__(self, dbc):
         self._dbc = dbc
 	self.zones = {}
 	self._dbc.execute('SELECT name, id FROM zones')
 	t = self._dbc.fetchone()
 	while t:
 	    name, id = t
-	    self.zones[name] = _Zone(dbc, id=id, name=name, nowrite=nowrite)
+	    self.zones[name] = _Zone(dbc, id=id, name=name)
 	    t = self._dbc.fetchone()
     def split(self, domain, zone=None):
 	"""Split domain name according to known zones."""
@@ -430,6 +427,7 @@ class db:
 	    raise AccessError(AccessError.DLOCKED)
 	if d._internal and not override_internal:
 	    raise AccessError(AccessError.DINTERNAL)
+	if self._nowrite: return
 	d.move_hist(login_id=self._login_id, domains=True)
 	z.set_updateserial()
 	self._dbh.commit()
@@ -449,6 +447,7 @@ class db:
 	    raise AccessError(AccessError.DLOCKED)
 	if d._internal and not override_internal:
 	    raise AccessError(AccessError.DINTERNAL)
+	if self._nowrite: return
 	d.move_hist(login_id=self._login_id, domains=False)
 	# add new resource records
 	d.add_rr(file)
