@@ -139,24 +139,24 @@ class _Zone:
 class _Domain:
     def __init__(self, dbc, id=None, name=None, zone_name=None):
 	self._dbc = dbc
-	self._id = id
-	self._name = name
+	self.id = id
+	self.name = name
 	self._zone_name = zone_name
     def new(self, z, login_id, internal=False):
 	self._dbc.execute(
 	  'INSERT INTO domains '
 	  '(name,zone_id,created_by,created_on,updated_by,updated_on,internal)'
 	  ' VALUES (%s,%d,%d,NOW(),%d,NOW(),%s)',
-	  (self._name, z.id, login_id, login_id, internal))
+	  (self.name, z.id, login_id, login_id, internal))
 	self._dbc.execute("SELECT currval('domains_id_seq')")
 	assert self._dbc.rowcount == 1
-	self._id, = self._dbc.fetchone()
+	self.id, = self._dbc.fetchone()
     def fetch(self, wlock=False):
 	"""Fetch domain information in memory.
 
 	wlock: if set, take a write lock on the domain and zone records
 	"""
-	did = self._id
+	did = self.id
 	if wlock: fud=' FOR UPDATE'
 	else: fud=''
 	self._dbc.execute('SELECT domains.name, zones.name, registry_hold, '
@@ -169,7 +169,7 @@ class _Domain:
 	if self._dbc.rowcount == 0:
 	    raise DomainError('Domain id not found', did)
 	assert self._dbc.rowcount == 1
-	(self._name, self._zone_name, self._registry_hold, self._registry_lock,
+	(self.name, self._zone_name, self._registry_hold, self._registry_lock,
 	 self._internal, self._zone_id, self._registrar_id,
 	 self._created_by, self._created_on,
 	 self._updated_by, self._updated_on) = self._dbc.fetchone()
@@ -180,7 +180,7 @@ class _Domain:
 	f: resource records in zone file format
 	domain_name, zone_name and domain_id should be set.
 	"""
-	dom, zone, did = self._name, self._zone_name, self._id
+	dom, zone, did = self.name, self._zone_name, self.id
 	assert dom != None and zone != None and did != None
 	dp = dnsparser.DnsParser()
 	# convenient default label if none provided on first line of file
@@ -222,14 +222,14 @@ class _Domain:
         """Set updated_by and updated_on."""
         self._dbc.execute('UPDATE domains '
                           'SET updated_by=%d, updated_on=NOW() '
-                          'WHERE id=%d', (login_id, self._id))
+                          'WHERE id=%d', (login_id, self.id))
     def move_hist(self, login_id, domains=False):
 	"""Move resource records to history tables, deleting
 	original records after copy.
 
 	domains: if set, also move domain and associated contact records.
 	"""
-	did = self._id
+	did = self.id
 	if domains:
 	    # get a lock on contact information we're going to delete
 	    self._dbc.execute('SELECT NULL FROM domain_contact '
@@ -255,10 +255,10 @@ class _Domain:
     def show_head(self):
 	"""Show administrative data for domain."""
 	print "; zone", self._zone_name
-	if self._name == '':
+	if self.name == '':
 	    print "; domain", self._zone_name
 	else:
-	    print "; domain", '.'.join((self._name,self._zone_name))
+	    print "; domain", '.'.join((self.name,self._zone_name))
 	if self._created_on:
 	    print "; created: by %s, %s" % (self._created_by, self._created_on)
 	if self._updated_on:
@@ -274,7 +274,7 @@ class _Domain:
 	    'WHERE domains.id=%d AND domains.id=rrs.domain_id '
 	    'AND rrtypes.id=rrs.rrtype_id '
 	    'ORDER BY domains.name,rrs.label,rrtypes.label,rrs.value',
-	    (self._id,))
+	    (self.id,))
 	lastlabel = ''
 	t = self._dbc.fetchone()
 	while t:
@@ -310,12 +310,12 @@ class _Domain:
 	"""Set value of boolean registry_lock."""
 	self._registry_lock = val
 	self._dbc.execute('UPDATE domains SET registry_lock=%s WHERE id=%d',
-			  (val, self._id))
+			  (val, self.id))
     def set_registry_hold(self, val):
 	"""Set value of boolean registry_hold."""
 	self._registry_hold = val
 	self._dbc.execute('UPDATE domains SET registry_hold=%s WHERE id=%d',
-			  (val, self._id))
+			  (val, self.id))
 
 class _ZoneList:
     """Cache zone list from database."""
@@ -357,7 +357,7 @@ class _ZoneList:
 
 	If not found and raise_nf is True, raise an exception.
 	Lock zone and domain for update if wlock is True.
-	Return domain_name, domain_id, _Zone object.
+	Return _Domain object, _Zone object.
 	"""
 	dname, z = self.split(domain, zone)
 	if z == None:
@@ -372,11 +372,12 @@ class _ZoneList:
 	if self._dbc.rowcount == 0:
 	    if raise_nf:
 		raise DomainError(DomainError.DNOTFOUND, domain)
-	    return (dname, None, z)
+	    d = _Domain(self._dbc, id=None, name=dname, zone_name=z.name)
+	    return (d, z)
 	assert self._dbc.rowcount == 1
 	did, = self._dbc.fetchone()
 	d = _Domain(self._dbc, id=did, name=dname, zone_name=z.name)
-	return (dname, d, z)
+	return (d, z)
 
 class db:
     def __init__(self, dbhandle, nowrite=False):
@@ -410,7 +411,7 @@ class db:
 	self._login_id = None
     def show(self, domain, zone):
 	"""Show a pretty-printed zone excerpt for domain."""
-	dname, d, z = self._zl.find(domain, zone)
+	d, z = self._zl.find(domain, zone)
 	self._check_login_perm(z.name)
 	d.fetch()
 	d.show()
@@ -420,7 +421,7 @@ class db:
 	domain: FQDN of domain name
 	override_internal: if set, allow modifications to internal domains
 	"""
-	dname, d, z = self._zl.find(domain, zone, wlock=True)
+	d, z = self._zl.find(domain, zone, wlock=True)
 	self._check_login_perm(z.name)
 	d.fetch(wlock=True)
 	if d._registry_lock:
@@ -439,7 +440,7 @@ class db:
 	type: string; if set, check zone allows this resource-record type
 	override_internal: if set, allow modifications to internal domains
 	"""
-	dname, d, z = self._zl.find(domain, zone, wlock=True)
+	d, z = self._zl.find(domain, zone, wlock=True)
 	self._check_login_perm(z.name)
 	z.checktype(type)
 	d.fetch(wlock=True)
@@ -462,18 +463,17 @@ class db:
 	type: string; if set, check zone allows this resource-record type
 	internal: if set, protect domain from user requests
 	"""
-	dname, d, z = self._zl.find(domain, zone, wlock=True, raise_nf=False)
+	d, z = self._zl.find(domain, zone, wlock=True, raise_nf=False)
 	self._check_login_perm(z.name)
-	if d != None:
+	if d.id != None:
 	    raise DomainError(DomainError.DEXISTS, domain)
 	z.checktype(type)
 	z.fetch()
-	if len(dname) < z.minlen:
+	if len(d.name) < z.minlen:
 	    raise AccessError(AccessError.DLENSHORT, z.minlen)
-	if len(dname) > z.maxlen:
+	if len(d.name) > z.maxlen:
 	    raise AccessError(AccessError.DLENLONG, z.maxlen)
 	if self._nowrite: return
-        d = _Domain(self._dbc, name=dname, zone_name=z.name)
         d.new(z, self._login_id, internal)
 	# add resource records, if provided
 	if file:
@@ -482,14 +482,14 @@ class db:
 	self._dbh.commit()
     def set_registry_lock(self, domain, zone, val):
 	"""Set registry_lock flag for domain."""
-	dname, d, z = self._zl.find(domain, zone, wlock=True)
+	d, z = self._zl.find(domain, zone, wlock=True)
 	self._check_login_perm(z.name)
 	if self._nowrite: return
 	d.set_registry_lock(val)
 	self._dbh.commit()
     def set_registry_hold(self, domain, zone, val):
 	"""Set registry_hold flag for domain."""
-	dname, d, z = self._zl.find(domain, zone, wlock=True)
+	d, z = self._zl.find(domain, zone, wlock=True)
 	self._check_login_perm(z.name)
 	if self._nowrite: return
 	d.set_registry_hold(val)
