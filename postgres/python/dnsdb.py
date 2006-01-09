@@ -33,19 +33,19 @@ class AccessError(DnsDbError):
 class _Zone:
     def __init__(self, dbc, name=None, id=None, nowrite=False):
 	self._dbc = dbc
-	self._name = name
-	self._id = id
+	self.name = name
+	self.id = id
 	self._nowrite = nowrite
     def set_updateserial(self):
 	"""Mark zone for serial update in SOA."""
-	assert self._id != None
+	assert self.id != None
 	if self._nowrite: return
 	self._updateserial = True
 	self._dbc.execute('UPDATE zones SET updateserial=TRUE WHERE id=%d',
-			  (self._id,))
+			  (self.id,))
     def soa(self):
 	"""Update serial for zone in SOA if flagged as such."""
-	zid = self._id
+	zid = self.id
 	serial = self._soaserial
 	assert zid != None and serial != None
 	if not self._updateserial: return
@@ -61,7 +61,7 @@ class _Zone:
 	self._dbc.execute('UPDATE zones SET soaserial=%d, updateserial=FALSE '
 			  'WHERE id=%d', (serial,zid))
     def fetch(self, wlock=True):
-	"""Fetch zone info from database, using self._name as a key.
+	"""Fetch zone info from database, using self.name as a key.
 
 	Lock zone row for update if wlock is True.
 	"""
@@ -69,18 +69,18 @@ class _Zone:
 	  'soaminimum,soaprimary,soaemail,updateserial,minlen,maxlen ' \
 	  'FROM zones WHERE name=%s'
 	if wlock: q += ' FOR UPDATE'
-	self._dbc.execute(q, (self._name,))
+	self._dbc.execute(q, (self.name,))
 	if self._dbc.rowcount == 0:
-	    raise DomainError(DomainError.ZNOTFOUND, self._name)
+	    raise DomainError(DomainError.ZNOTFOUND, self.name)
 	assert self._dbc.rowcount == 1
-	(self._id, self._ttl, self._soaserial,
+	(self.id, self._ttl, self._soaserial,
 	 self._soarefresh,self._soaretry, self._soaexpires, self._soaminimum,
 	 self._soaprimary, self._soaemail, self._updateserial,
-	 self._minlen, self._maxlen) = self._dbc.fetchone()
+	 self.minlen, self.maxlen) = self._dbc.fetchone()
     def checktype(self, rrtype):
 	"""Check rrtype is allowed in zone."""
 	if rrtype == None: return
-	zid = self._id
+	zid = self.id
 	self._dbc.execute('SELECT zone_id,rrtype_id FROM allowed_rr '
 		'WHERE allowed_rr.zone_id=%d '
 		'AND allowed_rr.rrtype_id='
@@ -91,7 +91,7 @@ class _Zone:
 	raise AccessError(AccessError.ILLRR, rrtype, zid)
     def cat(self):
 	"""Output zone file to stdout."""
-	print "; zone name=%s id=%d" % (self._name, self._id)
+	print "; zone name=%s id=%d" % (self.name, self.id)
 	if self._ttl != None: print '$TTL', self._ttl
 	print ("@\tSOA\t%s %s %d %d %d %d %d" %
 	    (self._soaprimary, self._soaemail, self._soaserial,
@@ -104,7 +104,7 @@ class _Zone:
 	    'WHERE domains.zone_id=%d AND domains.registry_hold=FALSE '
 	    'AND domains.id=rrs.domain_id AND rrtypes.id=rrs.rrtype_id '
 	    'ORDER BY domains.name,rrs.label,rrtypes.label,rrs.value',
-	    (self._id,))
+	    (self.id,))
 
 	# Loop over returned rows, printing as we go.
 	t = self._dbc.fetchone()
@@ -117,10 +117,10 @@ class _Zone:
 	    if label != '' and domain != '':
 		l = label + '.' + domain
 	    elif label+domain == '':
-		l = self._name + '.'
+		l = self.name + '.'
 	    else:
 		l = label + domain
-	    if l == self._name+'.':
+	    if l == self.name+'.':
 		l = '@'
 	    if ttl == None: ttl = ''
 	    else: ttl = str(ttl)
@@ -135,9 +135,9 @@ class _Zone:
 	print "_EU-ORG-END-MARKER\tTXT\t\"%s\"" % self._soaserial
     def lock(self):
 	"""Lock zone row for update."""
-	assert self._id != None
+	assert self.id != None
 	self._dbc.execute('SELECT NULL FROM zones WHERE id=%d FOR UPDATE',
-			  (self._id,))
+			  (self.id,))
 
 class _Domain:
     def __init__(self, dbc, id=None, name=None, zone_name=None):
@@ -311,6 +311,67 @@ class _Domain:
 	self._dbc.execute('UPDATE domains SET registry_hold=%s WHERE id=%d',
 			  (val, self._id))
 
+class _ZoneList:
+    """Cache zone list from database."""
+    def __init__(self, dbc, nowrite=False):
+        self._dbc = dbc
+	self.zones = {}
+	self._dbc.execute('SELECT name, id FROM zones')
+	t = self._dbc.fetchone()
+	while t:
+	    name, id = t
+	    self.zones[name] = _Zone(dbc, id=id, name=name, nowrite=nowrite)
+	    t = self._dbc.fetchone()
+    def split(self, domain, zone=None):
+	"""Split domain name according to known zones."""
+	domain = domain.upper()
+	if zone != None:
+            # zone name is provided, just check it exists
+	    zone = zone.upper()
+	    if not zone in self.zones:
+		return (None, None)
+	    if domain.endswith('.'+zone):
+		dom = domain[:-len(zone)-1]
+	    elif domain == zone:
+		dom = ''
+	    else:
+		return (None, None)
+	    return (dom, self.zones[zone])
+
+        # try to find the right zone
+	n = domain.split('.')
+	for i in range(1, len(n)):
+	    zone = '.'.join(n[i:])
+	    if zone in self.zones:
+		dom = '.'.join(n[:i])
+		return (dom, self.zones[zone])
+	return (None, None)
+    def find(self, domain, zone, wlock=False, raise_nf=True):
+	"""Find domain and zone id.
+
+	If not found and raise_nf is True, raise an exception.
+	Lock zone and domain for update if wlock is True.
+	Return domain_name, domain_id, _Zone object.
+	"""
+	dname, z = self.split(domain, zone)
+	if z == None:
+	    raise DomainError(DomainError.ZNOTFOUND, domain)
+	if wlock:
+	    fu = ' FOR UPDATE'
+	    z.lock()
+	else:
+	    fu = ''
+	self._dbc.execute('SELECT id FROM domains WHERE name=%s AND zone_id=%d'
+			  +fu, (dname, z.id))
+	if self._dbc.rowcount == 0:
+	    if raise_nf:
+		raise DomainError(DomainError.DNOTFOUND, domain)
+	    return (dname, None, z)
+	assert self._dbc.rowcount == 1
+	did, = self._dbc.fetchone()
+	d = _Domain(self._dbc, id=did, name=dname, zone_name=z.name)
+	return (dname, d, z)
+
 class db:
     def __init__(self, dbhandle, nowrite=False):
 	self._za = zauth.ZAuth()
@@ -318,65 +379,7 @@ class db:
 	self._dbc = dbhandle.cursor()
 	self._nowrite = nowrite
 	self._login_id = None
-	# Cache zone data from database
-	# XXX: this stuff does not really belong here
-	self._zone_id = {}
-	self._zone_minlen = {}
-	self._zone_maxlen = {}
-	self._dbc.execute('SELECT name, id, minlen, maxlen FROM zones')
-	t = self._dbc.fetchone()
-	while t:
-	    name, id, minlen, maxlen = t
-	    self._zone_id[name] = id
-	    self._zone_minlen[name] = minlen
-	    self._zone_maxlen[name] = maxlen
-	    t = self._dbc.fetchone()
-    def _split(self, domain, zone=None):
-	"""Split domain name according to known zones."""
-	domain = domain.upper()
-	if zone != None:
-	    zone = zone.upper()
-	    if not zone in self._zone_id:
-		return (None, None, None)
-	    if domain.endswith('.'+zone):
-		dom = domain[:-len(zone)-1]
-	    elif domain == zone:
-		dom = ''
-	    else:
-		return (None, None, None)
-	    return (dom, zone, self._zone_id[zone])
-
-	n = domain.split('.')
-	for i in range(1, len(n)):
-	    zone = '.'.join(n[i:])
-	    if zone in self._zone_id:
-		dom = '.'.join(n[:i])
-		return (dom, zone, self._zone_id[zone])
-	return (None, None, None)
-    def _find(self, domain, zone, wlock=False, raise_nf=True):
-	"""Find domain and zone id.
-
-	If not found and raise_nf is True, raise an exception.
-	Lock zone and domain for update if wlock is True.
-	Return domain_name, zone_name, domain_id, zone_id.
-	"""
-	d, z, zid = self._split(domain, zone)
-	if z == None or zid == None:
-	    raise DomainError(DomainError.ZNOTFOUND, domain)
-	if wlock:
-	    fu = ' FOR UPDATE'
-	    _Zone(self._dbc, id=zid, nowrite=self._nowrite).lock()
-	else:
-	    fu = ''
-	self._dbc.execute('SELECT id FROM domains WHERE name=%s AND zone_id=%d'
-			  +fu, (d, zid))
-	if self._dbc.rowcount == 0:
-	    if raise_nf:
-		raise DomainError(DomainError.DNOTFOUND, domain)
-	    return (d, z, None, zid)
-	assert self._dbc.rowcount == 1
-	did, = self._dbc.fetchone()
-	return (d, z, did, zid)
+        self._zl = _ZoneList(self._dbc)
     def login(self, login):
 	"""Login requested user."""
 	self._dbc.execute('SELECT id FROM admins WHERE login=%s', (login,))
@@ -401,27 +404,25 @@ class db:
 	self._login_id = None
     def show(self, domain, zone):
 	"""Show a pretty-printed zone excerpt for domain."""
-	d, z, did, zid = self._find(domain, zone)
-	self._check_login_perm(z)
-	dom = _Domain(self._dbc, did)
-	dom.fetch()
-	dom.show()
+	dname, d, z = self._zl.find(domain, zone)
+	self._check_login_perm(z.name)
+	d.fetch()
+	d.show()
     def delete(self, domain, zone, override_internal=False):
 	"""Delete domain.
 
 	domain: FQDN of domain name
 	override_internal: if set, allow modifications to internal domains
 	"""
-	d, z, did, zid = self._find(domain, zone, wlock=True)
-	self._check_login_perm(z)
-	dom = _Domain(self._dbc, did)
-	dom.fetch(wlock=True)
-	if dom._registry_lock:
+	dname, d, z = self._zl.find(domain, zone, wlock=True)
+	self._check_login_perm(z.name)
+	d.fetch(wlock=True)
+	if d._registry_lock:
 	    raise AccessError(AccessError.DLOCKED)
-	if dom._internal and not override_internal:
+	if d._internal and not override_internal:
 	    raise AccessError(AccessError.DINTERNAL)
-	dom.move_hist(login_id=self._login_id, domains=True)
-	_Zone(self._dbc, id=zid, nowrite=self._nowrite).set_updateserial()
+	d.move_hist(login_id=self._login_id, domains=True)
+	z.set_updateserial()
 	self._dbh.commit()
     def modify(self, domain, zone, type, file, override_internal=False):
 	"""Modify domain.
@@ -431,11 +432,9 @@ class db:
 	type: string; if set, check zone allows this resource-record type
 	override_internal: if set, allow modifications to internal domains
 	"""
-	dname, zname, did, zid = self._find(domain, zone, wlock=True)
-	self._check_login_perm(zone)
-	z = _Zone(self._dbc, id=zid, name=zname, nowrite=self._nowrite)
+	dname, d, z = self._zl.find(domain, zone, wlock=True)
+	self._check_login_perm(z.name)
 	z.checktype(type)
-	d = _Domain(self._dbc, id=did, name=dname, zone_name=zname)
 	d.fetch(wlock=True)
 	if d._registry_lock:
 	    raise AccessError(AccessError.DLOCKED)
@@ -455,59 +454,54 @@ class db:
 	type: string; if set, check zone allows this resource-record type
 	internal: if set, protect domain from user requests
 	"""
-	dname, zname, did, zid = self._find(domain, zone, wlock=True, raise_nf=False)
-	self._check_login_perm(zname)
-	if did != None:
+	dname, d, z = self._zl.find(domain, zone, wlock=True, raise_nf=False)
+	self._check_login_perm(z.name)
+	if d != None:
 	    raise DomainError(DomainError.DEXISTS, domain)
-	z = _Zone(self._dbc, id=zid, name=zname, nowrite=self._nowrite)
 	z.checktype(type)
 	z.fetch()
-	if len(dname) < self._zone_minlen[zname]:
-	    raise AccessError(AccessError.DLENSHORT,
-			      (zname, self._zone_minlen[zname]))
-	if len(dname) > self._zone_maxlen[zname]:
-	    raise AccessError(AccessError.DLENLONG,
-			      (zname, self._zone_maxlen[zname]))
+	if len(dname) < z.minlen:
+	    raise AccessError(AccessError.DLENSHORT, z.minlen)
+	if len(dname) > z.maxlen:
+	    raise AccessError(AccessError.DLENLONG, z.maxlen)
 	if self._nowrite: return
 	self._dbc.execute(
 	  'INSERT INTO domains '
 	  '(name,zone_id,created_by,created_on,updated_by,updated_on,internal)'
 	  ' VALUES (%s,%d,%d,NOW(),%d,NOW(),%s)',
-	  (dname, zid, self._login_id, self._login_id, internal))
+	  (dname, z.id, self._login_id, self._login_id, internal))
 	self._dbc.execute("SELECT currval('domains_id_seq')")
 	assert self._dbc.rowcount == 1
 	did, = self._dbc.fetchone()
 	# add resource records, if provided
 	if file:
-	    d = _Domain(self._dbc, id=did, name=dname, zone_name=zname)
+	    d = _Domain(self._dbc, id=did, name=dname, zone_name=z.name)
 	    d.add_rr(file)
 	z.set_updateserial()
 	self._dbh.commit()
     def set_registry_lock(self, domain, zone, val):
 	"""Set registry_lock flag for domain."""
-	d, z, did, zid = self._find(domain, zone, wlock=True)
-	self._check_login_perm(z)
+	dname, d, z = self._zl.find(domain, zone, wlock=True)
+	self._check_login_perm(z.name)
 	if self._nowrite: return
-	dom = _Domain(self._dbc, did)
-	dom.set_registry_lock(val)
+	d.set_registry_lock(val)
 	self._dbh.commit()
     def set_registry_hold(self, domain, zone, val):
 	"""Set registry_hold flag for domain."""
-	d, z, did, zid = self._find(domain, zone, wlock=True)
-	self._check_login_perm(z)
+	dname, d, z = self._zl.find(domain, zone, wlock=True)
+	self._check_login_perm(z.name)
 	if self._nowrite: return
-	dom = _Domain(self._dbc, did)
-	dom.set_registry_hold(val)
-	_Zone(self._dbc, id=zid, nowrite=self._nowrite).set_updateserial()
+	d.set_registry_hold(val)
+	z.set_updateserial()
 	self._dbh.commit()
     def soa(self, zone):
 	"""Update SOA serial for zone if necessary."""
-	z = _Zone(self._dbc, name=zone.upper(), nowrite=self._nowrite)
+	z = self._zl.zones[zone.upper()]
 	z.fetch()
 	z.soa()
 	self._dbh.commit()
     def cat(self, zone):
 	"""Output zone file to stdout."""
-	z = _Zone(self._dbc, name=zone.upper())
+	z = self._zl.zones[zone.upper()]
 	z.fetch()
 	z.cat()
