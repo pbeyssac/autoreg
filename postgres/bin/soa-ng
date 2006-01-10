@@ -8,7 +8,7 @@
 # Where to find the "access-zone" script
 AZ=/usr/local/dns-manager/bin/access-zone
 # The directory where "master" zone files are located
-DEST=/etc/namedb
+DEST=/etc/namedb/autoreg
 # Command to reload the nameserver. Used only if option -r is provided.
 NDC=/usr/local/sbin/rndc
 
