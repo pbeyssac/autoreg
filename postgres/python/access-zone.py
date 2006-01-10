@@ -105,6 +105,7 @@ domain = args[0].upper()
 
 dd.login(user)
 
+r = 0
 try:
   if action == 'show':
     dd.show(domain, zone)
@@ -125,12 +126,11 @@ try:
   elif action == 'cat':
     dd.cat(domain)
   elif action == 'soa':
-    if dd.soa(domain):
-	sys.exit(0)
-    sys.exit(1)
+    if not dd.soa(domain):
+	r = 1
   else:
     usage()
-    sys.exit(1)
+    r = 1
 except dnsdb.AccessError, e:
   if e.args[0] == dnsdb.AccessError.NOAUTH:
     errexit('MSG_NUSER', (user))
@@ -165,3 +165,5 @@ except:
   logging.exception("Unexpected exception in access-zone:\n")
   logging.error("variables:\n%s", str(locals()))
   raise
+else:
+  sys.exit(r)
