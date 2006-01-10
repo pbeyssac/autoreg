@@ -29,9 +29,9 @@ class ZAuth:
 	    self._zauth_email[zone] = email
     def check(self, zone, user):
 	"""Check that a given user has the rights to access a given zone.
-	DNSADMIN has rights on every zone.
+	'DNSADMIN' and 'autoreg' have rights on every zone.
 	"""
-	if user == 'DNSADMIN': return True
+	if user in ['DNSADMIN', 'autoreg']: return True
 	zone = zone.upper()
 	if zone in self._zauth and user in self._zauth[zone]:
 	    return True
