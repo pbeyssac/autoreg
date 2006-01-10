@@ -161,18 +161,23 @@ class _Domain:
 	else: fud=''
 	self._dbc.execute('SELECT domains.name, zones.name, registry_hold, '
 			  'registry_lock, internal, zone_id, registrar_id, '
-			  'ad1.login, created_on, ad2.login, updated_on '
-			  'FROM domains, zones, admins AS ad1, admins AS ad2 '
-			  'WHERE domains.id=%d AND zones.id=domains.zone_id '
-			  'AND created_by=ad1.id AND updated_by=ad2.id'
+			  'created_by, created_on, updated_by, updated_on '
+			  'FROM domains, zones '
+			  'WHERE domains.id=%d AND zones.id=domains.zone_id'
 			  +fud, (did,))
 	if self._dbc.rowcount == 0:
 	    raise DomainError('Domain id not found', did)
 	assert self._dbc.rowcount == 1
 	(self.name, self._zone_name, self._registry_hold, self._registry_lock,
 	 self._internal, self._zone_id, self._registrar_id,
-	 self._created_by, self._created_on,
-	 self._updated_by, self._updated_on) = self._dbc.fetchone()
+	 idcr, self._created_on, idup, self._updated_on) = self._dbc.fetchone()
+	# "GRANT SELECT" perms do not allow "SELECT ... FOR UPDATE",
+	# hence the request below is done separately from the request above.
+	self._dbc.execute('SELECT ad1.login, ad2.login '
+			  'FROM admins AS ad1, admins AS ad2 '
+			  'WHERE ad1.id=%d AND ad2.id=%d', (idcr, idup))
+	assert self._dbc.rowcount == 1
+	self._created_by, self._updated_by = self._dbc.fetchone()
 	return True
     def add_rr(self, f):
 	"""Add resource records to domain from file.
