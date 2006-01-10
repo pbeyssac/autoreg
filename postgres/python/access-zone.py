@@ -125,7 +125,9 @@ try:
   elif action == 'cat':
     dd.cat(domain)
   elif action == 'soa':
-    dd.soa(domain)
+    if dd.soa(domain):
+	sys.exit(0)
+    sys.exit(1)
   else:
     usage()
     sys.exit(1)

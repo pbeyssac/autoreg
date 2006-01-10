@@ -46,7 +46,7 @@ class _Zone:
 	zid = self.id
 	serial = self._soaserial
 	assert zid != None and serial != None
-	if not self._updateserial: return
+	if not self._updateserial: return False
 	year, month, day, h, m, s, wd, yd, dst = time.localtime()
 	newserial = int("%04d%02d%02d00"%(year,month,day))
 	if serial < newserial:
@@ -57,6 +57,7 @@ class _Zone:
 	self._updateserial = False
 	self._dbc.execute('UPDATE zones SET soaserial=%d, updateserial=FALSE '
 			  'WHERE id=%d', (serial,zid))
+	return True
     def fetch(self, wlock=True):
 	"""Fetch zone info from database, using self.name as a key.
 
