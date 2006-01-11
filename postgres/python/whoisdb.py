@@ -31,8 +31,6 @@ class Person:
     self._dbc = dbc
   
   def insert(self, o):
-    print "insert person:"
-    print o
     for i in [('nh',0), ('em',0),
               ('ad',0), ('ad',1), ('ad',2), ('ad',3), ('ad',4), ('ad',5),
               ('ph',0), ('fx',0)]:
@@ -53,8 +51,6 @@ class Domain:
   def insert(self, o):
     domain = o['dn',0].upper()
     ambig, inval = 0, 0
-    print "insert domain:"
-    print o
     # initialize missing attributes
     for i in ['ad', 'tc', 'zc', 'ac']:
       for j in range(10):
@@ -132,7 +128,6 @@ class Main:
   def insert(self, o):
     if o.has_key(('dn',0)):
       # domain object
-      print "insert domain", o['dn', 0].upper(), "=> postponed"
       self.dom[o['dn',0].upper()] = o
       self.ndom += 1
     elif o.has_key(('pn',0)):
@@ -141,10 +136,10 @@ class Main:
       self.ct.insert(o)
     elif o.has_key(('mt',0)):
       # maintainer object, ignore
-      print "maintainer, skip"
+      pass
     elif o.has_key(('XX',0)):
-      print "deleted, skip"
       # deleted object, ignore
+      pass
     else:
       print >>sys.stderr, "Unknown object type"
       print str(o)
