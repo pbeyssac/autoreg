@@ -77,6 +77,7 @@ for o, a in opts:
 	action = a.lower()
     elif o == "-c":
 	nowrite = True
+	user = 'DNSADMIN'
     elif o == "-i":
 	internal = True
     elif o == "-t":
