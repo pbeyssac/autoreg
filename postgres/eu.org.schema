@@ -1,5 +1,9 @@
 -- $Id$
 
+--
+-- DNS database
+--
+
 -- id lookup table for RR types
 CREATE TABLE rrtypes (
 	id SERIAL PRIMARY KEY,
@@ -71,43 +75,6 @@ CREATE TABLE rrs (
 );
 CREATE INDEX rrs_domain_id_index ON rrs(domain_id);
 
--- contact handling
-
-CREATE TABLE contacts (
-	id SERIAL PRIMARY KEY,
-	handle varchar(20),
-	name varchar(255),
-	email varchar(80),
-	addr1 varchar(80),
-	addr2 varchar(80),
-	addr3 varchar(80),
-	addr4 varchar(80),
-	addr5 varchar(80),
-	addr6 varchar(80),
-	phone varchar(40),
-	fax varchar(40),
-	updated_on TIMESTAMP(2) WITH TIME ZONE
-);
-CREATE INDEX contacts_handle_index ON contacts(handle);
-CREATE INDEX contacts_name_index ON contacts(lower(name));
-
--- mostly static table for mapping contact type integer to a string
--- see example rows below
-CREATE TABLE contact_types (
-	id SERIAL PRIMARY KEY,
-	name varchar(20)
-);
-
--- links domains with contacts
--- note that the contact type is part of this relation, allowing
--- a given contact record to be used as different contact types
-CREATE TABLE domain_contact (
-	domain_id INTEGER REFERENCES domains(id),
-	contact_id INTEGER REFERENCES contacts(id),
-	contact_type_id INTEGER REFERENCES contact_types(id),
-	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
-);
-
 -- keeping history
 
 -- deleted domains
@@ -135,14 +102,71 @@ CREATE TABLE rrs_hist (
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 
+---------------------------------------------------------------------
+
+--
+-- Whois database
+--
+
+-- contact handling
+
+CREATE TABLE contacts (
+	id SERIAL PRIMARY KEY,
+	handle varchar(20),
+	name varchar(255),
+	email varchar(80),
+	addr1 varchar(80),
+	addr2 varchar(80),
+	addr3 varchar(80),
+	addr4 varchar(80),
+	addr5 varchar(80),
+	addr6 varchar(80),
+	phone varchar(40),
+	fax varchar(40),
+	updated_on TIMESTAMP(2) WITH TIME ZONE
+);
+CREATE INDEX contacts_handle_index ON contacts(handle);
+CREATE INDEX contacts_name_index ON contacts(lower(name));
+
+-- mostly static table for mapping contact type integer to a string
+-- see example rows below
+CREATE TABLE contact_types (
+	id SERIAL PRIMARY KEY,
+	name varchar(20)
+);
+
+CREATE TABLE whoisdomains (
+	id SERIAL PRIMARY KEY,
+	fqdn VARCHAR(255),
+	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	updated_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX whoisdomains_fqdn_index ON whoisdomains(fqdn);
+
+-- links domains with contacts
+-- note that the contact type is part of this relation, allowing
+-- a given contact record to be used as different contact types
+CREATE TABLE domain_contact (
+	whoisdomain_id INTEGER REFERENCES whoisdomains(id),
+	contact_id INTEGER REFERENCES contacts(id),
+	contact_type_id INTEGER REFERENCES contact_types(id),
+	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+);
+
+-- history
+
 -- deleted domain-contact associations
 CREATE TABLE domain_contact_hist (
-	domain_id INTEGER,
+	whoisdomain_id INTEGER,
 	contact_id INTEGER,
 	contact_type_id INTEGER REFERENCES contact_types(id),
 	created_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
+---------------------------------------------------------------------
+--
+-- Database initialization
+--
 
 -- dummy "root" zone used as a placeholder to catch domains
 -- for which we store only whois data
