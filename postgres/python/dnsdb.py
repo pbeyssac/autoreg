@@ -236,10 +236,6 @@ class _Domain:
 	domains: if set, also move domain and associated contact records.
 	"""
 	did = self.id
-	if domains:
-	    # get a lock on contact information we're going to delete
-	    self._dbc.execute('SELECT NULL FROM domain_contact '
-		'WHERE domain_id=%d FOR UPDATE', (did,))
 	self._dbc.execute('INSERT INTO rrs_hist '
 		'(domain_id,ttl,rrtype_id,created_on,label,value,deleted_on) '
 		'SELECT domain_id,ttl,rrtype_id,created_on,label,value,NOW() '
@@ -249,12 +245,6 @@ class _Domain:
 		'(id,name,zone_id,registrar_id,created_by,created_on,deleted_by,deleted_on) '
 		'SELECT id,name,zone_id,registrar_id,created_by,created_on,%d,NOW() '
 		'FROM domains WHERE id=%d', (login_id, did))
-	    self._dbc.execute('INSERT INTO domain_contact_hist '
-		'(domain_id,contact_id,contact_type_id,created_on) '
-		'SELECT domain_id,contact_id,contact_type_id,created_on '
-		'FROM domain_contact WHERE domain_id=%d', (did,))
-	    self._dbc.execute('DELETE FROM domain_contact '
-		'WHERE domain_id=%d', (did,))
 	self._dbc.execute('DELETE FROM rrs WHERE domain_id=%d', (did,))
 	if domains:
 	    self._dbc.execute('DELETE FROM domains WHERE id=%d', (did,))

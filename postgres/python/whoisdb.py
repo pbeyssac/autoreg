@@ -3,8 +3,6 @@
 import sre
 import sys
 
-import dnsdb
-
 _tv6 = sre.compile('^\S+\s*(\d\d)(\d\d)(\d\d)$')
 _tv8 = sre.compile('^\S+\s*(\d\d\d\d)(\d\d)(\d\d)$')
 
@@ -51,7 +49,6 @@ class Person:
 class Domain:
   def __init__(self, dbc):
     self._dbc = dbc
-    self.zl = dnsdb._ZoneList(dbc)
     self.ct = Person(dbc)
   def insert(self, o):
     domain = o['dn',0].upper()
@@ -63,21 +60,12 @@ class Domain:
       for j in range(10):
         if not o.has_key((i, j)):
           o[i, j] = None
-    # find domain and zone
-    d, z = self.zl.find(domain, None, raise_nf=False)
-    if d == None:
-      d, z = self.zl.find(domain, '', raise_nf=False)
-    assert z != None
-    if d == None:
-      # not found, insert "dummy" domain
-      print "Domain %s not handled, inserting as dummy domain" % domain
-      self._dbc.execute('INSERT INTO domains (name,zone_id) VALUES (%s, %d)',
-                        (domain, z.id))
-      self._dbc.execute("SELECT currval('domains_id_seq'")
-      assert self._dbc.rowcount == 1
-      did, = self._dbc.fetchone()
-    else:
-      did = d.id
+    self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_on) '
+                      'VALUES (%s, %s)', (domain, parse_changed(o['ch',0])))
+    assert self._dbc.rowcount == 1
+    self._dbc.execute("SELECT currval('whoisdomains_id_seq')")
+    assert self._dbc.rowcount == 1
+    did, = self._dbc.fetchone()
 
     # create domain_contact records linking to all contacts
     for i in [('tc','technical'), ('zc','zone'), ('ac','administrative')]:
@@ -89,7 +77,7 @@ class Domain:
         if v == None:
           break
         self._dbc.execute('INSERT INTO domain_contact '
-                          '(domain_id,contact_id,contact_type_id) '
+                          '(whoisdomain_id,contact_id,contact_type_id) '
                           ' (SELECT %d,id,'
                           '  (SELECT id FROM contact_types WHERE name=%s) '
                           ' FROM contacts WHERE (lower(name)=%s OR handle=%s) '
@@ -115,7 +103,7 @@ class Domain:
     c['ch',0] = o['ch',0]
     self.ct.insert(c)
     self._dbc.execute("INSERT INTO domain_contact "
-                      "(domain_id,contact_id,contact_type_id) "
+                      "(whoisdomain_id,contact_id,contact_type_id) "
                       "VALUES (%d,(SELECT currval('contacts_id_seq')),"
                       "(SELECT id FROM contact_types WHERE name=%s))",
                       (did, 'registrant'))
