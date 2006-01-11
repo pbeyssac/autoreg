@@ -357,6 +357,11 @@ class _ZoneList:
 	    if zone in self.zones:
 		dom = '.'.join(n[:i])
 		return (dom, self.zones[zone])
+
+        # try domain as a zone name as a last resort
+        if domain in self.zones:
+          return ('', self.zones[domain])
+
 	return (None, None)
     def find(self, domain, zone, wlock=False, raise_nf=True):
 	"""Find domain and zone id.
