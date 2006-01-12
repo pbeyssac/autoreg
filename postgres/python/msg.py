@@ -56,4 +56,6 @@ class Msg:
 	    m = str.find('\\', m)
 	return str
     def f(self, id, args):
+	if not self.m.has_key(self.curlang):
+	  return self.m[''][id] % args
 	return self.m[self.curlang][id] % args
