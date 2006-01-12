@@ -500,8 +500,9 @@ class db:
 	"""Update SOA serial for zone if necessary."""
 	z = self._zl.zones[zone.upper()]
 	z.fetch()
-	z.soa()
+	r = z.soa()
 	self._dbh.commit()
+        return r
     def cat(self, zone):
 	"""Output zone file to stdout."""
 	z = self._zl.zones[zone.upper()]
