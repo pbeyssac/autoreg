@@ -27,9 +27,10 @@ def parse_changed(timeval):
   return "%04d-%02d-%02d 00:00:00" % (y, m, d)
 
 class Person:
-  def __init__(self, dbc):
+  def __init__(self, dbc, id=None):
     self._dbc = dbc
-  
+    self.id = id
+    self.d = {}
   def insert(self, o):
     for i in [('nh',0), ('em',0),
               ('ad',0), ('ad',1), ('ad',2), ('ad',3), ('ad',4), ('ad',5),
@@ -43,7 +44,32 @@ class Person:
                        o['ad',0], o['ad',1], o['ad',2],
                        o['ad',3], o['ad',4], o['ad',5],
                        o['ph',0], o['fx',0], parse_changed(o['ch',0])))
-
+    assert self._dbc.rowcount == 1
+  def fetch(self):
+    assert self.id != None
+    self._dbc.execute('SELECT handle,name,email,addr1,addr2,addr3,addr4,'
+                      ' addr5,addr6,phone,fax,updated_on '
+                      'FROM contacts WHERE id=%d', (self.id,))
+    assert self._dbc.rowcount == 1
+    d = {}
+    (d['nic-hdl'], d['person'], d['e-mail'],
+     d['addr',0], d['addr',1], d['addr',2],
+     d['addr',3], d['addr',4], d['addr',5],
+     d['phone'], d['fax'], d['changed']) = self._dbc.fetchone()
+    self.d = d
+  def display(self):
+    d = self.d
+    for i in ['person', 'nic-hdl']:
+      if d.has_key(i) and d[i] != None:
+        print "%-12s %s" % (i+':', d[i])
+    for i in range(6):
+      if d.has_key(('addr',i)) and d['addr',i] != None:
+        print "address:     %s" % (d['addr',i])
+    for i in ['phone', 'fax', 'e-mail', 'changed']:
+      if d.has_key(i) and d[i] != None:
+        print "%-12s %s" % (i+':', d[i])
+    print
+  
 class Domain:
   def __init__(self, dbc):
     self._dbc = dbc
@@ -104,7 +130,25 @@ class Domain:
                       "(SELECT id FROM contact_types WHERE name=%s))",
                       (did, 'registrant'))
     return ambig, inval
-    
+
+class Lookup:
+  def __init__(self, dbc):
+    self._dbc = dbc
+  def _makelist(self):
+    l = []
+    for t in self._dbc.fetchall():
+      id, = t
+      l.append(Person(self._dbc, id))
+    return l
+  def persons_by_handle(self, handle):
+    self._dbc.execute('SELECT id FROM contacts WHERE handle=%s',
+                      (handle.upper(),))
+    return self._makelist()
+  def persons_by_name(self, name):
+    self._dbc.execute('SELECT id FROM contacts WHERE lower(name)=%s',
+                      (name.lower(),))
+    return self._makelist()
+  
 class Main:
   shorts = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
              'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
