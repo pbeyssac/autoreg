@@ -485,7 +485,11 @@ sub checkname {
             &pr_error($ERR_BADD0, $_[0]);
 	    return;
 	}
-        if ($_[0] =~ /^[^A-Za-z0-9]/ || $_[0] =~ /\.[^A-Za-z]/) {
+        if ($_[0] =~ /^[0-9\.]+$/) {
+            &pr_error($ERR_BADDB, $_[0]);
+	    return;
+	}
+        if ($_[0] =~ /^[^A-Za-z0-9]/ || $_[0] =~ /\.[^A-Za-z0-9]/) {
             &pr_error($ERR_BADDB, $_[0]);
 	    return;
 	}
