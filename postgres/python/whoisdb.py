@@ -27,9 +27,10 @@ def parse_changed(timeval):
   return "%04d-%02d-%02d 00:00:00" % (y, m, d)
 
 class Person:
-  def __init__(self, dbc, id=None):
+  def __init__(self, dbc, id=None, key=None):
     self._dbc = dbc
     self.id = id
+    self.key = key
     self.d = {}
   def insert(self, o):
     for i in [('nh',0), ('em',0),
@@ -57,9 +58,10 @@ class Person:
      d['addr',3], d['addr',4], d['addr',5],
      d['phone'], d['fax'], d['changed']) = self._dbc.fetchone()
     self.d = d
-  def display(self):
+  def display(self, title='person'):
     d = self.d
-    for i in ['person', 'nic-hdl']:
+    print "%-12s %s" % (title+':', d['person'])
+    for i in ['nic-hdl']:
       if d.has_key(i) and d[i] != None:
         print "%-12s %s" % (i+':', d[i])
     for i in range(6):
@@ -68,12 +70,14 @@ class Person:
     for i in ['phone', 'fax', 'e-mail', 'changed']:
       if d.has_key(i) and d[i] != None:
         print "%-12s %s" % (i+':', d[i])
-    print
   
 class Domain:
-  def __init__(self, dbc):
+  def __init__(self, dbc, id=None, fqdn=None, updated_on=None):
     self._dbc = dbc
     self.ct = Person(dbc)
+    self.id = id
+    self.fqdn = fqdn
+    self.updated_on = updated_on
   def insert(self, o):
     domain = o['dn',0].upper()
     ambig, inval = 0, 0
@@ -88,6 +92,7 @@ class Domain:
     self._dbc.execute("SELECT currval('whoisdomains_id_seq')")
     assert self._dbc.rowcount == 1
     did, = self._dbc.fetchone()
+    self.id = did
 
     # create domain_contact records linking to all contacts
     for i in [('tc','technical'), ('zc','zone'), ('ac','administrative')]:
@@ -130,6 +135,35 @@ class Domain:
                       "(SELECT id FROM contact_types WHERE name=%s))",
                       (did, 'registrant'))
     return ambig, inval
+  def get_contacts(self):
+    self._dbc.execute('SELECT contact_id, contact_types.name,'
+                      ' handle, contacts.name '
+                      'FROM domain_contact, contact_types, contacts '
+                      'WHERE contact_types.id=contact_type_id '
+                      'AND contacts.id = contact_id '
+                      'AND domain_contact.whoisdomain_id=%d', (self.id,))
+    l = self._dbc.fetchall()
+    dc = {}
+    for id, type, handle, name in l:
+      k = handle
+      if k == None:
+        k = name
+      if not dc.has_key(type): dc[type] = []
+      dc[type].append(Person(self._dbc, id, k))
+    self.dc = dc
+    return dc
+  def display(self):
+    print "%-12s %s" % ('domain:', self.fqdn)
+    reg = self.dc['registrant'][0]
+    reg.fetch()
+    reg.display('address')
+    for k, l in [('technical','tech-c'),
+                 ('administrative','admin-c'),
+                 ('zone','zone-c')]:
+      if not (k in self.dc):
+        continue
+      for c in self.dc[k]:
+        print "%-12s %s" % (l+':', c.key)
 
 class Lookup:
   def __init__(self, dbc):
@@ -148,6 +182,15 @@ class Lookup:
     self._dbc.execute('SELECT id FROM contacts WHERE lower(name)=%s',
                       (name.lower(),))
     return self._makelist()
+  def domain_by_name(self, name):
+    name = name.upper()
+    self._dbc.execute('SELECT id, updated_on FROM whoisdomains WHERE fqdn=%s',
+                      (name,))
+    if self._dbc.rowcount == 0:
+      return None
+    assert self._dbc.rowcount == 1
+    id, upon = self._dbc.fetchone()
+    return Domain(self._dbc, id, name, upon)
   
 class Main:
   shorts = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
