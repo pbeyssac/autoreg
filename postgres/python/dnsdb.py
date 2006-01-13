@@ -121,7 +121,7 @@ class _Zone:
 	    if l == self.name+'.':
 		l = '@'
 	    if ttl == None: ttl = ''
-	    else: ttl = str(ttl)
+	    else: ttl = str(ttl)+'\t'
 	    # print line, removing label if possible
 	    # for compactness and clarity
 	    if l == lastlabel:
