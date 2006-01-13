@@ -13,14 +13,29 @@ l = whoisdb.Lookup(dbh.cursor())
 
 d = l.domain_by_name(a)
 if d != None:
-  d.get_contacts()
+  dc = d.get_contacts()
   d.display()
   print
-for p in l.persons_by_handle(a):
-  p.fetch()
-  p.display()
-  print
-for p in l.persons_by_name(a):
+  pdone = []
+  for k in ['technical', 'administrative', 'zone']:
+    if not k in dc:
+      continue
+    for p in dc[k]:
+      if not p.key in pdone:
+        p.fetch()
+        p.display()
+        pdone.append(p.key)
+        print
+  sys.exit(0)
+
+lp = l.persons_by_handle(a)
+if not lp:
+  lp = l.persons_by_name(a)
+if not lp:
+  print "Key not found"
+  sys.exit(1)
+
+for p in lp:
   p.fetch()
   p.display()
   print
