@@ -26,6 +26,14 @@ def parse_changed(timeval):
   d = int(d)
   return "%04d-%02d-%02d 00:00:00" % (y, m, d)
 
+ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
+              'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
+              'changed': 'ch', 'remark': 'rm', 'nic-hdl': 'nh',
+              'notify': 'ny', 'mnt-by': 'mb', 'source': 'so',
+              'upd->to': 'dt', 'auth': 'at', 'mntner': 'mt',
+              'domain': 'dn' }
+ripe_stol = dict((v, k) for k, v in ripe_ltos.iteritems())
+
 class Person:
   def __init__(self, dbc, id=None, key=None):
     self._dbc = dbc
@@ -33,18 +41,18 @@ class Person:
     self.key = key
     self.d = {}
   def insert(self, o):
-    for i in [('nh',0), ('em',0),
-              ('ad',0), ('ad',1), ('ad',2), ('ad',3), ('ad',4), ('ad',5),
-              ('ph',0), ('fx',0)]:
+    for i in ['nh', 'pn', 'em', 'ad', 'ph', 'fx']:
       if not o.has_key(i):
-        o[i] = None
+        o[i] = [ None ]
+    while len(o['ad']) < 6: o['ad'].append(None)
+    #print "o=", o
     self._dbc.execute('INSERT INTO contacts (handle,name,email,addr1,'
                       'addr2,addr3,addr4,addr5,addr6,phone,fax,updated_on) '
                       'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
-                      (o['nh',0], o['pn',0], o['em',0],
-                       o['ad',0], o['ad',1], o['ad',2],
-                       o['ad',3], o['ad',4], o['ad',5],
-                       o['ph',0], o['fx',0], parse_changed(o['ch',0])))
+                      (o['nh'][0], o['pn'][0], o['em'][0],
+                       o['ad'][0], o['ad'][1], o['ad'][2],
+                       o['ad'][3], o['ad'][4], o['ad'][5],
+                       o['ph'][0], o['fx'][0], parse_changed(o['ch'][0])))
     assert self._dbc.rowcount == 1
   def fetch(self):
     assert self.id != None
@@ -60,7 +68,8 @@ class Person:
     self.d = d
   def display(self, title='person'):
     d = self.d
-    print "%-12s %s" % (title+':', d['person'])
+    if d['person'] != None:
+	print "%-12s %s" % (title+':', d['person'])
     for i in ['nic-hdl']:
       if d.has_key(i) and d[i] != None:
         print "%-12s %s" % (i+':', d[i])
@@ -79,15 +88,12 @@ class Domain:
     self.fqdn = fqdn
     self.updated_on = updated_on
   def insert(self, o):
-    domain = o['dn',0].upper()
+    domain = o['dn'][0].upper()
     ambig, inval = 0, 0
-    # initialize missing attributes
-    for i in ['ad', 'tc', 'zc', 'ac']:
-      for j in range(10):
-        if not o.has_key((i, j)):
-          o[i, j] = None
+    assert 'ch' in o
+    #print o
     self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_on) '
-                      'VALUES (%s, %s)', (domain, parse_changed(o['ch',0])))
+                      'VALUES (%s, %s)', (domain, parse_changed(o['ch'][0])))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('whoisdomains_id_seq')")
     assert self._dbc.rowcount == 1
@@ -97,12 +103,9 @@ class Domain:
     # create domain_contact records linking to all contacts
     for i in [('tc','technical'), ('zc','zone'), ('ac','administrative')]:
       si, full = i
-      for j in range(10):
-        if not o.has_key((si,j)):
-          break
-        v = o[si,j]
-        if v == None:
-          break
+      if not si in o:
+        continue
+      for v in o[si]:
         self._dbc.execute('INSERT INTO domain_contact '
                           '(whoisdomain_id,contact_id,contact_type_id) '
                           ' (SELECT %d,id,'
@@ -121,13 +124,13 @@ class Domain:
     # Create a "registrant" contact, storing the address lines
     # of the RIPE-style domain object.
     c = {}
-    c['pn',0] = o['ad',0]
-    c['em',0] = None
-    for k in range(6):
-      c['ad',k] = o['ad',k+1]
-    c['ph',0] = None
-    c['fx',0] = None
-    c['ch',0] = o['ch',0]
+    if 'ad' in o:
+	#o['ad'] = [None, None, None, None, None, None]
+	#while len(o['ad']) < 6: o['ad'].append(None)
+	c['pn'] = o['ad'][:1]
+	c['ad'] = o['ad'][1:]
+    # c['em'] = None
+    c['ch'] = o['ch']
     self.ct.insert(c)
     self._dbc.execute("INSERT INTO domain_contact "
                       "(whoisdomain_id,contact_id,contact_type_id) "
@@ -193,12 +196,6 @@ class Lookup:
     return Domain(self._dbc, id, name, upon)
   
 class Main:
-  shorts = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
-             'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
-             'changed': 'ch', 'remark': 'rm', 'nic-hdl': 'nh',
-             'notify': 'ny', 'mnt-by': 'mb', 'source': 'so',
-             'upd->to': 'dt', 'auth': 'at', 'mntner': 'mt',
-             'domain': 'dn' }
   comment_re = sre.compile('^\s*#')
   white_re = sre.compile('^\s*$')
   empty_re = sre.compile('^$')
@@ -213,18 +210,18 @@ class Main:
     self.ambig = 0
     self.inval = 0
   def insert(self, o):
-    if o.has_key(('dn',0)):
+    if o.has_key('dn'):
       # domain object
-      self.dom[o['dn',0].upper()] = o
+      self.dom[o['dn'][0].upper()] = o
       self.ndom += 1
-    elif o.has_key(('pn',0)):
-      assert o.has_key(('em',0))
+    elif o.has_key('pn'):
+      assert o.has_key('em')
       self.nperson += 1
       self.ct.insert(o)
-    elif o.has_key(('mt',0)):
+    elif o.has_key('mt'):
       # maintainer object, ignore
       pass
-    elif o.has_key(('XX',0)):
+    elif o.has_key('XX'):
       # deleted object, ignore
       pass
     else:
@@ -253,15 +250,13 @@ class Main:
         m = self.longattr_re.search(l)
         assert m
         a, v = m.groups()
-        if not shorts.has_key(a):
+        if not ripe_ltos.has_key(a):
           raise Error
-        a = self.shorts[a]
-      for i in range(10):
-        if not o.has_key((a, i)):
-          o[a, i] = v
-          break
+        a = self.ripe_ltos[a]
+      if o.has_key(a):
+        o[a].append(v)
       else:
-        raise Error
+        o[a] = [v]
     if len(o):
       # end of file: insert last object
       self.insert(o)
