@@ -240,7 +240,7 @@ class Main:
     self._dbc = dbc
     self.ambig = 0
     self.inval = 0
-  def insert(self, o):
+  def process(self, o):
     if o.has_key('XX'):
       # deleted object, ignore
       return
@@ -261,9 +261,6 @@ class Main:
     elif o.has_key('mt'):
       # maintainer object, ignore
       pass
-    elif o.has_key('XX'):
-      # deleted object, ignore
-      pass
     else:
       print >>sys.stderr, "Unknown object type"
       print str(o)
@@ -277,7 +274,7 @@ class Main:
       if self.white_re.search(l) and len(o):
         # white line or empty line and o is not empty:
         # end of object, insert then cleanup for next object.
-        self.insert(o)
+        self.process(o)
         o = {}
         continue
       if self.empty_re.search(l):
@@ -299,7 +296,7 @@ class Main:
         o[a] = [v]
     if len(o):
       # end of file: insert last object
-      self.insert(o)
+      self.process(o)
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
     for i in sorted(self.dom.keys()):
