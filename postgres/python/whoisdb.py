@@ -3,6 +3,8 @@
 import sre
 import sys
 
+import mx
+
 _tv6 = sre.compile('^\S+\s*(\d\d)(\d\d)(\d\d)$')
 _tv8 = sre.compile('^\S+\s*(\d\d\d\d)(\d\d)(\d\d)$')
 
@@ -25,7 +27,7 @@ def parse_changed(timeval):
       raise Error
   m = int(m)
   d = int(d)
-  return "%04d-%02d-%02d 00:00:00" % (y, m, d)
+  return mx.DateTime.DateTime(y, m, d)
 
 ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
               'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
@@ -43,10 +45,18 @@ personattrs = {'pn': (0,1), 'ad': (0,6),
                'em': (0,1), 'ch': (1,1), 'nh': (0,1)}
 
 def from_ripe(o, attrlist):
+  # find ignored attributes, warn
+  dlist = []
   for k in o:
-    if not k in attrlist and not k in ['so', 'mb']:
-      print o
-      print "ignoring attribute %s: %s" % (k, o[k])
+    if not k in attrlist:
+      dlist.append(k)
+      if not k in ['so', 'mb']:
+        print o
+        print "ignoring attribute %s: %s" % (k, o[k])
+  # cleanup ignored attributes
+  for k in dlist:
+    del o[k]
+  # check attribute constraints
   for k, mm in attrlist.iteritems():
     min, max = mm
     if not k in o:
@@ -70,9 +80,15 @@ class Person:
     self.id = id
     self.key = key
     self.d = {}
+  def _set_key(self):
+    if self.d['nh'] != None:
+      self.key = self.d['nh']
+    else:
+      self.key = self.d['pn']
   def from_ripe(self, o):
     from_ripe(o, personattrs)
     self.d = o
+    self._set_key()
   def insert(self):
     o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,name,email,addr1,'
@@ -81,7 +97,7 @@ class Person:
                       (o['nh'][0], o['pn'][0], o['em'][0],
                        o['ad'][0], o['ad'][1], o['ad'][2],
                        o['ad'][3], o['ad'][4], o['ad'][5],
-                       o['ph'][0], o['fx'][0], o['ch'][0]))
+                       o['ph'][0], o['fx'][0], str(o['ch'][0])))
     assert self._dbc.rowcount == 1
   def fetch(self):
     assert self.id != None
@@ -90,24 +106,24 @@ class Person:
                       'FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
     d = {}
-    (d['nic-hdl'], d['person'], d['e-mail'],
-     d['addr',0], d['addr',1], d['addr',2],
-     d['addr',3], d['addr',4], d['addr',5],
-     d['phone'], d['fax'], d['changed']) = self._dbc.fetchone()
+    (d['nh'], d['pn'], d['em'],
+     addr1, addr2, addr3, addr4, addr5, addr6,
+     d['ph'], d['fx'], d['ch']) = self._dbc.fetchone()
+    for k in d.keys():
+      d[k] = [ d[k] ]
+    d['ad'] = [ addr1, addr2, addr3, addr4, addr5, addr6 ]
     self.d = d
+    self._set_key()
   def display(self, title='person'):
     d = self.d
-    if d['person'] != None:
-	print "%-12s %s" % (title+':', d['person'])
-    for i in ['nic-hdl']:
-      if d.has_key(i) and d[i] != None:
-        print "%-12s %s" % (i+':', d[i])
-    for i in range(6):
-      if d.has_key(('addr',i)) and d['addr',i] != None:
-        print "address:     %s" % (d['addr',i])
-    for i in ['phone', 'fax', 'e-mail', 'changed']:
-      if d.has_key(i) and d[i] != None:
-        print "%-12s %s" % (i+':', d[i])
+    for i in ['pn', 'nh', 'ad', 'ph', 'fx', 'em', 'ch']:
+      if i == 'pn':
+        l = title
+      else:
+        l = ripe_stol[i]
+      for j in d[i]:
+        if j != None:
+          print "%-12s %s" % (l+':', j)
   
 class Domain:
   def __init__(self, dbc, id=None, fqdn=None, updated_on=None):
@@ -125,7 +141,7 @@ class Domain:
     o = self.d
     ambig, inval = 0, 0
     self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_on) '
-                      'VALUES (%s, %s)', (domain, o['ch'][0]))
+                      'VALUES (%s, %s)', (domain, str(o['ch'][0])))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('whoisdomains_id_seq')")
     assert self._dbc.rowcount == 1
@@ -240,7 +256,8 @@ class Main:
     self._dbc = dbc
     self.ambig = 0
     self.inval = 0
-  def process(self, o):
+    self._lookup = Lookup(dbc)
+  def insert(self, o):
     if o.has_key('XX'):
       # deleted object, ignore
       return
@@ -253,13 +270,52 @@ class Main:
       self.ndom += 1
     elif o.has_key('pn'):
       # person object
-      assert o.has_key('em')
       self.nperson += 1
       ct = Person(self._dbc)
       ct.from_ripe(o)
-      ct.insert()
+      if 'nh' in o and o['nh'][0] != None:
+        # has a NIC handle, try to find if already in the base
+        handle = o['nh'][0]
+        lp = self._lookup.persons_by_handle(handle)
+        assert len(lp) <= 1
+        if len(lp) == 1:
+          # found, compare
+          lp[0].fetch()
+          if lp[0].d != o:
+            print "nic-hdl:", handle, "differ"
+            print "old=", lp[0].d
+            print "new=", o
+            # XXX: should update base here
+        else:
+          # not found, simply insert
+          ct.insert()
+      else:
+        assert 'pn' in o and o['pn'] != None
+        # no handle, try to find by name
+        name = o['pn'][0]
+        lp = self._lookup.persons_by_name(name)
+        if len(lp) == 0:
+          # not found, insert
+          ct.insert()
+        else:
+          for c in lp:
+            c.fetch()
+            # skip person objets with a NIC handle
+            if c.d['nh'][0] != None:
+              continue
+            if c.d == o:
+              # found, stop
+              break
+          else:
+            # not found, insert
+            print "No handle and not found by name"
+            print "new=", o
+            ct.insert()
     elif o.has_key('mt'):
       # maintainer object, ignore
+      pass
+    elif o.has_key('XX'):
+      # deleted object, ignore
       pass
     else:
       print >>sys.stderr, "Unknown object type"
@@ -274,7 +330,7 @@ class Main:
       if self.white_re.search(l) and len(o):
         # white line or empty line and o is not empty:
         # end of object, insert then cleanup for next object.
-        self.process(o)
+        self.insert(o)
         o = {}
         continue
       if self.empty_re.search(l):
@@ -296,15 +352,20 @@ class Main:
         o[a] = [v]
     if len(o):
       # end of file: insert last object
-      self.process(o)
+      self.insert(o)
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
     for i in sorted(self.dom.keys()):
-      wd = Domain(self._dbc)
-      wd.from_ripe(self.dom[i])
-      ambig, inval = wd.insert()
-      self.ambig += ambig
-      self.inval += inval
+      ld = self._lookup.domain_by_name(i)
+      if ld != None:
+        # XXX: update domain here
+        pass
+      else:
+        wd = Domain(self._dbc)
+        wd.from_ripe(self.dom[i])
+        ambig, inval = wd.insert()
+        self.ambig += ambig
+        self.inval += inval
     print "Domains:", self.ndom
     print "Persons:", self.nperson
     print "Ambiguous contacts:", self.ambig
