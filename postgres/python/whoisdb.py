@@ -21,6 +21,7 @@ def parse_changed(timeval):
       y, m, d = ma.groups()
       y = int(y)
     else:
+      print "Cannot parse_changed:", timeval
       raise Error
   m = int(m)
   d = int(d)
@@ -30,9 +31,38 @@ ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
               'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
               'changed': 'ch', 'remark': 'rm', 'nic-hdl': 'nh',
               'notify': 'ny', 'mnt-by': 'mb', 'source': 'so',
-              'upd->to': 'dt', 'auth': 'at', 'mntner': 'mt',
+              'upd-to': 'dt', 'auth': 'at', 'mntner': 'mt',
               'domain': 'dn' }
 ripe_stol = dict((v, k) for k, v in ripe_ltos.iteritems())
+
+domainattrs = {'dn': (1, 1), 'ad': (0,6),
+               'tc': (0,3), 'ac': (1,3), 'zc': (0,3), 'ch': (1,1) }
+
+personattrs = {'pn': (0,1), 'ad': (0,6),
+               'ph': (0,1), 'fx': (0,1),
+               'em': (0,1), 'ch': (1,1), 'nh': (0,1)}
+
+def from_ripe(o, attrlist):
+  for k in o:
+    if not k in attrlist and not k in ['so', 'mb']:
+      print o
+      print "ignoring attribute %s: %s" % (k, o[k])
+  for k, mm in attrlist.iteritems():
+    min, max = mm
+    if not k in o:
+      if min > 0:
+        print o
+        print "missing attribute %s" % ripe_stol[k]
+        raise Error
+      o[k] = [ None ]
+    else:
+      if not (min <= len(o[k]) <= max):
+        print o
+        print "attribute %s found %d times, should appear %d to %d time(s)" % \
+              (ripe_stol[k], len(o[k]), min, max)
+        o[k] = o[k][:max]
+  if len(o['ad']) < 6:
+    o['ad'].extend([ None ] * (6-len(o['ad'])))
 
 class Person:
   def __init__(self, dbc, id=None, key=None):
@@ -40,19 +70,18 @@ class Person:
     self.id = id
     self.key = key
     self.d = {}
-  def insert(self, o):
-    for i in ['nh', 'pn', 'em', 'ad', 'ph', 'fx']:
-      if not o.has_key(i):
-        o[i] = [ None ]
-    while len(o['ad']) < 6: o['ad'].append(None)
-    #print "o=", o
+  def from_ripe(self, o):
+    from_ripe(o, personattrs)
+    self.d = o
+  def insert(self):
+    o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,name,email,addr1,'
                       'addr2,addr3,addr4,addr5,addr6,phone,fax,updated_on) '
                       'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
                       (o['nh'][0], o['pn'][0], o['em'][0],
                        o['ad'][0], o['ad'][1], o['ad'][2],
                        o['ad'][3], o['ad'][4], o['ad'][5],
-                       o['ph'][0], o['fx'][0], parse_changed(o['ch'][0])))
+                       o['ph'][0], o['fx'][0], o['ch'][0]))
     assert self._dbc.rowcount == 1
   def fetch(self):
     assert self.id != None
@@ -83,17 +112,20 @@ class Person:
 class Domain:
   def __init__(self, dbc, id=None, fqdn=None, updated_on=None):
     self._dbc = dbc
-    self.ct = Person(dbc)
     self.id = id
     self.fqdn = fqdn
     self.updated_on = updated_on
-  def insert(self, o):
-    domain = o['dn'][0].upper()
+  def from_ripe(self, o):
+    from_ripe(o, domainattrs)
+    self.fqdn = o['dn'][0].upper()
+    o['dn'][0] = self.fqdn
+    self.d = o
+  def insert(self):
+    domain = self.fqdn
+    o = self.d
     ambig, inval = 0, 0
-    assert 'ch' in o
-    #print o
     self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_on) '
-                      'VALUES (%s, %s)', (domain, parse_changed(o['ch'][0])))
+                      'VALUES (%s, %s)', (domain, o['ch'][0]))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('whoisdomains_id_seq')")
     assert self._dbc.rowcount == 1
@@ -106,6 +138,7 @@ class Domain:
       if not si in o:
         continue
       for v in o[si]:
+	if v == None: continue
         self._dbc.execute('INSERT INTO domain_contact '
                           '(whoisdomain_id,contact_id,contact_type_id) '
                           ' (SELECT %d,id,'
@@ -125,13 +158,12 @@ class Domain:
     # of the RIPE-style domain object.
     c = {}
     if 'ad' in o:
-	#o['ad'] = [None, None, None, None, None, None]
-	#while len(o['ad']) < 6: o['ad'].append(None)
 	c['pn'] = o['ad'][:1]
 	c['ad'] = o['ad'][1:]
-    # c['em'] = None
     c['ch'] = o['ch']
-    self.ct.insert(c)
+    ct = Person(self._dbc)
+    ct.from_ripe(c)
+    ct.insert()
     self._dbc.execute("INSERT INTO domain_contact "
                       "(whoisdomain_id,contact_id,contact_type_id) "
                       "VALUES (%d,(SELECT currval('contacts_id_seq')),"
@@ -205,19 +237,27 @@ class Main:
     self.dom = {}
     self.ndom = 0
     self.nperson = 0
-    self.ct = Person(dbc)
     self._dbc = dbc
     self.ambig = 0
     self.inval = 0
   def insert(self, o):
+    if o.has_key('XX'):
+      # deleted object, ignore
+      return
+    if o.has_key('ch'):
+	for i in range(len(o['ch'])):
+	    o['ch'][i] = parse_changed(o['ch'][i])
     if o.has_key('dn'):
       # domain object
       self.dom[o['dn'][0].upper()] = o
       self.ndom += 1
     elif o.has_key('pn'):
+      # person object
       assert o.has_key('em')
       self.nperson += 1
-      self.ct.insert(o)
+      ct = Person(self._dbc)
+      ct.from_ripe(o)
+      ct.insert()
     elif o.has_key('mt'):
       # maintainer object, ignore
       pass
@@ -262,9 +302,10 @@ class Main:
       self.insert(o)
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
-    wd = Domain(self._dbc)
     for i in sorted(self.dom.keys()):
-      ambig, inval = wd.insert(self.dom[i])
+      wd = Domain(self._dbc)
+      wd.from_ripe(self.dom[i])
+      ambig, inval = wd.insert()
       self.ambig += ambig
       self.inval += inval
     print "Domains:", self.ndom
