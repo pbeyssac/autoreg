@@ -99,6 +99,18 @@ class Person:
                        o['ad'][3], o['ad'][4], o['ad'][5],
                        o['ph'][0], o['fx'][0], str(o['ch'][0])))
     assert self._dbc.rowcount == 1
+  def update(self):
+    assert self.id != None
+    o = self.d
+    self._dbc.execute('UPDATE contacts SET handle=%s,name=%s,email=%s,'
+                      'addr1=%s,addr2=%s,addr3=%s,addr4=%s,addr5=%s,addr6=%s,'
+                      'phone=%s,fax=%s,updated_on=%s '
+                      'WHERE id=%d',
+                      (o['nh'][0], o['pn'][0], o['em'][0],
+                       o['ad'][0], o['ad'][1], o['ad'][2],
+                       o['ad'][3], o['ad'][4], o['ad'][5],
+                       o['ph'][0], o['fx'][0], str(o['ch'][0]), self.id))
+    assert self._dbc.rowcount == 1
   def fetch(self):
     assert self.id != None
     self._dbc.execute('SELECT handle,name,email,addr1,addr2,addr3,addr4,'
@@ -285,7 +297,8 @@ class Main:
             print "nic-hdl:", handle, "differ"
             print "old=", lp[0].d
             print "new=", o
-            # XXX: should update base here
+            lp[0].d = o
+            lp[0].update()
         else:
           # not found, simply insert
           ct.insert()
@@ -345,7 +358,7 @@ class Main:
         a, v = m.groups()
         if not ripe_ltos.has_key(a):
           raise Error
-        a = self.ripe_ltos[a]
+        a = ripe_ltos[a]
       if o.has_key(a):
         o[a].append(v)
       else:
