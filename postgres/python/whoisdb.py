@@ -37,7 +37,7 @@ ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
               'domain': 'dn' }
 ripe_stol = dict((v, k) for k, v in ripe_ltos.iteritems())
 
-domainattrs = {'dn': (1, 1), 'ad': (0,6),
+domainattrs = {'dn': (1, 1), 'ad': (0,7),
                'tc': (0,3), 'ac': (1,3), 'zc': (0,3), 'ch': (1,1) }
 
 personattrs = {'pn': (0,1), 'ad': (0,6),
@@ -89,7 +89,7 @@ class Person:
     from_ripe(o, personattrs)
     self.d = o
     self._set_key()
-  def insert(self):
+  def insert(self, fetchid=False):
     o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,name,email,addr1,'
                       'addr2,addr3,addr4,addr5,addr6,phone,fax,updated_on) '
@@ -99,6 +99,10 @@ class Person:
                        o['ad'][3], o['ad'][4], o['ad'][5],
                        o['ph'][0], o['fx'][0], str(o['ch'][0])))
     assert self._dbc.rowcount == 1
+    if fetchid:
+      self._dbc.execute("SELECT currval('contacts_id_seq')")
+      self.id, = self._dbc.fetchone()
+      assert self._dbc.rowcount == 1
   def update(self):
     assert self.id != None
     o = self.d
@@ -148,6 +152,16 @@ class Domain:
     self.fqdn = o['dn'][0].upper()
     o['dn'][0] = self.fqdn
     self.d = o
+    # Create a "registrant" contact, storing the address lines
+    # of the RIPE-style domain object.
+    c = {}
+    if 'ad' in o:
+	c['pn'] = o['ad'][:1]
+	c['ad'] = o['ad'][1:]
+        del o['ad']
+    c['ch'] = o['ch']
+    self.ct = Person(self._dbc)
+    self.ct.from_ripe(c)
   def insert(self):
     domain = self.fqdn
     o = self.d
@@ -182,21 +196,13 @@ class Domain:
         elif self._dbc.rowcount > 1:
           print "Ambiguous contact '%s' for domain %s" % (v, domain)
           ambig += 1
-    # Create a "registrant" contact, storing the address lines
-    # of the RIPE-style domain object.
-    c = {}
-    if 'ad' in o:
-	c['pn'] = o['ad'][:1]
-	c['ad'] = o['ad'][1:]
-    c['ch'] = o['ch']
-    ct = Person(self._dbc)
-    ct.from_ripe(c)
-    ct.insert()
+    self.ct.insert(fetchid=True)
     self._dbc.execute("INSERT INTO domain_contact "
                       "(whoisdomain_id,contact_id,contact_type_id) "
-                      "VALUES (%d,(SELECT currval('contacts_id_seq')),"
+                      "VALUES (%d,%d,"
                       "(SELECT id FROM contact_types WHERE name=%s))",
-                      (did, 'registrant'))
+                      (did, self.ct.id, 'registrant'))
+    assert self._dbc.rowcount == 1
     return ambig, inval
   def get_contacts(self):
     self._dbc.execute('SELECT contact_id, contact_types.name,'
