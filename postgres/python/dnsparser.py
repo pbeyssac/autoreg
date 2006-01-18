@@ -24,12 +24,12 @@ class DnsParser:
 	if self._comment_re.search(l): return None
 	m = self._label_re.search(l)
 	if not m: raise ParseError('Unable to parse line', l)
-	label, ttl, type, value = m.groups()
+	label, ttl, typ, value = m.groups()
 	if label == None:
 	    label = ''
 	else:
 	    label = label.upper()
-	type = type.upper()
+	typ = typ.upper()
 	# Do some quick & dirty checking and canonicalization
 	if type in ['AAAA', 'CNAME', 'NS', 'SRV']:
 	    value = value.upper()

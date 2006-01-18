@@ -1,8 +1,6 @@
 #!/usr/local/bin/python
 # $Id$
 
-import sre
-import string
 import time
 
 # local modules
@@ -108,9 +106,9 @@ class _Zone:
 	t = self._dbc.fetchone()
 	lastlabel = '@'
 	while t:
-	    (label, domain, ttl, type, value) = t
+	    (label, domain, ttl, typ, value) = t
 	    # "uncompress"
-	    if type in ['CNAME', 'MX', 'NS']: value += '.'
+	    if typ in ['CNAME', 'MX', 'NS']: value += '.'
 	    # prepare label
 	    if label != '' and domain != '':
 		l = label + '.' + domain
@@ -128,7 +126,7 @@ class _Zone:
 		l = ''
 	    else:
 		lastlabel = l
-	    print "%s\t%s%s\t%s" % (l, ttl, type, value)
+	    print "%s\t%s%s\t%s" % (l, ttl, typ, value)
 	    t = self._dbc.fetchone()
 	print "_EU-ORG-END-MARKER\tTXT\t\"%s\"" % self._soaserial
     def lock(self):
@@ -196,7 +194,7 @@ class _Domain:
 	    if t == None:
 		# Was a comment or empty line
 		continue
-	    newlabel, ttl, type, value = t
+	    newlabel, ttl, typ, value = t
 	    if newlabel != '':
 		label = newlabel
 		if label.endswith('.'):
@@ -205,25 +203,25 @@ class _Domain:
 		    elif label == zone+'.':
 			label = ''
 		    else:
-			raise DomainError(Domain.NOTINDOM, label, zone)
+			raise DomainError(DomainError.NOTINDOM, label, zone)
 		if label.endswith('.'+dom):
 		    label = label[:-len(dom)-1]
 		elif label == dom:
 		    label = ''
 	    # More tests which do not belong in the parser.
 	    # Check & "compress" the value field somewhat.
-	    if type in ['CNAME', 'MX', 'NS']:
+	    if typ in ['CNAME', 'MX', 'NS']:
 		if not value.endswith('.'):
-		    raise DomainError(Domain.NODOT, value)
+		    raise DomainError(DomainError.NODOT, value)
 		value = value[:-1]
-	    elif type in ['A', 'AAAA', 'SRV', 'TXT']:
+	    elif typ in ['A', 'AAAA', 'SRV', 'TXT']:
 		pass
 	    else:
-		raise DomainError(Domain.RRUNSUP, type)
+		raise DomainError(DomainError.RRUNSUP, typ)
 	    self._dbc.execute('INSERT INTO rrs '
 		'(domain_id,label,ttl,rrtype_id,value) '
 		'VALUES (%d,%s,%s,(SELECT id FROM rrtypes WHERE label=%s),%s)',
-		(did, label, ttl, type, value))
+		(did, label, ttl, typ, value))
     def set_updated_by(self, login_id):
         """Set updated_by and updated_on."""
         self._dbc.execute('UPDATE domains '
@@ -274,10 +272,10 @@ class _Domain:
 	lastlabel = ''
 	t = self._dbc.fetchone()
 	while t:
-	    label, dom, ttl, type, val = t
+	    label, dom, ttl, typ, val = t
 
 	    # "uncompress"
-	    if type in ['CNAME', 'MX', 'NS']: val += '.'
+	    if typ in ['CNAME', 'MX', 'NS']: val += '.'
 
 	    # handle label
 	    if label != '' and dom != '':
@@ -294,7 +292,7 @@ class _Domain:
 	    if ttl == None: ttl = ''
 	    else: ttl = str(ttl)
 
-	    print "\t".join((l, ttl, type, val))
+	    print "\t".join((l, ttl, typ, val))
 	    t = self._dbc.fetchone()
 	if self._dbc.rowcount == 0:
 	    print '; (NO RECORD)'
@@ -321,8 +319,8 @@ class _ZoneList:
 	self._dbc.execute('SELECT name, id FROM zones')
 	t = self._dbc.fetchone()
 	while t:
-	    name, id = t
-	    self.zones[name] = _Zone(dbc, id=id, name=name)
+	    name, zid = t
+	    self.zones[name] = _Zone(dbc, id=zid, name=name)
 	    t = self._dbc.fetchone()
     def split(self, domain, zone=None):
 	"""Split domain name according to known zones."""
@@ -398,8 +396,8 @@ class db:
 	if self._dbc.rowcount == 0:
 	    raise AccessError(AccessError.UNKLOGIN, login)
 	assert self._dbc.rowcount == 1
-	id, = self._dbc.fetchone()
-	self._login_id = id
+	lid, = self._dbc.fetchone()
+	self._login_id = lid
 	self._login = login
 	return self._login_id
     def _check_login_perm(self, zone=None):
@@ -437,17 +435,17 @@ class db:
 	d.move_hist(login_id=self._login_id, domains=True)
 	z.set_updateserial()
 	self._dbh.commit()
-    def modify(self, domain, zone, type, file, override_internal=False):
+    def modify(self, domain, zone, typ, file, override_internal=False):
 	"""Modify domain.
 
 	domain: FQDN of domain name
 	file: RR records in zone file format
-	type: string; if set, check zone allows this resource-record type
+	typ: string; if set, check zone allows this resource-record type
 	override_internal: if set, allow modifications to internal domains
 	"""
 	d, z = self._zl.find(domain, zone, wlock=True)
 	self._check_login_perm(z.name)
-	z.checktype(type)
+	z.checktype(typ)
 	d.fetch(wlock=True)
 	if d._registry_lock:
 	    raise AccessError(AccessError.DLOCKED)
@@ -460,19 +458,19 @@ class db:
 	d.set_updated_by(self._login_id)
 	z.set_updateserial()
 	self._dbh.commit()
-    def new(self, domain, zone, type, file=None, internal=False):
+    def new(self, domain, zone, typ, file=None, internal=False):
 	"""Create domain.
 
 	domain: full domain name
 	file: RR records in zone file format
-	type: string; if set, check zone allows this resource-record type
+	typ: string; if set, check zone allows this resource-record type
 	internal: if set, protect domain from user requests
 	"""
 	d, z = self._zl.find(domain, zone, wlock=True, raise_nf=False)
 	self._check_login_perm(z.name)
 	if d.id != None:
 	    raise DomainError(DomainError.DEXISTS, domain)
-	z.checktype(type)
+	z.checktype(typ)
 	z.fetch()
 	if len(d.name) < z.minlen:
 	    raise AccessError(AccessError.DLENSHORT, (domain, z.minlen))
