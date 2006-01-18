@@ -202,11 +202,14 @@ class Domain:
     assert self._dbc.rowcount == 1
   def fetch(self):
     self._dbc.execute('SELECT fqdn, updated_on '
-                      'FROM whoisdomains WHERE id=%d', (id,))
+                      'FROM whoisdomains WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
-    c = {}
-    c['dn'], c['ch'] = self._dbc.fetchone()
-    self.c = c
+    d = {}
+    dn, ch = self._dbc.fetchone()
+    d['dn'] = [ dn ]
+    d['ch'] = [ ch ]
+    self.d = d
+    self.fetch_contacts()
   def fetch_contacts(self):
     d = self.d
     self._dbc.execute('SELECT contact_id,contact_types.name '
@@ -322,6 +325,7 @@ class Main:
 	    o['ch'][i] = parse_changed(o['ch'][i])
     if o.has_key('dn'):
       # domain object
+      from_ripe(o, domainattrs)
       self.dom[o['dn'][0].upper()] = o
       self.ndom += 1
     elif o.has_key('pn'):
@@ -416,11 +420,17 @@ class Main:
       ld = self._lookup.domain_by_name(i)
       if ld != None:
         # XXX: update domain here
+        ld.fetch()
+        newdom = Domain(self._dbc)
+        newdom.from_ripe(self.dom[i])
+        if ld.d != newdom.d:
+          print "ld.d=", ld.d
+          print "dom=", newdom.d
         pass
       else:
-        wd = Domain(self._dbc)
-        ambig, inval = wd.from_ripe(self.dom[i])
-        wd.insert()
+        ld = Domain(self._dbc)
+        ambig, inval = ld.from_ripe(self.dom[i])
+        ld.insert()
         self.ambig += ambig
         self.inval += inval
     print "Domains:", self.ndom
