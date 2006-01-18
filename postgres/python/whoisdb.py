@@ -44,6 +44,10 @@ personattrs = {'pn': (0,1), 'ad': (0,6),
                'ph': (0,1), 'fx': (0,1),
                'em': (0,1), 'ch': (1,1), 'nh': (0,1)}
 
+contact_map = { 'technical': 'tc', 'administrative': 'ac', 'zone': 'zc',
+                'registrant': 'rc' }
+contact_map_rev = dict((v, k) for k, v in contact_map.iteritems())
+
 def from_ripe(o, attrlist):
   # find ignored attributes, warn
   dlist = []
@@ -81,10 +85,10 @@ class Person:
     self.key = key
     self.d = {}
   def _set_key(self):
-    if self.d['nh'] != None:
-      self.key = self.d['nh']
+    if self.d['nh'][0] != None:
+      self.key = self.d['nh'][0]
     else:
-      self.key = self.d['pn']
+      self.key = self.d['pn'][0]
   def from_ripe(self, o):
     from_ripe(o, personattrs)
     self.d = o
@@ -143,15 +147,17 @@ class Person:
   
 class Domain:
   def __init__(self, dbc, id=None, fqdn=None, updated_on=None):
+    d = {}
     self._dbc = dbc
+    if fqdn != None:
+      d['dn'] = [ fqdn.upper() ]
+    if updated_on != None:
+      d['ch'] = [ updated_on ]
+    self.d = d
     self.id = id
-    self.fqdn = fqdn
-    self.updated_on = updated_on
   def from_ripe(self, o):
     from_ripe(o, domainattrs)
-    self.fqdn = o['dn'][0].upper()
-    o['dn'][0] = self.fqdn
-    self.d = o
+    o['dn'][0] = o['dn'][0].upper()
     # Create a "registrant" contact, storing the address lines
     # of the RIPE-style domain object.
     c = {}
@@ -160,12 +166,13 @@ class Domain:
 	c['ad'] = o['ad'][1:]
         del o['ad']
     c['ch'] = o['ch']
+    self.d = o
     self.ct = Person(self._dbc)
     self.ct.from_ripe(c)
+    return self.resolve_contacts()
   def insert(self):
-    domain = self.fqdn
     o = self.d
-    ambig, inval = 0, 0
+    domain = o['dn'][0]
     self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_on) '
                       'VALUES (%s, %s)', (domain, str(o['ch'][0])))
     assert self._dbc.rowcount == 1
@@ -183,19 +190,9 @@ class Domain:
 	if v == None: continue
         self._dbc.execute('INSERT INTO domain_contact '
                           '(whoisdomain_id,contact_id,contact_type_id) '
-                          ' (SELECT %d,id,'
-                          '  (SELECT id FROM contact_types WHERE name=%s) '
-                          ' FROM contacts WHERE (lower(name)=%s OR handle=%s) '
-                          ' AND email IS NOT NULL)',
-                          (did, full, v.lower(), v.upper()))
-        # check the returned number of inserted lines and
-        # issue an approriate warning message if it differs from 1.
-        if self._dbc.rowcount == 0:
-          print "Invalid contact '%s' for domain %s" % (v, domain)
-          inval += 1
-        elif self._dbc.rowcount > 1:
-          print "Ambiguous contact '%s' for domain %s" % (v, domain)
-          ambig += 1
+                          'VALUES (%d,%d,'
+                          ' (SELECT id FROM contact_types WHERE name=%s))',
+                          (did, v, full))
     self.ct.insert(fetchid=True)
     self._dbc.execute("INSERT INTO domain_contact "
                       "(whoisdomain_id,contact_id,contact_type_id) "
@@ -203,36 +200,77 @@ class Domain:
                       "(SELECT id FROM contact_types WHERE name=%s))",
                       (did, self.ct.id, 'registrant'))
     assert self._dbc.rowcount == 1
+  def fetch(self):
+    self._dbc.execute('SELECT fqdn, updated_on '
+                      'FROM whoisdomains WHERE id=%d', (id,))
+    assert self._dbc.rowcount == 1
+    c = {}
+    c['dn'], c['ch'] = self._dbc.fetchone()
+    self.c = c
+  def fetch_contacts(self):
+    d = self.d
+    self._dbc.execute('SELECT contact_id,contact_types.name '
+                      'FROM domain_contact, contact_types '
+                      'WHERE whoisdomain_id=%d '
+                      'AND contact_types.id=contact_type_id', (self.id,))
+    for k in 'tc', 'zc', 'ac', 'rc':
+      d[k] = []
+    l = self._dbc.fetchall()
+    for id, type in l:
+      cm = contact_map[type]
+      d[cm].append(id)
+    for k in 'tc', 'zc', 'ac', 'rc':
+      d[k].sort()
+    self.d = d
+  def resolve_contacts(self):
+    ambig, inval = 0, 0
+    newd = {}
+    for k in 'tc', 'zc', 'ac':
+      newd[k] = [ ]
+      for l in self.d[k]:
+        if l == None: continue
+        self._dbc.execute('SELECT id FROM contacts '
+                          'WHERE (lower(contacts.name)=%s OR handle=%s) '
+                          ' AND email IS NOT NULL',
+                          (l.lower(), l.upper()))
+        # check the returned number of found lines and
+        # issue an approriate warning message if it differs from 1.
+        if self._dbc.rowcount == 0:
+          print "Invalid contact '%s' for domain %s" % (l, self.d['dn'][0])
+          inval += 1
+        elif self._dbc.rowcount > 1:
+          print "Ambiguous contact '%s' for domain %s" % (l, self.d['dn'][0])
+          ambig += 1
+        lid = self._dbc.fetchall()
+        for id, in lid:
+          newd[k].append(id)
+    for k in 'tc', 'zc', 'ac':
+      newd[k].sort()
+    self.d.update(newd)
     return ambig, inval
   def get_contacts(self):
-    self._dbc.execute('SELECT contact_id, contact_types.name,'
-                      ' handle, contacts.name '
-                      'FROM domain_contact, contact_types, contacts '
-                      'WHERE contact_types.id=contact_type_id '
-                      'AND contacts.id = contact_id '
-                      'AND domain_contact.whoisdomain_id=%d', (self.id,))
-    l = self._dbc.fetchall()
+    self.fetch_contacts()
     dc = {}
-    for id, type, handle, name in l:
-      k = handle
-      if k == None:
-        k = name
-      if not dc.has_key(type): dc[type] = []
-      dc[type].append(Person(self._dbc, id, k))
-    self.dc = dc
+    for k in 'tc', 'zc', 'ac':
+      type = contact_map_rev[k]
+      dc[type] = []
+      for id in self.d[k]:
+        dc[type].append(Person(self._dbc, id))
     return dc
   def display(self):
-    print "%-12s %s" % ('domain:', self.fqdn)
-    reg = self.dc['registrant'][0]
+    print "%-12s %s" % ('domain:', self.d['dn'][0])
+    reg = Person(self._dbc, self.d['rc'][0])
     reg.fetch()
     reg.display('address')
-    for k, l in [('technical','tech-c'),
-                 ('administrative','admin-c'),
-                 ('zone','zone-c')]:
-      if not (k in self.dc):
+    for t, l in [('tc','tech-c'),
+                 ('ac','admin-c'),
+                 ('zc','zone-c')]:
+      if not (t in self.d):
         continue
-      for c in self.dc[k]:
-        print "%-12s %s" % (l+':', c.key)
+      for c in self.d[t]:
+        p = Person(self._dbc, c)
+        p.fetch()
+        print "%-12s %s" % (l+':', p.key)
 
 class Lookup:
   def __init__(self, dbc):
@@ -381,8 +419,8 @@ class Main:
         pass
       else:
         wd = Domain(self._dbc)
-        wd.from_ripe(self.dom[i])
-        ambig, inval = wd.insert()
+        ambig, inval = wd.from_ripe(self.dom[i])
+        wd.insert()
         self.ambig += ambig
         self.inval += inval
     print "Domains:", self.ndom
