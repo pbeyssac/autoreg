@@ -152,6 +152,7 @@ CREATE TABLE domain_contact (
 	contact_type_id INTEGER REFERENCES contact_types(id),
 	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
+CREATE INDEX domain_contact_domain_id ON domain_contact(whoisdomain_id);
 
 -- history
 
