@@ -170,18 +170,23 @@ class Domain:
     self.ct = Person(self._dbc)
     self.ct.from_ripe(c)
     return self.resolve_contacts()
-  def insert(self):
+  def update(self):
     o = self.d
-    domain = o['dn'][0]
-    self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_on) '
-                      'VALUES (%s, %s)', (domain, str(o['ch'][0])))
+    assert self.id != None
+    self._dbc.execute('UPDATE whoisdomains SET updated_on=NOW() WHERE id=%d',
+                      (self.id,))
+    print self.id
+    print self._dbc.rowcount
     assert self._dbc.rowcount == 1
-    self._dbc.execute("SELECT currval('whoisdomains_id_seq')")
-    assert self._dbc.rowcount == 1
-    did, = self._dbc.fetchone()
-    self.id = did
-
-    # create domain_contact records linking to all contacts
+    # XXX: the line below assumes registrant contacts are not shared.
+    # We'll get rid of this assumption when we drop the RIPE model.
+    self.ct.update()
+    self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%d',
+                      (self.id,))
+    self.insert_domain_contact()
+  def insert_domain_contact(self):
+    """Create domain_contact records linking to all contacts."""
+    o = self.d
     for i in [('tc','technical'), ('zc','zone'), ('ac','administrative')]:
       si, full = i
       if not si in o:
@@ -192,14 +197,26 @@ class Domain:
                           '(whoisdomain_id,contact_id,contact_type_id) '
                           'VALUES (%d,%d,'
                           ' (SELECT id FROM contact_types WHERE name=%s))',
-                          (did, v, full))
+                          (self.id, v, full))
+        assert self._dbc.rowcount == 1
     self.ct.insert(fetchid=True)
     self._dbc.execute("INSERT INTO domain_contact "
                       "(whoisdomain_id,contact_id,contact_type_id) "
                       "VALUES (%d,%d,"
                       "(SELECT id FROM contact_types WHERE name=%s))",
-                      (did, self.ct.id, 'registrant'))
+                      (self.id, self.ct.id, 'registrant'))
     assert self._dbc.rowcount == 1
+  def insert(self):
+    o = self.d
+    domain = o['dn'][0]
+    self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_on) '
+                      'VALUES (%s, %s)', (domain, str(o['ch'][0])))
+    assert self._dbc.rowcount == 1
+    self._dbc.execute("SELECT currval('whoisdomains_id_seq')")
+    assert self._dbc.rowcount == 1
+    did, = self._dbc.fetchone()
+    self.id = did
+    self.insert_domain_contact()
   def fetch(self):
     self._dbc.execute('SELECT fqdn, updated_on '
                       'FROM whoisdomains WHERE id=%d', (self.id,))
@@ -425,15 +442,16 @@ class Main:
       ld = self._lookup.domain_by_name(i)
       if ld != None:
         ld.fetch()
-        newdom = Domain(self._dbc)
+        newdom = Domain(self._dbc, ld.id)
         newdom.from_ripe(self.dom[i])
         if ld.d != newdom.d or ld.ct.d['ad'] != newdom.ct.d['ad']:
-          # XXX: update domain here
           print "Update for", i, "to be done"
           print "ld.d=", ld.d
           print "dom.d=", newdom.d
           print "ld.ct.d=", ld.ct.d
           print "dom.ct.d=", newdom.ct.d
+          newdom.ct.id = ld.ct.id
+          newdom.update()
       else:
         ld = Domain(self._dbc)
         ambig, inval = ld.from_ripe(self.dom[i])
