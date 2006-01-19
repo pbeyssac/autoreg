@@ -210,6 +210,11 @@ class Domain:
     d['ch'] = [ ch ]
     self.d = d
     self.fetch_contacts()
+    assert len(d['rc']) == 1
+    ct = Person(self._dbc, id=d['rc'][0])
+    del d['rc']
+    ct.fetch()
+    self.ct = ct
   def fetch_contacts(self):
     d = self.d
     self._dbc.execute('SELECT contact_id,contact_types.name '
@@ -419,14 +424,16 @@ class Main:
     for i in sorted(self.dom.keys()):
       ld = self._lookup.domain_by_name(i)
       if ld != None:
-        # XXX: update domain here
         ld.fetch()
         newdom = Domain(self._dbc)
         newdom.from_ripe(self.dom[i])
-        if ld.d != newdom.d:
+        if ld.d != newdom.d or ld.ct.d['ad'] != newdom.ct.d['ad']:
+          # XXX: update domain here
+          print "Update for", i, "to be done"
           print "ld.d=", ld.d
-          print "dom=", newdom.d
-        pass
+          print "dom.d=", newdom.d
+          print "ld.ct.d=", ld.ct.d
+          print "dom.ct.d=", newdom.ct.d
       else:
         ld = Domain(self._dbc)
         ambig, inval = ld.from_ripe(self.dom[i])
