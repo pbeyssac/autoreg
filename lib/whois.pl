@@ -39,23 +39,26 @@ sub whois_domain {
 }
 
 sub whois_html {
-   local ($server, $request) = ($_[0], $_[1]);
+   local ($server, $request, $typecount) = ($_[0], $_[1], $_[2]);
    $server =~ s/["';&]//g;
    $request =~ s/["';&]//g;
 
    if (!&whois_socket($server, $request)) {
       print "<STRONG>Can't execute whois: $!</STRONG>\n";
-      return "";
+      return -1;
    }
+   my $c = 0;
    print "<TT>\"$request\" at $server</TT>\n";
    print "<PRE>\n";
    while (<WHOIS>) {
+      if (defined($typecount) && /^$typecount:/) { $c++ }
       s/</&lt;/g;
       s/>/&gt;/g;
       print;
    }
    print "</PRE>\n";
    close(WHOIS);
+   return $c;
 }
 
 sub whois_email {
