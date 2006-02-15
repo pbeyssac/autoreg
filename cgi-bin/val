@@ -42,6 +42,12 @@ sub dowhoisforms {
     print "<BR>\n";
 }
 
+sub dowhoisperson {
+    my ($p) = $_[0];
+    print "<HR><H2>Current whois records for person $p:</H2>\n";
+    return &whois_html($WHOISHOST, $p, 'person');
+}
+
 sub dodir {
   local (@dirlist) = &rq_list();
   local (@domlist);
@@ -456,6 +462,7 @@ sub doeditwhois {
 
 sub dodisplay {
   local ($rq) = $_[0];
+  my $dups = 0;
 
   local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo,
 	 $dns, $dbrecords)
@@ -528,6 +535,17 @@ sub dodisplay {
     if ($nh1) { &dowhoisforms($nh1); }
     if ($nh2 && $nh1 ne $nh2) { &dowhoisforms($nh2); }
     #
+    # whois outputs for technical/admin contacts and person names
+    #
+    if ($tc && $tc ne $nh1 && $tc ne $nh2)
+	{ $dups += (&dowhoisperson($tc) > 0); }
+    if ($ac && $ac ne $tc && $ac ne $nh1 && $ac ne $nh2)
+	{ $dups += (&dowhoisperson($ac) > 0); }
+    if ($pn1 && $pn1 ne $tc && $pn1 ne $ac)
+	{ $dups += (&dowhoisperson($pn1) > 0); }
+    if ($pn2 && $pn2 ne $pn1 && $pn2 ne $tc && $pn2 ne $ac)
+	{ $dups += (&dowhoisperson($pn2) > 0); }
+    #
     # Forms for whois on technical/admin contacts and person names
     #
     if ($tc && $tc ne $nh1 && $tc ne $nh2)
@@ -575,6 +593,9 @@ sub dodisplay {
 #    print "<INPUT NAME=\"md5val\" SIZE=34> MD5<BR>\n";
     print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+    if ($dups) {
+	print "<B>Warning: potential <TT>person</TT> duplicate(s), please resolve!</B><BR>\n"
+    }
     print "<INPUT TYPE=\"submit\" VALUE=\"Accept and mail to $replyto\">\n";
     print "</FORM>\n";
 
