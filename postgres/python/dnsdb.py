@@ -464,7 +464,8 @@ class db:
 	domain: full domain name
 	file: RR records in zone file format
 	typ: string; if set, check zone allows this resource-record type
-	internal: if set, protect domain from user requests
+	internal: if set, protect domain from user requests and bypass
+		length checks.
 	"""
 	d, z = self._zl.find(domain, zone, wlock=True, raise_nf=False)
 	self._check_login_perm(z.name)
@@ -472,9 +473,9 @@ class db:
 	    raise DomainError(DomainError.DEXISTS, domain)
 	z.checktype(typ)
 	z.fetch()
-	if len(d.name) < z.minlen:
+	if len(d.name) < z.minlen and not internal:
 	    raise AccessError(AccessError.DLENSHORT, (domain, z.minlen))
-	if len(d.name) > z.maxlen:
+	if len(d.name) > z.maxlen and not internal:
 	    raise AccessError(AccessError.DLENLONG, (domain, z.maxlen))
 	if self._nowrite: return
         d.new(z, self._login_id, internal)
