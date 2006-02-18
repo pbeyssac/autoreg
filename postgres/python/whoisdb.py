@@ -110,6 +110,18 @@ class Person:
   def update(self):
     assert self.id != None
     o = self.d
+    self._dbc.execute('SELECT * FROM contacts WHERE id=%d FOR UPDATE',
+                      (self.id,))
+    assert self._dbc.rowcount == 1
+    self._dbc.execute('INSERT INTO contacts_hist '
+                      ' (contact_id,handle,name,email,'
+                      '  addr1,addr2,addr3,addr4,addr5,addr6,'
+                      '  phone,fax,updated_on,deleted_on)'
+                      ' SELECT id,handle,name,email,'
+                      '  addr1,addr2,addr3,addr4,addr5,addr6,'
+                      '  phone,fax,updated_on,NOW()'
+                      ' FROM contacts WHERE id=%d', (self.id,))
+    assert self._dbc.rowcount == 1
     self._dbc.execute('UPDATE contacts SET handle=%s,name=%s,email=%s,'
                       'addr1=%s,addr2=%s,addr3=%s,addr4=%s,addr5=%s,addr6=%s,'
                       'phone=%s,fax=%s,updated_on=%s '
@@ -173,6 +185,9 @@ class Domain:
   def update(self):
     o = self.d
     assert self.id != None
+    self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%d FOR UPDATE',
+                      (self.id,))
+    assert self._dbc.rowcount == 1
     self._dbc.execute('UPDATE whoisdomains SET updated_on=NOW() WHERE id=%d',
                       (self.id,))
     print self.id
@@ -181,6 +196,13 @@ class Domain:
     # XXX: the line below assumes registrant contacts are not shared.
     # We'll get rid of this assumption when we drop the RIPE model.
     self.ct.update()
+    self._dbc.execute('INSERT INTO domain_contact_hist'
+                      ' (whoisdomain_id,contact_id,contact_type_id,'
+                      '  created_on,deleted_on)'
+                      ' SELECT whoisdomain_id,contact_id,contact_type_id,'
+                      '  created_on,NOW()'
+                      '  FROM domain_contact WHERE whoisdomain_id=%d',
+                      (self.id,))
     self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%d',
                       (self.id,))
     self.insert_domain_contact()
