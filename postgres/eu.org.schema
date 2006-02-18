@@ -164,6 +164,23 @@ CREATE TABLE domain_contact_hist (
 	created_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
+CREATE TABLE contacts_hist (
+	contact_id INTEGER,
+	handle varchar(20),
+	name varchar(255),
+	email varchar(80),
+	addr1 varchar(80),
+	addr2 varchar(80),
+	addr3 varchar(80),
+	addr4 varchar(80),
+	addr5 varchar(80),
+	addr6 varchar(80),
+	phone varchar(40),
+	fax varchar(40),
+	created_on TIMESTAMP(2) WITH TIME ZONE
+	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+);
+
 ---------------------------------------------------------------------
 --
 -- Database initialization
