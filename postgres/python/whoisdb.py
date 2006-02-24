@@ -115,10 +115,10 @@ class Person:
     self._dbc.execute('INSERT INTO contacts_hist '
                       ' (contact_id,handle,name,email,'
                       '  addr1,addr2,addr3,addr4,addr5,addr6,'
-                      '  phone,fax,updated_on,deleted_on)'
+                      '  phone,fax,passwd,updated_on,deleted_on)'
                       ' SELECT id,handle,name,email,'
                       '  addr1,addr2,addr3,addr4,addr5,addr6,'
-                      '  phone,fax,updated_on,NOW()'
+                      '  phone,fax,passwd,updated_on,NOW()'
                       ' FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
   def update(self):
