@@ -123,6 +123,7 @@ CREATE TABLE contacts (
 	addr6 varchar(80),
 	phone varchar(40),
 	fax varchar(40),
+	passwd varchar(16),
 	updated_on TIMESTAMP(2) WITH TIME ZONE
 );
 CREATE INDEX contacts_handle_index ON contacts(handle);
@@ -177,6 +178,7 @@ CREATE TABLE contacts_hist (
 	addr6 varchar(80),
 	phone varchar(40),
 	fax varchar(40),
+	passwd varchar(16),
 	updated_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
