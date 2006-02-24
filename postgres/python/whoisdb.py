@@ -107,9 +107,8 @@ class Person:
       self._dbc.execute("SELECT currval('contacts_id_seq')")
       self.id, = self._dbc.fetchone()
       assert self._dbc.rowcount == 1
-  def update(self):
+  def _copyrecord(self):
     assert self.id != None
-    o = self.d
     self._dbc.execute('SELECT * FROM contacts WHERE id=%d FOR UPDATE',
                       (self.id,))
     assert self._dbc.rowcount == 1
@@ -122,6 +121,9 @@ class Person:
                       '  phone,fax,updated_on,NOW()'
                       ' FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
+  def update(self):
+    self._copyrecord()
+    o = self.d
     self._dbc.execute('UPDATE contacts SET handle=%s,name=%s,email=%s,'
                       'addr1=%s,addr2=%s,addr3=%s,addr4=%s,addr5=%s,addr6=%s,'
                       'phone=%s,fax=%s,updated_on=%s '
@@ -130,6 +132,10 @@ class Person:
                        o['ad'][0], o['ad'][1], o['ad'][2],
                        o['ad'][3], o['ad'][4], o['ad'][5],
                        o['ph'][0], o['fx'][0], str(o['ch'][0]), self.id))
+    assert self._dbc.rowcount == 1
+  def delete(self):
+    self._copyrecord()
+    self._dbc.execute('DELETE contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
   def fetch(self):
     assert self.id != None
@@ -182,6 +188,14 @@ class Domain:
     self.ct = Person(self._dbc)
     self.ct.from_ripe(c)
     return self.resolve_contacts()
+  def _copyrecords()
+    self._dbc.execute('INSERT INTO domain_contact_hist'
+                      ' (whoisdomain_id,contact_id,contact_type_id,'
+                      '  created_on,deleted_on)'
+                      ' SELECT whoisdomain_id,contact_id,contact_type_id,'
+                      '  created_on,NOW()'
+                      '  FROM domain_contact WHERE whoisdomain_id=%d',
+                      (self.id,))
   def update(self):
     o = self.d
     assert self.id != None
@@ -196,16 +210,27 @@ class Domain:
     # XXX: the line below assumes registrant contacts are not shared.
     # We'll get rid of this assumption when we drop the RIPE model.
     self.ct.update()
-    self._dbc.execute('INSERT INTO domain_contact_hist'
-                      ' (whoisdomain_id,contact_id,contact_type_id,'
-                      '  created_on,deleted_on)'
-                      ' SELECT whoisdomain_id,contact_id,contact_type_id,'
-                      '  created_on,NOW()'
-                      '  FROM domain_contact WHERE whoisdomain_id=%d',
-                      (self.id,))
+    self._copyrecords()
     self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%d',
                       (self.id,))
     self.insert_domain_contact()
+  def delete(self):
+    assert self.id != None
+    self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%d FOR UPDATE',
+                      (self.id,))
+    assert self._dbc.rowcount == 1
+    self._copyrecords()
+    self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%d',
+                      (self.id,))
+    self._dbc.execute('INSERT INTO whoisdomains_hist '
+                      ' (whoisdomain_id,fqdn,created_on,deleted_on)'
+                      ' SELECT id,fdqn,created_on,NOW()'
+                      ' FROM whoisdomains WHERE whoisdomain_id=%d',
+                      (self.id,))
+    assert self._dbc.rowcount == 1
+    self._dbc.execute('DELETE FROM whoisdomains WHERE id=%d',
+                      (self.id,))
+    assert self._dbc.rowcount == 1
   def insert_domain_contact(self):
     """Create domain_contact records linking to all contacts."""
     o = self.d
@@ -360,7 +385,7 @@ class Main:
     self.ambig = 0
     self.inval = 0
     self._lookup = Lookup(dbc)
-  def insert(self, o):
+  def process(self, o, dodel):
     if o.has_key('XX'):
       # deleted object, ignore
       return
@@ -369,9 +394,15 @@ class Main:
 	    o['ch'][i] = parse_changed(o['ch'][i])
     if o.has_key('dn'):
       # domain object
-      from_ripe(o, domainattrs)
-      self.dom[o['dn'][0].upper()] = o
-      self.ndom += 1
+      if dodel:
+        # XXX: compare!
+        ld = self._lookup.domain_by_name(o['dn'])
+        if ld != None:
+          ld.delete()
+      else:
+        from_ripe(o, domainattrs)
+        self.dom[o['dn'][0].upper()] = o
+        self.ndom += 1
     elif o.has_key('pn'):
       # person object
       self.nperson += 1
@@ -390,10 +421,19 @@ class Main:
             print "old=", lp[0].d
             print "new=", o
             lp[0].d = o
-            lp[0].update()
+            if not dodel:
+              lp[0].update()
+            else:
+              print "Cannot delete: not the same object"
+          else:
+            if dodel:
+              lp.delete()
         else:
-          # not found, simply insert
-          ct.insert()
+          # not found
+          if dodel:
+            print "Cannot delete: not found"
+          else:
+            ct.insert()
       else:
         assert 'pn' in o and o['pn'] != None
         # no handle, try to find by name
@@ -428,15 +468,17 @@ class Main:
 
   def parsefile(self, file):
     o = {}
+    dodel = False
     for l in file:
       if self.comment_re.search(l):
         # skip comment
         continue
       if self.white_re.search(l) and len(o):
         # white line or empty line and o is not empty:
-        # end of object, insert then cleanup for next object.
-        self.insert(o)
+        # end of object, process then cleanup for next object.
+        self.process(o, dodel)
         o = {}
+        dodel = False
         continue
       if self.empty_re.search(l):
         # empty line, no object in progress: skip
@@ -451,13 +493,16 @@ class Main:
         if not ripe_ltos.has_key(a):
           raise Error
         a = ripe_ltos[a]
-      if o.has_key(a):
-        o[a].append(v)
+      if a == 'delete':
+        dodel = True
       else:
-        o[a] = [v]
+        if o.has_key(a):
+          o[a].append(v)
+        else:
+          o[a] = [v]
     if len(o):
-      # end of file: insert last object
-      self.insert(o)
+      # end of file: process last object
+      self.process(o, dodel)
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
     for i in sorted(self.dom.keys()):
