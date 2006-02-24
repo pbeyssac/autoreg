@@ -180,6 +180,12 @@ CREATE TABLE contacts_hist (
 	updated_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
+CREATE TABLE whoisdomains_hist (
+	whoisdomain_id INTEGER,
+	fqdn VARCHAR(255),
+	updated_on TIMESTAMP(2) WITH TIME ZONE,
+	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+);
 
 ---------------------------------------------------------------------
 --
