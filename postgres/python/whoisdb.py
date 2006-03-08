@@ -78,6 +78,47 @@ def from_ripe(o, attrlist):
   if len(o['ad']) < 6:
     o['ad'].extend([ None ] * (6-len(o['ad'])))
 
+_skipalnum = sre.compile('^[a-zA-Z0-9]+\s*(.*)')
+_skipword = sre.compile('^\S+\s+(.*)')
+
+def mkinitials(name):
+  h = ''
+  while len(h) < 3:
+    if not name:
+      break
+    if 'A' <= name[0] <= 'Z':
+      h += name[0]
+    elif 'a' <= name[0] <= 'z':
+      h += name[0].upper()
+    else:
+      name = name[1:]
+      continue
+    ma = _skipalnum.search(name)
+    if not ma:
+      ma = _skipword.search(name)
+    if not ma:
+      break
+    name, = ma.groups()
+  if h == '':
+    h = 'ZZZ'
+  return h
+
+
+class _Handle:
+  _suffix = "-FREE"
+  def __init__(self, dbc):
+    self._dbc = dbc
+  def allocate(self, name):
+    l = mkinitials(name)
+    i = 1
+    while True:
+      h = "%s%d%s" % (l, i, self._suffix)
+      self._dbc.execute('SELECT * FROM contacts WHERE handle=%s', (h,))
+      assert 0 <= self._dbc.rowcount <= 1
+      if self._dbc.rowcount == 0:
+        return h
+      i += 1
+
 class Person:
   def __init__(self, dbc, id=None, key=None):
     self._dbc = dbc
@@ -93,6 +134,13 @@ class Person:
     from_ripe(o, personattrs)
     self.d = o
     self._set_key()
+  def allocate_handle(self):
+    if (not 'nh' in self.d) or self.d['nh'][0] == None:
+      h = _Handle(self._dbc)
+      handle = h.allocate(self.d['pn'][0])
+      self.key = handle
+      self.d['nh'] = [ handle ]
+      print "Allocated handle", handle, "for", self.d['pn'][0]
   def insert(self, fetchid=False):
     o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,name,email,addr1,'
@@ -121,8 +169,7 @@ class Person:
                       '  phone,fax,passwd,updated_on,NOW()'
                       ' FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
-  def update(self):
-    self._copyrecord()
+  def _update(self):
     o = self.d
     self._dbc.execute('UPDATE contacts SET handle=%s,name=%s,email=%s,'
                       'addr1=%s,addr2=%s,addr3=%s,addr4=%s,addr5=%s,addr6=%s,'
@@ -133,6 +180,9 @@ class Person:
                        o['ad'][3], o['ad'][4], o['ad'][5],
                        o['ph'][0], o['fx'][0], str(o['ch'][0]), self.id))
     assert self._dbc.rowcount == 1
+  def update(self):
+    self._copyrecord()
+    self._update()
   def delete(self):
     self._copyrecord()
     self._dbc.execute('DELETE contacts WHERE id=%d', (self.id,))
@@ -385,7 +435,7 @@ class Main:
     self.ambig = 0
     self.inval = 0
     self._lookup = Lookup(dbc)
-  def process(self, o, dodel):
+  def process(self, o, dodel, halloc):
     if o.has_key('XX'):
       # deleted object, ignore
       return
@@ -442,6 +492,8 @@ class Main:
         if len(lp) == 0:
           # not found, insert
           ct.insert()
+	  # keep for handle allocation
+	  halloc.append(ct)
         else:
           for c in lp:
             c.fetch()
@@ -450,12 +502,16 @@ class Main:
               continue
             if c.d == o:
               # found, stop
+	      # keep for handle allocation
+	      halloc.append(c)
               break
           else:
             # not found, insert
             print "No handle and not found by name"
             print "new=", o
             ct.insert()
+	    # keep for handle allocation
+	    halloc.append(ct)
     elif o.has_key('mt'):
       # maintainer object, ignore
       pass
@@ -468,6 +524,7 @@ class Main:
 
   def parsefile(self, file):
     o = {}
+    halloc = []
     dodel = False
     for l in file:
       if self.comment_re.search(l):
@@ -476,7 +533,7 @@ class Main:
       if self.white_re.search(l) and len(o):
         # white line or empty line and o is not empty:
         # end of object, process then cleanup for next object.
-        self.process(o, dodel)
+        self.process(o, dodel, halloc)
         o = {}
         dodel = False
         continue
@@ -502,7 +559,7 @@ class Main:
           o[a] = [v]
     if len(o):
       # end of file: process last object
-      self.process(o, dodel)
+      self.process(o, dodel, halloc)
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
     for i in sorted(self.dom.keys()):
@@ -525,6 +582,12 @@ class Main:
         ld.insert()
         self.ambig += ambig
         self.inval += inval
+
+    # now allocate missing handles
+    for i in halloc:
+      i.allocate_handle()
+      i._update()
+
     print "Domains:", self.ndom
     print "Persons:", self.nperson
     print "Ambiguous contacts:", self.ambig
