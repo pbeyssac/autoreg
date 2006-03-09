@@ -141,7 +141,7 @@ class Person:
       self.key = handle
       self.d['nh'] = [ handle ]
       print "Allocated handle", handle, "for", self.d['pn'][0]
-  def insert(self, fetchid=False):
+  def insert(self):
     o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,name,email,addr1,'
                       'addr2,addr3,addr4,addr5,addr6,phone,fax,updated_on) '
@@ -151,10 +151,9 @@ class Person:
                        o['ad'][3], o['ad'][4], o['ad'][5],
                        o['ph'][0], o['fx'][0], str(o['ch'][0])))
     assert self._dbc.rowcount == 1
-    if fetchid:
-      self._dbc.execute("SELECT currval('contacts_id_seq')")
-      self.id, = self._dbc.fetchone()
-      assert self._dbc.rowcount == 1
+    self._dbc.execute("SELECT currval('contacts_id_seq')")
+    self.id, = self._dbc.fetchone()
+    assert self._dbc.rowcount == 1
   def _copyrecord(self):
     assert self.id != None
     self._dbc.execute('SELECT * FROM contacts WHERE id=%d FOR UPDATE',
@@ -296,7 +295,7 @@ class Domain:
                           ' (SELECT id FROM contact_types WHERE name=%s))',
                           (self.id, v, full))
         assert self._dbc.rowcount == 1
-    self.ct.insert(fetchid=True)
+    self.ct.insert()
     self._dbc.execute("INSERT INTO domain_contact "
                       "(whoisdomain_id,contact_id,contact_type_id) "
                       "VALUES (%d,%d,"
