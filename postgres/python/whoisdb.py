@@ -103,23 +103,8 @@ def mkinitials(name):
     h = 'ZZZ'
   return h
 
-
-class _Handle:
-  _suffix = "-FREE"
-  def __init__(self, dbc):
-    self._dbc = dbc
-  def allocate(self, name):
-    l = mkinitials(name)
-    i = 1
-    while True:
-      h = "%s%d%s" % (l, i, self._suffix)
-      self._dbc.execute('SELECT * FROM contacts WHERE handle=%s', (h,))
-      assert 0 <= self._dbc.rowcount <= 1
-      if self._dbc.rowcount == 0:
-        return h
-      i += 1
-
 class Person:
+  _suffix = "-FREE"
   def __init__(self, dbc, id=None, key=None):
     self._dbc = dbc
     self.id = id
@@ -136,11 +121,23 @@ class Person:
     self._set_key()
   def allocate_handle(self):
     if (not 'nh' in self.d) or self.d['nh'][0] == None:
-      h = _Handle(self._dbc)
-      handle = h.allocate(self.d['pn'][0])
-      self.key = handle
-      self.d['nh'] = [ handle ]
-      print "Allocated handle", handle, "for", self.d['pn'][0]
+      self._dbc.execute('START TRANSACTION ISOLATION LEVEL SERIALIZABLE')
+      l = mkinitials(self.d['pn'][0])
+      i = 1
+      id = self.id
+      while True:
+        h = "%s%d%s" % (l, i, self._suffix)
+        self._dbc.execute('SELECT * FROM contacts WHERE handle=%s', (h,))
+        assert 0 <= self._dbc.rowcount <= 1
+        if self._dbc.rowcount == 0:
+          break
+        i += 1
+      self.key = h
+      self.d['nh'] = [ h ]
+      self._dbc.execute('UPDATE contacts SET handle=%s WHERE id=%d', (h, id))
+      assert self._dbc.rowcount == 1
+      self._dbc.execute('COMMIT TRANSACTION')
+      print "Allocated handle", h, "for", self.d['pn'][0]
   def insert(self):
     o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,name,email,addr1,'
@@ -426,14 +423,15 @@ class Main:
   empty_re = sre.compile('^$')
   longattr_re = sre.compile('^([a-z-]+):\s*(.*\S)\s*$')
   shortattr_re = sre.compile('^\*([a-zA-Z][a-zA-Z]):\s*(.*\S)\s*$')
-  def __init__(self, dbc):
+  def __init__(self, dbh):
     self.dom = {}
     self.ndom = 0
     self.nperson = 0
-    self._dbc = dbc
+    self._dbh = dbh
+    self._dbc = dbh.cursor()
     self.ambig = 0
     self.inval = 0
-    self._lookup = Lookup(dbc)
+    self._lookup = Lookup(self._dbc)
   def process(self, o, dodel, halloc):
     if o.has_key('XX'):
       # deleted object, ignore
@@ -525,6 +523,9 @@ class Main:
     o = {}
     halloc = []
     dodel = False
+    self._dbh.cursor().execute("SET client_encoding = 'ISO-8859-15'")
+    self._dbh.autocommit(0)
+
     for l in file:
       if self.comment_re.search(l):
         # skip comment
@@ -582,10 +583,13 @@ class Main:
         self.ambig += ambig
         self.inval += inval
 
+    self._dbh.commit()
+
     # now allocate missing handles
     for i in halloc:
       i.allocate_handle()
-      i._update()
+
+    self._dbh.commit()
 
     print "Domains:", self.ndom
     print "Persons:", self.nperson
