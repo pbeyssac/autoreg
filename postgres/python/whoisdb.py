@@ -519,11 +519,11 @@ class Main:
       print >>sys.stderr, "Unknown object type"
       print str(o)
 
-  def parsefile(self, file):
+  def parsefile(self, file, encoding='ISO-8859-1'):
     o = {}
     halloc = []
     dodel = False
-    self._dbh.cursor().execute("SET client_encoding = 'ISO-8859-15'")
+    self._dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
     self._dbh.autocommit(0)
 
     for l in file:
