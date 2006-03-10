@@ -112,7 +112,7 @@ CREATE TABLE rrs_hist (
 
 CREATE TABLE contacts (
 	id SERIAL PRIMARY KEY,
-	handle varchar(20),
+	handle varchar(20) UNIQUE,
 	name varchar(255),
 	email varchar(80),
 	addr1 varchar(80),
