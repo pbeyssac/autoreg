@@ -492,16 +492,16 @@ class Main:
 	  # keep for handle allocation
 	  halloc.append(ct)
         else:
+          # try to find if a similar object exists
           for c in lp:
             c.fetch()
-            # skip person objets with a NIC handle
-            if c.d['nh'][0] != None:
-              continue
+            # temporarily copy handle from found object
+            o['nh'] = c.d['nh']
             if c.d == o:
               # found, stop
-	      # keep for handle allocation
-	      halloc.append(c)
               break
+            # clear copied handle
+            o['nh'] = [ None ];
           else:
             # not found, insert
             print "No handle and not found by name"
