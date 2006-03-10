@@ -234,7 +234,7 @@ class Domain:
     self.ct = Person(self._dbc)
     self.ct.from_ripe(c)
     return self.resolve_contacts()
-  def _copyrecords():
+  def _copyrecords(self):
     self._dbc.execute('INSERT INTO domain_contact_hist'
                       ' (whoisdomain_id,contact_id,contact_type_id,'
                       '  created_on,deleted_on)'
