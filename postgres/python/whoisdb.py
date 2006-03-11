@@ -198,7 +198,7 @@ class Person:
     d['ad'] = [ addr1, addr2, addr3, addr4, addr5, addr6 ]
     self.d = d
     self._set_key()
-  def display(self, title='person'):
+  def display(self, out, title='person'):
     d = self.d
     for i in ['pn', 'nh', 'ad', 'ph', 'fx', 'em', 'ch']:
       if i == 'pn':
@@ -207,7 +207,7 @@ class Person:
         l = ripe_stol[i]
       for j in d[i]:
         if j != None:
-          print "%-12s %s" % (l+':', j)
+          print >>out, "%-12s %s" % (l+':', j)
   
 class Domain:
   def __init__(self, dbc, id=None, fqdn=None, updated_on=None):
@@ -375,11 +375,11 @@ class Domain:
       for id in self.d[k]:
         dc[type].append(Person(self._dbc, id))
     return dc
-  def display(self):
-    print "%-12s %s" % ('domain:', self.d['dn'][0])
+  def display(self, out):
+    print >>out, "%-12s %s" % ('domain:', self.d['dn'][0])
     reg = Person(self._dbc, self.d['rc'][0])
     reg.fetch()
-    reg.display('address')
+    reg.display(out, 'address')
     for t, l in [('tc','tech-c'),
                  ('ac','admin-c'),
                  ('zc','zone-c')]:
@@ -388,7 +388,7 @@ class Domain:
       for c in self.d[t]:
         p = Person(self._dbc, c)
         p.fetch()
-        print "%-12s %s" % (l+':', p.key)
+        print >>out, "%-12s %s" % (l+':', p.key)
 
 class Lookup:
   def __init__(self, dbc):
