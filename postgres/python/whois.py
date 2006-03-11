@@ -4,9 +4,14 @@ import psycopg
 import os
 import socket
 import sys
+import time
 
 import conf
 import whoisdb
+
+maxforks = 5
+delay = 1
+port = 4343
 
 class socketwrapper:
   def __init__(self, sock):
@@ -18,13 +23,41 @@ class socketwrapper:
 	raise Error
       buf = buf[r:]
 
+def log(msg):
+  (year, month, day, hh, mm, ss, d1, d2, d3) = time.localtime(time.time())
+  print "%04d%02d%02d %02d%02d%02d %s" % (year, month, day, hh, mm, ss, msg)
+
 def daemon():
   s = socket.socket()
   s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-  s.bind(('0', 4343))
+  s.bind(('0', port))
   s.listen(255)
+  nfree = maxforks
   while True:
-    c, a = s.accept()
+    while nfree < maxforks:
+      if nfree > 0:
+        r = os.waitpid(-1, os.WNOHANG)
+      else:
+        r = os.waitpid(-1, 0)
+      pid, status = r
+      if pid == 0:
+        break
+      nfree += 1
+
+    if nfree > 0:
+      c, a = s.accept()
+      f = os.fork()
+      if f == 0:
+        s.close()
+        handleclient(c, a)
+        time.sleep(delay)
+        sys.exit(0)
+      elif f > 0:
+        nfree -= 1
+        if nfree == 0:
+	  log("WARNING: maxforks (%d) reached" % maxforks)
+
+def handleclient(c, a):
     w = socketwrapper(c)
     ip, port = a
     c.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
@@ -35,7 +68,7 @@ def daemon():
       i = q.find('\r\n')
       if i >= 0:
 	q = q[:i]
-	print "FROM %s:%d GOT \"%s\"" % (ip, port, q)
+	log("%s:%s %s" % (ip, port, q))
 	query(q, w)
 	c.shutdown(socket.SHUT_WR)
 	break
@@ -73,12 +106,20 @@ def query(a, out):
     p.display(out)
     print >>out
 
-if len(sys.argv) != 2:
+if len(sys.argv) > 2:
   print >>sys.stderr, "Usage: %s [-d | query]" % sys.argv[0]
   sys.exit(1)
 
-a = sys.argv[1]
-if a == '-d':
+if len(sys.argv) < 2:
   daemon()
+elif sys.argv[1] == '-d':
+  r = os.fork()
+  if r == 0:
+    daemon()
+  elif r == -1:
+    print >>sys.stderr, "Daemon start failed"
+    sys.exit(1)
+  else:
+    print >>sys.stderr, "Daemon started"
 else:
-  query(a, sys.stdout)
+  query(sys.argv[1], sys.stdout)
