@@ -295,7 +295,7 @@ sub rq_get_info {
 # Delete request
 #
 sub rq_remove {
-  local ($rq, $user) = ($_[0], $_[1]);
+  local ($rq, $user, $moveto) = ($_[0], $_[1], $_[2]);
   local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo,
 	 $dns, $dbrecords);
 
@@ -312,12 +312,12 @@ sub rq_remove {
     return "Access to request $rq not authorized.";
   }
 
-  # We need to keep the lock until after the unlink
+  # We need to keep the lock until after the rename
 
-  if (!unlink("$VALDIR/$rq")) {
+  if (!rename("$VALDIR/$rq", "$moveto/$rq")) {
     local ($err) = $!;
     close(F);
-    return "unlink: $err";
+    return "rename: $err";
   }
   close(F);
 
