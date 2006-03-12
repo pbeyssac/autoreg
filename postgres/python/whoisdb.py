@@ -123,15 +123,20 @@ class Person:
     if (not 'nh' in self.d) or self.d['nh'][0] == None:
       self._dbc.execute('START TRANSACTION ISOLATION LEVEL SERIALIZABLE')
       l = mkinitials(self.d['pn'][0])
-      i = 1
-      id = self.id
-      while True:
-        h = "%s%d%s" % (l, i, self._suffix)
-        self._dbc.execute('SELECT * FROM contacts WHERE handle=%s', (h,))
-        assert 0 <= self._dbc.rowcount <= 1
-        if self._dbc.rowcount == 0:
-          break
+
+      # Find the highest allocated handle with the same initials
+      self._dbc.execute("SELECT CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
+			" FROM contacts WHERE handle SIMILAR TO '%s[0-9]+%s'"
+			" ORDER BY CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
+			" DESC LIMIT 1" % (l, self._suffix))
+      assert 0 <= self._dbc.rowcount <= 1
+      if self._dbc.rowcount == 0:
+        i = 1
+      else:
+        i, = self._dbc.fetchone()
         i += 1
+      h = "%s%d%s" % (l, i, self._suffix)
+      id = self.id
       self.key = h
       self.d['nh'] = [ h ]
       self._dbc.execute('UPDATE contacts SET handle=%s WHERE id=%d', (h, id))
