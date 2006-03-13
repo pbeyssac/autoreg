@@ -255,8 +255,6 @@ class Domain:
     assert self._dbc.rowcount == 1
     self._dbc.execute('UPDATE whoisdomains SET updated_on=NOW() WHERE id=%d',
                       (self.id,))
-    print self.id
-    print self._dbc.rowcount
     assert self._dbc.rowcount == 1
     # XXX: the line below assumes registrant contacts are not shared.
     # We'll get rid of this assumption when we drop the RIPE model.
