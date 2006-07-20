@@ -14,9 +14,10 @@
 	delete: delete the entry for domainname in the parent zone,
 		if already there.
 	cat:	print the zone file on stdout.
-	soa:	update the SOA for domainname in the zonefile of
+	soa:	update the SOA serial for domainname in the zonefile of
 		the same name, if the file has previously changed
 		due to one of the above actions.
+		Print the serial in any case.
 	show:	display entry for domainname.
         hold:	put domain on hold.
         unhold:	unhold domain.
@@ -127,8 +128,10 @@ try:
   elif action == 'cat':
     dd.cat(domain)
   elif action == 'soa':
-    if not dd.soa(domain):
+    (updated, serial) = dd.soa(domain)
+    if not updated:
 	r = 1
+    print serial
   else:
     usage()
     r = 1

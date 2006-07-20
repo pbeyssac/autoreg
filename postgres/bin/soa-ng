@@ -36,7 +36,18 @@ done
 
 for i in $*
 do
-	if $AZ -u$USER -asoa $i; then
+	oldser=`awk <$DEST/$i 'NR>10 {exit 1} $2=="SOA" {print $5; exit 0}'`
+	if [ "$oldser" = "" ]; then
+		echo "Error: cannot get old serial for $i"
+		exit 2
+	fi
+	newser=`$AZ -u$USER -asoa $i`
+	if [ "$newser" = "" ]; then
+		echo "Error: cannot get new serial for $i"
+		exit 2
+	fi
+
+	if [ "$newser" != "$oldser" ]; then
 	    if [ -r $DEST/$i ]; then
 		echo $i updated
 		if (
