@@ -1,7 +1,6 @@
 # $Id$
 import os
 import sre
-import sys
 
 import conf
 
@@ -19,15 +18,16 @@ class Msg:
     def __init__(self, file, curlang=''):
 	self.m = {}
 	self.curlang = curlang
+	lang = ''
 	for l in open(os.path.join(self.path, file)):
 	    if self.com_re.search(l): continue
 	    m = self.msg_re.search(l)
 	    if m:
-		id, st = m.groups()
+		msgid, st = m.groups()
 		st = self.unquote(st)
-		if self.m[lang].has_key(id):
-		    raise MsgError('Duplicate key', id)
-		self.m[lang][id] = st
+		if self.m[lang].has_key(msgid):
+		    raise MsgError('Duplicate key', msgid)
+		self.m[lang][msgid] = st
 		continue
 	    m = self.lang_re.search(l)
 	    if m:
@@ -52,9 +52,9 @@ class Msg:
 	    if c == 'n': c = '\n'
 	    elif c == 'r': c = '\r'
 	    elif c == 't': c = '\t'
-	    str = b + c + e
-	    m = str.find('\\', m)
-	return str
+	    s = b + c + e
+	    m = s.find('\\', m)
+	return s
     def f(self, id, args):
 	if not self.m.has_key(self.curlang):
 	  return self.m[''][id] % args
