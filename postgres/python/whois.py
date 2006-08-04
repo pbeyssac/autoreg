@@ -88,8 +88,8 @@ def query(a, out):
       if not k in dc:
         continue
       for p in dc[k]:
+        p.fetch()
         if not p.key in pdone:
-          p.fetch()
           p.display(out)
           pdone.append(p.key)
           print >>out
