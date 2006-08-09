@@ -31,17 +31,17 @@ class DnsParser:
 	    label = label.upper()
 	typ = typ.upper()
 	# Do some quick & dirty checking and canonicalization
-	if type in ['AAAA', 'CNAME', 'NS', 'SRV']:
+	if typ in ['AAAA', 'CNAME', 'NS', 'SRV']:
 	    value = value.upper()
-	elif type == 'MX':
+	elif typ == 'MX':
 	    m = self._mx_re.search(value)
 	    if not m: raise ParseError('Bad value for MX record', value)
 	    pri, fqdn = m.groups()
 	    pri = int(pri)
 	    if pri > 255: raise ParseError('Bad priority for MX record', pri)
 	    value = "%d %s" % (pri, fqdn.upper())
-	elif type in ['A', 'TXT']:
+	elif typ in ['A', 'TXT']:
 	    pass
 	else:
-	    raise ParseError('Illegal record type', type)
-	return (label, ttl, type, value)
+	    raise ParseError('Illegal record type', typ)
+	return (label, ttl, typ, value)
