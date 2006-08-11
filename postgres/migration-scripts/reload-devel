@@ -5,7 +5,7 @@
 #
 psql template1 << EOF
 drop database eudevel;
-create database eudevel;
+create database eudevel with encoding='UNICODE';
 EOF
 
 pg_dump eu.org | psql eudevel
