@@ -344,12 +344,14 @@ class Domain:
       d[k].sort()
     self.d = d
   def resolve_contacts(self):
+    """Resolve contact keys."""
     ambig, inval = 0, 0
     newd = {}
     for k in 'tc', 'zc', 'ac':
       newd[k] = [ ]
       for l in self.d[k]:
         if l == None: continue
+	# XXX: "email IS NOT NULL" is a hack to exclude "registrant" contacts
         self._dbc.execute('SELECT id FROM contacts '
                           'WHERE (lower(contacts.name)=%s OR handle=%s) '
                           ' AND email IS NOT NULL',
@@ -543,6 +545,7 @@ class Main:
       if self.empty_re.search(l):
         # empty line, no object in progress: skip
         continue
+      # should be an attribute: value line
       m = self.shortattr_re.search(l)
       if m:
         a, v = m.groups()
@@ -554,24 +557,32 @@ class Main:
           raise Error
         a = ripe_ltos[a]
       if a == 'delete':
+	# mark for deletion
         dodel = True
       else:
         if o.has_key(a):
+	  # multi-valued attribute
           o[a].append(v)
         else:
+	  # new attribute
           o[a] = [v]
+    # end of file
     if len(o):
       # end of file: process last object
       self.process(o, dodel, halloc)
+
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
     for i in sorted(self.dom.keys()):
       ld = self._lookup.domain_by_name(i)
       if ld != None:
+	# domain already exists
         ld.fetch()
         newdom = Domain(self._dbc, ld.id)
         newdom.from_ripe(self.dom[i])
+	# compare with new object
         if ld.d != newdom.d or ld.ct.d['ad'] != newdom.ct.d['ad']:
+	  # they differ, update database
           print "Update for", i, "to be done"
           print "ld.d=", ld.d
           print "dom.d=", newdom.d
@@ -580,8 +591,10 @@ class Main:
           newdom.ct.id = ld.ct.id
           newdom.update()
       else:
+	# make domain object
         ld = Domain(self._dbc)
         ambig, inval = ld.from_ripe(self.dom[i])
+	# store to database
         ld.insert()
         self.ambig += ambig
         self.inval += inval
