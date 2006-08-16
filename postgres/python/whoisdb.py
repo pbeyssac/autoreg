@@ -121,7 +121,7 @@ class Person:
     self._set_key()
   def allocate_handle(self):
     if (not 'nh' in self.d) or self.d['nh'][0] == None:
-      self._dbc.execute('START TRANSACTION ISOLATION LEVEL SERIALIZABLE')
+      #self._dbc.execute('START TRANSACTION ISOLATION LEVEL SERIALIZABLE')
       l = mkinitials(self.d['pn'][0])
 
       # Find the highest allocated handle with the same initials
@@ -141,7 +141,7 @@ class Person:
       self.d['nh'] = [ h ]
       self._dbc.execute('UPDATE contacts SET handle=%s WHERE id=%d', (h, id))
       assert self._dbc.rowcount == 1
-      self._dbc.execute('COMMIT TRANSACTION')
+      #self._dbc.execute('COMMIT TRANSACTION')
       print "Allocated handle", h, "for", self.d['pn'][0]
   def insert(self):
     o = self.d
@@ -224,7 +224,7 @@ class Domain:
       d['ch'] = [ updated_on ]
     self.d = d
     self.id = id
-  def from_ripe(self, o):
+  def from_ripe(self, o, pref_id=None):
     from_ripe(o, domainattrs)
     o['dn'][0] = o['dn'][0].upper()
     # Create a "registrant" contact, storing the address lines
@@ -238,7 +238,7 @@ class Domain:
     self.d = o
     self.ct = Person(self._dbc)
     self.ct.from_ripe(c)
-    return self.resolve_contacts()
+    return self.resolve_contacts(pref_id)
   def _copyrecords(self):
     self._dbc.execute('INSERT INTO domain_contact_hist'
                       ' (whoisdomain_id,contact_id,contact_type_id,'
@@ -343,11 +343,11 @@ class Domain:
     for k in 'tc', 'zc', 'ac', 'rc':
       d[k].sort()
     self.d = d
-  def resolve_contacts(self):
+  def resolve_contacts(self, pref_id=None):
     """Resolve contact keys."""
     ambig, inval = 0, 0
     newd = {}
-    for k in 'tc', 'zc', 'ac':
+    for k in 'ac', 'tc', 'zc':
       newd[k] = [ ]
       for l in self.d[k]:
         if l == None: continue
@@ -358,15 +358,27 @@ class Domain:
                           (l.lower(), l.upper()))
         # check the returned number of found lines and
         # issue an approriate warning message if it differs from 1.
+	dolimit = False
         if self._dbc.rowcount == 0:
-          print "Invalid contact '%s' for domain %s" % (l, self.d['dn'][0])
+          print "Invalid %s contact '%s' for domain %s" % (contact_map_rev[k],
+							   l, self.d['dn'][0])
           inval += 1
         elif self._dbc.rowcount > 1:
-          print "Ambiguous contact '%s' for domain %s" % (l, self.d['dn'][0])
+          print "Ambiguous key '%s' for domain %s %s contact"\
+		" resolves to %d records" % (l, self.d['dn'][0],
+					     contact_map_rev[k],
+					     self._dbc.rowcount)
           ambig += 1
+	  dolimit = True
         lid = self._dbc.fetchall()
         for id, in lid:
-          newd[k].append(id)
+	  if dolimit and pref_id != None:
+	    if id in pref_id:
+              pref_id.remove(id)
+              newd[k].append(id)
+              break
+          else:
+            newd[k].append(id)
     for k in 'tc', 'zc', 'ac':
       newd[k].sort()
     self.d.update(newd)
@@ -428,15 +440,17 @@ class Main:
   empty_re = sre.compile('^$')
   longattr_re = sre.compile('^([a-z-]+):\s*(.*\S)\s*$')
   shortattr_re = sre.compile('^\*([a-zA-Z][a-zA-Z]):\s*(.*\S)\s*$')
-  def __init__(self, dbh):
+  def _reset(self):
     self.dom = {}
     self.ndom = 0
     self.nperson = 0
-    self._dbh = dbh
-    self._dbc = dbh.cursor()
     self.ambig = 0
     self.inval = 0
+  def __init__(self, dbh):
+    self._dbh = dbh
+    self._dbc = dbh.cursor()
     self._lookup = Lookup(self._dbc)
+    self._reset()
   def process(self, o, dodel, halloc):
     if o.has_key('XX'):
       # deleted object, ignore
@@ -524,12 +538,13 @@ class Main:
       print >>sys.stderr, "Unknown object type"
       print str(o)
 
-  def parsefile(self, file, encoding='ISO-8859-1'):
+  def parsefile(self, file, encoding='ISO-8859-1', commit=True, chkdup=False):
     o = {}
     halloc = []
     dodel = False
     self._dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
     self._dbh.autocommit(0)
+    self._dbc.execute('START TRANSACTION ISOLATION LEVEL SERIALIZABLE')
 
     for l in file:
       if self.comment_re.search(l):
@@ -571,6 +586,21 @@ class Main:
       # end of file: process last object
       self.process(o, dodel, halloc)
 
+    # XXX: special case: duplicate contact record for a new domain;
+    # typically the first one is the administrative contact,
+    # the second one is the technical contact.
+    # Temporary debug code, just detect and warn.
+
+    if chkdup:
+      print "chkdup on", len(halloc), "records"
+      halloc_keys = []
+      for x in halloc:
+        if x.key.lower() in halloc_keys:
+          print "Duplicate key %s" % x.key
+        halloc_keys.append(x.key.lower())
+
+    xid = [x.id for x in halloc]
+
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
     for i in sorted(self.dom.keys()):
@@ -593,22 +623,23 @@ class Main:
       else:
 	# make domain object
         ld = Domain(self._dbc)
-        ambig, inval = ld.from_ripe(self.dom[i])
+        ambig, inval = ld.from_ripe(self.dom[i], xid)
 	# store to database
         ld.insert()
         self.ambig += ambig
         self.inval += inval
 
-    self._dbh.commit()
-
     # now allocate missing handles
     for i in halloc:
       i.allocate_handle()
 
-    self._dbh.commit()
+    if commit:
+	self._dbh.commit()
+    else:
+	self._dbh.rollback()
 
     print "Domains:", self.ndom
     print "Persons:", self.nperson
     print "Ambiguous contacts:", self.ambig
     print "Invalid contacts:", self.inval
-    del self.dom
+    self._reset()
