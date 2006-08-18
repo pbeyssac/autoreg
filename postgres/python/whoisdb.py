@@ -5,13 +5,13 @@ import sys
 
 import mx
 
-_tv6 = sre.compile('^\S+\s*(\d\d)(\d\d)(\d\d)$')
-_tv8 = sre.compile('^\S+\s*(\d\d\d\d)(\d\d)(\d\d)$')
+_tv6 = sre.compile('^(\S+)\s*(\d\d)(\d\d)(\d\d)$')
+_tv8 = sre.compile('^(\S+)\s*(\d\d\d\d)(\d\d)(\d\d)$')
 
 def parse_changed(timeval):
   ma = _tv6.search(timeval)
   if ma:
-    y, m, d = ma.groups()
+    email, y, m, d = ma.groups()
     y = int(y)
     if y > 50:
       y += 1900
@@ -20,14 +20,14 @@ def parse_changed(timeval):
   else:
     ma = _tv8.search(timeval)
     if ma:
-      y, m, d = ma.groups()
+      email, y, m, d = ma.groups()
       y = int(y)
     else:
       print "Cannot parse_changed:", timeval
       raise Error
   m = int(m)
   d = int(d)
-  return mx.DateTime.DateTime(y, m, d)
+  return email, mx.DateTime.DateTime(y, m, d)
 
 ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
               'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
@@ -146,12 +146,14 @@ class Person:
   def insert(self):
     o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,name,email,addr1,'
-                      'addr2,addr3,addr4,addr5,addr6,phone,fax,updated_on) '
-                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                      'addr2,addr3,addr4,addr5,addr6,phone,fax,'
+                      'updated_by,updated_on) '
+                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
                       (o['nh'][0], o['pn'][0], o['em'][0],
                        o['ad'][0], o['ad'][1], o['ad'][2],
                        o['ad'][3], o['ad'][4], o['ad'][5],
-                       o['ph'][0], o['fx'][0], str(o['ch'][0])))
+                       o['ph'][0], o['fx'][0],
+                       o['ch'][0][0], str(o['ch'][0][1])))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('contacts_id_seq')")
     self.id, = self._dbc.fetchone()
@@ -164,22 +166,23 @@ class Person:
     self._dbc.execute('INSERT INTO contacts_hist '
                       ' (contact_id,handle,name,email,'
                       '  addr1,addr2,addr3,addr4,addr5,addr6,'
-                      '  phone,fax,passwd,updated_on,deleted_on)'
+                      '  phone,fax,passwd,updated_by,updated_on,deleted_on)'
                       ' SELECT id,handle,name,email,'
                       '  addr1,addr2,addr3,addr4,addr5,addr6,'
-                      '  phone,fax,passwd,updated_on,NOW()'
+                      '  phone,fax,passwd,updated_by,updated_on,NOW()'
                       ' FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
   def _update(self):
     o = self.d
     self._dbc.execute('UPDATE contacts SET handle=%s,name=%s,email=%s,'
                       'addr1=%s,addr2=%s,addr3=%s,addr4=%s,addr5=%s,addr6=%s,'
-                      'phone=%s,fax=%s,updated_on=%s '
+                      'phone=%s,fax=%s,updated_by=%s,updated_on=%s '
                       'WHERE id=%d',
                       (o['nh'][0], o['pn'][0], o['em'][0],
                        o['ad'][0], o['ad'][1], o['ad'][2],
                        o['ad'][3], o['ad'][4], o['ad'][5],
-                       o['ph'][0], o['fx'][0], str(o['ch'][0]), self.id))
+                       o['ph'][0], o['fx'][0],
+                       o['ch'][0][0], str(o['ch'][0][1]), self.id))
     assert self._dbc.rowcount == 1
   def update(self):
     self._copyrecord()
@@ -191,16 +194,17 @@ class Person:
   def fetch(self):
     assert self.id != None
     self._dbc.execute('SELECT handle,name,email,addr1,addr2,addr3,addr4,'
-                      ' addr5,addr6,phone,fax,updated_on '
+                      ' addr5,addr6,phone,fax,updated_by,updated_on '
                       'FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
     d = {}
     (d['nh'], d['pn'], d['em'],
      addr1, addr2, addr3, addr4, addr5, addr6,
-     d['ph'], d['fx'], d['ch']) = self._dbc.fetchone()
+     d['ph'], d['fx'], chb, cho) = self._dbc.fetchone()
     for k in d.keys():
       d[k] = [ d[k] ]
     d['ad'] = [ addr1, addr2, addr3, addr4, addr5, addr6 ]
+    d['ch'] = [ (chb, cho) ]
     self.d = d
     self._set_key()
   def display(self, out, title='person'):
@@ -211,17 +215,20 @@ class Person:
       else:
         l = ripe_stol[i]
       for j in d[i]:
+        if i == 'ch':
+          j = "%s %s" % j
         if j != None:
           print >>out, "%-12s %s" % (l+':', j)
   
 class Domain:
-  def __init__(self, dbc, id=None, fqdn=None, updated_on=None):
+  def __init__(self, dbc, id=None, fqdn=None,
+               updated_by=None, updated_on=None):
     d = {}
     self._dbc = dbc
     if fqdn != None:
       d['dn'] = [ fqdn.upper() ]
     if updated_on != None:
-      d['ch'] = [ updated_on ]
+      d['ch'] = [ (updated_by, updated_on) ]
     self.d = d
     self.id = id
   def from_ripe(self, o, pref_id=None):
@@ -305,8 +312,9 @@ class Domain:
   def insert(self):
     o = self.d
     domain = o['dn'][0]
-    self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_on) '
-                      'VALUES (%s, %s)', (domain, str(o['ch'][0])))
+    self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_by,updated_on) '
+                      'VALUES (%s, %s,%s)',
+                      (domain, o['ch'][0][0], str(o['ch'][0][1])))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('whoisdomains_id_seq')")
     assert self._dbc.rowcount == 1
@@ -314,13 +322,13 @@ class Domain:
     self.id = did
     self.insert_domain_contact()
   def fetch(self):
-    self._dbc.execute('SELECT fqdn, updated_on '
+    self._dbc.execute('SELECT fqdn, updated_by, updated_on '
                       'FROM whoisdomains WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
     d = {}
-    dn, ch = self._dbc.fetchone()
+    dn, chb, cho = self._dbc.fetchone()
     d['dn'] = [ dn ]
-    d['ch'] = [ ch ]
+    d['ch'] = [ (chb, cho) ]
     self.d = d
     self.fetch_contacts()
     assert len(d['rc']) == 1
@@ -426,13 +434,14 @@ class Lookup:
     return self._makelist()
   def domain_by_name(self, name):
     name = name.upper()
-    self._dbc.execute('SELECT id, updated_on FROM whoisdomains WHERE fqdn=%s',
+    self._dbc.execute('SELECT id, updated_by, updated_on'
+                      ' FROM whoisdomains WHERE fqdn=%s',
                       (name,))
     if self._dbc.rowcount == 0:
       return None
     assert self._dbc.rowcount == 1
-    id, upon = self._dbc.fetchone()
-    return Domain(self._dbc, id, name, upon)
+    id, upby, upon = self._dbc.fetchone()
+    return Domain(self._dbc, id, name, upby, upon)
   
 class Main:
   comment_re = sre.compile('^\s*#')

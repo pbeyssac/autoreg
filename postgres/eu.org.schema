@@ -124,6 +124,7 @@ CREATE TABLE contacts (
 	phone varchar(40),
 	fax varchar(40),
 	passwd varchar(16),
+	updated_by varchar(64),
 	updated_on TIMESTAMP(2) WITH TIME ZONE
 );
 CREATE INDEX contacts_handle_index ON contacts(handle);
@@ -140,6 +141,7 @@ CREATE TABLE whoisdomains (
 	id SERIAL PRIMARY KEY,
 	fqdn VARCHAR(255) UNIQUE,
 	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	updated_by varchar(64),
 	updated_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 CREATE INDEX whoisdomains_fqdn_index ON whoisdomains(fqdn);
@@ -179,12 +181,14 @@ CREATE TABLE contacts_hist (
 	phone varchar(40),
 	fax varchar(40),
 	passwd varchar(16),
+	updated_by varchar(64),
 	updated_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 CREATE TABLE whoisdomains_hist (
 	whoisdomain_id INTEGER,
 	fqdn VARCHAR(255),
+	updated_by varchar(64),
 	updated_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
