@@ -62,19 +62,19 @@ def from_ripe(o, attrlist):
     del o[k]
   # check attribute constraints
   for k, mm in attrlist.iteritems():
-    min, max = mm
+    minl, maxl = mm
     if not k in o:
-      if min > 0:
+      if minl > 0:
         print o
         print "missing attribute %s" % ripe_stol[k]
         raise Error
       o[k] = [ None ]
     else:
-      if not (min <= len(o[k]) <= max):
+      if not (minl <= len(o[k]) <= maxl):
         print o
         print "attribute %s found %d times, should appear %d to %d time(s)" % \
-              (ripe_stol[k], len(o[k]), min, max)
-        o[k] = o[k][:max]
+              (ripe_stol[k], len(o[k]), minl, maxl)
+        o[k] = o[k][:maxl]
   if len(o['ad']) < 6:
     o['ad'].extend([ None ] * (6-len(o['ad'])))
 
@@ -255,7 +255,6 @@ class Domain:
                       '  FROM domain_contact WHERE whoisdomain_id=%d',
                       (self.id,))
   def update(self):
-    o = self.d
     assert self.id != None
     self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%d FOR UPDATE',
                       (self.id,))
@@ -345,8 +344,8 @@ class Domain:
     for k in 'tc', 'zc', 'ac', 'rc':
       d[k] = []
     l = self._dbc.fetchall()
-    for id, type in l:
-      cm = contact_map[type]
+    for id, typ in l:
+      cm = contact_map[typ]
       d[cm].append(id)
     for k in 'tc', 'zc', 'ac', 'rc':
       d[k].sort()
@@ -395,10 +394,10 @@ class Domain:
     self.fetch_contacts()
     dc = {}
     for k in 'tc', 'zc', 'ac':
-      type = contact_map_rev[k]
-      dc[type] = []
+      typ = contact_map_rev[k]
+      dc[typ] = []
       for id in self.d[k]:
-        dc[type].append(Person(self._dbc, id))
+        dc[typ].append(Person(self._dbc, id))
     return dc
   def display(self, out):
     print >>out, "%-12s %s" % ('domain:', self.d['dn'][0])
