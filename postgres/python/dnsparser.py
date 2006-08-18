@@ -19,9 +19,12 @@ class DnsParser:
 	'^(\S+)?\s+(?:(\d+)\s+)?(?:[Ii][Nn]\s+)?(\S+)\s+(\S|\S.*\S)\s*$')
     # right-hand side for a MX record
     _mx_re = sre.compile('^(\d+)\s+(\S+)$')
+    # lines such as $TTL ...
+    _dollar_re = sre.compile('^\$(\S+)\s+(\d+)\s*$')
 
     def parseline(self, l):
 	if self._comment_re.search(l): return None
+	if self._dollar_re.search(l): return None
 	m = self._label_re.search(l)
 	if not m: raise ParseError('Unable to parse line', l)
 	label, ttl, typ, value = m.groups()
@@ -40,7 +43,7 @@ class DnsParser:
 	    pri = int(pri)
 	    if pri > 255: raise ParseError('Bad priority for MX record', pri)
 	    value = "%d %s" % (pri, fqdn.upper())
-	elif typ in ['A', 'TXT']:
+	elif typ in ['A', 'TXT', 'SOA', 'PTR']:
 	    pass
 	else:
 	    raise ParseError('Illegal record type', typ)
