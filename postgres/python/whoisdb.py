@@ -29,6 +29,23 @@ def parse_changed(timeval):
   d = int(d)
   return email, mx.DateTime.DateTime(y, m, d)
 
+def addrmake(a):
+  """Make a newline-separated string from a list."""
+  ta = ''
+  for l in a:
+    if l != None:
+      ta += l + '\n'
+  return ta
+
+def addrsplit(ta):
+  """Make a None-padded list of length 6 from a newline-separated string."""
+  a = ta.split('\n')
+  for i in range(len(a)):
+    if a[i] == '': a[i] = None
+  while len(a) < 6:
+    a.append(None)
+  return a
+
 ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
               'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
               'changed': 'ch', 'remark': 'rm', 'nic-hdl': 'nh',
@@ -145,14 +162,11 @@ class Person:
       print "Allocated handle", h, "for", self.d['pn'][0]
   def insert(self):
     o = self.d
-    self._dbc.execute('INSERT INTO contacts (handle,name,email,addr1,'
-                      'addr2,addr3,addr4,addr5,addr6,phone,fax,'
-                      'updated_by,updated_on) '
-                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+    self._dbc.execute('INSERT INTO contacts (handle,name,email,'
+                      'addr,phone,fax,updated_by,updated_on) '
+                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
                       (o['nh'][0], o['pn'][0], o['em'][0],
-                       o['ad'][0], o['ad'][1], o['ad'][2],
-                       o['ad'][3], o['ad'][4], o['ad'][5],
-                       o['ph'][0], o['fx'][0],
+                       addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        o['ch'][0][0], str(o['ch'][0][1])))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('contacts_id_seq')")
@@ -164,24 +178,19 @@ class Person:
                       (self.id,))
     assert self._dbc.rowcount == 1
     self._dbc.execute('INSERT INTO contacts_hist '
-                      ' (contact_id,handle,name,email,'
-                      '  addr1,addr2,addr3,addr4,addr5,addr6,'
+                      ' (contact_id,handle,name,email,addr,'
                       '  phone,fax,passwd,updated_by,updated_on,deleted_on)'
-                      ' SELECT id,handle,name,email,'
-                      '  addr1,addr2,addr3,addr4,addr5,addr6,'
+                      ' SELECT id,handle,name,email,addr,'
                       '  phone,fax,passwd,updated_by,updated_on,NOW()'
                       ' FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
   def _update(self):
     o = self.d
     self._dbc.execute('UPDATE contacts SET handle=%s,name=%s,email=%s,'
-                      'addr1=%s,addr2=%s,addr3=%s,addr4=%s,addr5=%s,addr6=%s,'
-                      'phone=%s,fax=%s,updated_by=%s,updated_on=%s '
+                      'addr=%s,phone=%s,fax=%s,updated_by=%s,updated_on=%s '
                       'WHERE id=%d',
                       (o['nh'][0], o['pn'][0], o['em'][0],
-                       o['ad'][0], o['ad'][1], o['ad'][2],
-                       o['ad'][3], o['ad'][4], o['ad'][5],
-                       o['ph'][0], o['fx'][0],
+                       addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        o['ch'][0][0], str(o['ch'][0][1]), self.id))
     assert self._dbc.rowcount == 1
   def update(self):
@@ -193,17 +202,17 @@ class Person:
     assert self._dbc.rowcount == 1
   def fetch(self):
     assert self.id != None
-    self._dbc.execute('SELECT handle,name,email,addr1,addr2,addr3,addr4,'
-                      ' addr5,addr6,phone,fax,updated_by,updated_on '
+    self._dbc.execute('SELECT handle,name,email,addr,'
+                      ' phone,fax,updated_by,updated_on '
                       'FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
     d = {}
     (d['nh'], d['pn'], d['em'],
-     addr1, addr2, addr3, addr4, addr5, addr6,
+     addr,
      d['ph'], d['fx'], chb, cho) = self._dbc.fetchone()
     for k in d.keys():
       d[k] = [ d[k] ]
-    d['ad'] = [ addr1, addr2, addr3, addr4, addr5, addr6 ]
+    d['ad'] = addrsplit(addr)
     d['ch'] = [ (chb, cho) ]
     self.d = d
     self._set_key()
