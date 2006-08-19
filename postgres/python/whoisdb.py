@@ -240,7 +240,7 @@ class Domain:
       d['ch'] = [ (updated_by, updated_on) ]
     self.d = d
     self.id = id
-  def from_ripe(self, o, pref_id=None):
+  def from_ripe(self, o, prefs=None):
     from_ripe(o, domainattrs)
     o['dn'][0] = o['dn'][0].upper()
     # Create a "registrant" contact, storing the address lines
@@ -254,7 +254,7 @@ class Domain:
     self.d = o
     self.ct = Person(self._dbc)
     self.ct.from_ripe(c)
-    return self.resolve_contacts(pref_id)
+    return self.resolve_contacts(prefs)
   def _copyrecords(self):
     self._dbc.execute('INSERT INTO domain_contact_hist'
                       ' (whoisdomain_id,contact_id,contact_type_id,'
@@ -359,22 +359,33 @@ class Domain:
     for k in 'tc', 'zc', 'ac', 'rc':
       d[k].sort()
     self.d = d
-  def resolve_contacts(self, pref_id=None):
+  def resolve_contacts(self, prefs=None):
     """Resolve contact keys."""
     ambig, inval = 0, 0
+    if prefs != None:
+      print "prefs=", prefs
     newd = {}
     for k in 'ac', 'tc', 'zc':
       newd[k] = [ ]
       for l in self.d[k]:
         if l == None: continue
-	# XXX: "email IS NOT NULL" is a hack to exclude "registrant" contacts
-        self._dbc.execute('SELECT id FROM contacts '
-                          'WHERE (lower(contacts.name)=%s OR handle=%s) '
-                          ' AND email IS NOT NULL',
+	ll = l.lower()
+	if ll in prefs:
+	  id = prefs[ll][0].id
+	  print "Using id", id, "from prefs"
+          newd[k].append(id)
+	  # rotate prefs
+          prefs[ll] = prefs[ll][1:] + prefs[ll][:1]
+	  break
+	# XXX: "... AND email IS NOT NULL" is a hack
+	# to exclude "registrant" contacts while (temporarily)
+	# allowing regular contacts without an email.
+        self._dbc.execute('SELECT id FROM contacts'
+                          ' WHERE (lower(contacts.name)=%s'
+			  ' AND email IS NOT NULL) OR handle=%s',
                           (l.lower(), l.upper()))
         # check the returned number of found lines and
         # issue an approriate warning message if it differs from 1.
-	dolimit = False
         if self._dbc.rowcount == 0:
           print "Invalid %s contact '%s' for domain %s" % (contact_map_rev[k],
 							   l, self.d['dn'][0])
@@ -385,16 +396,9 @@ class Domain:
 					     contact_map_rev[k],
 					     self._dbc.rowcount)
           ambig += 1
-	  dolimit = True
         lid = self._dbc.fetchall()
         for id, in lid:
-	  if dolimit and pref_id != None:
-	    if id in pref_id:
-              pref_id.remove(id)
-              newd[k].append(id)
-              break
-          else:
-            newd[k].append(id)
+          newd[k].append(id)
     for k in 'tc', 'zc', 'ac':
       newd[k].sort()
     self.d.update(newd)
@@ -468,7 +472,9 @@ class Main:
     self._dbc = dbh.cursor()
     self._lookup = Lookup(self._dbc)
     self._reset()
-  def process(self, o, dodel, halloc):
+  def process(self, o, dodel, halloc, persons=None):
+    if persons == None:
+      persons = {}
     if o.has_key('XX'):
       # deleted object, ignore
       return
@@ -493,7 +499,12 @@ class Main:
       ct.from_ripe(o)
       if 'nh' in o and o['nh'][0] != None:
         # has a NIC handle, try to find if already in the base
-        handle = o['nh'][0]
+        handle = o['nh'][0].lower()
+	name = o['pn'][0].lower()
+	if not name in persons:
+	  persons[name] = []
+	if not handle in persons:
+	  persons[handle] = []
         lp = self._lookup.persons_by_handle(handle)
         assert len(lp) <= 1
         if len(lp) == 1:
@@ -506,27 +517,40 @@ class Main:
             lp[0].d = o
             if not dodel:
               lp[0].update()
+	      # keep for contact assignment
+	      persons[handle].append(ct)
+	      persons[name].append(ct)
             else:
               print "Cannot delete: not the same object"
           else:
             if dodel:
               lp[0].delete()
+	    else:
+	      persons[handle].append(lp[0])
+	      persons[name].append(lp[0])
         else:
           # not found
           if dodel:
             print "Cannot delete: not found"
           else:
             ct.insert()
+	    # keep for contact assignment
+	    persons[handle].append(ct)
+	    persons[name].append(ct)
       else:
         assert 'pn' in o and o['pn'] != None
         # no handle, try to find by name
-        name = o['pn'][0]
+        name = o['pn'][0].lower()
+	if not name in persons:
+	  persons[name] = []
         lp = self._lookup.persons_by_name(name)
         if len(lp) == 0:
           # not found, insert
           ct.insert()
 	  # keep for handle allocation
 	  halloc.append(ct)
+	  # keep for contact assignment
+	  persons[name].append(ct)
         else:
           # try to find if a similar object exists
           for c in lp:
@@ -535,6 +559,8 @@ class Main:
             o['nh'] = c.d['nh']
             if c.d == o:
               # found, stop
+	      # keep for contact assignment
+	      persons[name].append(c)
               break
             # clear copied handle
             o['nh'] = [ None ];
@@ -545,6 +571,8 @@ class Main:
             ct.insert()
 	    # keep for handle allocation
 	    halloc.append(ct)
+	    # keep for contact assignment
+	    persons[name].append(ct)
     elif o.has_key('mt'):
       # maintainer object, ignore
       pass
@@ -558,6 +586,7 @@ class Main:
   def parsefile(self, file, encoding='ISO-8859-1', commit=True, chkdup=False):
     o = {}
     halloc = []
+    persons = {}
     dodel = False
     self._dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
     self._dbh.autocommit(0)
@@ -570,7 +599,7 @@ class Main:
       if self.white_re.search(l) and len(o):
         # white line or empty line and o is not empty:
         # end of object, process then cleanup for next object.
-        self.process(o, dodel, halloc)
+        self.process(o, dodel, halloc, persons)
         o = {}
         dodel = False
         continue
@@ -601,7 +630,7 @@ class Main:
     # end of file
     if len(o):
       # end of file: process last object
-      self.process(o, dodel, halloc)
+      self.process(o, dodel, halloc, persons)
 
     # XXX: special case: duplicate contact record for a new domain;
     # typically the first one is the administrative contact,
@@ -609,14 +638,9 @@ class Main:
     # Temporary debug code, just detect and warn.
 
     if chkdup:
-      print "chkdup on", len(halloc), "records"
-      halloc_keys = []
-      for x in halloc:
-        if x.key.lower() in halloc_keys:
-          print "Duplicate key %s" % x.key
-        halloc_keys.append(x.key.lower())
-
-    xid = [x.id for x in halloc]
+      for x in persons:
+        if len(persons[x]) > 1:
+          print "Duplicate key %s" % x
 
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
@@ -626,7 +650,7 @@ class Main:
 	# domain already exists
         ld.fetch()
         newdom = Domain(self._dbc, ld.id)
-        newdom.from_ripe(self.dom[i])
+        newdom.from_ripe(self.dom[i], persons)
 	# compare with new object
         if ld.d != newdom.d or ld.ct.d['ad'] != newdom.ct.d['ad']:
 	  # they differ, update database
@@ -640,7 +664,7 @@ class Main:
       else:
 	# make domain object
         ld = Domain(self._dbc)
-        ambig, inval = ld.from_ripe(self.dom[i], xid)
+        ambig, inval = ld.from_ripe(self.dom[i], persons)
 	# store to database
         ld.insert()
         self.ambig += ambig
