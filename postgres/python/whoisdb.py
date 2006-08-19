@@ -510,7 +510,7 @@ class Main:
               print "Cannot delete: not the same object"
           else:
             if dodel:
-              lp.delete()
+              lp[0].delete()
         else:
           # not found
           if dodel:
