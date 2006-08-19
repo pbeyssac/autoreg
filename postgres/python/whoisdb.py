@@ -348,13 +348,13 @@ class Domain(_whoisobject):
     d['dn'] = [ dn ]
     d['ch'] = [ (chb, cho) ]
     self.d = d
-    self.fetch_contacts()
+    self._fetch_contacts()
     assert len(d['rc']) == 1
     ct = Person(self._dbc, id=d['rc'][0])
     del d['rc']
     ct.fetch()
     self.ct = ct
-  def fetch_contacts(self):
+  def _fetch_contacts(self):
     d = self.d
     self._dbc.execute('SELECT contact_id,contact_types.name '
                       'FROM domain_contact, contact_types '
@@ -372,8 +372,6 @@ class Domain(_whoisobject):
   def resolve_contacts(self, prefs=None):
     """Resolve contact keys."""
     ambig, inval = 0, 0
-    if prefs != None:
-      print "prefs=", prefs
     newd = {}
     for k in 'ac', 'tc', 'zc':
       newd[k] = [ ]
@@ -382,7 +380,6 @@ class Domain(_whoisobject):
 	ll = l.lower()
 	if ll in prefs:
 	  id = prefs[ll][0].id
-	  print "Using id", id, "from prefs"
           newd[k].append(id)
 	  # rotate prefs
           prefs[ll] = prefs[ll][1:] + prefs[ll][:1]
@@ -414,7 +411,7 @@ class Domain(_whoisobject):
     self.d.update(newd)
     return ambig, inval
   def get_contacts(self):
-    self.fetch_contacts()
+    self.fetch()
     dc = {}
     for k in 'tc', 'zc', 'ac':
       typ = contact_map_rev[k]
@@ -422,9 +419,9 @@ class Domain(_whoisobject):
       for id in self.d[k]:
         dc[typ].append(Person(self._dbc, id))
     return dc
-  def display(self, out):
+  def display(self, out=sys.stdout):
     print >>out, "%-12s %s" % ('domain:', self.d['dn'][0])
-    reg = Person(self._dbc, self.d['rc'][0])
+    reg = Person(self._dbc, self.ct.id)
     reg.fetch()
     reg.display(out, 'address')
     for t, l in [('tc','tech-c'),
@@ -523,14 +520,13 @@ class Main:
           # found, compare
           lp[0].fetch()
           if lp[0] != ct:
-            print "nic-hdl:", handle, "differ"
-            print "old=", lp[0].d
-            print "new=", o
-            lp[0].d = o
             if not dodel:
-	      print "Object updated:"
+	      print "Object updated from:"
 	      lp[0].display()
-              lp[0].update()
+	      print "Object updated to:"
+	      ct.id = lp[0].id
+	      ct.display()
+              ct.update()
 	      # keep for contact assignment
 	      persons[handle].append(ct)
 	      persons[name].append(ct)
@@ -590,8 +586,6 @@ class Main:
             o['nh'] = [ None ];
           else:
             # not found, insert
-            print "No handle and not found by name"
-            print "new=", o
             ct.insert()
 	    print "Object created:"
 	    ct.display()
@@ -680,19 +674,20 @@ class Main:
 	# compare with new object
         if ld.d != newdom.d or ld.ct.d['ad'] != newdom.ct.d['ad']:
 	  # they differ, update database
-          print "Update for", i, "to be done"
-          print "ld.d=", ld.d
-          print "dom.d=", newdom.d
-          print "ld.ct.d=", ld.ct.d
-          print "dom.ct.d=", newdom.ct.d
+          print "Object updated from:"
+	  ld.display()
           newdom.ct.id = ld.ct.id
           newdom.update()
+          print "Object updated to:"
+	  newdom.display()
       else:
 	# make domain object
         ld = Domain(self._dbc)
         ambig, inval = ld.from_ripe(self.dom[i], persons)
 	# store to database
         ld.insert()
+        print "Object created:"
+	ld.display()
         self.ambig += ambig
         self.inval += inval
 
