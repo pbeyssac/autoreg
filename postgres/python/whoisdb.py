@@ -226,7 +226,7 @@ class Person(_whoisobject):
     d['ch'] = [ (chb, cho) ]
     self.d = d
     self._set_key()
-  def display(self, out, title='person'):
+  def display(self, out=sys.stdout, title='person'):
     d = self.d
     for i in ['pn', 'nh', 'ad', 'ph', 'fx', 'em', 'ch']:
       if i == 'pn':
@@ -497,6 +497,8 @@ class Main:
         # XXX: compare!
         ld = self._lookup.domain_by_name(o['dn'])
         if ld != None:
+	  print "Object deleted:"
+	  ld.display()
           ld.delete()
       else:
         from_ripe(o, domainattrs)
@@ -526,6 +528,8 @@ class Main:
             print "new=", o
             lp[0].d = o
             if not dodel:
+	      print "Object updated:"
+	      lp[0].display()
               lp[0].update()
 	      # keep for contact assignment
 	      persons[handle].append(ct)
@@ -534,8 +538,12 @@ class Main:
               print "Cannot delete: not the same object"
           else:
             if dodel:
+	      print "Object deleted:"
+	      lp[0].display()
               lp[0].delete()
 	    else:
+	      print "Object already exists:"
+	      lp[0].display()
 	      persons[handle].append(lp[0])
 	      persons[name].append(lp[0])
         else:
@@ -544,6 +552,8 @@ class Main:
             print "Cannot delete: not found"
           else:
             ct.insert()
+	    print "Object created:"
+	    ct.display()
 	    # keep for contact assignment
 	    persons[handle].append(ct)
 	    persons[name].append(ct)
@@ -557,6 +567,8 @@ class Main:
         if len(lp) == 0:
           # not found, insert
           ct.insert()
+	  print "Object created:"
+	  ct.display()
 	  # keep for handle allocation
 	  halloc.append(ct)
 	  # keep for contact assignment
@@ -571,6 +583,8 @@ class Main:
               # found, stop
 	      # keep for contact assignment
 	      persons[name].append(c)
+	      print "Object already exists:"
+	      c.display()
               break
             # clear copied handle
             o['nh'] = [ None ];
@@ -579,6 +593,8 @@ class Main:
             print "No handle and not found by name"
             print "new=", o
             ct.insert()
+	    print "Object created:"
+	    ct.display()
 	    # keep for handle allocation
 	    halloc.append(ct)
 	    # keep for contact assignment
