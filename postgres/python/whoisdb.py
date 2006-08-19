@@ -120,7 +120,17 @@ def mkinitials(name):
     h = 'ZZZ'
   return h
 
-class Person:
+class _whoisobject(object):
+  def __cmp__(self, other):
+    if not isinstance(other, type(self)):
+      return id(self).__cmp__(id(other))
+    d1 = self.d.copy()
+    d2 = other.d.copy()
+    del d1['ch']
+    del d2['ch']
+    return d1.__cmp__(d2)
+
+class Person(_whoisobject):
   _suffix = "-FREE"
   def __init__(self, dbc, id=None, key=None):
     self._dbc = dbc
@@ -229,7 +239,7 @@ class Person:
         if j != None:
           print >>out, "%-12s %s" % (l+':', j)
   
-class Domain:
+class Domain(_whoisobject):
   def __init__(self, dbc, id=None, fqdn=None,
                updated_by=None, updated_on=None):
     d = {}
@@ -510,7 +520,7 @@ class Main:
         if len(lp) == 1:
           # found, compare
           lp[0].fetch()
-          if lp[0].d != o:
+          if lp[0] != ct:
             print "nic-hdl:", handle, "differ"
             print "old=", lp[0].d
             print "new=", o
@@ -557,7 +567,7 @@ class Main:
             c.fetch()
             # temporarily copy handle from found object
             o['nh'] = c.d['nh']
-            if c.d == o:
+            if ct == c:
               # found, stop
 	      # keep for contact assignment
 	      persons[name].append(c)
