@@ -476,16 +476,18 @@ class Main:
     self._dbc = dbh.cursor()
     self._lookup = Lookup(self._dbc)
     self._reset()
-  def process(self, o, dodel, persons=None):
+  def process(self, o, dodel, persons=None, forcechanged=None):
     """Handle object creation/updating/deletion."""
     if persons == None:
       persons = {}
     if o.has_key('XX'):
       # deleted object, ignore
       return
-    if o.has_key('ch'):
-	for i in range(len(o['ch'])):
-	    o['ch'][i] = parse_changed(o['ch'][i])
+    if forcechanged != None:
+      o['ch'] = [ forcechanged ]
+    elif o.has_key('ch'):
+      for i in range(len(o['ch'])):
+	o['ch'][i] = parse_changed(o['ch'][i])
     if o.has_key('dn'):
       # domain object
       i = o['dn'][0].upper()
@@ -627,7 +629,7 @@ class Main:
       print >>sys.stderr, "Unknown object type"
       print str(o)
 
-  def _order(self, o, dodel, persons, nohandle, domains):
+  def _order(self, o, dodel, persons, nohandle, domains, forcechanged):
     """Handle reordering."""
     if not dodel and 'pn' in o and not 'nh' in o:
       # updating or creation of a person object, no handle yet.
@@ -638,9 +640,10 @@ class Main:
       domains[o['dn'][0].upper()] = o
     else:
       # process everything else as we go
-      self.process(o, dodel, persons)
+      self.process(o, dodel, persons, forcechanged)
 
-  def parsefile(self, file, encoding='ISO-8859-1', commit=True, chkdup=False):
+  def parsefile(self, file, encoding='ISO-8859-1', commit=True, chkdup=False,
+		forcechangedemail=None):
     """Parse file and reorder objects before calling process()."""
     o = {}
     persons = {}
@@ -651,6 +654,13 @@ class Main:
     self._dbh.autocommit(0)
     self._dbc.execute('START TRANSACTION ISOLATION LEVEL SERIALIZABLE')
 
+    if forcechangedemail != None:
+      # Get transaction date and build our changed: line from it.
+      self._dbc.execute("SELECT NOW()")
+      now, = self._dbc.fetchone()
+      assert self._dbc.rowcount == 1
+      forcechanged = (forcechangedemail, now)
+
     for l in file:
       if self.comment_re.search(l):
         # skip comment
@@ -658,7 +668,7 @@ class Main:
       if self.white_re.search(l) and len(o):
         # white line or empty line and o is not empty:
         # end of object, process then cleanup for next object.
-	self._order(o, dodel, persons, nohandle, domains)
+	self._order(o, dodel, persons, nohandle, domains, forcechanged)
         o = {}
         dodel = False
         continue
@@ -689,10 +699,10 @@ class Main:
     # end of file
     if len(o):
       # end of file: process last object
-      self._order(o, dodel, persons, nohandle, domains)
+      self._order(o, dodel, persons, nohandle, domains, forcechanged)
 
     for p in nohandle:
-      self.process(p, False, persons)
+      self.process(p, False, persons, forcechanged)
 
     # XXX: special case: duplicate contact record for a new domain;
     # typically the first one is the administrative contact,
@@ -707,7 +717,7 @@ class Main:
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
     for i in sorted(domains.keys()):
-      self.process(domains[i], False, persons)
+      self.process(domains[i], False, persons, forcechanged)
 
     if commit:
 	self._dbh.commit()
