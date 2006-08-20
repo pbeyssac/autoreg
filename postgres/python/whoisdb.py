@@ -660,6 +660,8 @@ class Main:
       now, = self._dbc.fetchone()
       assert self._dbc.rowcount == 1
       forcechanged = (forcechangedemail, now)
+    else:
+      forcechanged = None
 
     for l in file:
       if self.comment_re.search(l):
