@@ -508,7 +508,7 @@ class Main:
         newdom = Domain(self._dbc, ld.id)
         newdom.from_ripe(o, persons)
 	# compare with new object
-        if ld.d != newdom.d or ld.ct.d['ad'] != newdom.ct.d['ad']:
+        if ld != newdom or ld.ct.d['ad'] != newdom.ct.d['ad']:
 	  # they differ, update database
           print "Object updated from:"
 	  ld.display()
