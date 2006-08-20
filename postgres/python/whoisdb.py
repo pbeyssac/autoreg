@@ -654,7 +654,7 @@ class Main:
       else:
         self.process(o, dodel, persons)
 
-    for p in nohandle
+    for p in nohandle:
       self.process(p, False, persons)
 
     # XXX: special case: duplicate contact record for a new domain;
