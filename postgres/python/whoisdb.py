@@ -128,6 +128,9 @@ class _whoisobject(object):
     d2 = other.d.copy()
     del d1['ch']
     del d2['ch']
+    if 'pn' in d1 and 'pn' in d2:
+      d1['pn'] = [ d1['pn'][0].lower() ]
+      d2['pn'] = [ d2['pn'][0].lower() ]
     return d1.__cmp__(d2)
 
 class Person(_whoisobject):
