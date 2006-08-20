@@ -165,7 +165,7 @@ class Person(_whoisobject):
       id = self.id
       self.key = h
       self.d['nh'] = [ h ]
-      print "Allocated handle", h, "for", self.d['pn'][0]
+      #print "Allocated handle", h, "for", self.d['pn'][0]
   def insert(self):
     o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,name,email,'
@@ -691,6 +691,8 @@ class Main:
 
     print "Domains:", self.ndom
     print "Persons:", self.nperson
-    print "Ambiguous contacts:", self.ambig
-    print "Invalid contacts:", self.inval
+    if self.ambig:
+      print "Ambiguous contacts:", self.ambig
+    if self.inval:
+      print "Invalid contacts:", self.inval
     self._reset()
