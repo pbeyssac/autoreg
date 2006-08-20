@@ -39,6 +39,8 @@ def addrmake(a):
 
 def addrsplit(ta):
   """Make a None-padded list of length 6 from a newline-separated string."""
+  if ta.endswith('\n'):
+    ta = ta[:-1]
   a = ta.split('\n')
   for i in range(len(a)):
     if a[i] == '': a[i] = None
