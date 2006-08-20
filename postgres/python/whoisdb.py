@@ -72,8 +72,7 @@ def from_ripe(o, attrlist):
     if not k in attrlist:
       dlist.append(k)
       if not k in ['so', 'mb']:
-        print o
-        print "ignoring attribute %s: %s" % (k, o[k])
+        print "Ignoring attribute %s: %s" % (k, o[k])
   # cleanup ignored attributes
   for k in dlist:
     del o[k]
@@ -82,14 +81,12 @@ def from_ripe(o, attrlist):
     minl, maxl = mm
     if not k in o:
       if minl > 0:
-        print o
-        print "missing attribute %s" % ripe_stol[k]
+        print "Missing attribute %s" % ripe_stol[k]
         raise Error
       o[k] = [ None ]
     else:
       if not (minl <= len(o[k]) <= maxl):
-        print o
-        print "attribute %s found %d times, should appear %d to %d time(s)" % \
+        print "Attribute %s found %d times, should appear %d to %d time(s)" % \
               (ripe_stol[k], len(o[k]), minl, maxl)
         o[k] = o[k][:maxl]
   if len(o['ad']) < 6:
