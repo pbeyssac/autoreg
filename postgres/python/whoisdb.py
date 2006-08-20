@@ -600,6 +600,7 @@ class Main:
   def parsefile(self, file, encoding='ISO-8859-1', commit=True, chkdup=False):
     o = {}
     persons = {}
+    nohandle = []
     dodel = False
     self._dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
     self._dbh.autocommit(0)
@@ -612,7 +613,11 @@ class Main:
       if self.white_re.search(l) and len(o):
         # white line or empty line and o is not empty:
         # end of object, process then cleanup for next object.
-        self.process(o, dodel, persons)
+	if not dodel and 'pn' in o and not 'nh' in o:
+	  # keep for later allocation to avoid clashes
+	  nohandle.append(o)
+	else:
+          self.process(o, dodel, persons)
         o = {}
         dodel = False
         continue
@@ -643,7 +648,14 @@ class Main:
     # end of file
     if len(o):
       # end of file: process last object
-      self.process(o, dodel, persons)
+      if not dodel and 'pn' in o and not 'nh' in o:
+	# keep for later allocation to avoid clashes
+	nohandle.append(o)
+      else:
+        self.process(o, dodel, persons)
+
+    for p in nohandle
+      self.process(p, False, persons)
 
     # XXX: special case: duplicate contact record for a new domain;
     # typically the first one is the administrative contact,
