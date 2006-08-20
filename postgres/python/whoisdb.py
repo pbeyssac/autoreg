@@ -148,7 +148,6 @@ class Person(_whoisobject):
     self._set_key()
   def allocate_handle(self):
     if (not 'nh' in self.d) or self.d['nh'][0] == None:
-      #self._dbc.execute('START TRANSACTION ISOLATION LEVEL SERIALIZABLE')
       l = mkinitials(self.d['pn'][0])
 
       # Find the highest allocated handle with the same initials
@@ -166,9 +165,6 @@ class Person(_whoisobject):
       id = self.id
       self.key = h
       self.d['nh'] = [ h ]
-      self._dbc.execute('UPDATE contacts SET handle=%s WHERE id=%d', (h, id))
-      assert self._dbc.rowcount == 1
-      #self._dbc.execute('COMMIT TRANSACTION')
       print "Allocated handle", h, "for", self.d['pn'][0]
   def insert(self):
     o = self.d
@@ -479,7 +475,7 @@ class Main:
     self._dbc = dbh.cursor()
     self._lookup = Lookup(self._dbc)
     self._reset()
-  def process(self, o, dodel, halloc, persons=None):
+  def process(self, o, dodel, persons=None):
     if persons == None:
       persons = {}
     if o.has_key('XX'):
@@ -562,11 +558,10 @@ class Main:
         lp = self._lookup.persons_by_name(name)
         if len(lp) == 0:
           # not found, insert
+	  ct.allocate_handle()
           ct.insert()
 	  print "Object created:"
 	  ct.display()
-	  # keep for handle allocation
-	  halloc.append(ct)
 	  # keep for contact assignment
 	  persons[name].append(ct)
         else:
@@ -586,11 +581,10 @@ class Main:
             o['nh'] = [ None ];
           else:
             # not found, insert
+            ct.allocate_handle()
             ct.insert()
 	    print "Object created:"
 	    ct.display()
-	    # keep for handle allocation
-	    halloc.append(ct)
 	    # keep for contact assignment
 	    persons[name].append(ct)
     elif o.has_key('mt'):
@@ -605,7 +599,6 @@ class Main:
 
   def parsefile(self, file, encoding='ISO-8859-1', commit=True, chkdup=False):
     o = {}
-    halloc = []
     persons = {}
     dodel = False
     self._dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
@@ -619,7 +612,7 @@ class Main:
       if self.white_re.search(l) and len(o):
         # white line or empty line and o is not empty:
         # end of object, process then cleanup for next object.
-        self.process(o, dodel, halloc, persons)
+        self.process(o, dodel, persons)
         o = {}
         dodel = False
         continue
@@ -650,7 +643,7 @@ class Main:
     # end of file
     if len(o):
       # end of file: process last object
-      self.process(o, dodel, halloc, persons)
+      self.process(o, dodel, persons)
 
     # XXX: special case: duplicate contact record for a new domain;
     # typically the first one is the administrative contact,
@@ -690,10 +683,6 @@ class Main:
 	ld.display()
         self.ambig += ambig
         self.inval += inval
-
-    # now allocate missing handles
-    for i in halloc:
-      i.allocate_handle()
 
     if commit:
 	self._dbh.commit()
