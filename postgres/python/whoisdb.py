@@ -7,6 +7,7 @@ import mx
 
 _tv6 = sre.compile('^(\S+)\s*(\d\d)(\d\d)(\d\d)$')
 _tv8 = sre.compile('^(\S+)\s*(\d\d\d\d)(\d\d)(\d\d)$')
+handlesuffix = '-FREE'
 
 def parse_changed(timeval):
   ma = _tv6.search(timeval)
@@ -53,7 +54,7 @@ ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
               'changed': 'ch', 'remark': 'rm', 'nic-hdl': 'nh',
               'notify': 'ny', 'mnt-by': 'mb', 'source': 'so',
               'upd-to': 'dt', 'auth': 'at', 'mntner': 'mt',
-              'domain': 'dn' }
+              'domain': 'dn', 'ext-hdl': 'eh' }
 ripe_stol = dict((v, k) for k, v in ripe_ltos.iteritems())
 
 domainattrs = {'dn': (1, 1), 'ad': (0,7),
@@ -61,7 +62,7 @@ domainattrs = {'dn': (1, 1), 'ad': (0,7),
 
 personattrs = {'pn': (0,1), 'ad': (0,6),
                'ph': (0,1), 'fx': (0,1),
-               'em': (0,1), 'ch': (1,1), 'nh': (0,1)}
+               'em': (0,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
 
 contact_map = { 'technical': 'tc', 'administrative': 'ac', 'zone': 'zc',
                 'registrant': 'rc' }
@@ -78,6 +79,9 @@ def from_ripe(o, attrlist):
   # cleanup ignored attributes
   for k in dlist:
     del o[k]
+  if 'nh' in o and not o['nh'][0].endswith(handlesuffix):
+    o['eh'] = o['nh']
+    del o['nh']
   # check attribute constraints
   for k, mm in attrlist.iteritems():
     minl, maxl = mm
@@ -133,7 +137,6 @@ class _whoisobject(object):
     return d1.__cmp__(d2)
 
 class Person(_whoisobject):
-  _suffix = "-FREE"
   def __init__(self, dbc, id=None, key=None):
     self._dbc = dbc
     self.id = id
@@ -156,24 +159,24 @@ class Person(_whoisobject):
       self._dbc.execute("SELECT CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
 			" FROM contacts WHERE handle SIMILAR TO '%s[0-9]+%s'"
 			" ORDER BY CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
-			" DESC LIMIT 1" % (l, self._suffix))
+			" DESC LIMIT 1" % (l, handlesuffix))
       assert 0 <= self._dbc.rowcount <= 1
       if self._dbc.rowcount == 0:
         i = 1
       else:
         i, = self._dbc.fetchone()
         i += 1
-      h = "%s%d%s" % (l, i, self._suffix)
+      h = "%s%d%s" % (l, i, handlesuffix)
       id = self.id
       self.key = h
       self.d['nh'] = [ h ]
       #print "Allocated handle", h, "for", self.d['pn'][0]
   def insert(self):
     o = self.d
-    self._dbc.execute('INSERT INTO contacts (handle,name,email,'
+    self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
                       'addr,phone,fax,updated_by,updated_on) '
-                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
-                      (o['nh'][0], o['pn'][0], o['em'][0],
+                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                      (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        o['ch'][0][0], str(o['ch'][0][1])))
     assert self._dbc.rowcount == 1
@@ -186,18 +189,19 @@ class Person(_whoisobject):
                       (self.id,))
     assert self._dbc.rowcount == 1
     self._dbc.execute('INSERT INTO contacts_hist '
-                      ' (contact_id,handle,name,email,addr,'
+                      ' (contact_id,handle,exthandle,name,email,addr,'
                       '  phone,fax,passwd,updated_by,updated_on,deleted_on)'
-                      ' SELECT id,handle,name,email,addr,'
+                      ' SELECT id,handle,exthandle,name,email,addr,'
                       '  phone,fax,passwd,updated_by,updated_on,NOW()'
                       ' FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
   def _update(self):
     o = self.d
-    self._dbc.execute('UPDATE contacts SET handle=%s,name=%s,email=%s,'
+    self._dbc.execute('UPDATE contacts SET handle=%s,exthandle=%s,'
+		      'name=%s,email=%s,'
                       'addr=%s,phone=%s,fax=%s,updated_by=%s,updated_on=%s '
                       'WHERE id=%d',
-                      (o['nh'][0], o['pn'][0], o['em'][0],
+                      (o['nh'][0], o['eh'][0], o['pn'][0], o['em'][0],
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        o['ch'][0][0], str(o['ch'][0][1]), self.id))
     assert self._dbc.rowcount == 1
@@ -210,12 +214,12 @@ class Person(_whoisobject):
     assert self._dbc.rowcount == 1
   def fetch(self):
     assert self.id != None
-    self._dbc.execute('SELECT handle,name,email,addr,'
+    self._dbc.execute('SELECT handle,exthandle,name,email,addr,'
                       ' phone,fax,updated_by,updated_on '
                       'FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
     d = {}
-    (d['nh'], d['pn'], d['em'],
+    (d['nh'], d['eh'], d['pn'], d['em'],
      addr,
      d['ph'], d['fx'], chb, cho) = self._dbc.fetchone()
     for k in d.keys():
@@ -226,7 +230,7 @@ class Person(_whoisobject):
     self._set_key()
   def display(self, out=sys.stdout, title='person'):
     d = self.d
-    for i in ['pn', 'nh', 'ad', 'ph', 'fx', 'em', 'ch']:
+    for i in ['pn', 'nh', 'eh', 'ad', 'ph', 'fx', 'em', 'ch']:
       if i == 'pn':
         l = title
       else:
@@ -385,10 +389,16 @@ class Domain(_whoisobject):
 	# XXX: "... AND email IS NOT NULL" is a hack
 	# to exclude "registrant" contacts while (temporarily)
 	# allowing regular contacts without an email.
-        self._dbc.execute('SELECT id FROM contacts'
-                          ' WHERE (lower(contacts.name)=%s'
-			  ' AND email IS NOT NULL) OR handle=%s',
-                          (l.lower(), l.upper()))
+        if l.upper().endswith(handlesuffix):
+          self._dbc.execute('SELECT id FROM contacts'
+                            ' WHERE (lower(contacts.name)=%s'
+			    ' AND email IS NOT NULL) OR handle=%s',
+                            (l.lower(), l.upper()))
+	else:
+          self._dbc.execute('SELECT id FROM contacts'
+                            ' WHERE (lower(contacts.name)=%s'
+			    ' AND email IS NOT NULL) OR exthandle=%s',
+                            (l.lower(), l.upper()))
         # check the returned number of found lines and
         # issue an approriate warning message if it differs from 1.
         if self._dbc.rowcount == 0:
@@ -442,8 +452,12 @@ class Lookup:
       l.append(Person(self._dbc, id))
     return l
   def persons_by_handle(self, handle):
-    self._dbc.execute('SELECT id FROM contacts WHERE handle=%s',
-                      (handle.upper(),))
+    if handle.upper().endswith(handlesuffix):
+      self._dbc.execute('SELECT id FROM contacts WHERE handle=%s',
+                        (handle.upper(),))
+    else:
+      self._dbc.execute('SELECT id FROM contacts WHERE exthandle=%s',
+                        (handle.upper(),))
     return self._makelist()
   def persons_by_name(self, name):
     self._dbc.execute('SELECT id FROM contacts WHERE lower(name)=%s',
@@ -631,7 +645,8 @@ class Main:
 
   def _order(self, o, dodel, persons, nohandle, domains, forcechanged):
     """Handle reordering."""
-    if not dodel and 'pn' in o and not 'nh' in o:
+    if not dodel and 'pn' in o \
+	and (not 'nh' in o or not o['nh'][0].endswith(handlesuffix)):
       # updating or creation of a person object, no handle yet.
       # keep for later allocation to avoid clashes
       nohandle.append(o)

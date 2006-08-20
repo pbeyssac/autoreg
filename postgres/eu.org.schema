@@ -113,6 +113,7 @@ CREATE TABLE rrs_hist (
 CREATE TABLE contacts (
 	id SERIAL PRIMARY KEY,
 	handle varchar(20) UNIQUE,
+	exthandle varchar(20),
 	name varchar(255),
 	email varchar(80),
 	addr varchar(400),
@@ -124,6 +125,7 @@ CREATE TABLE contacts (
 );
 CREATE INDEX contacts_handle_index ON contacts(handle);
 CREATE INDEX contacts_name_index ON contacts(lower(name));
+CREATE INDEX contacts_exthandle_index ON contacts(exthandle);
 
 -- mostly static table for mapping contact type integer to a string
 -- see example rows below
@@ -165,6 +167,7 @@ CREATE TABLE domain_contact_hist (
 CREATE TABLE contacts_hist (
 	contact_id INTEGER,
 	handle varchar(20),
+	exthandle varchar(20),
 	name varchar(255),
 	email varchar(80),
 	addr varchar(400),
