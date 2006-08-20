@@ -467,7 +467,6 @@ class Main:
   longattr_re = sre.compile('^([a-z-]+):\s*(.*\S)\s*$')
   shortattr_re = sre.compile('^\*([a-zA-Z][a-zA-Z]):\s*(.*\S)\s*$')
   def _reset(self):
-    self.dom = {}
     self.ndom = 0
     self.nperson = 0
     self.ambig = 0
@@ -478,6 +477,7 @@ class Main:
     self._lookup = Lookup(self._dbc)
     self._reset()
   def process(self, o, dodel, persons=None):
+    """Handle object creation/updating/deletion."""
     if persons == None:
       persons = {}
     if o.has_key('XX'):
@@ -488,17 +488,45 @@ class Main:
 	    o['ch'][i] = parse_changed(o['ch'][i])
     if o.has_key('dn'):
       # domain object
+      i = o['dn'][0].upper()
       if dodel:
         # XXX: compare!
-        ld = self._lookup.domain_by_name(o['dn'])
+        ld = self._lookup.domain_by_name(i)
         if ld != None:
 	  print "Object deleted:"
 	  ld.display()
           ld.delete()
+	  return
+      from_ripe(o, domainattrs)
+      self.ndom += 1
+      ld = self._lookup.domain_by_name(i)
+      if ld != None:
+	# domain already exists
+        ld.fetch()
+        newdom = Domain(self._dbc, ld.id)
+        newdom.from_ripe(o, persons)
+	# compare with new object
+        if ld.d != newdom.d or ld.ct.d['ad'] != newdom.ct.d['ad']:
+	  # they differ, update database
+          print "Object updated from:"
+	  ld.display()
+          newdom.ct.id = ld.ct.id
+          newdom.update()
+          print "Object updated to:"
+	  newdom.display()
+	else:
+	  print "Object already exists:"
+	  ld.display()
       else:
-        from_ripe(o, domainattrs)
-        self.dom[o['dn'][0].upper()] = o
-        self.ndom += 1
+	# make domain object
+        ld = Domain(self._dbc)
+        ambig, inval = ld.from_ripe(o, persons)
+	# store to database
+        ld.insert()
+        print "Object created:"
+	ld.display()
+        self.ambig += ambig
+        self.inval += inval
     elif o.has_key('pn'):
       # person object
       self.nperson += 1
@@ -599,10 +627,25 @@ class Main:
       print >>sys.stderr, "Unknown object type"
       print str(o)
 
+  def _order(self, o, dodel, persons, nohandle, domains):
+    """Handle reordering."""
+    if not dodel and 'pn' in o and not 'nh' in o:
+      # updating or creation of a person object, no handle yet.
+      # keep for later allocation to avoid clashes
+      nohandle.append(o)
+    elif not dodel and 'dn' in o:
+      # keep domains for handling at the end
+      domains[o['dn'][0].upper()] = o
+    else:
+      # process everything else as we go
+      self.process(o, dodel, persons)
+
   def parsefile(self, file, encoding='ISO-8859-1', commit=True, chkdup=False):
+    """Parse file and reorder objects before calling process()."""
     o = {}
     persons = {}
     nohandle = []
+    domains = {}
     dodel = False
     self._dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
     self._dbh.autocommit(0)
@@ -615,11 +658,7 @@ class Main:
       if self.white_re.search(l) and len(o):
         # white line or empty line and o is not empty:
         # end of object, process then cleanup for next object.
-	if not dodel and 'pn' in o and not 'nh' in o:
-	  # keep for later allocation to avoid clashes
-	  nohandle.append(o)
-	else:
-          self.process(o, dodel, persons)
+	self._order(o, dodel, persons, nohandle, domains)
         o = {}
         dodel = False
         continue
@@ -650,11 +689,7 @@ class Main:
     # end of file
     if len(o):
       # end of file: process last object
-      if not dodel and 'pn' in o and not 'nh' in o:
-	# keep for later allocation to avoid clashes
-	nohandle.append(o)
-      else:
-        self.process(o, dodel, persons)
+      self._order(o, dodel, persons, nohandle, domains)
 
     for p in nohandle:
       self.process(p, False, persons)
@@ -671,32 +706,8 @@ class Main:
 
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
-    for i in sorted(self.dom.keys()):
-      ld = self._lookup.domain_by_name(i)
-      if ld != None:
-	# domain already exists
-        ld.fetch()
-        newdom = Domain(self._dbc, ld.id)
-        newdom.from_ripe(self.dom[i], persons)
-	# compare with new object
-        if ld.d != newdom.d or ld.ct.d['ad'] != newdom.ct.d['ad']:
-	  # they differ, update database
-          print "Object updated from:"
-	  ld.display()
-          newdom.ct.id = ld.ct.id
-          newdom.update()
-          print "Object updated to:"
-	  newdom.display()
-      else:
-	# make domain object
-        ld = Domain(self._dbc)
-        ambig, inval = ld.from_ripe(self.dom[i], persons)
-	# store to database
-        ld.insert()
-        print "Object created:"
-	ld.display()
-        self.ambig += ambig
-        self.inval += inval
+    for i in sorted(domains.keys()):
+      self.process(domains[i], False, persons)
 
     if commit:
 	self._dbh.commit()
