@@ -25,20 +25,20 @@ class Msg:
 	    if m:
 		msgid, st = m.groups()
 		st = self.unquote(st)
-		if self.m[lang].has_key(msgid):
+		if msgid in self.m[lang]:
 		    raise MsgError('Duplicate key', msgid)
 		self.m[lang][msgid] = st
 		continue
 	    m = self.lang_re.search(l)
 	    if m:
 		lang, = m.groups()
-		if not self.m.has_key(lang):
+		if not lang in self.m:
 		    self.m[lang] = {}
 		continue
 	    m = self.lang_default_re.search(l)
 	    if m:
 		lang = ''
-		if not self.m.has_key(lang):
+		if not lang in self.m:
 		    self.m[lang] = {}
 		continue
 	    raise MsgError('Bad line', l)
@@ -56,6 +56,6 @@ class Msg:
 	    m = s.find('\\', m)
 	return s
     def f(self, id, args):
-	if not self.m.has_key(self.curlang):
+	if not self.curlang in self.m:
 	  return self.m[''][id] % args
 	return self.m[self.curlang][id] % args

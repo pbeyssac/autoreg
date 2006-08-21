@@ -532,18 +532,18 @@ class Main:
     """Handle object creation/updating/deletion."""
     if persons == None:
       persons = {}
-    if o.has_key('XX'):
+    if 'XX' in o:
       # deleted object, ignore
       return
     if forcechanged != None:
       o['ch'] = [ forcechanged ]
-    elif o.has_key('ch'):
+    elif 'ch' in o:
       for i in range(len(o['ch'])):
 	email, t = parse_changed(o['ch'][i])
 	if (email, t) == (None, None):
 	  return
 	o['ch'][i] = email, t
-    if o.has_key('dn'):
+    if 'dn' in o:
       # domain object
       i = o['dn'][0].upper()
       if dodel:
@@ -593,7 +593,7 @@ class Main:
 	ld.display()
         self.ambig += ambig
         self.inval += inval
-    elif o.has_key('pn'):
+    elif 'pn' in o:
       # person object
       self.nperson += 1
       ct = Person(self._dbc)
@@ -666,10 +666,10 @@ class Main:
 	ct.display()
 	# keep for contact assignment
 	persons[name].append(ct)
-    elif o.has_key('mt'):
+    elif 'mt' in o:
       # maintainer object, ignore
       pass
-    elif o.has_key('XX'):
+    elif 'XX' in o:
       # deleted object, ignore
       pass
     else:
@@ -743,7 +743,7 @@ class Main:
 	# mark for deletion
         dodel = True
       else:
-        if o.has_key(a):
+        if a in o:
 	  # multi-valued attribute
           o[a].append(v)
         else:
