@@ -69,6 +69,7 @@ contact_map = { 'technical': 'tc', 'administrative': 'ac', 'zone': 'zc',
 contact_map_rev = dict((v, k) for k, v in contact_map.iteritems())
 
 def from_ripe(o, attrlist):
+  """Check and convert from RIPE-style attributes."""
   # find ignored attributes, warn
   dlist = []
   for k in o:
@@ -125,6 +126,10 @@ def mkinitials(name):
 
 class _whoisobject(object):
   def __cmp__(self, other):
+    """Customized compare function:
+	- ignore 'ch' entries
+	- case-insensitive compare on 'pn'
+    """
     if not isinstance(other, type(self)):
       return id(self).__cmp__(id(other))
     d1 = self.d.copy()
@@ -148,6 +153,7 @@ class Person(_whoisobject):
     else:
       self.key = self.d['pn'][0]
   def from_ripe(self, o):
+    """Fill from RIPE-style attributes."""
     from_ripe(o, personattrs)
     self.d = o
     self._set_key()
@@ -172,6 +178,7 @@ class Person(_whoisobject):
       self.d['nh'] = [ h ]
       #print "Allocated handle", h, "for", self.d['pn'][0]
   def insert(self):
+    """Create in database."""
     o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
                       'addr,phone,fax,updated_by,updated_on) '
@@ -184,6 +191,7 @@ class Person(_whoisobject):
     self.id, = self._dbc.fetchone()
     assert self._dbc.rowcount == 1
   def _copyrecord(self):
+    """Copy record to history."""
     assert self.id != None
     self._dbc.execute('SELECT * FROM contacts WHERE id=%d FOR UPDATE',
                       (self.id,))
@@ -196,6 +204,7 @@ class Person(_whoisobject):
                       ' FROM contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
   def _update(self):
+    """Write back to database."""
     o = self.d
     self._dbc.execute('UPDATE contacts SET handle=%s,exthandle=%s,'
 		      'name=%s,email=%s,'
@@ -206,13 +215,16 @@ class Person(_whoisobject):
                        o['ch'][0][0], str(o['ch'][0][1]), self.id))
     assert self._dbc.rowcount == 1
   def update(self):
+    """Write back to database, keeping history."""
     self._copyrecord()
     self._update()
   def delete(self):
+    """Delete from database, keeping history."""
     self._copyrecord()
     self._dbc.execute('DELETE contacts WHERE id=%d', (self.id,))
     assert self._dbc.rowcount == 1
   def fetch(self):
+    """Read from database."""
     assert self.id != None
     self._dbc.execute('SELECT handle,exthandle,name,email,addr,'
                       ' phone,fax,updated_by,updated_on '
@@ -255,6 +267,7 @@ class Domain(_whoisobject):
     self.d = d
     self.id = id
   def from_ripe(self, o, prefs=None):
+    """Fill from RIPE-style attributes."""
     from_ripe(o, domainattrs)
     o['dn'][0] = o['dn'][0].upper()
     # Create a "registrant" contact, storing the address lines
@@ -270,6 +283,7 @@ class Domain(_whoisobject):
     self.ct.from_ripe(c)
     return self.resolve_contacts(prefs)
   def _copyrecords(self):
+    """Copy record to history."""
     self._dbc.execute('INSERT INTO domain_contact_hist'
                       ' (whoisdomain_id,contact_id,contact_type_id,'
                       '  created_on,deleted_on)'
@@ -278,6 +292,7 @@ class Domain(_whoisobject):
                       '  FROM domain_contact WHERE whoisdomain_id=%d',
                       (self.id,))
   def update(self):
+    """Write back to database, keeping history."""
     assert self.id != None
     self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%d FOR UPDATE',
                       (self.id,))
@@ -291,8 +306,9 @@ class Domain(_whoisobject):
     self._copyrecords()
     self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%d',
                       (self.id,))
-    self.insert_domain_contact()
+    self._insert_domain_contact()
   def delete(self):
+    """Delete from database, keeping history."""
     assert self.id != None
     self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%d FOR UPDATE',
                       (self.id,))
@@ -309,7 +325,7 @@ class Domain(_whoisobject):
     self._dbc.execute('DELETE FROM whoisdomains WHERE id=%d',
                       (self.id,))
     assert self._dbc.rowcount == 1
-  def insert_domain_contact(self):
+  def _insert_domain_contact(self):
     """Create domain_contact records linking to all contacts."""
     o = self.d
     for i in [('tc','technical'), ('zc','zone'), ('ac','administrative')]:
@@ -333,6 +349,7 @@ class Domain(_whoisobject):
                       (self.id, self.ct.id, 'registrant'))
     assert self._dbc.rowcount == 1
   def insert(self):
+    """Create in database."""
     o = self.d
     domain = o['dn'][0]
     self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_by,updated_on) '
@@ -343,7 +360,7 @@ class Domain(_whoisobject):
     assert self._dbc.rowcount == 1
     did, = self._dbc.fetchone()
     self.id = did
-    self.insert_domain_contact()
+    self._insert_domain_contact()
   def fetch(self):
     self._dbc.execute('SELECT fqdn, updated_by, updated_on '
                       'FROM whoisdomains WHERE id=%d', (self.id,))
