@@ -20,12 +20,12 @@ def parse_changed(changed):
     else:
       y += 2000
   else:
-    ma = _tv8.search(timeval)
+    ma = _tv8.search(changed)
     if ma:
       email, y, m, d = ma.groups()
       y = int(y)
     else:
-      print "Cannot parse_changed:", timeval
+      print "Cannot parse_changed:", changed
       raise Error
   m = int(m)
   d = int(d)
