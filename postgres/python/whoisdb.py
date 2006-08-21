@@ -4,9 +4,10 @@ import sre
 
 import mx
 
+handlesuffix = '-FREE'
+
 _tv6 = sre.compile('^(\S+)\s*(\d\d)(\d\d)(\d\d)$')
 _tv8 = sre.compile('^(\S+)\s*(\d\d\d\d)(\d\d)(\d\d)$')
-handlesuffix = '-FREE'
 
 def parse_changed(changed):
   """Parse a RIPE-style changed: line."""
@@ -49,6 +50,13 @@ def addrsplit(ta):
     a.append(None)
   return a
 
+_lhandlesuffix = len(handlesuffix)
+
+def suffixadd(h):
+  return h + handlesuffix
+def suffixstrip(h):
+  return h[:-_lhandlesuffix]
+
 ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
               'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
               'changed': 'ch', 'remark': 'rm', 'nic-hdl': 'nh',
@@ -81,9 +89,12 @@ def from_ripe(o, attrlist):
   for k in dlist:
     del o[k]
   # move foreign NIC handle out of the way
-  if 'nh' in o and not o['nh'][0].endswith(handlesuffix):
-    o['eh'] = o['nh']
-    del o['nh']
+  if 'nh' in o:
+    if o['nh'][0].endswith(handlesuffix):
+      o['nh'][0] = suffixstrip(o['nh'][0])
+    else:
+      o['eh'] = o['nh']
+      del o['nh']
   # check attribute constraints
   ok = True
   for k, mm in attrlist.iteritems():
@@ -152,7 +163,7 @@ class Person(_whoisobject):
     self.d = {}
   def _set_key(self):
     if self.d['nh'][0] != None:
-      self.key = self.d['nh'][0]
+      self.key = suffixadd(self.d['nh'][0])
     else:
       self.key = self.d['pn'][0]
   def from_ripe(self, o):
@@ -169,20 +180,20 @@ class Person(_whoisobject):
 
       # Find the highest allocated handle with the same initials
       self._dbc.execute("SELECT CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
-			" FROM contacts WHERE handle SIMILAR TO '%s[0-9]+%s'"
+			" FROM contacts WHERE handle SIMILAR TO '%s[0-9]+'"
 			" ORDER BY CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
-			" DESC LIMIT 1" % (l, handlesuffix))
+			" DESC LIMIT 1" % (l,))
       assert 0 <= self._dbc.rowcount <= 1
       if self._dbc.rowcount == 0:
         i = 1
       else:
         i, = self._dbc.fetchone()
         i += 1
-      h = "%s%d%s" % (l, i, handlesuffix)
+      h = "%s%d" % (l, i)
       id = self.id
-      self.key = h
+      self.key = suffixadd(h)
       self.d['nh'] = [ h ]
-      #print "Allocated handle", h, "for", self.d['pn'][0]
+      #print "Allocated handle", self.key, "for", self.d['pn'][0]
   def insert(self):
     """Create in database."""
     self._allocate_handle()
@@ -262,6 +273,8 @@ class Person(_whoisobject):
       for j in d[i]:
         if i == 'ch':
           j = "%s %s" % j
+        elif i == 'nh':
+	  j = suffixadd(j)
         if j != None:
           print "%-12s %s" % (l+':', j)
     if not embed:
@@ -426,7 +439,7 @@ class Domain(_whoisobject):
           self._dbc.execute('SELECT id FROM contacts'
                             ' WHERE (lower(contacts.name)=%s'
 			    ' AND email IS NOT NULL) OR handle=%s',
-                            (l.lower(), l.upper()))
+                            (l.lower(), suffixstrip(l.upper())))
 	else:
           self._dbc.execute('SELECT id FROM contacts'
                             ' WHERE (lower(contacts.name)=%s'
@@ -488,7 +501,7 @@ class Lookup:
   def persons_by_handle(self, handle):
     if handle.upper().endswith(handlesuffix):
       self._dbc.execute('SELECT id FROM contacts WHERE handle=%s',
-                        (handle.upper(),))
+                        (suffixstrip(handle.upper()),))
     else:
       self._dbc.execute('SELECT id FROM contacts WHERE exthandle=%s',
                         (handle.upper(),))
@@ -604,7 +617,7 @@ class Main:
 	persons[name] = []
       if 'nh' in o and o['nh'][0] != None:
         # has a NIC handle, try to find if already in the base
-        handle = o['nh'][0].lower()
+        handle = suffixadd(o['nh'][0]).lower()
 	if not handle in persons:
 	  persons[handle] = []
         lp = self._lookup.persons_by_handle(handle)
