@@ -552,7 +552,7 @@ class Main:
 	# domain already exists
         ld.fetch()
         newdom = Domain(self._dbc, ld.id)
-        newdom.from_ripe(o, persons)
+        ambig, inval = newdom.from_ripe(o, persons)
 	# compare with new object
         if ld != newdom or ld.ct.d['ad'] != newdom.ct.d['ad']:
 	  # they differ, update database
@@ -562,6 +562,8 @@ class Main:
           newdom.update()
           print "Object updated to:"
 	  newdom.display()
+          self.ambig += ambig
+          self.inval += inval
 	else:
 	  print "Object already exists:"
 	  ld.display()
