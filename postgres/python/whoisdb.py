@@ -1,7 +1,6 @@
 #!/usr/local/bin/python
 
 import sre
-import sys
 
 import mx
 
@@ -26,7 +25,7 @@ def parse_changed(changed):
       y = int(y)
     else:
       print "Cannot parse_changed:", changed
-      raise Error
+      return None, None
   m = int(m)
   d = int(d)
   return email, mx.DateTime.DateTime(y, m, d)
@@ -86,12 +85,13 @@ def from_ripe(o, attrlist):
     o['eh'] = o['nh']
     del o['nh']
   # check attribute constraints
+  ok = True
   for k, mm in attrlist.iteritems():
     minl, maxl = mm
     if not k in o:
       if minl > 0:
         print "Missing attribute %s" % ripe_stol[k]
-        raise Error
+	ok = False
       o[k] = [ None ]
     else:
       if not (minl <= len(o[k]) <= maxl):
@@ -100,6 +100,7 @@ def from_ripe(o, attrlist):
         o[k] = o[k][:maxl]
   if len(o['ad']) < 6:
     o['ad'].extend([ None ] * (6-len(o['ad'])))
+  return ok
 
 _skipalnum = sre.compile('^[a-zA-Z0-9]+\s*(.*)')
 _skipword = sre.compile('^\S+\s+(.*)')
@@ -156,9 +157,11 @@ class Person(_whoisobject):
       self.key = self.d['pn'][0]
   def from_ripe(self, o):
     """Fill from RIPE-style attributes."""
-    from_ripe(o, personattrs)
+    if not from_ripe(o, personattrs):
+      return False
     self.d = o
     self._set_key()
+    return True
   def _allocate_handle(self):
     """Allocate ourselves a handle if we lack one."""
     if (not 'nh' in self.d) or self.d['nh'][0] == None:
@@ -244,7 +247,7 @@ class Person(_whoisobject):
     d['ch'] = [ (chb, cho) ]
     self.d = d
     self._set_key()
-  def display(self, out=sys.stdout, title='person', embed=False):
+  def display(self, title='person', embed=False):
     """Display contact, RIPE-style.
        embed selects display within domain for a registrant contact.
     """
@@ -260,9 +263,9 @@ class Person(_whoisobject):
         if i == 'ch':
           j = "%s %s" % j
         if j != None:
-          print >>out, "%-12s %s" % (l+':', j)
+          print "%-12s %s" % (l+':', j)
     if not embed:
-      print >>out
+      print
   
 class Domain(_whoisobject):
   def __init__(self, dbc, id=None, fqdn=None,
@@ -277,7 +280,8 @@ class Domain(_whoisobject):
     self.id = id
   def from_ripe(self, o, prefs=None):
     """Fill from RIPE-style attributes."""
-    from_ripe(o, domainattrs)
+    if not from_ripe(o, domainattrs):
+      return None
     o['dn'][0] = o['dn'][0].upper()
     # Create a "registrant" contact, storing the address lines
     # of the RIPE-style domain object.
@@ -289,7 +293,8 @@ class Domain(_whoisobject):
     c['ch'] = o['ch']
     self.d = o
     self.ct = Person(self._dbc)
-    self.ct.from_ripe(c)
+    if not self.ct.from_ripe(c):
+      return None
     return self.resolve_contacts(prefs)
   def _copyrecords(self):
     """Copy record to history."""
@@ -430,11 +435,11 @@ class Domain(_whoisobject):
         # check the returned number of found lines and
         # issue an approriate warning message if it differs from 1.
         if self._dbc.rowcount == 0:
-          print "Invalid %s contact '%s' for domain %s" % (contact_map_rev[k],
-							   l, self.d['dn'][0])
+          print "Invalid %s contact '%s' for domain %s" \
+		% (contact_map_rev[k], l, self.d['dn'][0])
           inval += 1
         elif self._dbc.rowcount > 1:
-          print "Ambiguous key '%s' for domain %s %s contact"\
+          print "Ambiguous key '%s' for domain %s %s contact" \
 		" resolves to %d records" % (l, self.d['dn'][0],
 					     contact_map_rev[k],
 					     self._dbc.rowcount)
@@ -455,11 +460,11 @@ class Domain(_whoisobject):
       for id in self.d[k]:
         dc[typ].append(Person(self._dbc, id))
     return dc
-  def display(self, out=sys.stdout):
-    print >>out, "%-12s %s" % ('domain:', self.d['dn'][0])
+  def display(self):
+    print "%-12s %s" % ('domain:', self.d['dn'][0])
     reg = Person(self._dbc, self.ct.id)
     reg.fetch()
-    reg.display(out, 'address', embed=True)
+    reg.display('address', embed=True)
     for t, l in [('tc','tech-c'),
                  ('ac','admin-c'),
                  ('zc','zone-c')]:
@@ -468,8 +473,8 @@ class Domain(_whoisobject):
       for c in self.d[t]:
         p = Person(self._dbc, c)
         p.fetch()
-        print >>out, "%-12s %s" % (l+':', p.key)
-    print >>out
+        print "%-12s %s" % (l+':', p.key)
+    print
 
 class Lookup:
   def __init__(self, dbc):
@@ -534,7 +539,10 @@ class Main:
       o['ch'] = [ forcechanged ]
     elif o.has_key('ch'):
       for i in range(len(o['ch'])):
-	o['ch'][i] = parse_changed(o['ch'][i])
+	email, t = parse_changed(o['ch'][i])
+	if (email, t) == (None, None):
+	  return
+	o['ch'][i] = email, t
     if o.has_key('dn'):
       # domain object
       i = o['dn'][0].upper()
@@ -552,7 +560,11 @@ class Main:
 	# domain already exists
         ld.fetch()
         newdom = Domain(self._dbc, ld.id)
-        ambig, inval = newdom.from_ripe(o, persons)
+        r = newdom.from_ripe(o, persons)
+	if r == None:
+	  # something incorrect in provided attributes
+	  return
+        ambig, inval = r
 	# compare with new object
         if ld != newdom or ld.ct.d['ad'] != newdom.ct.d['ad']:
 	  # they differ, update database
@@ -570,7 +582,11 @@ class Main:
       else:
 	# make domain object
         ld = Domain(self._dbc)
-        ambig, inval = ld.from_ripe(o, persons)
+        r = ld.from_ripe(o, persons)
+	if r == None:
+	  # something incorrect in provided attributes
+	  return
+        ambig, inval = r
 	# store to database
         ld.insert()
         print "Object created:"
@@ -581,7 +597,8 @@ class Main:
       # person object
       self.nperson += 1
       ct = Person(self._dbc)
-      ct.from_ripe(o)
+      if not ct.from_ripe(o):
+	return
       name = o['pn'][0].lower()
       if not name in persons:
 	persons[name] = []
@@ -656,7 +673,7 @@ class Main:
       # deleted object, ignore
       pass
     else:
-      print >>sys.stderr, "Unknown object type"
+      print "Unknown object type"
       print str(o)
 
   def _order(self, o, dodel, persons, nohandle, domains, forcechanged):
@@ -714,10 +731,13 @@ class Main:
         a, v = m.groups()
       else:
         m = self.longattr_re.search(l)
-        assert m
+	if not m:
+	  print "Unrecognized line:", l
+	  continue
         a, v = m.groups()
-        if not ripe_ltos.has_key(a):
-          raise Error
+        if not a in ripe_ltos:
+          print "Unrecognized attribute:", a
+	  continue
         a = ripe_ltos[a]
       if a == 'delete':
 	# mark for deletion
