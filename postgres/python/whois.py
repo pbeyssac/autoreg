@@ -75,7 +75,7 @@ def handleclient(c, a):
       r = c.revc(256)
     c.close()
 
-def query(a, out, encoding='ISO-8859-1'):
+def query(a, out, encoding='ISO-8859-1', remote=True):
   dbh = psycopg.connect(conf.dbstring)
   dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
   l = whoisdb.Lookup(dbh.cursor())
@@ -97,6 +97,8 @@ def query(a, out, encoding='ISO-8859-1'):
   lp = l.persons_by_handle(a)
   if not lp:
     lp = l.persons_by_name(a)
+  if not lp and not remote and a.find('@') >= 0:
+    lp = l.persons_by_email(a)
   if not lp:
     print >>out, "Key not found"
     return
@@ -120,4 +122,4 @@ elif sys.argv[1] == '-d':
   else:
     print >>sys.stderr, "Daemon started"
 else:
-  query(sys.argv[1], sys.stdout)
+  query(sys.argv[1], sys.stdout, remote=False)

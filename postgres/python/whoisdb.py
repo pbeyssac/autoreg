@@ -492,6 +492,10 @@ class Lookup:
     self._dbc.execute('SELECT id FROM contacts WHERE lower(name)=%s' \
 		      ' AND email IS NOT NULL', (name.lower(),))
     return self._makelist()
+  def persons_by_email(self, email):
+    self._dbc.execute('SELECT id FROM contacts WHERE lower(email)=%s',
+		      (email.lower(),))
+    return self._makelist()
   def domain_by_name(self, name):
     name = name.upper()
     self._dbc.execute('SELECT id, updated_by, updated_on'
