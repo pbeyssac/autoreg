@@ -228,11 +228,13 @@ class Person(_whoisobject):
     d['ch'] = [ (chb, cho) ]
     self.d = d
     self._set_key()
-  def display(self, out=sys.stdout, title='person'):
+  def display(self, out=sys.stdout, title='person', showhandles=True):
     d = self.d
     for i in ['pn', 'nh', 'eh', 'ad', 'ph', 'fx', 'em', 'ch']:
       if i == 'pn':
         l = title
+      elif i in ['nh', 'eh'] and not showhandles:
+	continue
       else:
         l = ripe_stol[i]
       for j in d[i]:
@@ -322,6 +324,7 @@ class Domain(_whoisobject):
                           ' (SELECT id FROM contact_types WHERE name=%s))',
                           (self.id, v, full))
         assert self._dbc.rowcount == 1
+    self.ct.allocate_handle()
     self.ct.insert()
     self._dbc.execute("INSERT INTO domain_contact "
                       "(whoisdomain_id,contact_id,contact_type_id) "
@@ -431,7 +434,7 @@ class Domain(_whoisobject):
     print >>out, "%-12s %s" % ('domain:', self.d['dn'][0])
     reg = Person(self._dbc, self.ct.id)
     reg.fetch()
-    reg.display(out, 'address')
+    reg.display(out, 'address', showhandles=False)
     for t, l in [('tc','tech-c'),
                  ('ac','admin-c'),
                  ('zc','zone-c')]:
