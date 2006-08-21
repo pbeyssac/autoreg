@@ -9,8 +9,9 @@ _tv6 = sre.compile('^(\S+)\s*(\d\d)(\d\d)(\d\d)$')
 _tv8 = sre.compile('^(\S+)\s*(\d\d\d\d)(\d\d)(\d\d)$')
 handlesuffix = '-FREE'
 
-def parse_changed(timeval):
-  ma = _tv6.search(timeval)
+def parse_changed(changed):
+  """Parse a RIPE-style changed: line."""
+  ma = _tv6.search(changed)
   if ma:
     email, y, m, d = ma.groups()
     y = int(y)
@@ -80,6 +81,7 @@ def from_ripe(o, attrlist):
   # cleanup ignored attributes
   for k in dlist:
     del o[k]
+  # move foreign NIC handle out of the way
   if 'nh' in o and not o['nh'][0].endswith(handlesuffix):
     o['eh'] = o['nh']
     del o['nh']
@@ -158,6 +160,7 @@ class Person(_whoisobject):
     self.d = o
     self._set_key()
   def allocate_handle(self):
+    """Allocate ourselves a handle if we lack one."""
     if (not 'nh' in self.d) or self.d['nh'][0] == None:
       l = mkinitials(self.d['pn'][0])
 
