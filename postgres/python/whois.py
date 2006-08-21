@@ -82,7 +82,7 @@ def query(a, out, encoding='ISO-8859-1', remote=True):
   d = l.domain_by_name(a)
   if d != None:
     dc = d.get_contacts()
-    d.display(out)
+    d.display()
     pdone = []
     for k in ['technical', 'administrative', 'zone']:
       if not k in dc:
@@ -90,7 +90,7 @@ def query(a, out, encoding='ISO-8859-1', remote=True):
       for p in dc[k]:
         p.fetch()
         if not p.key in pdone:
-          p.display(out)
+          p.display()
           pdone.append(p.key)
     return
 
@@ -104,7 +104,7 @@ def query(a, out, encoding='ISO-8859-1', remote=True):
     return
   for p in lp:
     p.fetch()
-    p.display(out)
+    p.display()
 
 if len(sys.argv) > 2:
   print >>sys.stderr, "Usage: %s [-d | query]" % sys.argv[0]
