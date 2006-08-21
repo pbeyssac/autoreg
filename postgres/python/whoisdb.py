@@ -489,8 +489,8 @@ class Lookup:
                         (handle.upper(),))
     return self._makelist()
   def persons_by_name(self, name):
-    self._dbc.execute('SELECT id FROM contacts WHERE lower(name)=%s',
-                      (name.lower(),))
+    self._dbc.execute('SELECT id FROM contacts WHERE lower(name)=%s' \
+		      ' AND email IS NOT NULL', (name.lower(),))
     return self._makelist()
   def domain_by_name(self, name):
     name = name.upper()
