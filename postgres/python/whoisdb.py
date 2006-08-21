@@ -159,7 +159,7 @@ class Person(_whoisobject):
     from_ripe(o, personattrs)
     self.d = o
     self._set_key()
-  def allocate_handle(self):
+  def _allocate_handle(self):
     """Allocate ourselves a handle if we lack one."""
     if (not 'nh' in self.d) or self.d['nh'][0] == None:
       l = mkinitials(self.d['pn'][0])
@@ -182,6 +182,7 @@ class Person(_whoisobject):
       #print "Allocated handle", h, "for", self.d['pn'][0]
   def insert(self):
     """Create in database."""
+    self._allocate_handle()
     o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
                       'addr,phone,fax,updated_by,updated_on) '
@@ -343,7 +344,6 @@ class Domain(_whoisobject):
                           ' (SELECT id FROM contact_types WHERE name=%s))',
                           (self.id, v, full))
         assert self._dbc.rowcount == 1
-    self.ct.allocate_handle()
     self.ct.insert()
     self._dbc.execute("INSERT INTO domain_contact "
                       "(whoisdomain_id,contact_id,contact_type_id) "
@@ -536,7 +536,6 @@ class Main:
 	  ld.display()
           ld.delete()
 	  return
-      from_ripe(o, domainattrs)
       self.ndom += 1
       ld = self._lookup.domain_by_name(i)
       if ld != None:
@@ -571,42 +570,37 @@ class Main:
       self.nperson += 1
       ct = Person(self._dbc)
       ct.from_ripe(o)
+      name = o['pn'][0].lower()
+      if not name in persons:
+	persons[name] = []
       if 'nh' in o and o['nh'][0] != None:
         # has a NIC handle, try to find if already in the base
         handle = o['nh'][0].lower()
-	name = o['pn'][0].lower()
-	if not name in persons:
-	  persons[name] = []
 	if not handle in persons:
 	  persons[handle] = []
         lp = self._lookup.persons_by_handle(handle)
         assert len(lp) <= 1
         if len(lp) == 1:
+	  c = lp[0]
           # found, compare
-          lp[0].fetch()
-          if lp[0] != ct:
-            if not dodel:
-	      print "Object updated from:"
-	      lp[0].display()
-	      print "Object updated to:"
-	      ct.id = lp[0].id
-	      ct.display()
-              ct.update()
-	      # keep for contact assignment
-	      persons[handle].append(ct)
-	      persons[name].append(ct)
-            else:
+          c.fetch()
+	  if dodel:
+	    if ct != c:
               print "Cannot delete: not the same object"
-          else:
-            if dodel:
-	      print "Object deleted:"
-	      lp[0].display()
-              lp[0].delete()
 	    else:
+	      print "Object deleted:"
+	      ct.display()
+              ct.delete()
+          else:
+            if ct != c:
+	      print "Object updated from:"
+	      c.display()
+	      print "Object updated to:"
+	      ct.id = c.id
+              ct.update()
+            else:
+	      ct = c
 	      print "Object already exists:"
-	      lp[0].display()
-	      persons[handle].append(lp[0])
-	      persons[name].append(lp[0])
         else:
           # not found
           if dodel:
@@ -614,48 +608,34 @@ class Main:
           else:
             ct.insert()
 	    print "Object created:"
-	    ct.display()
-	    # keep for contact assignment
-	    persons[handle].append(ct)
-	    persons[name].append(ct)
-      else:
-        assert 'pn' in o and o['pn'] != None
-        # no handle, try to find by name
-        name = o['pn'][0].lower()
-	if not name in persons:
-	  persons[name] = []
-        lp = self._lookup.persons_by_name(name)
-        if len(lp) == 0:
-          # not found, insert
-	  ct.allocate_handle()
-          ct.insert()
-	  print "Object created:"
+	if not dodel:
 	  ct.display()
 	  # keep for contact assignment
+	  persons[handle].append(ct)
 	  persons[name].append(ct)
-        else:
-          # try to find if a similar object exists
-          for c in lp:
+      else:
+        # XXX: dodel == True is not handled!
+        # no handle, try to find by name
+        lp = self._lookup.persons_by_name(name)
+        # try to find if a similar object exists
+        for c in lp:
             c.fetch()
             # temporarily copy handle from found object
             o['nh'] = c.d['nh']
             if ct == c:
               # found, stop
-	      # keep for contact assignment
-	      persons[name].append(c)
+	      ct = c
 	      print "Object already exists:"
-	      c.display()
               break
             # clear copied handle
             o['nh'] = [ None ];
-          else:
+        else:
             # not found, insert
-            ct.allocate_handle()
             ct.insert()
 	    print "Object created:"
-	    ct.display()
-	    # keep for contact assignment
-	    persons[name].append(ct)
+	ct.display()
+	# keep for contact assignment
+	persons[name].append(ct)
     elif o.has_key('mt'):
       # maintainer object, ignore
       pass
