@@ -613,8 +613,9 @@ class Main:
 	  # keep for contact assignment
 	  persons[handle].append(ct)
 	  persons[name].append(ct)
+      elif dodel:
+	print "Cannot delete: no handle provided"
       else:
-        # XXX: dodel == True is not handled!
         # no handle, try to find by name
         lp = self._lookup.persons_by_name(name)
         # try to find if a similar object exists
