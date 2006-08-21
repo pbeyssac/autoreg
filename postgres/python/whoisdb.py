@@ -244,12 +244,15 @@ class Person(_whoisobject):
     d['ch'] = [ (chb, cho) ]
     self.d = d
     self._set_key()
-  def display(self, out=sys.stdout, title='person', showhandles=True):
+  def display(self, out=sys.stdout, title='person', embed=False):
+    """Display contact, RIPE-style.
+       embed selects display within domain for a registrant contact.
+    """
     d = self.d
     for i in ['pn', 'nh', 'eh', 'ad', 'ph', 'fx', 'em', 'ch']:
       if i == 'pn':
         l = title
-      elif i in ['nh', 'eh'] and not showhandles:
+      elif i in ['nh', 'eh'] and embed:
 	continue
       else:
         l = ripe_stol[i]
@@ -258,6 +261,8 @@ class Person(_whoisobject):
           j = "%s %s" % j
         if j != None:
           print >>out, "%-12s %s" % (l+':', j)
+    if not embed:
+      print >>out
   
 class Domain(_whoisobject):
   def __init__(self, dbc, id=None, fqdn=None,
@@ -454,7 +459,7 @@ class Domain(_whoisobject):
     print >>out, "%-12s %s" % ('domain:', self.d['dn'][0])
     reg = Person(self._dbc, self.ct.id)
     reg.fetch()
-    reg.display(out, 'address', showhandles=False)
+    reg.display(out, 'address', embed=True)
     for t, l in [('tc','tech-c'),
                  ('ac','admin-c'),
                  ('zc','zone-c')]:
@@ -464,6 +469,7 @@ class Domain(_whoisobject):
         p = Person(self._dbc, c)
         p.fetch()
         print >>out, "%-12s %s" % (l+':', p.key)
+    print >>out
 
 class Lookup:
   def __init__(self, dbc):

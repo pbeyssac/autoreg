@@ -83,7 +83,6 @@ def query(a, out, encoding='ISO-8859-1'):
   if d != None:
     dc = d.get_contacts()
     d.display(out)
-    print >>out
     pdone = []
     for k in ['technical', 'administrative', 'zone']:
       if not k in dc:
@@ -93,7 +92,6 @@ def query(a, out, encoding='ISO-8859-1'):
         if not p.key in pdone:
           p.display(out)
           pdone.append(p.key)
-          print >>out
     return
 
   lp = l.persons_by_handle(a)
@@ -105,7 +103,6 @@ def query(a, out, encoding='ISO-8859-1'):
   for p in lp:
     p.fetch()
     p.display(out)
-    print >>out
 
 if len(sys.argv) > 2:
   print >>sys.stderr, "Usage: %s [-d | query]" % sys.argv[0]
