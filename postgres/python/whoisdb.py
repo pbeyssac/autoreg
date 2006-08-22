@@ -8,9 +8,17 @@ handlesuffix = '-FREE'
 
 _tv6 = sre.compile('^(\S+)\s*(\d\d)(\d\d)(\d\d)$')
 _tv8 = sre.compile('^(\S+)\s*(\d\d\d\d)(\d\d)(\d\d)$')
+_notv = sre.compile('^(\S+)\s*$')
 
 def parse_changed(changed):
   """Parse a RIPE-style changed: line."""
+
+  # syntax extension: accept a changed line without a date
+  ma = _notv.search(changed)
+  if ma:
+    # no date, just an email
+    return ma.groups()[0], None
+
   ma = _tv6.search(changed)
   if ma:
     email, y, m, d = ma.groups()
@@ -115,7 +123,7 @@ def from_ripe(o, attrlist):
   if len(o['ad']) < 6:
     o['ad'].extend([ None ] * (6-len(o['ad'])))
   # If no created_on date, set from updated_on date
-  if not 'cr' in o:
+  if ok and not 'cr' in o:
     o['cr'] = [ o['ch'][0][1] ]
   return ok
 
@@ -147,7 +155,7 @@ def mkinitials(name):
 class _whoisobject(object):
   def __cmp__(self, other):
     """Customized compare function:
-	- ignore 'ch' entries
+	- ignore 'ch' and 'cr' entries
 	- case-insensitive compare on 'pn'
     """
     if not isinstance(other, type(self)):
@@ -156,6 +164,8 @@ class _whoisobject(object):
     d2 = other.d.copy()
     del d1['ch']
     del d2['ch']
+    del d1['cr']
+    del d2['cr']
     if 'pn' in d1 and 'pn' in d2:
       d1['pn'] = [ d1['pn'][0].lower() ]
       d2['pn'] = [ d2['pn'][0].lower() ]
@@ -560,6 +570,9 @@ class Main:
 	email, t = parse_changed(o['ch'][i])
 	if (email, t) == (None, None):
 	  return False
+	if t == None:
+	  # "changed:" line without a date
+	  t = self.now
 	o['ch'][i] = email, t
     if 'dn' in o:
       # domain object
@@ -733,12 +746,13 @@ class Main:
     self._dbh.autocommit(0)
     self._dbc.execute('START TRANSACTION ISOLATION LEVEL SERIALIZABLE')
 
+    # Get transaction date
+    self._dbc.execute("SELECT NOW()")
+    assert self._dbc.rowcount == 1
+    self.now, = self._dbc.fetchone()
+
     if forcechangedemail != None:
-      # Get transaction date and build our changed: line from it.
-      self._dbc.execute("SELECT NOW()")
-      now, = self._dbc.fetchone()
-      assert self._dbc.rowcount == 1
-      forcechanged = (forcechangedemail, now)
+      forcechanged = (forcechangedemail, self.now)
     else:
       forcechanged = None
 
