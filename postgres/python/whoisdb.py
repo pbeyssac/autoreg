@@ -431,7 +431,7 @@ class Domain(_whoisobject):
           newd[k].append(id)
 	  # rotate prefs
           prefs[ll] = prefs[ll][1:] + prefs[ll][:1]
-	  break
+	  continue
 	# XXX: "... AND email IS NOT NULL" is a hack
 	# to exclude "registrant" contacts while (temporarily)
 	# allowing regular contacts without an email.
