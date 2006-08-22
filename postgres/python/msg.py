@@ -42,13 +42,13 @@ class Msg:
 		    self.m[lang] = {}
 		continue
 	    raise MsgError('Bad line', l)
-    def unquote(self, str):
+    def unquote(self, s):
 	"""Unquote C-source style string. """
-	m = str.find('\\')
+	m = s.find('\\')
 	while m >= 0:
-	    b = str[:m]
-	    c = str[m+1]
-	    e = str[m+2:]
+	    b = s[:m]
+	    c = s[m+1]
+	    e = s[m+2:]
 	    if c == 'n': c = '\n'
 	    elif c == 'r': c = '\r'
 	    elif c == 't': c = '\t'
