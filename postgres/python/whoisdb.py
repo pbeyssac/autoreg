@@ -191,7 +191,6 @@ class Person(_whoisobject):
         i, = self._dbc.fetchone()
         i += 1
       h = "%s%d" % (l, i)
-      id = self.id
       self.key = suffixadd(h)
       self.d['nh'] = [ h ]
       #print "Allocated handle", self.key, "for", self.d['pn'][0]
@@ -470,9 +469,7 @@ class Domain(_whoisobject):
     dc = {}
     for k in 'tc', 'zc', 'ac':
       typ = contact_map_rev[k]
-      dc[typ] = []
-      for id in self.d[k]:
-        dc[typ].append(Person(self._dbc, id))
+      dc[typ] = [ Person(self._dbc, id) for id in self.d[k] ]
     return dc
   def display(self):
     print "%-12s %s" % ('domain:', self.d['dn'][0])
@@ -482,9 +479,7 @@ class Domain(_whoisobject):
     for t, l in [('tc','tech-c'),
                  ('ac','admin-c'),
                  ('zc','zone-c')]:
-      if not (t in self.d):
-        continue
-      for c in self.d[t]:
+      for c in self.d.get(t, []):
         p = Person(self._dbc, c)
         p.fetch()
         print "%-12s %s" % (l+':', p.key)
@@ -494,10 +489,7 @@ class Lookup:
   def __init__(self, dbc):
     self._dbc = dbc
   def _makelist(self):
-    l = []
-    for t in self._dbc.fetchall():
-      id, = t
-      l.append(Person(self._dbc, id))
+    l = [ Person(self._dbc, t[0]) for t in self._dbc.fetchall() ]
     return l
   def persons_by_handle(self, handle):
     if handle.upper().endswith(handlesuffix):
@@ -620,19 +612,13 @@ class Main:
       if not ct.from_ripe(o):
 	return False
       name = o['pn'][0].lower()
-      if not name in persons:
-	persons[name] = []
       if 'eh' in o and o['eh'][0] != None:
 	ehandle = o['eh'][0].lower()
-	if not ehandle in persons:
-	  persons[ehandle] = []
       else:
         ehandle = None
       if 'nh' in o and o['nh'][0] != None:
         # has a NIC handle, try to find if already in the base
         handle = suffixadd(o['nh'][0]).lower()
-	if not handle in persons:
-	  persons[handle] = []
         lp = self._lookup.persons_by_handle(handle)
         assert len(lp) <= 1
         if len(lp) == 1:
@@ -668,10 +654,9 @@ class Main:
 	if not dodel:
 	  ct.display()
 	  # keep for contact assignment
-	  persons[handle].append(ct)
-	  persons[name].append(ct)
-	  if ehandle != None:
-	    persons[ehandle].append(ct)
+	  persons.setdefault(handle, []).append(ct)
+	  persons.setdefault(name, []).append(ct)
+	  persons.setdefault(ehandle, []).append(ct)
       elif dodel:
 	print "ERROR: Cannot delete: no handle provided"
 	return False
@@ -696,9 +681,8 @@ class Main:
 	    print "Object created:"
 	ct.display()
 	# keep for contact assignment
-	persons[name].append(ct)
-	if ehandle != None:
-	  persons[ehandle].append(ct)
+	persons.setdefault(name, []).append(ct)
+	persons.setdefault(ehandle, []).append(ct)
     elif 'mt' in o:
       # maintainer object, ignore
       pass
@@ -783,12 +767,8 @@ class Main:
 	# mark for deletion
         dodel = True
       else:
-        if a in o:
-	  # multi-valued attribute
-          o[a].append(v)
-        else:
-	  # new attribute
-          o[a] = [v]
+	# new or multi-valued attribute
+        o.setdefault(a, []).append(v)
     # end of file
     if len(o):
       # end of file: process last object
