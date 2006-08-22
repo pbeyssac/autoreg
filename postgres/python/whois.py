@@ -13,6 +13,9 @@ maxforks = 5
 delay = 1
 port = 4343
 
+class SocketError(Exception):
+    pass
+
 class socketwrapper:
   def __init__(self, sock):
     self.s = sock
@@ -20,7 +23,7 @@ class socketwrapper:
     while buf:
       r = self.s.send(buf)
       if r < 0:
-	raise Error
+	raise SocketError('send')
       buf = buf[r:]
 
 def log(msg):
@@ -59,7 +62,7 @@ def daemon():
 
 def handleclient(c, a):
     w = socketwrapper(c)
-    ip, port = a
+    ip, cport = a
     c.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     q = ''
     r = c.recv(256)
@@ -68,7 +71,7 @@ def handleclient(c, a):
       i = q.find('\r\n')
       if i >= 0:
 	q = q[:i]
-	log("%s:%s %s" % (ip, port, q))
+	log("%s:%s %s" % (ip, cport, q))
 	query(q, w)
 	c.shutdown(socket.SHUT_WR)
 	break
@@ -106,20 +109,24 @@ def query(a, out, encoding='ISO-8859-1', remote=True):
     p.fetch()
     p.display()
 
-if len(sys.argv) > 2:
-  print >>sys.stderr, "Usage: %s [-d | query]" % sys.argv[0]
-  sys.exit(1)
-
-if len(sys.argv) < 2:
-  daemon()
-elif sys.argv[1] == '-d':
-  r = os.fork()
-  if r == 0:
-    daemon()
-  elif r == -1:
-    print >>sys.stderr, "Daemon start failed"
+def main():
+  if len(sys.argv) > 2:
+    print >>sys.stderr, "Usage: %s [-d | query]" % sys.argv[0]
     sys.exit(1)
+
+  if len(sys.argv) < 2:
+    daemon()
+  elif sys.argv[1] == '-d':
+    r = os.fork()
+    if r == 0:
+      daemon()
+    elif r == -1:
+      print >>sys.stderr, "Daemon start failed"
+      sys.exit(1)
+    else:
+      print >>sys.stderr, "Daemon started"
   else:
-    print >>sys.stderr, "Daemon started"
-else:
-  query(sys.argv[1], sys.stdout, remote=False)
+    query(sys.argv[1], sys.stdout, remote=False)
+
+if __name__ == "__main__":
+  main()
