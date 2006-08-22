@@ -25,7 +25,7 @@ def parse_changed(changed):
       email, y, m, d = ma.groups()
       y = int(y)
     else:
-      print "Cannot parse_changed:", changed
+      print "ERROR: Cannot parse_changed:", changed
       return None, None
   m = int(m)
   d = int(d)
@@ -84,7 +84,7 @@ def from_ripe(o, attrlist):
     if not k in attrlist:
       dlist.append(k)
       if not k in ['so', 'mb']:
-        print "Ignoring attribute %s: %s" % (k, o[k])
+        print "WARN: Ignoring attribute %s: %s" % (k, o[k])
   # cleanup ignored attributes
   for k in dlist:
     del o[k]
@@ -101,12 +101,13 @@ def from_ripe(o, attrlist):
     minl, maxl = mm
     if not k in o:
       if minl > 0:
-        print "Missing attribute %s" % ripe_stol[k]
+        print "ERROR: Missing attribute %s" % ripe_stol[k]
 	ok = False
       o[k] = [ None ]
     else:
       if not (minl <= len(o[k]) <= maxl):
-        print "Attribute %s found %d times, should appear %d to %d time(s)" % \
+	print "WARN: " \
+              "Attribute %s found %d times, should appear %d to %d time(s)" % \
               (ripe_stol[k], len(o[k]), minl, maxl)
         o[k] = o[k][:maxl]
   if len(o['ad']) < 6:
@@ -448,11 +449,11 @@ class Domain(_whoisobject):
         # check the returned number of found lines and
         # issue an approriate warning message if it differs from 1.
         if self._dbc.rowcount == 0:
-          print "Invalid %s contact '%s' for domain %s" \
+          print "ERROR: Invalid %s contact '%s' for domain %s" \
 		% (contact_map_rev[k], l, self.d['dn'][0])
           inval += 1
         elif self._dbc.rowcount > 1:
-          print "Ambiguous key '%s' for domain %s %s contact" \
+          print "ERROR: Ambiguous key '%s' for domain %s %s contact" \
 		" resolves to %d records" % (l, self.d['dn'][0],
 					     contact_map_rev[k],
 					     self._dbc.rowcount)
@@ -542,19 +543,21 @@ class Main:
     self._lookup = Lookup(self._dbc)
     self._reset()
   def process(self, o, dodel, persons=None, forcechanged=None):
-    """Handle object creation/updating/deletion."""
+    """Handle object creation/updating/deletion.
+       Return True if ok, False otherwise.
+    """
     if persons == None:
       persons = {}
     if 'XX' in o:
       # deleted object, ignore
-      return
+      return True
     if forcechanged != None:
       o['ch'] = [ forcechanged ]
     elif 'ch' in o:
       for i in range(len(o['ch'])):
 	email, t = parse_changed(o['ch'][i])
 	if (email, t) == (None, None):
-	  return
+	  return False
 	o['ch'][i] = email, t
     if 'dn' in o:
       # domain object
@@ -563,10 +566,10 @@ class Main:
         # XXX: compare!
         ld = self._lookup.domain_by_name(i)
         if ld != None:
+          ld.delete()
 	  print "Object deleted:"
 	  ld.display()
-          ld.delete()
-	  return
+	  return True
       self.ndom += 1
       ld = self._lookup.domain_by_name(i)
       if ld != None:
@@ -576,8 +579,10 @@ class Main:
         r = newdom.from_ripe(o, persons)
 	if r == None:
 	  # something incorrect in provided attributes
-	  return
+	  return False
         ambig, inval = r
+	if ambig or inval:
+	  return False
 	# compare with new object
         if ld != newdom or ld.ct.d['ad'] != newdom.ct.d['ad']:
 	  # they differ, update database
@@ -598,8 +603,10 @@ class Main:
         r = ld.from_ripe(o, persons)
 	if r == None:
 	  # something incorrect in provided attributes
-	  return
+	  return False
         ambig, inval = r
+	if ambig or inval:
+	  return False
 	# store to database
         ld.insert()
         print "Object created:"
@@ -611,7 +618,7 @@ class Main:
       self.nperson += 1
       ct = Person(self._dbc)
       if not ct.from_ripe(o):
-	return
+	return False
       name = o['pn'][0].lower()
       if not name in persons:
 	persons[name] = []
@@ -628,7 +635,8 @@ class Main:
           c.fetch()
 	  if dodel:
 	    if ct != c:
-              print "Cannot delete: not the same object"
+              print "ERROR: Cannot delete: not the same object"
+	      return False
 	    else:
 	      print "Object deleted:"
 	      ct.display()
@@ -646,7 +654,8 @@ class Main:
         else:
           # not found
           if dodel:
-            print "Cannot delete: not found"
+            print "ERROR: Cannot delete: not found"
+	    return False
           else:
             ct.insert()
 	    print "Object created:"
@@ -656,7 +665,8 @@ class Main:
 	  persons[handle].append(ct)
 	  persons[name].append(ct)
       elif dodel:
-	print "Cannot delete: no handle provided"
+	print "ERROR: Cannot delete: no handle provided"
+	return False
       else:
         # no handle, try to find by name
         lp = self._lookup.persons_by_name(name)
@@ -686,8 +696,10 @@ class Main:
       # deleted object, ignore
       pass
     else:
-      print "Unknown object type"
+      print "ERROR: Unknown object type"
       print str(o)
+      return False
+    return True
 
   def _order(self, o, dodel, persons, nohandle, domains, forcechanged):
     """Handle reordering."""
@@ -701,7 +713,8 @@ class Main:
       domains[o['dn'][0].upper()] = o
     else:
       # process everything else as we go
-      self.process(o, dodel, persons, forcechanged)
+      return self.process(o, dodel, persons, forcechanged)
+    return True
 
   def parsefile(self, file, encoding='ISO-8859-1', commit=True, chkdup=False,
 		forcechangedemail=None):
@@ -711,6 +724,7 @@ class Main:
     nohandle = []
     domains = {}
     dodel = False
+    err = 0
     self._dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
     self._dbh.autocommit(0)
     self._dbc.execute('START TRANSACTION ISOLATION LEVEL SERIALIZABLE')
@@ -731,7 +745,8 @@ class Main:
       if self.white_re.search(l) and len(o):
         # white line or empty line and o is not empty:
         # end of object, process then cleanup for next object.
-	self._order(o, dodel, persons, nohandle, domains, forcechanged)
+	if not self._order(o, dodel, persons, nohandle, domains, forcechanged):
+	  err += 1
         o = {}
         dodel = False
         continue
@@ -745,11 +760,13 @@ class Main:
       else:
         m = self.longattr_re.search(l)
 	if not m:
-	  print "Unrecognized line:", l
+	  print "ERROR: Unrecognized line:", l
+	  err += 1
 	  continue
         a, v = m.groups()
         if not a in ripe_ltos:
-          print "Unrecognized attribute:", a
+          print "ERROR: Unrecognized attribute \"%s\"" % a
+	  err += 1
 	  continue
         a = ripe_ltos[a]
       if a == 'delete':
@@ -765,10 +782,12 @@ class Main:
     # end of file
     if len(o):
       # end of file: process last object
-      self._order(o, dodel, persons, nohandle, domains, forcechanged)
+      if not self._order(o, dodel, persons, nohandle, domains, forcechanged):
+	err += 1
 
     for p in nohandle:
-      self.process(p, False, persons, forcechanged)
+      if not self.process(p, False, persons, forcechanged):
+	err += 1
 
     # XXX: special case: duplicate contact record for a new domain;
     # typically the first one is the administrative contact,
@@ -783,9 +802,10 @@ class Main:
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
     for i in sorted(domains.keys()):
-      self.process(domains[i], False, persons, forcechanged)
+      if not self.process(domains[i], False, persons, forcechanged):
+	err += 1
 
-    if commit:
+    if commit and err == 0:
 	self._dbh.commit()
     else:
 	self._dbh.rollback()
@@ -797,3 +817,6 @@ class Main:
     if self.inval:
       print "Invalid contacts:", self.inval
     self._reset()
+    if err:
+      print err, "error(s), aborting"
+    return err == 0
