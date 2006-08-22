@@ -427,7 +427,7 @@ class Domain(_whoisobject):
       for l in self.d[k]:
         if l == None: continue
 	ll = l.lower()
-	if ll in prefs:
+	if ll in prefs and len(prefs[ll]):
 	  id = prefs[ll][0].id
           newd[k].append(id)
 	  # rotate prefs
@@ -622,6 +622,12 @@ class Main:
       name = o['pn'][0].lower()
       if not name in persons:
 	persons[name] = []
+      if 'eh' in o and o['eh'][0] != None:
+	ehandle = o['eh'][0].lower()
+	if not ehandle in persons:
+	  persons[ehandle] = []
+      else:
+        ehandle = None
       if 'nh' in o and o['nh'][0] != None:
         # has a NIC handle, try to find if already in the base
         handle = suffixadd(o['nh'][0]).lower()
@@ -664,6 +670,8 @@ class Main:
 	  # keep for contact assignment
 	  persons[handle].append(ct)
 	  persons[name].append(ct)
+	  if ehandle != None:
+	    persons[ehandle].append(ct)
       elif dodel:
 	print "ERROR: Cannot delete: no handle provided"
 	return False
@@ -689,6 +697,8 @@ class Main:
 	ct.display()
 	# keep for contact assignment
 	persons[name].append(ct)
+	if ehandle != None:
+	  persons[ehandle].append(ct)
     elif 'mt' in o:
       # maintainer object, ignore
       pass
