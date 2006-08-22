@@ -114,6 +114,9 @@ def from_ripe(o, attrlist):
         o[k] = o[k][:maxl]
   if len(o['ad']) < 6:
     o['ad'].extend([ None ] * (6-len(o['ad'])))
+  # If no created_on date, set from updated_on date
+  if not 'cr' in o:
+    o['cr'] = [ o['ch'][0][1] ]
   return ok
 
 _skipalnum = sre.compile('^[a-zA-Z0-9]+\s*(.*)')
@@ -201,11 +204,11 @@ class Person(_whoisobject):
     self._allocate_handle()
     o = self.d
     self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
-                      'addr,phone,fax,updated_by,updated_on) '
-                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                      'addr,phone,fax,created_on,updated_by,updated_on) '
+                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
                       (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
-                       o['ch'][0][0], str(o['ch'][0][1])))
+                       str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1])))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('contacts_id_seq')")
     self.cid, = self._dbc.fetchone()
@@ -218,9 +221,11 @@ class Person(_whoisobject):
     assert self._dbc.rowcount == 1
     self._dbc.execute('INSERT INTO contacts_hist '
                       ' (contact_id,handle,exthandle,name,email,addr,'
-                      '  phone,fax,passwd,updated_by,updated_on,deleted_on)'
+                      '  phone,fax,passwd,'
+                      '  created_on,updated_by,updated_on,deleted_on)'
                       ' SELECT id,handle,exthandle,name,email,addr,'
-                      '  phone,fax,passwd,updated_by,updated_on,NOW()'
+                      '  phone,fax,passwd,'
+                      '  created_on,updated_by,updated_on,NOW()'
                       ' FROM contacts WHERE id=%d', (self.cid,))
     assert self._dbc.rowcount == 1
   def _update(self):
@@ -247,13 +252,13 @@ class Person(_whoisobject):
     """Read from database."""
     assert self.cid != None
     self._dbc.execute('SELECT handle,exthandle,name,email,addr,'
-                      ' phone,fax,updated_by,updated_on '
+                      ' phone,fax,created_on,updated_by,updated_on '
                       'FROM contacts WHERE id=%d', (self.cid,))
     assert self._dbc.rowcount == 1
     d = {}
     (d['nh'], d['eh'], d['pn'], d['em'],
      addr,
-     d['ph'], d['fx'], chb, cho) = self._dbc.fetchone()
+     d['ph'], d['fx'], d['cr'], chb, cho) = self._dbc.fetchone()
     for k in d.keys():
       d[k] = [ d[k] ]
     d['ad'] = addrsplit(addr)
@@ -380,9 +385,11 @@ class Domain(_whoisobject):
     """Create in database."""
     o = self.d
     domain = o['dn'][0]
-    self._dbc.execute('INSERT INTO whoisdomains (fqdn,updated_by,updated_on) '
-                      'VALUES (%s, %s,%s)',
-                      (domain, o['ch'][0][0], str(o['ch'][0][1])))
+    self._dbc.execute('INSERT INTO whoisdomains'
+                      ' (fqdn,created_on,updated_by,updated_on) '
+                      'VALUES (%s,%s,%s,%s)',
+                      (domain, str(o['cr'][0]),
+                       o['ch'][0][0], str(o['ch'][0][1])))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('whoisdomains_id_seq')")
     assert self._dbc.rowcount == 1
@@ -390,12 +397,13 @@ class Domain(_whoisobject):
     self.did = did
     self._insert_domain_contact()
   def fetch(self):
-    self._dbc.execute('SELECT fqdn, updated_by, updated_on '
+    self._dbc.execute('SELECT fqdn, created_on, updated_by, updated_on '
                       'FROM whoisdomains WHERE id=%d', (self.did,))
     assert self._dbc.rowcount == 1
     d = {}
-    dn, chb, cho = self._dbc.fetchone()
+    dn, cr, chb, cho = self._dbc.fetchone()
     d['dn'] = [ dn ]
+    d['cr'] = [ cr ]
     d['ch'] = [ (chb, cho) ]
     self.d = d
     self._fetch_contacts()
