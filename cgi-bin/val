@@ -13,9 +13,45 @@ require "$DNSLIB/cgi.pl";
 require "$DNSLIB/auth.pl";
 require "$DNSLIB/requests.pl";
 
+use FileHandle;
+use IPC::Open2;
+
 &zauth_read;
 
 $date=`date +%Y%m%d`; chop $date;
+
+my $alldryrun = 1;
+
+sub tohtml {
+    my $text = shift;
+    $text =~ s/&/&amp;/g;
+    $text =~ s/>/&gt;/g;
+    $text =~ s/</&lt;/g;
+    return $text;
+}
+
+sub dowhoisupdate {
+    my $text = shift;
+    my $dryrun = shift;
+    my $opt = "";
+
+    if ($dryrun) { $opt = "-n" }
+
+    my $pid = open2(*RD, *WR, "$WUPATH $opt 2>&1");
+    print WR $text;
+    close WR;
+
+    my $st = "ERR";
+    my $text = "";
+    while (<RD>) {
+	if (/^STATUS (\S+)$/) {
+	    $st = $1;
+	    last;
+	}
+	$text .= $_;
+    }
+    return ($st, $text);
+}
 
 sub dowhoisform {
     local ($server, $request, $label) = ($_[0], $_[1], $_[2]);
@@ -219,12 +255,14 @@ sub doaccept {
   #
   # Check request with respect to zone file
   #
+  print "Checking DNS...<BR>\n";
   if (!open(AZ, "$AZPATH -c -a$action -u$ENV{'REMOTE_USER'} $domain 2>&1 |")) {
       print "<STRONG>Unable to test request in zone.</STRONG><P>\n";
       return "";
   } else {
     print "<PRE>\n";
     while (<AZ>) {
+      s/&/&amp;/g;
       s/>/&gt;/g;
       s/</&lt;/g;
       print;
@@ -240,11 +278,8 @@ sub doaccept {
     }
   }
 
+  my $output;
   if ($action ne 'MZ') {
-    # send e-mail to whois db manager
-
-    local ($error, $output);
-
     if ($action eq 'D') {
       ($error, $output) = &whois_domain($WHOISHOST, $domain);
 
@@ -255,43 +290,41 @@ sub doaccept {
     } else {
       $output = $dbrecords;
     }
-
-    if (!open(SMU, "|$SENDMAIL -t")) {
-      print "Unable to send mail.<P>\n";
-      return;
-    }
-
-    print SMU "From: $user_mail\n";
-    print SMU "To: $WHOISDBM\n";
-    print SMU "Cc: $user_mail\n";
-    print SMU "Subject: whois update request for [$rq]\n";
-    print SMU "\n";
-
+    my $t = "";
     foreach $line (split('\n', $output)) {
+      if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/ && $1 eq "domain"
+	  && $action eq 'D') {
+        $t .= "delete: $user_mail\n"
+      }
+      $t .= $line."\n";
+    }
+    $output = $t;
+  }
+
+  #
+  # Check request with respect to whois database
+  #
+  my $text = "";
+  foreach $line (split('\n', $output)) {
       if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
 	if ($1 eq "CHANGED") {
-	  $line = "changed: $user_mail $date";
+	  $line = "changed: $user_mail";
 	} elsif ($1 eq "MNT-BY") {
 	  $line = "mnt-by:  $user_mntby";
-	  if ($user_pmnt) { print SMU "password: $user_pmnt\n" }
 	} elsif ($1 eq "mnt-by") {
-	  if ($user_pmnt) { print SMU "password: $user_pmnt\n" }
 	} elsif ($1 eq "domain") {
-	  if ($action eq 'D') { print SMU "delete: $user_mail $date\n" }
+	  if ($action eq 'D') { $text .= "delete: $user_mail $date\n" }
 	}
       }
-      print SMU $line."\n";
-    }
-
-    print SMU "\n";
-    close(SMU);
-
-    if ($? != 0) {
-      print "<STRONG>sendmail for Whois update returned an error !</STRONG>\n";
-      print "<BR>\n";
-      print "Request kept, not processed.<P>\n";
-      return;
-    }
+      $text .= $line."\n";
+  }
+  print "Checking whois...<BR>\n";
+  my ($st, $rtext) = &dowhoisupdate($text, 1);
+  if ($st eq 'ERR') {
+      my $htmltext = &tohtml($rtext);
+      print "<STRONG>This request cannot be executed.</STRONG>\n";
+      print "<PRE>\n$htmltext\n</PRE>\n";
+      return "";
   }
 
   #
@@ -304,7 +337,11 @@ sub doaccept {
 
   printf SMU $VALHEADERS, $MSG_ADDR;
   printf SMU $MSG_SUBAC, $content{'rq'}, $domain;
-  print  SMU "To: $replyto\nCc: $user_mail\n\n";                
+  if ($alldryrun) {
+    print SMU "To: $user_mail\n\n";
+  } else {
+    print SMU "To: $replyto\nCc: $user_mail\n\n";
+  }
   printf SMU $MSG_BDYAC, $content{'rq'}, $domain;
 
   if ($action eq 'M' || $action eq 'MZ' || $action eq 'D') {
@@ -322,7 +359,8 @@ sub doaccept {
       print SMU "\n";
     }
   }
-  if ($action eq 'D') {
+  if ($alldryrun) {
+  } elsif ($action eq 'D') {
     if (!open(AZ, "$AZPATH -a delete -u$ENV{'REMOTE_USER'} $domain 2>&1 |")) {
       print "<STRONG>Unable to delete zone records.</STRONG><P>\n";
     } else {
@@ -346,16 +384,18 @@ sub doaccept {
       print SMU "\n";
     }
   }
+
+  ($st, $rtext) = &dowhoisupdate($text, $alldryrun);
+  my $htmltext = &tohtml($rtext);
+  if ($st ne 'OK') {
+    print "<STRONG>Error when trying to handle whois records.</STRONG>\n";
+  }
+  print "Whois result:\n<PRE>\n$htmltext\n</PRE>\n";
+  print "The above has been <STRONG>committed</STRONG><BR>\n";
+
   if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
     print SMU $MSG_BDYWI;
-    foreach $line (split('\n', $dbrecords)) {
-      if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
-	  if ($1 eq "CHANGED") { $line = "changed: $user_mail $date"; }
-	  elsif ($1 eq "MNT-BY") { $line = "mnt-by:  $user_mntby"; }
-      }
-      print SMU $line."\n";
-    }
-    print SMU "\n";
+    print SMU $rtext;
   }
 
   if ($remadm) {
@@ -412,7 +452,7 @@ sub doaccept {
     close(SMU);
   }
 
-  &rq_remove($rq, $ENV{'REMOTE_USER'}, $ACCDIR);
+  if (!$alldryrun) { &rq_remove($rq, $ENV{'REMOTE_USER'}, $ACCDIR); }
   print "End of processing.<P>\n";
 }
 
@@ -490,14 +530,16 @@ sub dodisplay {
 
     print "(lines with a \"_\" by itself are considered empty)<BR>\n";
 
-    local ($line, $text, $nrows);
+    local ($line, $text, $htmltext, $nrows);
     $nrows=3;
 
     foreach $line (split('\n', $dbrecords)) {
-      if ($line =~ /^$/) {
+      if ($line =~ /^\s*$/) {
+	  $text .= $line."\n";
           $line = "_";
+	  $htmltext .= "_\n";
       } elsif ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
-	  if ($1 eq "CHANGED") { $line = "changed: $user_mail $date"; }
+	  if ($1 eq "CHANGED") { $line = "changed: $user_mail"; }
 	  elsif ($1 eq "MNT-BY") { $line = "mnt-by:  $user_mntby"; }
 	  elsif ($1 eq "nic-hdl" && $nh1) { $nh2 = $2; }
 	  elsif ($1 eq "nic-hdl") { $nh1 = $2; }
@@ -505,12 +547,12 @@ sub dodisplay {
 	  elsif ($1 eq "admin-c") { $ac = $2; }
 	  elsif ($1 eq "person" && $pn1) { $pn2 = $2; }
 	  elsif ($1 eq "person") { $pn1 = $2; };
+	  $text .= $line."\n";
+	  $htmltext .= $line."\n";
       }
-      $text .= $line."\n";
       $nrows++;
     }
-    $text =~ s/>/&gt;/g;
-    $text =~ s/</&lt;/g;
+    $htmltext = &tohtml($htmltext);
 
     $act="editwhois";
     print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
@@ -518,10 +560,18 @@ sub dodisplay {
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
     print "<TEXTAREA NAME=\"whois\" COLS=70 ROWS=$nrows>\n";
     print "$text";
-    print "_\n_\n_\n</TEXTAREA>\n";
+    print "_\n_\n_\n</TEXTAREA><BR>\n";
     print "If necessary, edit the above then\n";
     print "<INPUT TYPE=\"submit\" VALUE=\"submit\"> to save changes\n";
     print "</FORM>\n";
+
+    print "<BR><STRONG>Uncommitted</STRONG> dry-run results:<BR>\n";
+    my ($st, $rtext) = &dowhoisupdate($text, 1);
+    if ($st ne 'OK') {
+	print "<STRONG>Error</STRONG>\n";
+    }
+    my $htmltext = &tohtml($rtext);
+    print "<PRE>\n$htmltext</PRE>\n";
 
     print "<HR>\n";
 
@@ -564,6 +614,7 @@ sub dodisplay {
       print "Unable to show existing records.\n";
     } else {
       while (<AZ>) {
+	s/&/&amp;/g;
 	s/</&lt;/g;
 	s/>/&gt;/g;
 	print;
@@ -593,10 +644,33 @@ sub dodisplay {
 #    print "<INPUT NAME=\"md5val\" SIZE=34> MD5<BR>\n";
     print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-    if ($dups) {
-	print "<B>Warning: potential <TT>person</TT> duplicate(s), please resolve!</B><BR>\n"
-    }
     print "<INPUT TYPE=\"submit\" VALUE=\"Accept and mail to $replyto\">\n";
+    print "</FORM>\n";
+
+    print "<P>\n";
+
+    $act='reject';
+    print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
+    print "<INPUT TYPE=\"submit\" VALUE=\"Reject: duplicate\">\n";
+    print "<INPUT NAME=\"reason\" TYPE=\"hidden\" VALUE=\"Duplicate request.\">\n";
+    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+    print "</FORM>\n";
+
+    $act='reject';
+    print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
+    print "<INPUT TYPE=\"submit\" VALUE=\"Reject: bogus address\">\n";
+    print "<INPUT NAME=\"reason\" TYPE=\"hidden\" VALUE=\"Bogus address information.\">\n";
+    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+    print "</FORM>\n";
+
+    $act='reject';
+    print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
+    print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
+    print "Reason:<BR><TEXTAREA NAME=\"reason\" ROWS=10 COLS=77></TEXTAREA>\n";
+    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
     print "</FORM>\n";
 
     print "<P>\n";
@@ -611,15 +685,6 @@ sub dodisplay {
 
     print "<P>\n";
 
-    $act='reject';
-    print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
-    print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
-    print "Reason:<TEXTAREA NAME=\"reason\" ROWS=10 COLS=77></TEXTAREA>\n";
-    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-    print "</FORM>\n";
-
-    print "<P>\n";
   } else {
     print "(request not yet confirmed by user)<P>\n";
     $act='setopen';
