@@ -11,14 +11,14 @@ sub whois_socket {
    local ($whoishost, $request) = ($_[0], $_[1]);
    local ($name, $aliases, $type, $len, $thataddr, $sockaddr, $that);
 
-   my $whois_port = $WHOIS_PORT;
-   if ($whois_host =~ /^([^:]+):(\d+)$/) {
-      $whois_host, $whois_port = ($1, $2);
+   my $whoisport = $WHOIS_PORT;
+   if ($whoishost =~ /^([^:]+):(\d+)$/) {
+      $whoishost, $whoisport = ($1, $2);
    }
 
    $sockaddr = 'S n a4 x8';
    ($name, $aliases, $type, $len, $thataddr) = gethostbyname($whoishost);
-   $that = pack($sockaddr, $AF_INET, $whois_port, $thataddr);
+   $that = pack($sockaddr, $AF_INET, $whoisport, $thataddr);
    socket(WHOIS, $AF_INET, $SOCK_STREAM, $proto) || return "";
    if (!connect(WHOIS, $that)) {
       close(WHOIS);
