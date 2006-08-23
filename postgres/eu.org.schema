@@ -260,6 +260,7 @@ GRANT SELECT,UPDATE ON TABLE zones TO root, www, nobody, autoreg;
 GRANT INSERT,SELECT ON TABLE domains_hist,rrs_hist TO root, www, nobody, autoreg;
 # read-only
 GRANT SELECT ON TABLE admins,allowed_rr,rrtypes TO root, www, nobody, autoreg;
+GRANT SELECT ON TABLE contact_types TO whois;
 
 # Permissions on Whois database
 # read-write
@@ -274,3 +275,4 @@ GRANT INSERT,SELECT ON TABLE whoisdomains_hist TO www;
 GRANT INSERT,SELECT ON TABLE domain_contact_hist TO www;
 # read-only
 GRANT SELECT ON TABLE contact_types TO www;
+GRANT SELECT ON TABLE contacts, whoisdomains, domain_contact TO whois;
