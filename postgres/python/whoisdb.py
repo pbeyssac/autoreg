@@ -194,6 +194,9 @@ class Person(_whoisobject):
     if (not 'nh' in self.d) or self.d['nh'][0] == None:
       l = mkinitials(self.d['pn'][0])
 
+      # lock the table real good to avoid any race condition
+      self._dbc.execute("LOCK TABLE contacts IN ACCESS EXCLUSIVE MODE")
+
       # Find the highest allocated handle with the same initials
       self._dbc.execute("SELECT CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
 			" FROM contacts WHERE handle SIMILAR TO '%s[0-9]+'"
@@ -744,7 +747,7 @@ class Main:
     err = 0
     self._dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
     self._dbh.autocommit(0)
-    self._dbc.execute('START TRANSACTION ISOLATION LEVEL SERIALIZABLE')
+    self._dbc.execute('START TRANSACTION')
 
     # Get transaction date
     self._dbc.execute("SELECT NOW()")
