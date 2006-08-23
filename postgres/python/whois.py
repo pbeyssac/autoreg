@@ -112,7 +112,7 @@ def handleclient(c, a):
     c.close()
 
 def query(a, out, encoding='ISO-8859-1', remote=True):
-  dbh = psycopg.connect(conf.dbstring)
+  dbh = psycopg.connect(dbstring)
   dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
   l = whoisdb.Lookup(dbh.cursor())
   d = l.domain_by_name(a)
