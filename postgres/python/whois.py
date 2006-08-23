@@ -12,10 +12,13 @@ import conf
 import whoisdb
 
 runas = 'whois'
+whoisrqlog = '/var/log/whoisd.log'
+whoiserrlog = '/var/log/whoisd.err'
 
 maxforks = 5
 delay = 1
 port = 4343
+logf = None
 
 class SocketError(Exception):
     pass
@@ -31,11 +34,16 @@ class socketwrapper:
       buf = buf[r:]
 
 def log(msg):
+  global logf
   (year, month, day, hh, mm, ss, d1, d2, d3) = time.localtime(time.time())
-  print "%04d%02d%02d %02d%02d%02d %s" % (year, month, day, hh, mm, ss, msg)
+  print >>logf, "%04d%02d%02d %02d%02d%02d %s" % \
+		 (year, month, day, hh, mm, ss, msg)
 
 def daemon():
+  global logf
   p = pwd.getpwnam(runas)
+  logf = open(whoisrqlog, 'a')
+  sys.stderr = open(whoiserrlog, 'a')
   gid = p.pw_gid
   uid = p.pw_uid
 
@@ -65,6 +73,7 @@ def daemon():
       if f == 0:
         s.close()
         handleclient(c, a)
+	# crude rate control
         time.sleep(delay)
         sys.exit(0)
       elif f > 0:
@@ -74,6 +83,7 @@ def daemon():
 
 def handleclient(c, a):
     w = socketwrapper(c)
+    sys.stdout = w
     ip, cport = a
     c.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     q = ''
@@ -83,7 +93,7 @@ def handleclient(c, a):
       i = q.find('\r\n')
       if i >= 0:
 	q = q[:i]
-	log("%s:%s %s" % (ip, cport, q))
+	log("%s %s" % (ip, q))
 	query(q, w)
 	c.shutdown(socket.SHUT_WR)
 	break
