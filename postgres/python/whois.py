@@ -1,13 +1,17 @@
 #!/usr/local/bin/python
 
-import psycopg
 import os
+import pwd
 import socket
 import sys
 import time
 
+import psycopg
+
 import conf
 import whoisdb
+
+runas = 'whois'
 
 maxforks = 5
 delay = 1
@@ -31,10 +35,18 @@ def log(msg):
   print "%04d%02d%02d %02d%02d%02d %s" % (year, month, day, hh, mm, ss, msg)
 
 def daemon():
+  p = pwd.getpwnam(runas)
+  gid = p.pw_gid
+  uid = p.pw_uid
+
   s = socket.socket()
   s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
   s.bind(('0', port))
   s.listen(255)
+
+  os.setgid(gid)
+  os.setuid(uid)
+
   nfree = maxforks
   while True:
     while nfree < maxforks:
