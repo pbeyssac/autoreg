@@ -1,5 +1,15 @@
 #!/usr/local/bin/python
+# $Id$
 
+"""Usage:
+Client mode:
+whois.py request
+
+Server mode:
+whois.py [-D database-string] [-l request log] [-e stderr log] [-u user] [-d]
+"""
+
+import getopt
 import os
 import pwd
 import socket
@@ -14,10 +24,11 @@ import whoisdb
 runas = 'whois'
 whoisrqlog = '/var/log/whoisd.log'
 whoiserrlog = '/var/log/whoisd.err'
+dbstring = conf.dbstring
 
 maxforks = 5
 delay = 1
-port = 4343
+port = 43
 logf = None
 
 class SocketError(Exception):
@@ -41,17 +52,17 @@ def log(msg):
 
 def daemon():
   global logf
-  p = pwd.getpwnam(runas)
   logf = open(whoisrqlog, 'a')
   sys.stderr = open(whoiserrlog, 'a')
-  gid = p.pw_gid
-  uid = p.pw_uid
 
   s = socket.socket()
   s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
   s.bind(('0', port))
   s.listen(255)
 
+  p = pwd.getpwnam(runas)
+  gid = p.pw_gid
+  uid = p.pw_uid
   os.setgid(gid)
   os.setuid(uid)
 
@@ -131,14 +142,40 @@ def query(a, out, encoding='ISO-8859-1', remote=True):
     p.fetch()
     p.display()
 
+def usage():
+    print >>sys.stderr, __doc__
+
 def main():
-  if len(sys.argv) > 2:
-    print >>sys.stderr, "Usage: %s [-d | query]" % sys.argv[0]
+  global dbstring, whoiserrlog, whoisrqlog, port, runas
+  detach = True
+
+  try:
+    opts, args = getopt.getopt(sys.argv[1:], "dD:e:l:p:u:")
+  except getopt.GetoptError:
+    usage()
     sys.exit(1)
 
-  if len(sys.argv) < 2:
-    daemon()
-  elif sys.argv[1] == '-d':
+  for o, a in opts:
+    if o == '-d':
+      detach = False
+    elif o == '-D':
+      dbstring = a
+    elif o == '-e':
+      whoiserrlog = a
+    elif o == '-l':
+      whoisrqlog = a
+    elif o == '-p':
+      port = int(a)
+    elif o == '-u':
+      runas = a
+
+  if len(args) > 1:
+    usage()
+    sys.exit(1)
+
+  if len(args) == 0:
+    if not detach:
+      daemon()
     r = os.fork()
     if r == 0:
       daemon()
@@ -148,7 +185,7 @@ def main():
     else:
       print >>sys.stderr, "Daemon started"
   else:
-    query(sys.argv[1], sys.stdout, remote=False)
+    query(args[0], sys.stdout, remote=False)
 
 if __name__ == "__main__":
   main()
