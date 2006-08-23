@@ -57,6 +57,7 @@ sub whois_html {
    print "<PRE>\n";
    while (<WHOIS>) {
       if (defined($typecount) && /^$typecount:/) { $c++ }
+      s/&/&amp;/g;
       s/</&lt;/g;
       s/>/&gt;/g;
       print;
