@@ -21,6 +21,7 @@ use IPC::Open2;
 $date=`date +%Y%m%d`; chop $date;
 
 my $alldryrun = 1;
+if ($alldryrun) { $WHOISHOST .= ':4343' }
 
 sub tohtml {
     my $text = shift;
@@ -139,6 +140,11 @@ sub dodir {
 sub dostate {
   local ($rq, $newstate, $newstateinfo) = ($_[0], $_[1], $_[2]);
 
+  if ($alldryrun) {
+    print "Void (test mode), end of processing.<P>\n";
+    return "";
+  }
+
   local ($error, $replyto, $action, $domain, $lang, $state)
 	= &rq_set_state($rq, $ENV{'REMOTE_USER'}, $newstate, $newstateinfo);
 
@@ -157,6 +163,11 @@ sub dostate {
 
 sub doinfo {
   local ($rq) = $_[0];
+
+  if ($alldryrun) {
+    print "Void (test mode), end of processing.<P>\n";
+    return "";
+  }
 
   local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo,
 	 $dns, $dbrecords)
@@ -186,6 +197,11 @@ sub doinfo {
 
 sub doreject {
   local ($rq) = $_[0];
+
+  if ($alldryrun) {
+    print "Void (test mode), end of processing.<P>\n";
+    return "";
+  }
 
   local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo,
 	 $dns, $dbrecords)
@@ -461,6 +477,10 @@ sub doeditwhois {
 
   local ($line, $wh, $nempty);
 
+  if ($alldryrun) {
+    print "Void (test mode), end of processing.<P>\n";
+    return "";
+  }
   # Remove trailing \r
   # Remove empty lines (some browsers suppress them when POSTing)
   # Remove leading "_" lines
