@@ -49,6 +49,7 @@ def log(msg):
   (year, month, day, hh, mm, ss, d1, d2, d3) = time.localtime(time.time())
   print >>logf, "%04d%02d%02d %02d%02d%02d %s" % \
 		 (year, month, day, hh, mm, ss, msg)
+  logf.flush()
 
 def daemon():
   global logf
