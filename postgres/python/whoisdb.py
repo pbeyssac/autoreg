@@ -737,7 +737,7 @@ class Main:
       return self.process(o, dodel, persons, forcechanged)
     return True
 
-  def parsefile(self, file, encoding='ISO-8859-1', commit=True, chkdup=False,
+  def parsefile(self, file, encoding='ISO-8859-1', commit=True,
 		forcechangedemail=None):
     """Parse file and reorder objects before calling process()."""
     o = {}
@@ -806,16 +806,6 @@ class Main:
     for p in nohandle:
       if not self.process(p, False, persons, forcechanged):
 	err += 1
-
-    # XXX: special case: duplicate contact record for a new domain;
-    # typically the first one is the administrative contact,
-    # the second one is the technical contact.
-    # Temporary debug code, just detect and warn.
-
-    if chkdup:
-      for x in persons:
-        if len(persons[x]) > 1:
-          print "Duplicate key %s" % x
 
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
