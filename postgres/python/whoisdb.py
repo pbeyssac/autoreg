@@ -217,6 +217,12 @@ class Person(_whoisobject):
 
     self._allocate_handle()
     o = self.d
+    if o['ch'][0][1] == None:
+      self._dbc.execute('SELECT NOW()')
+      assert self._dbc.rowcount == 1
+      now, = self._dbc.fetchone()
+      o['ch'] = [(o['ch'][0][0], now)]
+      o['cr'] = [now]
     self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
                       'addr,phone,fax,created_on,updated_by,updated_on) '
                       'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
@@ -247,11 +253,11 @@ class Person(_whoisobject):
     o = self.d
     self._dbc.execute('UPDATE contacts SET handle=%s,exthandle=%s,'
 		      'name=%s,email=%s,'
-                      'addr=%s,phone=%s,fax=%s,updated_by=%s,updated_on=%s '
+                      'addr=%s,phone=%s,fax=%s,updated_by=%s,updated_on=NOW() '
                       'WHERE id=%d',
                       (o['nh'][0], o['eh'][0], o['pn'][0], o['em'][0],
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
-                       o['ch'][0][0], str(o['ch'][0][1]), self.cid))
+                       o['ch'][0][0], self.cid))
     assert self._dbc.rowcount == 1
   def update(self):
     """Write back to database, keeping history."""
