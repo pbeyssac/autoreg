@@ -543,7 +543,7 @@ class Lookup:
     return Domain(self._dbc, did, name, upby, upon)
   
 class Main:
-  comment_re = sre.compile('^\s*#')
+  comment_re = sre.compile('^\s*(?:#|%)')
   white_re = sre.compile('^\s*$')
   empty_re = sre.compile('^$')
   longattr_re = sre.compile('^([a-z-]+):\s*(.*\S)\s*$')
