@@ -293,7 +293,7 @@ class Person(_whoisobject):
         l = ripe_stol[i]
       for j in d[i]:
         if i == 'ch':
-          j = "%s %s" % j
+          j = str(j[1])
         elif i == 'nh':
 	  j = suffixadd(j)
         if j != None:
