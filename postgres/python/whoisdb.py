@@ -285,10 +285,11 @@ class Person(_whoisobject):
     d['ch'] = [ (chb, cho) ]
     self.d = d
     self._set_key()
-  def display(self, title='person', embed=False):
-    """Display contact, RIPE-style.
+  def __str__(self, title='person', embed=False):
+    """Convert to string, RIPE-style.
        embed selects display within domain for a registrant contact.
     """
+    s = ''
     d = self.d
     for i in ['pn', 'nh', 'eh', 'ad', 'ph', 'fx', 'em', 'ch']:
       if i == 'pn':
@@ -303,7 +304,13 @@ class Person(_whoisobject):
         elif i == 'nh':
 	  j = suffixadd(j)
         if j != None:
-          print "%-12s %s" % (l+':', j)
+          s += "%-12s %s\n" % (l+':', j)
+    return s
+  def display(self, title='person', embed=False):
+    """Display contact, RIPE-style.
+       embed selects display within domain for a registrant contact.
+    """
+    print self.__str__(title, embed),
     if not embed:
       print
   
