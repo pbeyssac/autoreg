@@ -760,6 +760,14 @@ class Main:
     else:
       forcechanged = None
 
+    # lock contact table from the start;
+    # this is necessary to avoid deadlocks if we need to allocate handles:
+    #  - p1 does a SELECT on contact c1
+    #  - p2 does a SELECT on contact c2
+    #  - p1 blocks waiting for a lock on the full contact table
+    #  - p2 blocks waiting for a lock on the full contact table
+    self._dbc.execute("LOCK TABLE contacts IN ACCESS EXCLUSIVE MODE")
+
     for l in file:
       if self.comment_re.search(l):
         # skip comment
