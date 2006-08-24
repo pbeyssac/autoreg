@@ -108,7 +108,7 @@ def handleclient(c, a):
 	query(q, w)
 	c.shutdown(socket.SHUT_WR)
 	break
-      r = c.revc(256)
+      r = c.recv(256)
     c.close()
 
 def query(a, out, encoding='ISO-8859-1', remote=True):
