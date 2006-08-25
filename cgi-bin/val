@@ -20,7 +20,7 @@ use IPC::Open2;
 
 $date=`date +%Y%m%d`; chop $date;
 
-my $alldryrun = 1;
+my $alldryrun = 0;
 if ($alldryrun) { $WHOISHOST .= ':4343' }
 
 sub tohtml {
@@ -185,7 +185,7 @@ sub doinfo {
   printf SMU $VALHEADERS, $MSG_ADDR;
   printf SMU $MSG_SUBIN, $content{'rq'}, $domain;
   print SMU "To: $replyto\n\n";
-  printf SMU $MSG_BDYIN, $content{'rq'}, $domain, $content{'reason'};
+  printf SMU $MSG_BDYIN, $content{'rq'}, $domain, $reason;
   print SMU $MSG_BYE;
 
   close(SMU);
@@ -216,10 +216,17 @@ sub doreject {
     return;
   }
 
+  my $reason;
+  if (defined($content{'reason'})) {
+    $reason = $content{'reason'};
+  } else {
+    $reason = $content{'submit'};
+  }
+
   printf SMU $VALHEADERS, $MSG_ADDR;
   printf SMU $MSG_SUBRJ, $content{'rq'}, $domain;
-  print  SMU "To: $replyto\n\n";
-  printf SMU $MSG_BDYRJ, $content{'rq'}, $domain, $content{'reason'};
+  print SMU "To: $replyto\nBcc: $user_mail\n\n";
+  printf SMU $MSG_BDYRJ, $content{'rq'}, $domain, $reason;
   print  SMU $MSG_BYE;
 
   if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
@@ -356,7 +363,7 @@ sub doaccept {
   if ($alldryrun) {
     print SMU "To: $user_mail\n\n";
   } else {
-    print SMU "To: $replyto\nCc: $user_mail\n\n";
+    print SMU "To: $replyto\nBcc: $user_mail\n\n";
   }
   printf SMU $MSG_BDYAC, $content{'rq'}, $domain;
 
@@ -670,25 +677,22 @@ sub dodisplay {
     print "<P>\n";
 
     $act='reject';
+    print "Pre-filled answers:\n";
     print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
-    print "<INPUT TYPE=\"submit\" VALUE=\"Reject: duplicate\">\n";
-    print "<INPUT NAME=\"reason\" TYPE=\"hidden\" VALUE=\"Duplicate request.\">\n";
+    print "<INPUT TYPE=\"submit\" NAME=\"submit\" VALUE=\"Duplicate request\">\n";
+    print "<INPUT TYPE=\"submit\" NAME=\"submit\" VALUE=\"Bogus address information\">\n";
+    print "<INPUT TYPE=\"submit\" NAME=\"submit\" VALUE=\"Please provide a full name\">\n";
+    print "<INPUT TYPE=\"submit\" NAME=\"submit\" VALUE=\"Sorry, this domain is already allocated\">\n";
     print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
     print "</FORM>\n";
 
-    $act='reject';
-    print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
-    print "<INPUT TYPE=\"submit\" VALUE=\"Reject: bogus address\">\n";
-    print "<INPUT NAME=\"reason\" TYPE=\"hidden\" VALUE=\"Bogus address information.\">\n";
-    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-    print "</FORM>\n";
+    print "<P>\n";
 
     $act='reject';
     print "<FORM ACTION=\"$ENV{'SCRIPT_NAME'}\" METHOD=\"POST\">\n";
     print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
-    print "Reason:<BR><TEXTAREA NAME=\"reason\" ROWS=10 COLS=77></TEXTAREA>\n";
+    print "Reason:<BR><TEXTAREA NAME=\"reason\" ROWS=6 COLS=77></TEXTAREA>\n";
     print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
     print "</FORM>\n";
