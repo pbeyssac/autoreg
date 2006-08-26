@@ -572,8 +572,11 @@ class Domain(_whoisobject):
 class Lookup:
   def __init__(self, dbc):
     self._dbc = dbc
-  def _makelist(self):
+  def _makeplist(self):
     l = [ Person(self._dbc, t[0]) for t in self._dbc.fetchall() ]
+    return l
+  def _makedlist(self):
+    l = [ Domain(self._dbc, t[0]) for t in self._dbc.fetchall() ]
     return l
   def persons_by_handle(self, handle):
     if handle.upper().endswith(handlesuffix):
@@ -582,15 +585,15 @@ class Lookup:
     else:
       self._dbc.execute('SELECT id FROM contacts WHERE exthandle=%s',
                         (handle.upper(),))
-    return self._makelist()
+    return self._makeplist()
   def persons_by_name(self, name):
     self._dbc.execute('SELECT id FROM contacts WHERE lower(name)=%s' \
                       ' AND email IS NOT NULL', (name.lower(),))
-    return self._makelist()
+    return self._makeplist()
   def persons_by_email(self, email):
     self._dbc.execute('SELECT id FROM contacts WHERE lower(email)=%s',
                       (email.lower(),))
-    return self._makelist()
+    return self._makeplist()
   def domain_by_name(self, name):
     name = name.upper()
     self._dbc.execute('SELECT id, updated_by, updated_on'
@@ -601,6 +604,17 @@ class Lookup:
     assert self._dbc.rowcount == 1
     did, upby, upon = self._dbc.fetchone()
     return Domain(self._dbc, did, name, upby, upon)
+  def domains_by_handle(self, handle):
+    if not handle.upper().endswith(handlesuffix):
+      # no lookup of that kind on foreign handle
+      return None
+    self._dbc.execute('SELECT DISTINCT(whoisdomains.id) FROM '
+                      ' whoisdomains, contacts, domain_contact'
+                      ' WHERE contacts.handle=%s'
+                      ' AND contacts.id = domain_contact.contact_id'
+                      ' AND whoisdomains.id = domain_contact.whoisdomain_id',
+                      (suffixstrip(handle.upper()),))
+    return self._makedlist()
   
 class Main:
   comment_re = sre.compile('^\s*(?:#|%)')
