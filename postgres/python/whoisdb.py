@@ -1,6 +1,8 @@
 #!/usr/local/bin/python
+# $Id$
 
 import sre
+import sys
 
 import mx
 
@@ -84,49 +86,6 @@ contact_map = { 'technical': 'tc', 'administrative': 'ac', 'zone': 'zc',
                 'registrant': 'rc' }
 contact_map_rev = dict((v, k) for k, v in contact_map.iteritems())
 
-def from_ripe(o, attrlist):
-  """Check and convert from RIPE-style attributes."""
-  # find ignored attributes, warn
-  dlist = []
-  for k in o:
-    if not k in attrlist:
-      dlist.append(k)
-      if not k in ['so', 'mb']:
-        for v in o[k]:
-          print "WARN: Ignoring attribute \"%s\" (%s)" \
-                % (ripe_stol.get(k, k), v)
-  # cleanup ignored attributes
-  for k in dlist:
-    del o[k]
-  # move foreign NIC handle out of the way
-  if 'nh' in o:
-    if o['nh'][0].endswith(handlesuffix):
-      o['nh'][0] = suffixstrip(o['nh'][0])
-    else:
-      o['eh'] = o['nh']
-      del o['nh']
-  # check attribute constraints
-  ok = True
-  for k, mm in attrlist.iteritems():
-    minl, maxl = mm
-    if not k in o:
-      if minl > 0:
-        print "ERROR: Missing attribute \"%s\"" % ripe_stol[k]
-        ok = False
-      o[k] = [ None ]
-    else:
-      if not (minl <= len(o[k]) <= maxl):
-        print "WARN: " \
-              "Attribute \"%s\" found %d times instead of %d to %d time(s)" % \
-              (ripe_stol[k], len(o[k]), minl, maxl)
-        o[k] = o[k][:maxl]
-  if len(o['ad']) < 6:
-    o['ad'].extend([ None ] * (6-len(o['ad'])))
-  # If no created_on date, set from updated_on date
-  if ok and not 'cr' in o:
-    o['cr'] = [ o['ch'][0][1] ]
-  return ok
-
 _skipalnum = sre.compile('^[a-zA-Z0-9]+\s*(.*)')
 _skipword = sre.compile('^\S+\s+(.*)')
 
@@ -153,6 +112,90 @@ def mkinitials(name):
   return h
 
 class _whoisobject(object):
+  re_map = {
+    'em': [60, sre.compile('^[a-zA-Z0-9\-+\.\_\/\=%]+'
+                           '@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)+$')],
+    'ph': [40, sre.compile('^\+?[\d\s#\-\(\)\[\]\.]+$')],
+    'fx': [40, sre.compile('^\+?[\d\s#\-\(\)\[\]\.]+$')],
+    'pn': [80, sre.compile('^[a-zA-Z0-9_\-\.\ \'\|\`]+$', sre.IGNORECASE)],
+    'nh': [20, sre.compile('^[A-Z]{1,3}\d+$', sre.IGNORECASE)],
+    'eh': [20, sre.compile('^[A-Z]+\d*(?:-[A-Z0-9]+)?$', sre.IGNORECASE)],
+    'dn': [255, sre.compile('^[A-Z0-9][A-Z0-9-]*(?:\.[A-Z0-9][A-Z0-9-]*)*'
+                            '\.[A-Z]+$',
+                            sre.IGNORECASE|sre.MULTILINE)],
+    'ad': [80, sre.compile('.*')]
+    }
+  
+  def check(self, o, attrlist):
+    """Check and convert from RIPE-style attributes."""
+    self.d = o
+    warn = []
+    err = []
+    # find ignored attributes, warn
+    dlist = []
+    for k in o:
+      if not k in attrlist:
+        dlist.append(k)
+        if not k in ['so', 'mb']:
+          for v in o[k]:
+            warn.append("WARN: Ignoring attribute \"%s\" (%s)" \
+                        % (ripe_stol.get(k, k), v))
+    # cleanup ignored attributes
+    for k in dlist:
+      del o[k]
+    # move foreign NIC handle out of the way
+    if 'nh' in o:
+      if o['nh'][0].endswith(handlesuffix):
+        o['nh'][0] = suffixstrip(o['nh'][0])
+      else:
+        o['eh'] = o['nh']
+        del o['nh']
+    # check syntax
+    for k in o:
+      if k in self.re_map:
+        for l in o[k]:
+          maxlen, regex = self.re_map[k]
+          if len(o[k]) > maxlen:
+            err.append("ERROR: Attribute \"%s\" value too long" \
+                       % ripe_stol.get(k, k))
+          elif l != None and not regex.match(l):
+            err.append("ERROR: Invalid syntax for attribute \"%s\": %s" \
+                       % (ripe_stol.get(k, k), l))
+    if 'ad' in o and len(addrmake(o['ad'])) > 400:
+      err.append("ERROR: Address too long")
+    # check attribute constraints
+    for k, mm in attrlist.iteritems():
+      minl, maxl = mm
+      if not k in o:
+        if minl > 0:
+          err.append("ERROR: Missing attribute \"%s\"" % ripe_stol[k])
+        o[k] = [ None ]
+      else:
+        if not (minl <= len(o[k]) <= maxl):
+          warn.append("WARN: " \
+                      "Attribute \"%s\" found %d times instead of %d to %d time(s)" \
+                      % (ripe_stol[k], len(o[k]), minl, maxl))
+          o[k] = o[k][:maxl]
+    # convert address
+    if len(o['ad']) < 6:
+      o['ad'].extend([ None ] * (6-len(o['ad'])))
+    # If no created_on date, set from updated_on date
+    if 'ch' in o and not 'cr' in o:
+      o['cr'] = [ o['ch'][0][1] ]
+    # hide lists of errors/warnings in the returned attributes...
+    if len(err):
+      o['err'] = err
+    if len(warn):
+      o['warn'] = warn
+    return len(err) == 0 and len(warn) == 0
+  def get_msgs(self):
+    o = self.d
+    text = ''
+    for i in ('err', 'warn'):
+      if i in o:
+        for j in o[i]:
+          text += j + '\n'
+    return text
   def __cmp__(self, other):
     """Customized compare function:
         - ignore 'ch' and 'cr' entries
@@ -184,9 +227,8 @@ class Person(_whoisobject):
       self.key = self.d['pn'][0]
   def from_ripe(self, o):
     """Fill from RIPE-style attributes."""
-    if not from_ripe(o, personattrs):
+    if not self.check(o, personattrs):
       return False
-    self.d = o
     self._set_key()
     return True
   def _allocate_handle(self):
@@ -327,7 +369,7 @@ class Domain(_whoisobject):
     self.did = did
   def from_ripe(self, o, prefs=None):
     """Fill from RIPE-style attributes."""
-    if not from_ripe(o, domainattrs):
+    if not self.check(o, domainattrs):
       return None
     o['dn'][0] = o['dn'][0].upper()
     # Create a "registrant" contact, storing the address lines
@@ -338,9 +380,10 @@ class Domain(_whoisobject):
         c['ad'] = o['ad'][1:]
         del o['ad']
     c['ch'] = o['ch']
-    self.d = o
     self.ct = Person(self._dbc)
     if not self.ct.from_ripe(c):
+      o['err'] = c.get('err', [])
+      o['warn'] = c.get('warn', [])
       return None
     return self.resolve_contacts(prefs)
   def _copyrecords(self):
@@ -458,6 +501,7 @@ class Domain(_whoisobject):
     """Resolve contact keys."""
     ambig, inval = 0, 0
     newd = {}
+    err = []
     for k in 'ac', 'tc', 'zc':
       newd[k] = [ ]
       for l in self.d[k]:
@@ -485,21 +529,24 @@ class Domain(_whoisobject):
         # check the returned number of found lines and
         # issue an approriate warning message if it differs from 1.
         if self._dbc.rowcount == 0:
-          print "ERROR: Invalid %s contact '%s' for domain %s" \
-                % (contact_map_rev[k], l, self.d['dn'][0])
+          err.append("ERROR: Invalid %s contact '%s' for domain %s" \
+                     % (contact_map_rev[k], l, self.d['dn'][0]))
           inval += 1
         elif self._dbc.rowcount > 1:
-          print "ERROR: Ambiguous key '%s' for domain %s %s contact" \
-                " resolves to %d records" % (l, self.d['dn'][0],
-                                             contact_map_rev[k],
-                                             self._dbc.rowcount)
+          err.append("ERROR: Ambiguous key '%s' for domain %s %s contact" \
+                     " resolves to %d records" % (l, self.d['dn'][0],
+                                                  contact_map_rev[k],
+                                                  self._dbc.rowcount))
           ambig += 1
         lid = self._dbc.fetchall()
         for cid, in lid:
           newd[k].append(cid)
     for k in 'tc', 'zc', 'ac':
       newd[k].sort()
-    self.d.update(newd)
+    if ambig == 0 and inval == 0:
+      self.d.update(newd)
+    else:
+      self.d.setdefault('err', []).append(err)
     return ambig, inval
   def get_contacts(self):
     self.fetch()
@@ -609,6 +656,7 @@ class Main:
         ld.fetch()
         newdom = Domain(self._dbc, ld.did)
         r = newdom.from_ripe(o, persons)
+        sys.stdout.write(newdom.get_msgs())
         if r == None:
           # something incorrect in provided attributes
           return False
@@ -633,6 +681,7 @@ class Main:
         # make domain object
         ld = Domain(self._dbc)
         r = ld.from_ripe(o, persons)
+        sys.stdout.write(ld.get_msgs())
         if r == None:
           # something incorrect in provided attributes
           return False
@@ -649,7 +698,9 @@ class Main:
       # person object
       self.nperson += 1
       ct = Person(self._dbc)
-      if not ct.from_ripe(o):
+      r = ct.from_ripe(o)
+      sys.stdout.write(ct.get_msgs())
+      if not r:
         return False
       name = o['pn'][0].lower()
       if 'eh' in o and o['eh'][0] != None:
