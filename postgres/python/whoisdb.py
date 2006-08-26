@@ -12,6 +12,36 @@ _tv6 = sre.compile('^(\S+)\s*(\d\d)(\d\d)(\d\d)$')
 _tv8 = sre.compile('^(\S+)\s*(\d\d\d\d)(\d\d)(\d\d)$')
 _notv = sre.compile('^(\S+)\s*$')
 
+DBENCODING = None
+DEFAULTENCODING = 'ISO-8859-1'
+
+def fetch_dbencoding(dbc):
+  """Get the current client encoding on the database connection."""
+  global DBENCODING
+  if DBENCODING == None:
+    dbc.execute('SHOW client_encoding')
+    assert dbc.rowcount == 1
+    DBENCODING, = dbc.fetchone()
+  return DBENCODING
+
+def _todb(atuple):
+  """Convert Unicode strings in the tuple for use in a database request."""
+  newlist = []
+  for i in atuple:
+    if type(i) == unicode:
+      i = i.encode(DBENCODING)
+    newlist.append(i)
+  return tuple(newlist)
+
+def _fromdb(atuple):
+  """Convert to Unicode any strings returned by the database."""
+  newlist = []
+  for i in atuple:
+    if type(i) == str:
+      i = unicode(i, DBENCODING)
+    newlist.append(i)
+  return tuple(newlist)
+
 def parse_changed(changed):
   """Parse a RIPE-style changed: line."""
 
@@ -131,18 +161,31 @@ class _whoisobject(object):
     self.d = o
     warn = []
     err = []
+    # obtain encoding for strings stored in o
+    encoding = o.get('encoding', DEFAULTENCODING)
     # find ignored attributes, warn
     dlist = []
     for k in o:
       if not k in attrlist:
         dlist.append(k)
-        if not k in ['so', 'mb']:
+        if not k in ['so', 'mb', 'encoding', 'err', 'warn']:
           for v in o[k]:
             warn.append("WARN: Ignoring attribute \"%s\" (%s)" \
                         % (ripe_stol.get(k, k), v))
     # cleanup ignored attributes
     for k in dlist:
       del o[k]
+    # convert strings to Unicode
+    for k in o:
+      # only strings stored in database, skip 'err' and 'warn'
+      if len(k) != 2:
+        continue
+      r = []
+      for s in o[k]:
+        if type(s) == str:
+          s = unicode(s, encoding)
+        r.append(s)
+      o[k] = r
     # move foreign NIC handle out of the way
     if 'nh' in o:
       if o['nh'][0].endswith(handlesuffix):
@@ -205,10 +248,11 @@ class _whoisobject(object):
       return id(self).__cmp__(id(other))
     d1 = self.d.copy()
     d2 = other.d.copy()
-    del d1['ch']
-    del d2['ch']
-    del d1['cr']
-    del d2['cr']
+    for i in 'ch', 'cr', 'encoding', 'warn', 'err':
+      if i in d1:
+        del d1[i]
+      if i in d2:
+        del d2[i]
     if 'pn' in d1 and 'pn' in d2:
       d1['pn'] = [ d1['pn'][0].lower() ]
       d2['pn'] = [ d2['pn'][0].lower() ]
@@ -216,6 +260,7 @@ class _whoisobject(object):
 
 class Person(_whoisobject):
   def __init__(self, dbc, cid=None, key=None):
+    fetch_dbencoding(dbc)
     self._dbc = dbc
     self.cid = cid
     self.key = key
@@ -240,14 +285,14 @@ class Person(_whoisobject):
       self._dbc.execute("SELECT CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
                         " FROM contacts WHERE handle SIMILAR TO '%s[0-9]+'"
                         " ORDER BY CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
-                        " DESC LIMIT 1" % (l,))
+                        " DESC LIMIT 1" % _todb((l,)))
       assert 0 <= self._dbc.rowcount <= 1
       if self._dbc.rowcount == 0:
         i = 1
       else:
-        i, = self._dbc.fetchone()
+        i, = _fromdb(self._dbc.fetchone())
         i += 1
-      h = "%s%d" % (l, i)
+      h = u"%s%d" % (l, i)
       self.key = suffixadd(h)
       self.d['nh'] = [ h ]
       #print "Allocated handle", self.key, "for", self.d['pn'][0]
@@ -268,9 +313,10 @@ class Person(_whoisobject):
     self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
                       'addr,phone,fax,created_on,updated_by,updated_on) '
                       'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                   _todb(
                       (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
-                       str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1])))
+                       str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]))))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('contacts_id_seq')")
     self.cid, = self._dbc.fetchone()
@@ -297,9 +343,10 @@ class Person(_whoisobject):
                       'name=%s,email=%s,'
                       'addr=%s,phone=%s,fax=%s,updated_by=%s,updated_on=NOW() '
                       'WHERE id=%d',
+                   _todb(
                       (o['nh'][0], o['eh'][0], o['pn'][0], o['em'][0],
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
-                       o['ch'][0][0], self.cid))
+                       o['ch'][0][0], self.cid)))
     assert self._dbc.rowcount == 1
   def update(self):
     """Write back to database, keeping history."""
@@ -320,7 +367,7 @@ class Person(_whoisobject):
     d = {}
     (d['nh'], d['eh'], d['pn'], d['em'],
      addr,
-     d['ph'], d['fx'], d['cr'], chb, cho) = self._dbc.fetchone()
+     d['ph'], d['fx'], d['cr'], chb, cho) = _fromdb(self._dbc.fetchone())
     for k in d.keys():
       d[k] = [ d[k] ]
     d['ad'] = addrsplit(addr)
@@ -331,7 +378,7 @@ class Person(_whoisobject):
     """Convert to string, RIPE-style.
        embed selects display within domain for a registrant contact.
     """
-    s = ''
+    s = u''
     d = self.d
     for i in ['pn', 'nh', 'eh', 'ad', 'ph', 'fx', 'em', 'ch']:
       if i == 'pn':
@@ -348,17 +395,11 @@ class Person(_whoisobject):
         if j != None:
           s += "%-12s %s\n" % (l+':', j)
     return s
-  def display(self, title='person', embed=False):
-    """Display contact, RIPE-style.
-       embed selects display within domain for a registrant contact.
-    """
-    print self.__str__(title, embed),
-    if not embed:
-      print
   
 class Domain(_whoisobject):
   def __init__(self, dbc, did=None, fqdn=None,
                updated_by=None, updated_on=None):
+    fetch_dbencoding(dbc)
     d = {}
     self._dbc = dbc
     if fqdn != None:
@@ -458,8 +499,9 @@ class Domain(_whoisobject):
     self._dbc.execute('INSERT INTO whoisdomains'
                       ' (fqdn,created_on,updated_by,updated_on) '
                       'VALUES (%s,%s,%s,%s)',
+                   _todb(
                       (domain, str(o['cr'][0]),
-                       o['ch'][0][0], str(o['ch'][0][1])))
+                       o['ch'][0][0], str(o['ch'][0][1]))))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('whoisdomains_id_seq')")
     assert self._dbc.rowcount == 1
@@ -471,7 +513,7 @@ class Domain(_whoisobject):
                       'FROM whoisdomains WHERE id=%d', (self.did,))
     assert self._dbc.rowcount == 1
     d = {}
-    dn, cr, chb, cho = self._dbc.fetchone()
+    dn, cr, chb, cho = _fromdb(self._dbc.fetchone())
     d['dn'] = [ dn ]
     d['cr'] = [ cr ]
     d['ch'] = [ (chb, cho) ]
@@ -520,12 +562,12 @@ class Domain(_whoisobject):
           self._dbc.execute('SELECT id FROM contacts'
                             ' WHERE (lower(contacts.name)=%s'
                             ' AND email IS NOT NULL) OR handle=%s',
-                            (l.lower(), suffixstrip(l.upper())))
+                            _todb((l.lower(), suffixstrip(l.upper()))))
         else:
           self._dbc.execute('SELECT id FROM contacts'
                             ' WHERE (lower(contacts.name)=%s'
                             ' AND email IS NOT NULL) OR exthandle=%s',
-                            (l.lower(), l.upper()))
+                            _todb((l.lower(), l.upper())))
         # check the returned number of found lines and
         # issue an approriate warning message if it differs from 1.
         if self._dbc.rowcount == 0:
@@ -555,22 +597,23 @@ class Domain(_whoisobject):
       typ = contact_map_rev[k]
       dc[typ] = [ Person(self._dbc, cid) for cid in self.d[k] ]
     return dc
-  def display(self):
-    print "%-12s %s" % ('domain:', self.d['dn'][0])
+  def __str__(self):
+    s = u"%-12s %s\n" % ('domain:', self.d['dn'][0])
     reg = Person(self._dbc, self.ct.cid)
     reg.fetch()
-    reg.display('address', embed=True)
+    s += reg.__str__('address', embed=True)
     for t, l in [('tc','tech-c'),
                  ('ac','admin-c'),
                  ('zc','zone-c')]:
       for c in self.d.get(t, []):
         p = Person(self._dbc, c)
         p.fetch()
-        print "%-12s %s" % (l+':', p.key)
-    print
+        s += "%-12s %s\n" % (l+':', p.key)
+    return s
 
 class Lookup:
   def __init__(self, dbc):
+    fetch_dbencoding(dbc)
     self._dbc = dbc
   def _makeplist(self):
     l = [ Person(self._dbc, t[0]) for t in self._dbc.fetchall() ]
@@ -581,28 +624,28 @@ class Lookup:
   def persons_by_handle(self, handle):
     if handle.upper().endswith(handlesuffix):
       self._dbc.execute('SELECT id FROM contacts WHERE handle=%s',
-                        (suffixstrip(handle.upper()),))
+                        _todb((suffixstrip(handle.upper()),)))
     else:
       self._dbc.execute('SELECT id FROM contacts WHERE exthandle=%s',
-                        (handle.upper(),))
+                        _todb((handle.upper(),)))
     return self._makeplist()
   def persons_by_name(self, name):
     self._dbc.execute('SELECT id FROM contacts WHERE lower(name)=%s' \
-                      ' AND email IS NOT NULL', (name.lower(),))
+                      ' AND email IS NOT NULL', _todb((name.lower(),)))
     return self._makeplist()
   def persons_by_email(self, email):
     self._dbc.execute('SELECT id FROM contacts WHERE lower(email)=%s',
-                      (email.lower(),))
+                      _todb((email.lower(),)))
     return self._makeplist()
   def domain_by_name(self, name):
     name = name.upper()
     self._dbc.execute('SELECT id, updated_by, updated_on'
                       ' FROM whoisdomains WHERE fqdn=%s',
-                      (name,))
+                      _todb((name,)))
     if self._dbc.rowcount == 0:
       return None
     assert self._dbc.rowcount == 1
-    did, upby, upon = self._dbc.fetchone()
+    did, upby, upon = _fromdb(self._dbc.fetchone())
     return Domain(self._dbc, did, name, upby, upon)
   def domains_by_handle(self, handle):
     if not handle.upper().endswith(handlesuffix):
@@ -613,7 +656,7 @@ class Lookup:
                       ' WHERE contacts.handle=%s'
                       ' AND contacts.id = domain_contact.contact_id'
                       ' AND whoisdomains.id = domain_contact.whoisdomain_id',
-                      (suffixstrip(handle.upper()),))
+                      _todb((suffixstrip(handle.upper()),)))
     return self._makedlist()
   
 class Main:
@@ -630,6 +673,7 @@ class Main:
   def __init__(self, dbh):
     self._dbh = dbh
     self._dbc = dbh.cursor()
+    fetch_dbencoding(self._dbc)
     self._lookup = Lookup(self._dbc)
     self._reset()
   def process(self, o, dodel, persons=None, forcechanged=None):
@@ -641,6 +685,7 @@ class Main:
     if 'XX' in o:
       # deleted object, ignore
       return True
+    encoding = o['encoding']
     if forcechanged != None:
       o['ch'] = [ forcechanged ]
     elif 'ch' in o:
@@ -661,7 +706,7 @@ class Main:
         if ld != None:
           ld.delete()
           print "Object deleted:"
-          ld.display()
+          print ld
           return True
       self.ndom += 1
       ld = self._lookup.domain_by_name(i)
@@ -670,7 +715,7 @@ class Main:
         ld.fetch()
         newdom = Domain(self._dbc, ld.did)
         r = newdom.from_ripe(o, persons)
-        sys.stdout.write(newdom.get_msgs())
+        sys.stdout.write(newdom.get_msgs().encode(encoding))
         if r == None:
           # something incorrect in provided attributes
           return False
@@ -681,21 +726,21 @@ class Main:
         if ld != newdom or ld.ct.d['ad'] != newdom.ct.d['ad']:
           # they differ, update database
           print "Object updated from:"
-          ld.display()
+          print ld.__str__().encode(encoding)
           newdom.ct.cid = ld.ct.cid
           newdom.update()
           print "Object updated to:"
-          newdom.display()
+          print newdom.__str__().encode(encoding)
           self.ambig += ambig
           self.inval += inval
         else:
           print "Object already exists:"
-          ld.display()
+          print ld.__str__().encode(encoding)
       else:
         # make domain object
         ld = Domain(self._dbc)
         r = ld.from_ripe(o, persons)
-        sys.stdout.write(ld.get_msgs())
+        sys.stdout.write(ld.get_msgs().encode(encoding))
         if r == None:
           # something incorrect in provided attributes
           return False
@@ -705,7 +750,7 @@ class Main:
         # store to database
         ld.insert()
         print "Object created:"
-        ld.display()
+        print ld.__str__().encode(encoding)
         self.ambig += ambig
         self.inval += inval
     elif 'pn' in o:
@@ -713,7 +758,7 @@ class Main:
       self.nperson += 1
       ct = Person(self._dbc)
       r = ct.from_ripe(o)
-      sys.stdout.write(ct.get_msgs())
+      sys.stdout.write(ct.get_msgs().encode(encoding))
       if not r:
         return False
       name = o['pn'][0].lower()
@@ -736,12 +781,12 @@ class Main:
               return False
             else:
               print "Object deleted:"
-              ct.display()
+              print ct.__str__().encode(encoding)
               ct.delete()
           else:
             if ct != c:
               print "Object updated from:"
-              c.display()
+              print c.__str__().encode(encoding)
               print "Object updated to:"
               ct.cid = c.cid
               ct.update()
@@ -757,7 +802,7 @@ class Main:
             ct.insert()
             print "Object created:"
         if not dodel:
-          ct.display()
+          print ct.__str__().encode(encoding)
           # keep for contact assignment
           persons.setdefault(handle, []).append(ct)
           persons.setdefault(name, []).append(ct)
@@ -784,7 +829,7 @@ class Main:
             # not found, insert
             ct.insert()
             print "Object created:"
-        ct.display()
+        print ct.__str__().encode(encoding)
         # keep for contact assignment
         persons.setdefault(name, []).append(ct)
         persons.setdefault(ehandle, []).append(ct)
@@ -815,16 +860,16 @@ class Main:
       return self.process(o, dodel, persons, forcechanged)
     return True
 
-  def parsefile(self, file, encoding='ISO-8859-1', commit=True,
+  def parsefile(self, file, encoding=DEFAULTENCODING, commit=True,
                 forcechangedemail=None):
     """Parse file and reorder objects before calling process()."""
-    o = {}
+    o = { 'encoding': encoding }
     persons = {}
     nohandle = []
     domains = {}
     dodel = False
     err = 0
-    self._dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
+
     self._dbh.autocommit(0)
     self._dbc.execute('START TRANSACTION')
 
@@ -850,12 +895,12 @@ class Main:
       if self.comment_re.search(l):
         # skip comment
         continue
-      if self.white_re.search(l) and len(o):
+      if self.white_re.search(l) and len(o) > 1:
         # white line or empty line and o is not empty:
         # end of object, process then cleanup for next object.
         if not self._order(o, dodel, persons, nohandle, domains, forcechanged):
           err += 1
-        o = {}
+        o = { 'encoding': encoding }
         dodel = False
         continue
       if self.empty_re.search(l):
@@ -884,7 +929,7 @@ class Main:
         # new or multi-valued attribute
         o.setdefault(a, []).append(v)
     # end of file
-    if len(o):
+    if len(o) > 1:
       # end of file: process last object
       if not self._order(o, dodel, persons, nohandle, domains, forcechanged):
         err += 1

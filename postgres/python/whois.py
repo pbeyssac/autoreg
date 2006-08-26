@@ -114,20 +114,19 @@ def handleclient(c, a):
 
 def query(a, out, encoding='ISO-8859-1', remote=True):
   dbh = psycopg.connect(dbstring)
-  dbh.cursor().execute("SET client_encoding = '%s'" % encoding)
   l = whoisdb.Lookup(dbh.cursor())
 
   if a[0] == '/' and not remote:
     ld = l.domains_by_handle(a[1:])
     for d in ld:
       d.fetch()
-      d.display()
+      print d.__str__().encode(encoding, 'xmlcharrefreplace')
     return
 
   d = l.domain_by_name(a)
   if d != None:
     dc = d.get_contacts()
-    d.display()
+    print d.__str__().encode(encoding, 'xmlcharrefreplace')
     pdone = []
     for k in ['technical', 'administrative', 'zone']:
       if not k in dc:
@@ -135,7 +134,7 @@ def query(a, out, encoding='ISO-8859-1', remote=True):
       for p in dc[k]:
         p.fetch()
         if not p.key in pdone:
-          p.display()
+          print p.__str__().encode(encoding, 'xmlcharrefreplace')
           pdone.append(p.key)
     return
 
@@ -149,7 +148,7 @@ def query(a, out, encoding='ISO-8859-1', remote=True):
     return
   for p in lp:
     p.fetch()
-    p.display()
+    print p.__str__().encode(encoding, 'xmlcharrefreplace')
 
 def usage():
     print >>sys.stderr, __doc__
