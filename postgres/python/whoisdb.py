@@ -108,9 +108,13 @@ ripe_stol = dict((v, k) for k, v in ripe_ltos.iteritems())
 domainattrs = {'dn': (1, 1), 'ad': (0,7),
                'tc': (0,3), 'ac': (1,3), 'zc': (0,3), 'ch': (1,1) }
 
-personattrs = {'pn': (0,1), 'ad': (0,6),
+registrantattrs = {'pn': (0,1), 'ad': (0,6),
+                   'ph': (0,1), 'fx': (0,1),
+                   'em': (0,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
+
+personattrs = {'pn': (1,1), 'ad': (1,6),
                'ph': (0,1), 'fx': (0,1),
-               'em': (0,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
+               'em': (1,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
 
 contact_map = { 'technical': 'tc', 'administrative': 'ac', 'zone': 'zc',
                 'registrant': 'rc' }
@@ -147,13 +151,14 @@ class _whoisobject(object):
                            '@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)+$')],
     'ph': [40, sre.compile('^\+?[\d\s#\-\(\)\[\]\.]+$')],
     'fx': [40, sre.compile('^\+?[\d\s#\-\(\)\[\]\.]+$')],
-    'pn': [80, sre.compile('^[a-zA-Z0-9_\-\.\ \'\|\`]+$', sre.IGNORECASE)],
+    'pn': [80, sre.compile('^[a-zA-Z0-9_\-\.\ \'\|\`]+'
+                           '\s+[a-zA-Z0-9_\-\.\ \'\|\`]+$', sre.IGNORECASE)],
     'nh': [20, sre.compile('^[A-Z]{1,3}\d+$', sre.IGNORECASE)],
     'eh': [20, sre.compile('^[A-Z]+\d*(?:-[A-Z0-9]+)?$', sre.IGNORECASE)],
     'dn': [255, sre.compile('^[A-Z0-9][A-Z0-9-]*(?:\.[A-Z0-9][A-Z0-9-]*)*'
                             '\.[A-Z]+$',
                             sre.IGNORECASE|sre.MULTILINE)],
-    'ad': [80, sre.compile('.*')]
+    'ad': [80, sre.compile('^[^\x00-\x1f]*$')]
     }
   
   def check(self, o, attrlist):
@@ -270,12 +275,18 @@ class Person(_whoisobject):
       self.key = suffixadd(self.d['nh'][0])
     else:
       self.key = self.d['pn'][0]
-  def from_ripe(self, o):
+  def _from_ripe(self, o, attrs):
     """Fill from RIPE-style attributes."""
-    if not self.check(o, personattrs):
+    if not self.check(o, attrs):
       return False
     self._set_key()
     return True
+  def registrant_from_ripe(self, o):
+    """Fill a registrant from RIPE-style attributes."""
+    return self._from_ripe(o, registrantattrs)
+  def from_ripe(self, o):
+    """Fill from RIPE-style attributes."""
+    return self._from_ripe(o, personattrs)
   def _allocate_handle(self):
     """Allocate ourselves a handle if we lack one."""
     if (not 'nh' in self.d) or self.d['nh'][0] == None:
@@ -422,7 +433,7 @@ class Domain(_whoisobject):
         del o['ad']
     c['ch'] = o['ch']
     self.ct = Person(self._dbc)
-    if not self.ct.from_ripe(c):
+    if not self.ct.registrant_from_ripe(c):
       o['err'] = c.get('err', [])
       o['warn'] = c.get('warn', [])
       return None
