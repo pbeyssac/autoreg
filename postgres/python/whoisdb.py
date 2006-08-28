@@ -211,6 +211,8 @@ class _whoisobject(object):
                        % (ripe_stol.get(k, k), l))
     if 'ad' in o and len(addrmake(o['ad'])) > 400:
       err.append("ERROR: Address too long")
+    if 'ad' in o and len(addrmake(o['ad'])) < 20:
+      err.append("ERROR: Address too short")
     # check attribute constraints
     for k, mm in attrlist.iteritems():
       minl, maxl = mm
