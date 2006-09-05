@@ -309,6 +309,8 @@ class Person(_whoisobject):
       self.key = suffixadd(h)
       self.d['nh'] = [ h ]
       #print "Allocated handle", self.key, "for", self.d['pn'][0]
+  def gethandle(self):
+    return suffixadd(self.d['nh'][0])
   def insert(self):
     """Create in database."""
     # lock the table real good to avoid any race condition at
