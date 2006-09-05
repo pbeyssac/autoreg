@@ -175,8 +175,7 @@ class _whoisobject(object):
         dlist.append(k)
         if not k in ['so', 'mb', 'encoding', 'err', 'warn']:
           for v in o[k]:
-            warn.append("WARN: Ignoring attribute \"%s\" (%s)" \
-                        % (ripe_stol.get(k, k), v))
+            warn.append([k, "Ignoring"])
     # cleanup ignored attributes
     for k in dlist:
       del o[k]
@@ -204,27 +203,24 @@ class _whoisobject(object):
         for l in o[k]:
           maxlen, regex = self.re_map[k]
           if len(o[k]) > maxlen:
-            err.append("ERROR: Attribute \"%s\" value too long" \
-                       % ripe_stol.get(k, k))
+            err.append([k, "value too long"])
           elif l != None and not regex.match(l):
-            err.append("ERROR: Invalid syntax for attribute \"%s\": %s" \
-                       % (ripe_stol.get(k, k), l))
+            err.append([k, "Invalid syntax: %s" % l])
     if 'ad' in o and len(addrmake(o['ad'])) > 400:
-      err.append("ERROR: Address too long")
+      err.append(['ad', "Address too long"])
     if 'ad' in o and len(addrmake(o['ad'])) < 20:
-      err.append("ERROR: Address too short")
+      err.append(['ad', "Address too short"])
     # check attribute constraints
     for k, mm in attrlist.iteritems():
       minl, maxl = mm
       if not k in o:
         if minl > 0:
-          err.append("ERROR: Missing attribute \"%s\"" % ripe_stol[k])
+          err.append([k, "Missing"])
         o[k] = [ None ]
       else:
         if not (minl <= len(o[k]) <= maxl):
-          warn.append("WARN: " \
-                      "Attribute \"%s\" found %d times instead of %d to %d time(s)" \
-                      % (ripe_stol[k], len(o[k]), minl, maxl))
+          warn.append([k, "Found %d times instead of %d to %d time(s)" \
+                      % (len(o[k]), minl, maxl)])
           o[k] = o[k][:maxl]
     # convert address
     if len(o['ad']) < 6:
@@ -239,12 +235,18 @@ class _whoisobject(object):
       o['warn'] = warn
     return len(err) == 0 and len(warn) == 0
   def get_msgs(self):
+    return self.d.get('err', []), self.d.get('warn', [])
+  def format_msgs(self):
     o = self.d
     text = ''
     for i in ('err', 'warn'):
       if i in o:
         for j in o[i]:
-          text += j + '\n'
+          if i == 'err':
+            text += 'ERROR'
+          else:
+            text += 'WARN'
+          text += ': ' + ripe_stol.get(j[0], j[0]) + ': ' + j[1] + '\n'
     return text
   def __cmp__(self, other):
     """Customized compare function:
@@ -586,14 +588,14 @@ class Domain(_whoisobject):
         # check the returned number of found lines and
         # issue an approriate warning message if it differs from 1.
         if self._dbc.rowcount == 0:
-          err.append("ERROR: Invalid %s contact '%s' for domain %s" \
-                     % (contact_map_rev[k], l, self.d['dn'][0]))
+          err.append(['**', "Invalid %s contact '%s' for domain %s" \
+                     % (contact_map_rev[k], l, self.d['dn'][0])])
           inval += 1
         elif self._dbc.rowcount > 1:
-          err.append("ERROR: Ambiguous key '%s' for domain %s %s contact" \
+          err.append(['**', "Ambiguous key '%s' for domain %s %s contact" \
                      " resolves to %d records" % (l, self.d['dn'][0],
                                                   contact_map_rev[k],
-                                                  self._dbc.rowcount))
+                                                  self._dbc.rowcount)])
           ambig += 1
         lid = self._dbc.fetchall()
         for cid, in lid:
@@ -730,7 +732,7 @@ class Main:
         ld.fetch()
         newdom = Domain(self._dbc, ld.did)
         r = newdom.from_ripe(o, persons)
-        sys.stdout.write(newdom.get_msgs().encode(encoding))
+        sys.stdout.write(newdom.format_msgs().encode(encoding))
         if r == None:
           # something incorrect in provided attributes
           return False
@@ -755,7 +757,7 @@ class Main:
         # make domain object
         ld = Domain(self._dbc)
         r = ld.from_ripe(o, persons)
-        sys.stdout.write(ld.get_msgs().encode(encoding))
+        sys.stdout.write(ld.format_msgs().encode(encoding))
         if r == None:
           # something incorrect in provided attributes
           return False
@@ -773,7 +775,7 @@ class Main:
       self.nperson += 1
       ct = Person(self._dbc)
       r = ct.from_ripe(o)
-      sys.stdout.write(ct.get_msgs().encode(encoding))
+      sys.stdout.write(ct.format_msgs().encode(encoding))
       if not r:
         return False
       name = o['pn'][0].lower()
