@@ -21,10 +21,19 @@ class DnsParser:
     _mx_re = sre.compile('^(\d+)\s+(\S+)$')
     # lines such as $TTL ...
     _dollar_re = sre.compile('^\$(\S+)\s+(\d+)\s*$')
+    # SOA lines
+    _soa_begin_re = sre.compile('^.*\(\s*(?:;.*)?$')
+    _soa_end_re = sre.compile('^\s+\d+\s*\)\s*(?:;.*)?$')
 
+    def __init__(self):
+        self.insoa = False
     def parseline(self, l):
 	if self._comment_re.search(l): return None
 	if self._dollar_re.search(l): return None
+        if self.insoa:
+            if self._soa_end_re.search(l):
+                self.insoa = False
+            return None
 	m = self._label_re.search(l)
 	if not m: raise ParseError('Unable to parse line', l)
 	label, ttl, typ, value = m.groups()
@@ -43,8 +52,11 @@ class DnsParser:
 	    pri = int(pri)
 	    if pri > 255: raise ParseError('Bad priority for MX record', pri)
 	    value = "%d %s" % (pri, fqdn.upper())
-	elif typ in ['A', 'TXT', 'SOA', 'PTR']:
+	elif typ in ['A', 'TXT', 'PTR']:
 	    pass
+        elif typ == 'SOA':
+            if self._soa_begin_re.search(value.strip()):
+                self.insoa = True
 	else:
 	    raise ParseError('Illegal record type', typ)
 	return (label, ttl, typ, value)
