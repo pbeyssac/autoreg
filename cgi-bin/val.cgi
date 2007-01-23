@@ -21,7 +21,7 @@ print "</HEAD><BODY>\n";
 &content;
 
 if ($content{'rq'} && $content{'rq'} !~ /[a-zA-Z0-9-_]/) {
-  print "Bad filename: $contents{'rq'}\n";
+  print "Bad filename: $content{'rq'}\n";
   print "</BODY></HTML>\n";
   exit;
 } elsif (!$ENV{'REMOTE_USER'}) {
@@ -45,8 +45,6 @@ if (!$user_mail) {
   print "</BODY></HTML>\n";
   exit;
 }
-
-print "user=$user\n";
 
 if ($content{'action'} eq 'editwhois') {
   &doeditwhois($content{'rq'}, $user, $content{'whois'});
