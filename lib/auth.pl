@@ -21,11 +21,11 @@ sub zauth_read {
 }
 
 # check that a given user has the rights to access a given zone.
-# DNSADMIN has rights on every zone.
+# DNSADMIN and autoreg have rights on every zone.
 sub zauth_check {
   local ($zone, $user) = @_;
 
-  if ($user eq "DNSADMIN") { return "DNSADMIN"; }
+  if ($user eq "DNSADMIN" || $user eq "autoreg") { return "DNSADMIN"; }
   $zone =~ tr/a-z/A-Z/;
   foreach (split(/,/, $ZAUTH{$zone})) {
     return $_ if $_ eq $user;

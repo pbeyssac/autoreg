@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+
+# local configuration.
+require "/usr/local/dns-manager/conf/config";
+#require "$DNSLIB/md5.pl";
+require "$DNSLIB/user.pl";
+require "$DNSLIB/auth.pl";
+require "$DNSLIB/val.pl";
+
+&zauth_read;
+  
+$date=`date +%Y%m%d`; chop $date;
+
+my $rq = $ARGV[0];
+
+if ($rq && $rq !~ /[a-zA-Z0-9-_]/) {
+  print "Bad filename: $rq\n";
+  exit;
+} elsif (!chdir($VALDIR)) {
+  print "Can't cd to $VALDIR: $!\n";
+  exit;
+}
+
+&doaccept($rq, "autoreg", $date, "dbmaster@eu.org");
