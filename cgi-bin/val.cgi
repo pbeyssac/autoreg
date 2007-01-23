@@ -66,7 +66,7 @@ if ($content{'action'} eq 'editwhois') {
 #			     ":$user:accept:$content{'rq'}",
 #			     $content{'md5val'});
 #  if (!$err) {
-    &doaccept($content{'rq'}, $user, $date, $user_mail);
+    &doaccept($content{'rq'}, $user, $date);
 #  } else {
 #    print "<STRONG>$err</STRONG></P>\n";
 #    print "The MD5 you have provided is incorrect, or the file has been deleted.<P>\n";

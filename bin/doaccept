@@ -23,5 +23,8 @@ if ($rq && $rq !~ /[a-zA-Z0-9-_]/) {
   print "Can't cd to $VALDIR: $!\n";
   exit;
 }
+$user = "autoreg";
+($user_pass, $user_mail, $user_mntby, $user_pmnt)
+	= &user_get($user);
 
-&doaccept($rq, "autoreg", $date, "dbmaster@eu.org");
+&doaccept($rq, $user, $date);
