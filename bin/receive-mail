@@ -135,6 +135,10 @@ if ($rqid) {
     print  VF $MSG_BYE;
     close(VF);
 
+    if ($action eq 'MZ') {
+	system "/usr/local/dns-manager/bin/doaccept $rqid >> /tmp/doaccept.log";
+    }
+
     die "Error sending mail: $!\n" if $?;
 
     unlink($REQFILE);
