@@ -672,14 +672,20 @@ class Lookup:
     return Domain(self._dbc, did, name, upby, upon)
   def domains_by_handle(self, handle):
     if not handle.upper().endswith(handlesuffix):
-      # no lookup of that kind on foreign handle
-      return None
-    self._dbc.execute('SELECT DISTINCT(whoisdomains.id) FROM '
-                      ' whoisdomains, contacts, domain_contact'
-                      ' WHERE contacts.handle=%s'
-                      ' AND contacts.id = domain_contact.contact_id'
-                      ' AND whoisdomains.id = domain_contact.whoisdomain_id',
-                      _todb((suffixstrip(handle.upper()),)))
+      # external handle
+      self._dbc.execute('SELECT DISTINCT(whoisdomains.id) FROM '
+                        ' whoisdomains, contacts, domain_contact'
+                        ' WHERE contacts.exthandle=%s'
+                        ' AND contacts.id = domain_contact.contact_id'
+                        ' AND whoisdomains.id = domain_contact.whoisdomain_id',
+                        _todb((handle.upper(),)))
+    else:
+      self._dbc.execute('SELECT DISTINCT(whoisdomains.id) FROM '
+                        ' whoisdomains, contacts, domain_contact'
+                        ' WHERE contacts.handle=%s'
+                        ' AND contacts.id = domain_contact.contact_id'
+                        ' AND whoisdomains.id = domain_contact.whoisdomain_id',
+                        _todb((suffixstrip(handle.upper()),)))
     return self._makedlist()
   
 class Main:
