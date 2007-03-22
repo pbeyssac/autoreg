@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 # $Id$
 
+import sha
 import sre
 import sys
 
@@ -393,6 +394,9 @@ class Person(_whoisobject):
     d['ch'] = [ (chb, cho) ]
     self.d = d
     self._set_key()
+  def digest(self, seed=''):
+    self.fetch()
+    return sha.new(seed + self.key.lower()).hexdigest()[:8]
   def __str__(self, title='person', embed=False):
     """Convert to string, RIPE-style.
        embed selects display within domain for a registrant contact.
