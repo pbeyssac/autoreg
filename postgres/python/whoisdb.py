@@ -200,12 +200,14 @@ class _whoisobject(object):
     # check syntax
     for k in o:
       if k in self.re_map:
+        maxlen, regex = self.re_map[k]
+        i = 1
         for l in o[k]:
-          maxlen, regex = self.re_map[k]
-          if len(o[k]) > maxlen:
-            err.append([k, "value too long"])
+          if len(l) > maxlen:
+            err.append([k + str(i), "value too long"])
           elif l != None and not regex.match(l):
-            err.append([k, "Invalid syntax: %s" % l])
+            err.append([k + str(i), "Invalid syntax: %s" % l])
+          i += 1
     if 'ad' in o and len(addrmake(o['ad'])) > 400:
       err.append(['ad', "Address too long"])
     if 'ad' in o and len(addrmake(o['ad'])) < 20:
@@ -246,7 +248,7 @@ class _whoisobject(object):
             text += 'ERROR'
           else:
             text += 'WARN'
-          text += ': ' + ripe_stol.get(j[0], j[0]) + ': ' + j[1] + '\n'
+          text += ': ' + j[0] + '/' + ripe_stol.get(j[0], j[0]) + ': ' + j[1] + '\n'
     return text
   def __cmp__(self, other):
     """Customized compare function:
