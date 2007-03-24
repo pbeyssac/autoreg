@@ -9,9 +9,11 @@ Server mode:
 whois.py [-D database-string] [-l request log] [-e stderr log] [-u user] [-d]
 """
 
+import errno
 import getopt
 import os
 import pwd
+import signal
 import socket
 import sys
 import time
@@ -27,6 +29,7 @@ whoiserrlog = '/var/log/whoisd.err'
 dbstring = conf.dbstring
 
 maxforks = 5
+maxtime = 60
 delay = 1
 port = 43
 logf = None
@@ -66,29 +69,56 @@ def daemon():
   uid = p.pw_uid
   os.setgid(gid)
   os.setuid(uid)
+  pidinfo = {}
 
   nfree = maxforks
   while True:
     while nfree < maxforks:
       if nfree > 0:
+        # don't block
         r = os.waitpid(-1, os.WNOHANG)
       else:
+        # block: anyway we can't process any request until a process exits.
         r = os.waitpid(-1, 0)
       pid, status = r
       if pid == 0:
         break
+      if pid in pidinfo:
+        del pidinfo[pid]
+      else:
+        log("WARNING: reaped an unknown process")
       nfree += 1
+
+    now = time.time()
+    for pid in pidinfo:
+      # kill hung processes
+      t, a = pidinfo[pid]
+      ip, cport = addr
+      if t + maxtime < now:
+        try:
+          log("WARNING: killing hung process %d (%s)" % (pid, ip))
+          os.kill(pid, signal.SIGTERM)
+        except OSError, e:
+          if e.errno != errno.ESRCH:
+            raise e
 
     if nfree > 0:
       c, a = s.accept()
-      f = os.fork()
+      try:
+        f = os.fork()
+      except OSError, e:
+        log("ERROR: cannot fork, %s" % e)
+        f = -1
       if f == 0:
+        # in child process
         s.close()
         handleclient(c, a)
 	# crude rate control
         time.sleep(delay)
         sys.exit(0)
       elif f > 0:
+        # in parent process
+        pidinfo[f] = (time.time(), a)
         nfree -= 1
         if nfree == 0:
 	  log("WARNING: maxforks (%d) reached" % maxforks)
