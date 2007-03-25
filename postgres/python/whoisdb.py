@@ -113,7 +113,7 @@ registrantattrs = {'pn': (0,1), 'ad': (0,6),
                    'ph': (0,1), 'fx': (0,1),
                    'em': (0,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
 
-personattrs = {'pn': (1,1), 'ad': (1,6),
+personattrs = {'pn': (1,1), 'ad': (0,6),
                'ph': (0,1), 'fx': (0,1),
                'em': (1,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
 
@@ -204,9 +204,11 @@ class _whoisobject(object):
         maxlen, regex = self.re_map[k]
         i = 1
         for l in o[k]:
+          if l == None:
+            continue
           if len(l) > maxlen:
             err.append([k + str(i), "value too long"])
-          elif l != None and not regex.match(l):
+          elif not regex.match(l):
             err.append([k + str(i), "Invalid syntax: %s" % l])
           i += 1
     if 'ad' in o and len(addrmake(o['ad'])) > 400:
@@ -611,7 +613,7 @@ class Domain(_whoisobject):
     if ambig == 0 and inval == 0:
       self.d.update(newd)
     else:
-      self.d.setdefault('err', []).append(err)
+      self.d.setdefault('err', []).extend(err)
     return ambig, inval
   def get_contacts(self):
     self.fetch()
