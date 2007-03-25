@@ -93,7 +93,7 @@ def daemon():
     for pid in pidinfo:
       # kill hung processes
       t, a = pidinfo[pid]
-      ip, cport = addr
+      ip, cport = a
       if t + maxtime < now:
         try:
           log("WARNING: killing hung process %d (%s)" % (pid, ip))
