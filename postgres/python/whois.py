@@ -136,7 +136,7 @@ def handleclient(c, a):
       if i >= 0:
 	q = q[:i]
 	log("%s %s" % (ip, q))
-	query(q, w)
+	query(q, w, remote = (ip != '127.0.0.1'))
 	c.shutdown(socket.SHUT_WR)
 	break
       r = c.recv(256)
