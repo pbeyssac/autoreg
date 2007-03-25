@@ -48,11 +48,16 @@ sub dowhoisupdate {
     return ($st, $text);
 }
 
-sub dowhoisform {
+sub mkwhoisform {
     local ($server, $request, $label) = ($_[0], $_[1], $_[2]);
     $server =~ s/ /+/g;
     $request =~ s/ /+/g;
-    print "<A HREF=\"$WHOISCGI?server=$server&request=$request\">$label</A>\n";
+    return "<A HREF=\"$WHOISCGI?server=$server&request=$request\">$label</A>\n";
+}
+
+sub dowhoisform {
+    local ($server, $request, $label) = ($_[0], $_[1], $_[2]);
+    print &mkwhoisform($server, $request, $label);
 }
 
 sub dolocalwhoisform {
@@ -110,12 +115,13 @@ sub dodir {
       } elsif ($action eq 'D') {
 	$action = "DEL";
       }
+      my $wreplyto = &mkwhoisform("localhost", $replyto, $replyto);
       if ($state eq 'Open') {
-	$rqhtml = "<A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $replyto<BR>\n";
+	$rqhtml = "<A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $wreplyto<BR>\n";
       } elsif ($state eq 'Answered' && $stateinfo) {
-	$rqhtml = "<A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $replyto ($state by $stateinfo)<BR>\n";
+	$rqhtml = "<A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $wreplyto ($state by $stateinfo)<BR>\n";
       } else {
-	$rqhtml = "<A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $replyto ($state)<BR>\n";
+	$rqhtml = "<A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $wreplyto ($state)<BR>\n";
       }
       if ($domlist{$domain}) {
 	$rqlist{$domlist{$domain}} = $rqlist{$domlist{$domain}} . "see also " . $rqhtml;
