@@ -1,0 +1,114 @@
+#!/usr/bin/perl
+
+use strict;
+
+my $dir = "/usr/local/dns-manager/conf";
+my $ui = "$dir/user-info";
+my $za = "$dir/zones-auth";
+my $htpass = "/usr/local/etc/apache/.htpasswd";
+my $htgroup = "/usr/local/etc/apache/.htgroup";
+
+my $pass = "eu/mnt";
+my ($login, $email, $pw1, $pw2);
+
+my %log;
+
+open(UI, "< $ui") || die "Can't open $dir/user-info";
+while (<UI>) {
+	if (/^([a-z0-9]+):/) { $log{$1} = 1; }
+}
+close UI;
+
+print "Create an eu.org account\n";
+print "login: ";
+$login = <STDIN>;
+chop $login;
+if ($login !~ /^[a-z0-9]+$/ || length($login) > 8) {
+	die "$login: invalid login\n";
+}
+if ($log{$login}) {
+	die "$login: already exists\n";
+}
+
+system("stty -echo");
+print "password: "; $pw1 = <STDIN>; chop $pw1;
+print "\npassword again: "; $pw2 = <STDIN>; chop $pw2;
+print "\n";
+system("stty echo");
+if ($pw1 ne $pw2) { die "passwords don't match\n"; }
+
+print "email: ";
+$email = <STDIN>;
+chop $email;
+
+print STDERR "Adding $login to $ui\n";
+open(UI, ">> $ui") || die "Cannot open $ui";
+print UI "${login}::${email}:FREE-NIC-MNT:${pass}\n";
+close UI;
+
+print STDERR "Adding $login to $htpass\n";
+my $salt = join '', ('.', '/', 0..9, 'A'..'Z', 'a'..'z')[rand 64, rand 64];
+my $cryptpw = crypt($pw1, $salt);
+open(HTPA, ">> $htpass") || die "Cannot open $htpass\n";
+print HTPA "${login}:${cryptpw}\n";
+close HTPA;
+
+print STDERR "Adding $login to $htgroup\n";
+open(HTGR, "< $htgroup") || die "Cannot open $htgroup\n";
+open(HTGROUT, "> $htgroup.$$") || die "Cannot open $htgroup.$$\n";
+while (<HTGR>) {
+	chop;
+	if (/^dnsadmin:/) {
+		print HTGROUT "$_ $login\n";
+	} else {
+		print HTGROUT "$_\n";
+	}
+}
+close HTGR;
+if (!close HTGROUT) {
+	unlink("$htgroup.$$");
+	die "Cannot write to $htgroup.$$";
+}
+rename("$htgroup.$$", $htgroup);
+
+my $zaout = "$za.$$";
+
+print STDERR "Adding $login to $za\n";
+
+open(ZA, "< $za") || die "Can't open $za";
+open(ZAOUT, "> $zaout") || die "Can't open $zaout";
+while (<ZA>) {
+	my $line = $_;
+	chop $line;
+	if ($line =~ /[\t ]*#/) {
+		print ZAOUT "$line\n";
+		next;
+	} elsif ($line =~ /^[^:]+:[^:]+:[^:]+$/) {
+		print ZAOUT "$line\n";
+		next;
+		# Domaine externe, on n'ajoute personne
+	} elsif ($line =~ /^([^:]+):([^:])+$/) {
+		my ($dom, $list) = ($1, $2);
+		my $ans;
+		print "Add to $1 [y]: ";
+		$ans = <STDIN>;
+		chop $ans;
+		if ($ans eq "" || $ans =~ /^[yY]/) {
+			$line = $line.",$login";
+		}
+		print ZAOUT "$line\n";
+		next;
+	} else {
+		print "unparseable line:\n$line\n";
+		unlink($zaout);
+		exit(1);
+	}
+}
+close ZA;
+if (!close ZAOUT) {
+	unlink($zaout);
+	die "write to $zaout failed\n";
+}
+rename($zaout, $za);
+
+print "\n\n$login successfully added!\n";
