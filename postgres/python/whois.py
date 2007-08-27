@@ -23,16 +23,10 @@ import psycopg
 import autoreg.conf
 import autoreg.whois.db as whoisdb
 
-runas = 'whois'
-whoisrqlog = '/var/log/whoisd.log'
-whoiserrlog = '/var/log/whoisd.err'
-dbstring = autoreg.conf.dbstring
-
-maxforks = 5
-maxtime = 60
-delay = 1
-port = 43
-logf = None
+USERID = 'whois'
+RQLOG = '/var/log/whoisd.log'
+ERRLOG = '/var/log/whoisd.err'
+PORT = 43
 
 class SocketError(Exception):
     pass
@@ -47,83 +41,79 @@ class socketwrapper:
 	raise SocketError('send')
       buf = buf[r:]
 
-def log(msg):
-  global logf
-  (year, month, day, hh, mm, ss, d1, d2, d3) = time.localtime(time.time())
-  print >>logf, "%04d%02d%02d %02d%02d%02d %s" % \
-		 (year, month, day, hh, mm, ss, msg)
-  logf.flush()
+class server:
+  maxforks = 5
+  maxtime = 60
+  delay = 1
+  def __init__(self, dbstring, rqlog, errlog, port=PORT, runas=USERID):
+    self.logf = open(rqlog, 'a')
+    sys.stderr = open(errlog, 'a')
 
-def daemon():
-  global logf
-  logf = open(whoisrqlog, 'a')
-  sys.stderr = open(whoiserrlog, 'a')
+    s = socket.socket()
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(('0', port))
+    s.listen(255)
 
-  s = socket.socket()
-  s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-  s.bind(('0', port))
-  s.listen(255)
+    p = pwd.getpwnam(runas)
+    gid = p.pw_gid
+    uid = p.pw_uid
+    os.setgid(gid)
+    os.setuid(uid)
+    pidinfo = {}
 
-  p = pwd.getpwnam(runas)
-  gid = p.pw_gid
-  uid = p.pw_uid
-  os.setgid(gid)
-  os.setuid(uid)
-  pidinfo = {}
+    nfree = self.maxforks
+    while True:
+      while nfree < self.maxforks:
+        if nfree > 0:
+          # don't block
+          r = os.waitpid(-1, os.WNOHANG)
+        else:
+          # block: anyway we can't process any request until a process exits.
+          r = os.waitpid(-1, 0)
+        pid, status = r
+        if pid == 0:
+          break
+        if pid in pidinfo:
+          del pidinfo[pid]
+        else:
+          log("WARNING: reaped an unknown process")
+        nfree += 1
 
-  nfree = maxforks
-  while True:
-    while nfree < maxforks:
+      now = time.time()
+      for pid in pidinfo:
+        # kill hung processes
+        t, a = pidinfo[pid]
+        ip, cport = a
+        if t + self.maxtime < now:
+          try:
+            log("WARNING: killing hung process %d (%s)" % (pid, ip))
+            os.kill(pid, signal.SIGTERM)
+          except OSError, e:
+            if e.errno != errno.ESRCH:
+              raise e
+
       if nfree > 0:
-        # don't block
-        r = os.waitpid(-1, os.WNOHANG)
-      else:
-        # block: anyway we can't process any request until a process exits.
-        r = os.waitpid(-1, 0)
-      pid, status = r
-      if pid == 0:
-        break
-      if pid in pidinfo:
-        del pidinfo[pid]
-      else:
-        log("WARNING: reaped an unknown process")
-      nfree += 1
-
-    now = time.time()
-    for pid in pidinfo:
-      # kill hung processes
-      t, a = pidinfo[pid]
-      ip, cport = a
-      if t + maxtime < now:
+        c, a = s.accept()
         try:
-          log("WARNING: killing hung process %d (%s)" % (pid, ip))
-          os.kill(pid, signal.SIGTERM)
+          f = os.fork()
         except OSError, e:
-          if e.errno != errno.ESRCH:
-            raise e
+          log("ERROR: cannot fork, %s" % e)
+          f = -1
+        if f == 0:
+          # in child process
+          s.close()
+          handleclient(self, c, a)
+  	  # crude rate control
+          time.sleep(self.delay)
+          sys.exit(0)
+        elif f > 0:
+          # in parent process
+          pidinfo[f] = (time.time(), a)
+          nfree -= 1
+          if nfree == 0:
+            log("WARNING: maxforks (%d) reached" % self.maxforks)
 
-    if nfree > 0:
-      c, a = s.accept()
-      try:
-        f = os.fork()
-      except OSError, e:
-        log("ERROR: cannot fork, %s" % e)
-        f = -1
-      if f == 0:
-        # in child process
-        s.close()
-        handleclient(c, a)
-	# crude rate control
-        time.sleep(delay)
-        sys.exit(0)
-      elif f > 0:
-        # in parent process
-        pidinfo[f] = (time.time(), a)
-        nfree -= 1
-        if nfree == 0:
-	  log("WARNING: maxforks (%d) reached" % maxforks)
-
-def handleclient(c, a):
+  def handleclient(self, c, a):
     w = socketwrapper(c)
     sys.stdout = w
     ip, cport = a
@@ -136,13 +126,18 @@ def handleclient(c, a):
       if i >= 0:
 	q = q[:i]
 	log("%s %s" % (ip, q))
-	query(q, w, remote = (ip != '127.0.0.1'))
+	query(q, dbstring, w, remote = (ip != '127.0.0.1'))
 	c.shutdown(socket.SHUT_WR)
 	break
       r = c.recv(256)
     c.close()
+  def log(self, msg):
+    (year, month, day, hh, mm, ss, d1, d2, d3) = time.localtime(time.time())
+    print >>self.logf, "%04d%02d%02d %02d%02d%02d %s" % \
+		       (year, month, day, hh, mm, ss, msg)
+    self.logf.flush()
 
-def query(a, out, encoding='ISO-8859-1', remote=True):
+def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
   dbh = psycopg.connect(dbstring)
   l = whoisdb.Lookup(dbh.cursor())
 
@@ -181,17 +176,18 @@ def query(a, out, encoding='ISO-8859-1', remote=True):
     print p.__str__().encode(encoding, 'xmlcharrefreplace')
 
 def usage():
-    print >>sys.stderr, __doc__
+  print >>sys.stderr, __doc__
 
-def main():
-  global dbstring, whoiserrlog, whoisrqlog, port, runas
+def command(argv):
+  whoiserrlog, whoisrqlog, runas, port = ERRLOG, RQLOG, USERID, PORT
+  dbstring = autoreg.conf.dbstring
   detach = True
 
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "dD:e:l:p:u:")
+    opts, args = getopt.getopt(argv[1:], "dD:e:l:p:u:")
   except getopt.GetoptError:
     usage()
-    sys.exit(1)
+    return 1
 
   for o, a in opts:
     if o == '-d':
@@ -209,21 +205,22 @@ def main():
 
   if len(args) > 1:
     usage()
-    sys.exit(1)
+    return 1
 
   if len(args) == 0:
     if not detach:
-      daemon()
+      server(dbstring, whoisrqlog, whoiserrlog, port, runas)
     r = os.fork()
     if r == 0:
-      daemon()
+      server(dbstring, whoisrqlog, whoiserrlog, port, runas)
     elif r == -1:
       print >>sys.stderr, "Daemon start failed"
-      sys.exit(1)
+      return 1
     else:
       print >>sys.stderr, "Daemon started"
   else:
-    query(args[0], sys.stdout, remote=False)
+    query(args[0], dbstring, sys.stdout, remote=False)
+  return 0
 
 if __name__ == "__main__":
-  main()
+  sys.exit(command(sys.argv))
