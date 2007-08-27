@@ -4,8 +4,8 @@
 import time
 
 # local modules
-import dnsparser
-import zauth
+import parser
+import autoreg.zauth as zauth
 
 class DnsDbError(Exception):
     pass
@@ -186,7 +186,7 @@ class _Domain:
 	"""
 	dom, zone, did = self.name, self._zone_name, self.id
 	assert dom != None and zone != None and did != None
-	dp = dnsparser.DnsParser()
+	dp = parser.DnsParser()
 	# convenient default label if none provided on first line of file
 	label = ''
 	for l in f:
