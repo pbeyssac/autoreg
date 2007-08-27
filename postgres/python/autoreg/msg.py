@@ -1,6 +1,6 @@
 # $Id$
 import os
-import sre
+import re
 
 import conf
 
@@ -10,10 +10,10 @@ class MsgError(Exception):
 class Msg:
     path=conf.msgdir
 
-    com_re=sre.compile("^\s*}?(#|$)")
-    lang_re=sre.compile("LANG.*eq\s+\'(.+)\'")
-    lang_default_re=sre.compile("^\s*\}\s*else\s*\{\s*$")
-    msg_re=sre.compile("^\s*\$(\S+)=\"(.*)\";\s*$")
+    com_re=re.compile("^\s*}?(#|$)")
+    lang_re=re.compile("LANG.*eq\s+\'(.+)\'")
+    lang_default_re=re.compile("^\s*\}\s*else\s*\{\s*$")
+    msg_re=re.compile("^\s*\$(\S+)=\"(.*)\";\s*$")
 
     def __init__(self, file, curlang=''):
 	self.m = {}

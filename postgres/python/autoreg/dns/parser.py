@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 # $Id$
 
-import sre
+import re
 
 class ParseError(Exception):
     pass
@@ -12,18 +12,18 @@ class DnsParser:
     # Zone file regexps
     #
     # a comment or empty line
-    _comment_re = sre.compile('^\s*(;.*|)$')
+    _comment_re = re.compile('^\s*(;.*|)$')
     # simplified expression for a regular line
     # (does not handle trailing comments, difficult because of string quoting)
-    _label_re = sre.compile(
+    _label_re = re.compile(
 	'^(\S+)?\s+(?:(\d+)\s+)?(?:[Ii][Nn]\s+)?(\S+)\s+(\S|\S.*\S)\s*$')
     # right-hand side for a MX record
-    _mx_re = sre.compile('^(\d+)\s+(\S+)$')
+    _mx_re = re.compile('^(\d+)\s+(\S+)$')
     # lines such as $TTL ...
-    _dollar_re = sre.compile('^\$(\S+)\s+(\d+)\s*$')
+    _dollar_re = re.compile('^\$(\S+)\s+(\d+)\s*$')
     # SOA lines
-    _soa_begin_re = sre.compile('^.*\(\s*(?:;.*)?$')
-    _soa_end_re = sre.compile('^\s+\d+\s*\)\s*(?:;.*)?$')
+    _soa_begin_re = re.compile('^.*\(\s*(?:;.*)?$')
+    _soa_end_re = re.compile('^\s+\d+\s*\)\s*(?:;.*)?$')
 
     def __init__(self):
         self.insoa = False

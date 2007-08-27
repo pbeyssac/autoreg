@@ -3,7 +3,7 @@
 
 """Legacy hack to evaluate which administrators have access permissions."""
 
-import sre
+import re
 
 import conf
 
@@ -11,7 +11,7 @@ class ZAuthError(Exception):
     pass
 
 class ZAuth:
-    comment_re = sre.compile('^\s*(#.*|)$')
+    comment_re = re.compile('^\s*(#.*|)$')
     filename = conf.zones_auth
     def __init__(self):
 	self._zauth = {}

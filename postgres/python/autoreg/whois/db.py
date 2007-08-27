@@ -1,17 +1,17 @@
 #!/usr/local/bin/python
 # $Id$
 
+import re
 import sha
-import sre
 import sys
 
 import mx
 
 handlesuffix = '-FREE'
 
-_tv6 = sre.compile('^(\S+)\s*(\d\d)(\d\d)(\d\d)$')
-_tv8 = sre.compile('^(\S+)\s*(\d\d\d\d)(\d\d)(\d\d)$')
-_notv = sre.compile('^(\S+)\s*$')
+_tv6 = re.compile('^(\S+)\s*(\d\d)(\d\d)(\d\d)$')
+_tv8 = re.compile('^(\S+)\s*(\d\d\d\d)(\d\d)(\d\d)$')
+_notv = re.compile('^(\S+)\s*$')
 
 DBENCODING = None
 DEFAULTENCODING = 'ISO-8859-1'
@@ -121,8 +121,8 @@ contact_map = { 'technical': 'tc', 'administrative': 'ac', 'zone': 'zc',
                 'registrant': 'rc' }
 contact_map_rev = dict((v, k) for k, v in contact_map.iteritems())
 
-_skipalnum = sre.compile('^[a-zA-Z0-9]+\s*(.*)')
-_skipword = sre.compile('^\S+\s+(.*)')
+_skipalnum = re.compile('^[a-zA-Z0-9]+\s*(.*)')
+_skipword = re.compile('^\S+\s+(.*)')
 
 def mkinitials(name):
   h = ''
@@ -148,18 +148,18 @@ def mkinitials(name):
 
 class _whoisobject(object):
   re_map = {
-    'em': [60, sre.compile('^[a-zA-Z0-9\-+\.\_\/\=%]+'
-                           '@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)+$')],
-    'ph': [40, sre.compile('^\+?[\d\s#\-\(\)\[\]\.]+$')],
-    'fx': [40, sre.compile('^\+?[\d\s#\-\(\)\[\]\.]+$')],
-    'pn': [80, sre.compile('^[a-zA-Z0-9_\-\.\ \'\|\`]+'
-                           '\s+[a-zA-Z0-9_\-\.\ \'\|\`]+$', sre.IGNORECASE)],
-    'nh': [20, sre.compile('^[A-Z]{1,3}\d+$', sre.IGNORECASE)],
-    'eh': [20, sre.compile('^[A-Z]+\d*(?:-[A-Z0-9]+)?$', sre.IGNORECASE)],
-    'dn': [255, sre.compile('^[A-Z0-9][A-Z0-9-]*(?:\.[A-Z0-9][A-Z0-9-]*)*'
-                            '\.[A-Z]+$',
-                            sre.IGNORECASE|sre.MULTILINE)],
-    'ad': [80, sre.compile('^[^\x00-\x1f]*$')]
+    'em': [60, re.compile('^[a-zA-Z0-9\-+\.\_\/\=%]+'
+                          '@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)+$')],
+    'ph': [40, re.compile('^\+?[\d\s#\-\(\)\[\]\.]+$')],
+    'fx': [40, re.compile('^\+?[\d\s#\-\(\)\[\]\.]+$')],
+    'pn': [80, re.compile('^[a-zA-Z0-9_\-\.\ \'\|\`]+'
+                          '\s+[a-zA-Z0-9_\-\.\ \'\|\`]+$', re.IGNORECASE)],
+    'nh': [20, re.compile('^[A-Z]{1,3}\d+$', re.IGNORECASE)],
+    'eh': [20, re.compile('^[A-Z]+\d*(?:-[A-Z0-9]+)?$', re.IGNORECASE)],
+    'dn': [255, re.compile('^[A-Z0-9][A-Z0-9-]*(?:\.[A-Z0-9][A-Z0-9-]*)*'
+                           '\.[A-Z]+$',
+                           re.IGNORECASE|re.MULTILINE)],
+    'ad': [80, re.compile('^[^\x00-\x1f]*$')]
     }
   
   def check(self, o, attrlist):
@@ -691,11 +691,11 @@ class Lookup:
     return self._makedlist()
   
 class Main:
-  comment_re = sre.compile('^\s*(?:#|%)')
-  white_re = sre.compile('^\s*$')
-  empty_re = sre.compile('^$')
-  longattr_re = sre.compile('^([a-z-]+):\s*(.*\S)\s*$')
-  shortattr_re = sre.compile('^\*([a-zA-Z][a-zA-Z]):\s*(.*\S)\s*$')
+  comment_re = re.compile('^\s*(?:#|%)')
+  white_re = re.compile('^\s*$')
+  empty_re = re.compile('^$')
+  longattr_re = re.compile('^([a-z-]+):\s*(.*\S)\s*$')
+  shortattr_re = re.compile('^\*([a-zA-Z][a-zA-Z]):\s*(.*\S)\s*$')
   def _reset(self):
     self.ndom = 0
     self.nperson = 0
