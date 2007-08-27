@@ -20,13 +20,13 @@ import time
 
 import psycopg
 
-import conf
-import whoisdb
+import autoreg.conf
+import autoreg.whois.db as whoisdb
 
 runas = 'whois'
 whoisrqlog = '/var/log/whoisd.log'
 whoiserrlog = '/var/log/whoisd.err'
-dbstring = conf.dbstring
+dbstring = autoreg.conf.dbstring
 
 maxforks = 5
 maxtime = 60

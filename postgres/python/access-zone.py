@@ -41,9 +41,11 @@ import psycopg
 import sys
 
 # local modules
-import conf
-import dnsdb
-import msg
+import autoreg
+import autoreg.conf as conf
+import autoreg.dns
+import autoreg.dns.db as dnsdb
+import autoreg.msg as msg
 
 logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
 		    format='%(asctime)s %(levelname)-8s %(message)s',

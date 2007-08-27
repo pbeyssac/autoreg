@@ -4,11 +4,11 @@
 import psycopg
 import sys
 
-import conf
-import whoisdb
+import autoreg.conf
+import autoreg.whois.db as whoisdb
 
 def main():
-  dbh = psycopg.connect(conf.dbstring)
+  dbh = psycopg.connect(autoreg.conf.dbstring)
   w = whoisdb.Main(dbh)
 
   # to avoid deadlock, read everything on input first
