@@ -4,7 +4,7 @@
 #
 # Cleanup unacknowledged requests after 30 days.
 #
-DIR=/usr/local/autoreg/val
+DIR=/usr/local/autoreg/requests/val
 
 find $DIR -type f -mtime +30 |
 while read filename; do
