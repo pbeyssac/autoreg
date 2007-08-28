@@ -6,7 +6,7 @@
 #	-c to be quiet if nothing has changed (useful in cron jobs)
 
 # Where to find the "access-zone" script
-AZ=/usr/local/dns-manager/bin/access-zone
+AZ=/usr/local/autoreg/bin/access-zone
 # The directory where "master" zone files are located
 DEST=/etc/namedb/autoreg
 # Command to reload the nameserver. Used only if option -r is provided.

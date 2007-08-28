@@ -6,7 +6,7 @@
 #
 
 # local configuration.
-require "/usr/local/dns-manager/conf/config";
+require "/usr/local/autoreg/conf/config";
 require "$DNSLIB/auth.pl";
 require "$DNSLIB/misc.pl";
 

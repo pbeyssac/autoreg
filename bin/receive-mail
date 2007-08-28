@@ -17,7 +17,7 @@ if ($opt_l eq 'fr') {
 }
 
 # local configuration
-require "/usr/local/dns-manager/conf/config";
+require "/usr/local/autoreg/conf/config";
 require "$DNSCONF/msg-val";
 require "$DNSLIB/requests.pl";
 
@@ -80,7 +80,7 @@ if ($replyto =~ /^(.*\S)\s*\(.*\)/) {
 	$replyto = $1;
 }
 if ($replyto =~ /^majordomo/i || $replyto =~ /^mailer-daemon/i) {
-	open(LO, ">> /tmp/dns-manager.log");
+	open(LO, ">> /tmp/receive-mail.log");
 	print LO "from=$from\nreplyto=$replyto\n";
 	close LO;
 	exit 0;
@@ -136,7 +136,7 @@ if ($rqid) {
     close(VF);
 
     if ($action eq 'MZ') {
-	system "/usr/local/dns-manager/bin/doaccept $rqid >> /tmp/doaccept.log";
+	system "/usr/local/autoreg/bin/doaccept $rqid >> /tmp/doaccept.log";
     }
 
     die "Error sending mail: $!\n" if $?;

@@ -25,7 +25,7 @@
 
 die "Usage: check-ns {domain}\n" if ($#ARGV > 0);
 
-require "/usr/local/dns-manager/conf/config";
+require "/usr/local/autoreg/conf/config";
 require "$DNSLIB/dns.pl";
 require "$DNSLIB/misc.pl";
 require "$DNSLIB/errors.pl";

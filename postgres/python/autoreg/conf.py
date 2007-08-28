@@ -3,6 +3,8 @@
 
 import os
 
-msgdir='/usr/local/dns-manager/conf'
-zones_auth='/usr/local/dns-manager/conf/zones-auth'
+autoregdir='/usr/local/autoreg'
+confdir=os.path.join(autoregdir, 'conf')
+msgdir=confdir
+zones_auth=os.path.join(confdir,'zones-auth')
 dbstring=os.getenv('AUTOREG_DBSTRING') or 'dbname=eu.org'

@@ -4,7 +4,7 @@
 #
 
 # local configuration.
-require "/usr/local/dns-manager/conf/config";
+require "/usr/local/autoreg/conf/config";
 
 #
 # Compute MD5 on a given file

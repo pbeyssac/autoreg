@@ -13,24 +13,29 @@ $SENDMAIL="/usr/sbin/sendmail";
 $MD5SEED="bf9bb421ef836495aa79ecd6ab6ca531";
 
 # local URLs
-$WHOISCGI="/adm/whois.cgi";
+$WHOISCGI="/adm/cgi-bin/whois.cgi";
 
 # hostname for whois
 $WHOISHOST="whois.eu.org";
 
+# autoreg directory
+$ARDIR="/usr/local/autoreg";
+
 # local dns-manager location
 $DNSDIR="/usr/local/dns-manager";
-
-$DNSLIB="$DNSDIR/lib";		# libraries directory
-$DNSBIN="$DNSDIR/bin";		# scripts directory
-$DNSCONF="$DNSDIR/conf";	# configuration files directory
+$DNSLIB="$ARDIR/lib";		# libraries directory
+$DNSBIN="$ARDIR/bin";		# scripts directory
+$DNSCONF="$ARDIR/conf";		# configuration files directory
 $ZONEDIR="$DNSDIR/zones";	# zone files directory
-$VALDIR="$DNSDIR/val";		# spool directory for waiting requests
-$ACCDIR="$DNSDIR/acc";		# archive directory for accepted requests
-$REJDIR="$DNSDIR/rej";		# archive directory for rejected requests
-$REQDIR="$DNSDIR/spool";	# temp spool directory for e-mail forms
 
-$DNSLOG="$DNSDIR/log";		# log file
+# autoreg requests directory
+$ARRDIR="$ARDIR/requests";
+$VALDIR="$ARRDIR/val";		# spool directory for waiting requests
+$ACCDIR="$ARRDIR/acc";		# archive directory for accepted requests
+$REJDIR="$ARRDIR/rej";		# archive directory for rejected requests
+$REQDIR="$ARRDIR/tmp";		# temp spool directory for e-mail forms
+
+$DNSLOG="$ARRDIR/log";		# log file
 
 # scripts
 $AZPATH="$DNSBIN/access-zone";
