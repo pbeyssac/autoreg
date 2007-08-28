@@ -48,6 +48,7 @@ class server:
   def __init__(self, dbstring, rqlog, errlog, port=PORT, runas=USERID):
     self.logf = open(rqlog, 'a')
     sys.stderr = open(errlog, 'a')
+    self.dbstring = dbstring
 
     s = socket.socket()
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -76,7 +77,7 @@ class server:
         if pid in pidinfo:
           del pidinfo[pid]
         else:
-          log("WARNING: reaped an unknown process")
+          self.log("WARNING: reaped an unknown process")
         nfree += 1
 
       now = time.time()
@@ -86,7 +87,7 @@ class server:
         ip, cport = a
         if t + self.maxtime < now:
           try:
-            log("WARNING: killing hung process %d (%s)" % (pid, ip))
+            self.log("WARNING: killing hung process %d (%s)" % (pid, ip))
             os.kill(pid, signal.SIGTERM)
           except OSError, e:
             if e.errno != errno.ESRCH:
@@ -97,12 +98,12 @@ class server:
         try:
           f = os.fork()
         except OSError, e:
-          log("ERROR: cannot fork, %s" % e)
+          self.log("ERROR: cannot fork, %s" % e)
           f = -1
         if f == 0:
           # in child process
           s.close()
-          handleclient(self, c, a)
+          self.handleclient(c, a)
   	  # crude rate control
           time.sleep(self.delay)
           sys.exit(0)
@@ -111,7 +112,7 @@ class server:
           pidinfo[f] = (time.time(), a)
           nfree -= 1
           if nfree == 0:
-            log("WARNING: maxforks (%d) reached" % self.maxforks)
+            self.log("WARNING: maxforks (%d) reached" % self.maxforks)
 
   def handleclient(self, c, a):
     w = socketwrapper(c)
@@ -125,8 +126,8 @@ class server:
       i = q.find('\r\n')
       if i >= 0:
 	q = q[:i]
-	log("%s %s" % (ip, q))
-	query(q, dbstring, w, remote = (ip != '127.0.0.1'))
+	self.log("%s %s" % (ip, q))
+	query(q, self.dbstring, w, remote = (ip != '127.0.0.1'))
 	c.shutdown(socket.SHUT_WR)
 	break
       r = c.recv(256)
