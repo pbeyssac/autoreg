@@ -144,6 +144,9 @@ def mkinitials(name):
     name, = ma.groups()
   if h == '':
     h = 'ZZZ'
+  elif len(h) == 1:
+    # forbid 1-letter handles
+    h += 'Z'
   return h
 
 class _whoisobject(object):
@@ -152,8 +155,7 @@ class _whoisobject(object):
                           '@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)+$')],
     'ph': [40, re.compile('^\+?[\d\s#\-\(\)\[\]\.]+$')],
     'fx': [40, re.compile('^\+?[\d\s#\-\(\)\[\]\.]+$')],
-    'pn': [80, re.compile('^[a-zA-Z0-9_\-\.\ \'\|\`]+'
-                          '\s+[a-zA-Z0-9_\-\.\ \'\|\`]+$', re.IGNORECASE)],
+    'pn': [80, re.compile('^[^\x00-\x1f]*$')],
     'nh': [20, re.compile('^[A-Z]{1,3}\d+$', re.IGNORECASE)],
     'eh': [20, re.compile('^[A-Z]+\d*(?:-[A-Z0-9]+)?$', re.IGNORECASE)],
     'dn': [255, re.compile('^[A-Z0-9][A-Z0-9-]*(?:\.[A-Z0-9][A-Z0-9-]*)*'
