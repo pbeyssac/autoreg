@@ -3,8 +3,9 @@
 # $Id$
 #
 
-require "/usr/local/dns-manager/lib/cgi.pl";
-require "/usr/local/dns-manager/lib/whois.pl";
+require "/usr/local/autoreg/conf/config";
+require "$DNSLIB/cgi.pl";
+require "$DNSLIB/whois.pl";
 
 sub doform {
    print <<EOF;
