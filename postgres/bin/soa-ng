@@ -10,7 +10,9 @@ AZ=/usr/local/autoreg/bin/access-zone
 # The directory where "master" zone files are located
 DEST=/etc/namedb/autoreg
 # Command to reload the nameserver. Used only if option -r is provided.
-NDC=/usr/local/sbin/rndc
+NDC=/usr/sbin/rndc
+#
+NDCKEY=/etc/namedb/rndc-autoreg.key
 
 if [ "$USER" = "root" ]; then USER=DNSADMIN; fi
 
@@ -80,7 +82,7 @@ done
 
 if [ "$mod" = "1" ]; then
 	if [ $optr = 1 ]; then
-		$NDC reload
+		$NDC -k $NDCKEY reload
 	else
 		if [ $optc = 0 ]; then echo "now:" echo "$NDC reload"; fi
 	fi
