@@ -139,6 +139,8 @@ class server:
     self.logf.flush()
 
 def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
+  if not isinstance(a, unicode):
+    a = a.decode(encoding)
   dbh = psycopg.connect(dbstring)
   l = whoisdb.Lookup(dbh.cursor())
 
