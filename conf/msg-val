@@ -5,7 +5,7 @@
 
 # Messages and addresses for e-mails
 
-if ($ENV{'LANG'} eq 'fr') {
+if ($ENV{'ARLANG'} eq 'fr') {
 
 $MSG_ADDR=$MAILACKFR;
 $MSG_SUBIN="Subject: requete [%s] (domaine %s)\n";

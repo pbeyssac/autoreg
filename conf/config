@@ -49,10 +49,10 @@ $PASSFILE="$DNSCONF/user-info";		# user info file
 $ZAUTFILE="$DNSCONF/zones-auth";	# zone authorizations file
 
 # templates for mail requests
-if ($ENV{'LANG'} eq 'en') {
+if ($ENV{'ARLANG'} eq 'en') {
 	$DOMTEMP="$DNSCONF/domain-template.txt";
 } else {
-	$DOMTEMP="$DNSCONF/domain-template-$ENV{'LANG'}.txt";
+	$DOMTEMP="$DNSCONF/domain-template-$ENV{'ARLANG'}.txt";
 }
 
 # Enable real nameserver checking.

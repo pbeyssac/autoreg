@@ -17,9 +17,9 @@ $ENV{PATH} = "/sbin:/bin:/usr/sbin:/usr/bin";
 if ($#ARGV !=0) { die "Usage: check-request [-l language-iso-code] [-s] request-id.\n"; }
 
 if ($opt_l) {
-	$ENV{'LANG'}=$opt_l;
+	$ENV{'ARLANG'}=$opt_l;
 } else {
-	$ENV{'LANG'}="en";
+	$ENV{'ARLANG'}="en";
 }
 
 # local configuration
@@ -75,9 +75,9 @@ while (<STDIN>) {
 	if (?^ln\.: ?) {
 		$LANG = substr($_, index($_, ":") + 1);
 		if ($LANG =~ /^\s*(.*\S)\s*$/) {
-			$ENV{'LANG'} = $1;
+			$ENV{'ARLANG'} = $1;
 		} else {
-			$ENV{'LANG'} = "en";
+			$ENV{'ARLANG'} = "en";
 		}
 		do "$DNSCONF/msg-check";
 	}
@@ -412,7 +412,7 @@ if ($req eq 'M') {
   }
 }
 
-$vr = &rq_create($REQID, $replyto, $req, $domain, $ENV{'LANG'})
+$vr = &rq_create($REQID, $replyto, $req, $domain, $ENV{'ARLANG'})
 		|| die ("Cannot open $REQID: $!\n");
 
 if ($makerr) {

@@ -177,7 +177,7 @@ sub doinfo {
 	= &rq_get_info($rq, $user);
   if ($error) { print "Error: $error.<P>\n"; return; }
 
-  $ENV{'LANG'} = $lang;
+  $ENV{'ARLANG'} = $lang;
   do "$DNSCONF/msg-val";
 
   if (!open(SMU, "|$SENDMAIL -t")) {
@@ -215,7 +215,7 @@ sub doreject {
 	= &rq_get_info($rq, $user);
   if ($error) { print "Error: $error.<P>\n"; return; }
 
-  $ENV{'LANG'} = $lang;
+  $ENV{'ARLANG'} = $lang;
   do "$DNSCONF/msg-val";
 
   if (!open(SMU, "|$SENDMAIL -t")) {
@@ -275,7 +275,7 @@ sub doaccept {
 	= &rq_get_info($rq, $user);
   if ($error) { print "Error: $error.<P>\n"; return; }
 
-  $ENV{'LANG'} = $lang;
+  $ENV{'ARLANG'} = $lang;
   do "$DNSCONF/msg-val";
 
   local ($pdom) = &parent_of($domain);
@@ -547,7 +547,7 @@ sub dodisplay {
 	= &rq_get_info($rq, $user);
   if ($error) { print "Error: $error.<P>\n"; return; }
 
-  $ENV{'LANG'} = $lang;
+  $ENV{'ARLANG'} = $lang;
   do "$DNSCONF/msg-val";
 
   local ($pdom) = &parent_of($domain);

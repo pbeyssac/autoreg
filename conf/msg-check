@@ -5,7 +5,7 @@
 
 # Messages for check-*
 
-if ($ENV{'LANG'} eq 'fr') {
+if ($ENV{'ARLANG'} eq 'fr') {
 $ERR_BADD0="\nErreur: %s: domaine intermédiaire vide.\n";
 $ERR_BADDB="\nErreur: %s: chaque partie doit commencer par une lettre\n";
 $ERR_BADDE="\nErreur: %s: chaque partie doit se terminer par une lettre ou un chiffre\n";

@@ -11,9 +11,9 @@ do Getopts("l:");
 if ($#ARGV != -1) { die "Usage: receive-mail [-l language-iso-code]\n"; }
 
 if ($opt_l eq 'fr') {
-	$ENV{'LANG'}="fr";
+	$ENV{'ARLANG'}="fr";
 } else {
-	$ENV{'LANG'}="en";
+	$ENV{'ARLANG'}="en";
 }
 
 # local configuration
@@ -149,7 +149,7 @@ if ($rqid) {
 #
 # No valid request id found in the subject, assume it's a new request
 #
-open(CHECK, "$CRPATH -s -l$ENV{'LANG'} < $REQFILE mail 2>&1 |") || die "Cannot start $CRPATH: $!\n";
+open(CHECK, "$CRPATH -s -l$ENV{'ARLANG'} < $REQFILE mail 2>&1 |") || die "Cannot start $CRPATH: $!\n";
 while (<CHECK>) {
 	print VF;
 }
