@@ -490,7 +490,7 @@ class Domain(_whoisobject):
                       (self.did,))
     self._dbc.execute('INSERT INTO whoisdomains_hist '
                       ' (whoisdomain_id,fqdn,created_on,deleted_on)'
-                      ' SELECT id,fdqn,created_on,NOW()'
+                      ' SELECT id,fqdn,created_on,NOW()'
                       ' FROM whoisdomains WHERE whoisdomain_id=%d',
                       (self.did,))
     assert self._dbc.rowcount == 1
