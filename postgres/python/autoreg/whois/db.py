@@ -491,7 +491,7 @@ class Domain(_whoisobject):
     self._dbc.execute('INSERT INTO whoisdomains_hist '
                       ' (whoisdomain_id,fqdn,created_on,deleted_on)'
                       ' SELECT id,fqdn,created_on,NOW()'
-                      ' FROM whoisdomains WHERE whoisdomain_id=%d',
+                      ' FROM whoisdomains WHERE id=%d',
                       (self.did,))
     assert self._dbc.rowcount == 1
     self._dbc.execute('DELETE FROM whoisdomains WHERE id=%d',
