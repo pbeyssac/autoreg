@@ -9,8 +9,8 @@ import mx
 
 handlesuffix = '-FREE'
 
-_tv6 = re.compile('^(\S+)\s*(\d\d)(\d\d)(\d\d)$')
-_tv8 = re.compile('^(\S+)\s*(\d\d\d\d)(\d\d)(\d\d)$')
+_tv68 = re.compile('^(\S+)\s*(?:(\d\d))?(\d\d)(\d\d)(\d\d)$')
+_tv = re.compile('^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)(?:\.(\d\d))?$')
 _notv = re.compile('^(\S+)\s*$')
 
 DBENCODING = None
@@ -52,19 +52,23 @@ def parse_changed(changed):
     # no date, just an email
     return ma.groups()[0], None
 
-  ma = _tv6.search(changed)
+  ma = _tv68.search(changed)
   if ma:
-    email, y, m, d = ma.groups()
+    email, c, y, m, d = ma.groups()
     y = int(y)
-    if y > 50:
-      y += 1900
+    if c:
+      y += int(c)*100
     else:
-      y += 2000
+      if y > 50:
+        y += 1900
+      else:
+        y += 2000
   else:
-    ma = _tv8.search(changed)
+    ma = _tv.search(changed)
     if ma:
-      email, y, m, d = ma.groups()
+      y, m, d, h, m, s, fs = ma.groups()
       y = int(y)
+      email = None
     else:
       print "ERROR: Cannot parse_changed:", changed
       return None, None
