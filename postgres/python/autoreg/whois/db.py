@@ -107,7 +107,8 @@ ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
               'changed': 'ch', 'remark': 'rm', 'nic-hdl': 'nh',
               'notify': 'ny', 'mnt-by': 'mb', 'source': 'so',
               'upd-to': 'dt', 'auth': 'at', 'mntner': 'mt',
-              'domain': 'dn', 'ext-hdl': 'eh' }
+              'domain': 'dn', 'ext-hdl': 'eh',
+              'delete': 'delete' }
 ripe_stol = dict((v, k) for k, v in ripe_ltos.iteritems())
 
 domainattrs = {'dn': (1, 1), 'ad': (0,7),
@@ -580,7 +581,7 @@ class Domain(_whoisobject):
       for l in self.d[k]:
         if l == None: continue
         ll = l.lower()
-        if ll in prefs and len(prefs[ll]):
+        if prefs and ll in prefs and len(prefs[ll]):
           cid = prefs[ll][0].cid
           newd[k].append(cid)
           # rotate prefs
@@ -738,13 +739,27 @@ class Main:
       # domain object
       i = o['dn'][0].upper()
       if dodel:
-        # XXX: compare!
+        # We don't compare registrant information matches.
+        # It's good enough for us.
+        dom = Domain(self._dbc)
+        r = dom.from_ripe(o)
+        sys.stdout.write(dom.format_msgs().encode(encoding))
+        if not r:
+          return False
         ld = self._lookup.domain_by_name(i)
         if ld != None:
+          ld.fetch()
+          if ld != dom:
+            print "ERROR: Cannot delete: not the same object"
+            return False
           ld.delete()
           print "Object deleted:"
           print ld
+          self.ndom += 1
           return True
+        else:
+          print "ERROR: Cannot delete: not found"
+          return False
       self.ndom += 1
       ld = self._lookup.domain_by_name(i)
       if ld != None:
