@@ -66,7 +66,7 @@ def parse_changed(changed):
   else:
     ma = _tv.search(changed)
     if ma:
-      y, m, d, h, m, s, fs = ma.groups()
+      y, m, d, h, min, s, fs = ma.groups()
       y = int(y)
       email = None
     else:
