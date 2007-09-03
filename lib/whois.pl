@@ -38,7 +38,10 @@ sub whois_domain {
       return "Can't execute whois: $!";
    }
    local ($output);
-   while (<WHOIS>) { $output .= $_; }
+   while (<WHOIS>) {
+      last if (/^person:/i);
+      $output .= $_;
+   }
    close(WHOIS);
    return ("", $output);
 }
