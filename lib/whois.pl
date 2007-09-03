@@ -34,7 +34,7 @@ sub whois_domain {
    $server =~ s/["';&]//g;
    $request =~ s/["';&]//g;
 
-   if (!&whois_socket($server, "-r -T domain $request")) {
+   if (!&whois_socket($server, "$request")) {
       return "Can't execute whois: $!";
    }
    local ($output);
@@ -73,12 +73,11 @@ sub whois_email {
    $server =~ s/["';&]//g;
    $request =~ s/["';&]//g;
 
-   if (!&whois_socket($server, "-T domain $request")) {
+   if (!&whois_socket($server, "$request")) {
       return "";
    }
    #
-   # In case "-T domain" doesn't work as expected, skip until
-   # we find a domain.
+   # Skip until we find a domain.
    #
    while (<WHOIS>) {
       last if (/^domain:/i);
