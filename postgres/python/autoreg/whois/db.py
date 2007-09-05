@@ -754,7 +754,7 @@ class Main:
             return False
           ld.delete()
           print "Object deleted:"
-          print ld
+          print str(ld).encode(encoding)
           self.ndom += 1
           return True
         else:
