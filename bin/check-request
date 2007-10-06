@@ -47,7 +47,7 @@ local ($domain)="";
 local (@fqdn);
 local (@ip);
 local (@got);
-local ($nums)=1;
+local ($nums)=0;
 local ($rectype)="NS";
 
 $multi = 0;
@@ -117,16 +117,11 @@ while (<STDIN>) {
 		$rectype = $v;
 	} elsif (/^om\./ || /^[at][hmte]\./ || /^[oat][cspn]\./) {
 		$ref{$refid} = $v;
-	} elsif (/^f1\./) {
-		push(@fqdn, $v);
-	} elsif (/^i1\./) {
-		$ip[0] = $v;
-	} elsif (/^f[2-9]\./) {
-		push(@fqdn, $v);
-		$numfqdn = $nums;
+	} elsif (/^f([1-9])\./) {
+		$fqdn[$1] = uc($v);
 		$nums++;
-	} elsif (/^i[2-9]\./) {
-		if ($numfqdn) { $ip[$numfqdn] = $v; $numfqdn = 0 }
+	} elsif (/^i([1-9])\./) {
+		$ip[$1] = $v;
 	}
 }
 
@@ -157,7 +152,6 @@ $req =~ tr/a-z/A-Z/;
 $domain =~ tr/a-z/A-Z/;
 if ($ref{"ah"}) { $ref{"ah"} =~ tr/a-z/A-Z/ }
 if ($ref{"th"}) { $ref{"th"} =~ tr/a-z/A-Z/ }
-for ($i=0; $fqdn[$i]; $i++) { $fqdn[$i] =~ tr/a-z/A-Z/ }
 
 &stoperrs;
 
@@ -211,8 +205,8 @@ if (!@fqdn) {
 	}
 } else {
     if ($req eq 'N' || $req eq 'MZ' || $req eq 'M') {
-	for ($i = 0; $fqdn[$i]; $i++) {
-	    &checkname($fqdn[$i]);
+	for ($i = 0; $i <= 6; $i++) {
+	    if (defined($fqdn[$i])) { &checkname($fqdn[$i]); }
 	}
     }
 }
@@ -229,10 +223,12 @@ if ($makerr && $do_checkns) {
 
     print CHECKNS "$domain\n";
 
-    for ($i = 0; $fqdn[$i]; $i++) {
-      print CHECKNS $fqdn[$i];
-      if ($ip[$i]) { print CHECKNS " $ip[$i]" }
-      print CHECKNS "\n";
+    for ($i = 0; $i <= 6; $i++) {
+      if (defined($fqdn[$i])) {
+        print CHECKNS $fqdn[$i];
+        if ($ip[$i]) { print CHECKNS " $ip[$i]" }
+        print CHECKNS "\n";
+      }
     }
     close(CHECKNS);
     exit $? if ($?);
@@ -241,8 +237,10 @@ if ($makerr && $do_checkns) {
       exit 1;
     }
   } else {
-    for ($i = 0; $fqdn[$i]; $i++) {
-      if (system("$CHECKMXPATH $fqdn[$i] 2>&1")) { $doexit=1; }
+    for ($i = 0; $i <= 6; $i++) {
+      if (defined($fqdn[$i])) {
+        if (system("$CHECKMXPATH $fqdn[$i] 2>&1")) { $doexit=1; }
+      }
     }
     if ($doexit) { exit }
   }
@@ -572,12 +570,14 @@ sub valdata {
 
 	if ($rectype =~ /^N/) {
 	    print $hdl &tabify($newdom, "IN NS\t$fqdn[0].\n", 24);
-	    for ($i=1; $fqdn[$i]; $i++) {
-		print $hdl "\t\t\tIN NS\t$fqdn[$i].\n";
+	    for ($i=0; $i <= 6; $i++) {
+		if (defined($fqdn[$i])) {
+		    print $hdl "\t\t\tIN NS\t$fqdn[$i].\n";
+		}
 	    }
 
-	    for ($i=0; $fqdn[$i]; $i++) {
-		if ($ip[$i] && &isasubdomain($fqdn[$i], $domain)) {
+	    for ($i=0; $i <= 6; $i++) {
+		if (defined($ip[$i]) && &isasubdomain($fqdn[$i], $domain)) {
 		    print $hdl &tabify("$fqdn[$i].", "IN A\t$ip[$i]\n", 24);
 		}
 	    }
