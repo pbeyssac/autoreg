@@ -567,12 +567,17 @@ sub tabify {
 #
 sub valdata {
 	local ($hdl) = $_[0];
+	my $labeldone;
 
 	if ($rectype =~ /^N/) {
-	    print $hdl &tabify($newdom, "IN NS\t$fqdn[0].\n", 24);
 	    for ($i=0; $i <= 6; $i++) {
 		if (defined($fqdn[$i])) {
-		    print $hdl "\t\t\tIN NS\t$fqdn[$i].\n";
+		    if (!$labeldone) {
+			print $hdl &tabify($newdom, "IN NS\t$fqdn[$i].\n", 24);
+			$labeldone = 1;
+		    } else {
+			print $hdl "\t\t\tIN NS\t$fqdn[$i].\n";
+		    }
 		}
 	    }
 
@@ -582,23 +587,36 @@ sub valdata {
 		}
 	    }
 	} elsif ($rectype =~ /^M/) {
-	    print $hdl &tabify($newdom, "IN MX\t 0 $fqdn[0].\n", 24);
-	    for ($i=1; $fqdn[$i]; $i++) {
+	    for ($i=0; $i <= 6; $i++) {
 		$pri=$i * 10;
-		print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+		if (!$labeldone) {
+		    print $hdl &tabify($newdom, "IN MX\t 0 $fqdn[$i].\n", 24);
+		    $labeldone = 1;
+		} else {
+		    print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+		}
 	    }
 	} elsif ($rectype =~ /^C/) {
-	    print $hdl &tabify($newdom, "IN CNAME\t$fqdn[0].\n", 24);
+	    print $hdl &tabify($newdom, "IN CNAME\t$fqdn[1].\n", 24);
 	} else {
-	    print $hdl &tabify($newdom, "IN MX\t 0 $fqdn[0].\n", 24);
-	    for ($i=1; $fqdn[$i]; $i++) {
+	    for ($i=0; $i <= 6; $i++) {
 		$pri=$i * 10;
-		print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+		if (!$labeldone) {
+		    print $hdl &tabify($newdom, "IN MX\t 0 $fqdn[$i].\n", 24);
+		    $labeldone = 1;
+		} else {
+		    print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+		}
 	    }
-	    print $hdl &tabify("*.$newdom", "IN MX\t 0 $fqdn[0].\n", 24);
-	    for ($i=1; $fqdn[$i]; $i++) {
+	    $labeldone = 0;
+	    for ($i=0; $i <= 6; $i++) {
 		$pri=$i * 10;
-		print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+		if (!$labeldone) {
+		    print $hdl &tabify("*.$newdom", "IN MX\t 0 $fqdn[$i].\n", 24);
+		    $labeldone = 1;
+		} else {
+		    print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+		}
 	    }
 	}
 }
