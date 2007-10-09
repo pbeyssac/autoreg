@@ -583,7 +583,11 @@ sub valdata {
 
 	    for ($i=0; $i <= 6; $i++) {
 		if (defined($ip[$i]) && &isasubdomain($fqdn[$i], $domain)) {
-		    print $hdl &tabify("$fqdn[$i].", "IN A\t$ip[$i]\n", 24);
+		    if ($ip[$i] !~ /:/) {
+			print $hdl &tabify("$fqdn[$i].", "IN A\t$ip[$i]\n", 24);
+		    } else {
+			print $hdl &tabify("$fqdn[$i].", "IN AAAA\t$ip[$i]\n", 24);
+		    }
 		}
 	    }
 	} elsif ($rectype =~ /^M/) {
