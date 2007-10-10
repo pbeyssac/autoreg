@@ -32,6 +32,8 @@ require "$DNSLIB/errors.pl";
 require "$DNSLIB/misc.pl";
 require "$DNSCONF/msg-check";
 
+my %ip;
+
 if ($#ARGV == 0) {
 	$domain	= &fqdncanon($ARGV[0]);
 	@fqdn = &getns($domain), "\n";
@@ -67,7 +69,8 @@ foreach $i (@fqdn) { &checkname($i); }
 &stoperrs;
 
 if ($gotstdin) {
-	foreach $i (@ip) { &checkipname($i); }
+	foreach $i (sort keys %ip) { &checkipname($ip{$i}); }
+	&stoperrs;
 	print $MSG_CSERV;
 
 	foreach $i (@fqdn) {
