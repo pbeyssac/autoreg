@@ -198,10 +198,67 @@ sub checkname {
 }
 
 # Check IP quad syntax.
+sub checkip4 {
+	my $ip = $_[0];
+	return join('.', unpack("C4", pack("C4", split(/\./, $ip, 4)))) eq $ip;
+}
+
+sub checkip6 {
+	my $IP = $_[0];
+	@quadlist = split(':', $IP, 8);
+	my $emptydone = 0;
+	my $numquad = 0;
+	my $ip4done = 0;
+	if (@quadlist < 3) {
+	    &pr_error($ERR_INVIP, $IP);
+	    return;
+	}
+	if ($quadlist[0] eq '') {
+	    if ($quadlist[1] ne '') {
+		&pr_error($ERR_INVIP, $IP);
+		return;
+	    }
+	    shift @quadlist;
+	}
+	if ($quadlist[$#quadlist] eq '') {
+	    if ($quadlist[$#quadlist-1] ne '') {
+		&pr_error($ERR_INVIP, $IP);
+		return;
+	    }
+	    pop @quadlist;
+	}
+	foreach my $i (@quadlist) {
+	    if ($i eq '' && !$emptydone) {
+		$numquad++;
+		$emptydone = 1;
+		$empty = 1;
+		next;
+	    }
+	    if ($i =~ /^[0-9a-f]{1,4}$/i) {
+		$numquad++;
+		next;
+	    }
+	    if ($i =~ /\./ && !$ip4done && ($numquad == 6 || $emptydone)) {
+		if (&checkip4($i)) {
+		    $ip4done = 1;
+		    $numquad = 8;
+		    next;
+		}
+	    }
+	    &pr_error($ERR_INVIP, $IP);
+	    return;
+	}
+	if ($numquad > 8 || ($numquad < 8 && !$emptydone)) {
+	    &pr_error($ERR_INVIP, $IP);
+	}
+}
+
 sub checkipname {
 	local ($IP)=$_[0];
-	if (join('.', unpack("C4", pack("C4", split(/\./, $IP, 4)))) ne $IP) {
-            	&pr_error($ERR_INVIP, $_[0]);
+	if (&checkip4($IP)) {
+		return;
+	}
+	if (&checkip6($IP)) {
 		return;
 	}
 }
