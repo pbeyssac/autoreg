@@ -50,9 +50,10 @@ class server:
     sys.stderr = open(errlog, 'a')
     self.dbstring = dbstring
 
-    s = socket.socket()
+    s = socket.socket(socket.AF_INET6)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(('0', port))
+    s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+    s.bind(('::', port))
     s.listen(255)
 
     p = pwd.getpwnam(runas)
@@ -84,7 +85,7 @@ class server:
       for pid in pidinfo:
         # kill hung processes
         t, a = pidinfo[pid]
-        ip, cport = a
+        ip, cport, flowinfo, scopeid = a
         if t + self.maxtime < now:
           try:
             self.log("WARNING: killing hung process %d (%s)" % (pid, ip))
@@ -117,7 +118,7 @@ class server:
   def handleclient(self, c, a):
     w = socketwrapper(c)
     sys.stdout = w
-    ip, cport = a
+    ip, cport, flowinfo, scopeid = a
     c.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     q = ''
     r = c.recv(256)
@@ -126,8 +127,11 @@ class server:
       i = q.find('\r\n')
       if i >= 0:
 	q = q[:i]
+        if ip.startswith('::ffff:'):
+              ip = ip[7:]
 	self.log("%s %s" % (ip, q))
-	query(q, self.dbstring, w, remote = (ip != '127.0.0.1'))
+	query(q, self.dbstring, w,
+              remote = (ip != '127.0.0.1' and ip != '::1'))
 	c.shutdown(socket.SHUT_WR)
 	break
       r = c.recv(256)
