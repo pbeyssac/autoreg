@@ -46,7 +46,9 @@ if ($#ARGV == 0) {
 		chop; split;
 		$i = &fqdncanon($_[0]);
 		push(@fqdn, $i);
-		$ip{$i} = $_[1];
+		if ($_[1] !~ /^\s*$/) {
+			$ip{$i} = $_[1];
+		}
 	}
 }
 
