@@ -2,6 +2,7 @@
 # $Id$
 
 import re
+import socket
 
 class ParseError(Exception):
     pass
@@ -43,7 +44,18 @@ class DnsParser:
 	    label = label.upper()
 	typ = typ.upper()
 	# Do some quick & dirty checking and canonicalization
-	if typ in ['AAAA', 'CNAME', 'NS', 'SRV']:
+        if typ == 'AAAA':
+	    value = value.upper()
+            try:
+                dummy = socket.inet_pton(socket.AF_INET6, value)
+            except socket.error:
+                raise ParseError('Bad IPv6 address', value)
+	elif typ == 'A':
+            try:
+                dummy = socket.inet_pton(socket.AF_INET, value)
+            except socket.error:
+                raise ParseError('Bad IPv4 address', value)
+        elif typ in ['CNAME', 'NS', 'SRV']:
 	    value = value.upper()
 	elif typ == 'MX':
 	    m = self._mx_re.search(value)
@@ -52,7 +64,7 @@ class DnsParser:
 	    pri = int(pri)
 	    if pri > 255: raise ParseError('Bad priority for MX record', pri)
 	    value = "%d %s" % (pri, fqdn.upper())
-	elif typ in ['A', 'TXT', 'PTR']:
+        elif typ in ['TXT', 'PTR']:
 	    pass
         elif typ == 'SOA':
             if self._soa_begin_re.search(value.strip()):
