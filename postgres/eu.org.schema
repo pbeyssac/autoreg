@@ -250,29 +250,29 @@ INSERT INTO admins (id,login) VALUES (32,'ob');
 INSERT INTO admins (id,login) VALUES (33,'lc');
 INSERT INTO admins (id,login) VALUES (34,'jertreg');
 
-# Permissions on DNS database
-# read-write
+-- Permissions on DNS database
+-- read-write
 GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE rrs TO root, www, nobody, autoreg;
 GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE domains TO root, www, nobody, autoreg;
 GRANT SELECT,UPDATE ON domains_id_seq TO root, www, nobody, autoreg;
 GRANT SELECT,UPDATE ON TABLE zones TO root, www, nobody, autoreg;
-# append-only
+-- append-only
 GRANT INSERT,SELECT ON TABLE domains_hist,rrs_hist TO root, www, nobody, autoreg;
-# read-only
+-- read-only
 GRANT SELECT ON TABLE admins,allowed_rr,rrtypes TO root, www, nobody, autoreg;
 GRANT SELECT ON TABLE contact_types TO whois;
 
-# Permissions on Whois database
-# read-write
+-- Permissions on Whois database
+-- read-write
 GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE contacts TO www, autoreg;
 GRANT SELECT,UPDATE ON TABLE contacts_id_seq TO www, autoreg;
 GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE whoisdomains TO www, autoreg;
 GRANT SELECT,UPDATE ON TABLE whoisdomains_id_seq TO www, autoreg;
 GRANT INSERT,SELECT,DELETE ON TABLE domain_contact TO www, autoreg;
-# append-only
+-- append-only
 GRANT INSERT,SELECT ON TABLE contacts_hist TO www, autoreg;
 GRANT INSERT,SELECT ON TABLE whoisdomains_hist TO www, autoreg;
 GRANT INSERT,SELECT ON TABLE domain_contact_hist TO www, autoreg;
-# read-only
+-- read-only
 GRANT SELECT ON TABLE contact_types TO www, autoreg;
 GRANT SELECT ON TABLE contacts, whoisdomains, domain_contact TO whois;
