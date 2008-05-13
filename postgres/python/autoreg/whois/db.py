@@ -710,6 +710,21 @@ class Main:
     self.inval = 0
   def __init__(self, dbh):
     self._dbh = dbh
+
+    # At once, set transaction isolation level to READ COMMITTED.
+    #
+    # Psycopg's default is SERIALIZED, which is SQL92-compliant
+    # but differs from the documented Postgres default.
+    #
+    # This rids us of spurious occurences of error "could not serialize
+    # access due to concurrent update".
+    #
+    # "this obviously need to be better explained in the documentation"
+    #    Psycopg's author, from a 2004 post in the psycopg mailing list:
+    #    http://lists.initd.org/pipermail/psycopg/2004-February/002577.html
+    #
+    dbh.set_isolation_level(1)
+
     self._dbc = dbh.cursor()
     fetch_dbencoding(self._dbc)
     self._lookup = Lookup(self._dbc)
@@ -922,7 +937,8 @@ class Main:
     dodel = False
     err = 0
 
-    self._dbh.autocommit(0)
+    # set transaction isolation level to READ COMMITTED.
+    self._dbh.set_isolation_level(1)
     self._dbc.execute('START TRANSACTION')
 
     # Get transaction date

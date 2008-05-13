@@ -380,6 +380,9 @@ class _ZoneList:
 
 class db:
     def __init__(self, dbhandle, nowrite=False):
+        # At once, set transaction isolation level to READ COMMITTED.
+        # (see autoreg.whois.db for details)
+        dbhandle.set_isolation_level(1)
 	self._za = zauth.ZAuth()
 	self._dbh = dbhandle
 	self._dbc = dbhandle.cursor()
