@@ -148,6 +148,9 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
   dbh = psycopg.connect(dbstring)
   l = whoisdb.Lookup(dbh.cursor())
 
+  if not a:
+    return
+
   if a[0] == '/' and not remote:
     ld = l.domains_by_handle(a[1:])
     for d in ld:
