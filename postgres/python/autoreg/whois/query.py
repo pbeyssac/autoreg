@@ -104,7 +104,15 @@ class server:
         if f == 0:
           # in child process
           s.close()
-          self.handleclient(c, a)
+          bkpipe = False
+          try:
+            self.handleclient(c, a)
+          except socket.error, se:
+            if len(se) != 2 or se.args[0] != errno.EPIPE:
+              raise
+            bkpipe = True
+          if bkpipe:
+            self.log("WARNING: EPIPE on process %d (%s)" % (pid, ip))
   	  # crude rate control
           time.sleep(self.delay)
           sys.exit(0)
