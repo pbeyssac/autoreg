@@ -34,9 +34,10 @@ CREATE TABLE zones (
 
 -- lists allowed RR types for each zone
 CREATE TABLE allowed_rr (
+	id SERIAL PRIMARY KEY,
 	zone_id INTEGER REFERENCES zones(id),
 	rrtype_id INTEGER REFERENCES rrtypes(id),
-	PRIMARY KEY (zone_id, rrtype_id)
+	UNIQUE (zone_id, rrtype_id)
 );
 
 -- all domains in all zones
@@ -59,9 +60,10 @@ CREATE INDEX domains_name_index ON domains(name,zone_id);
 -- lists allowed administrators for each zone
 -- not currently used
 CREATE TABLE admin_zone (
+	id SERIAL PRIMARY KEY,
 	admin_id INTEGER REFERENCES admins(id),
 	zone_id INTEGER REFERENCES zones(id),
-	PRIMARY KEY (admin_id, zone_id)
+	UNIQUE (admin_id, zone_id)
 );
 
 -- all resource records for all domains and zones
