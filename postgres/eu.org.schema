@@ -68,6 +68,7 @@ CREATE TABLE admin_zone (
 
 -- all resource records for all domains and zones
 CREATE TABLE rrs (
+	id SERIAL PRIMARY KEY,	-- used only for web framework access
 	domain_id INTEGER REFERENCES domains(id),
 	ttl INTEGER,
 	rrtype_id INTEGER REFERENCES rrtypes(id),
@@ -150,6 +151,7 @@ CREATE INDEX whoisdomains_fqdn_index ON whoisdomains(fqdn);
 -- note that the contact type is part of this relation, allowing
 -- a given contact record to be used as different contact types
 CREATE TABLE domain_contact (
+	id SERIAL PRIMARY KEY,	-- used only for web framework access
 	whoisdomain_id INTEGER REFERENCES whoisdomains(id),
 	contact_id INTEGER REFERENCES contacts(id),
 	contact_type_id INTEGER REFERENCES contact_types(id),
