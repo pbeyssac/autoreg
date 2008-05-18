@@ -1,5 +1,7 @@
 -- $Id$
 
+CREATE LANGUAGE "plpgsql";
+
 --
 -- DNS database
 --
@@ -105,6 +107,53 @@ CREATE TABLE rrs_hist (
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE OR REPLACE FUNCTION trig_domains()
+    RETURNS TRIGGER as $trig_domains$
+    BEGIN
+	IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
+	    INSERT INTO domains_hist (
+		id, name,zone_id, registrar_id,
+		created_by, created_on, deleted_on)
+	      VALUES (
+		OLD.id, OLD.name, OLD.zone_id, OLD.registrar_id,
+		OLD.created_by, OLD.created_on, NOW());
+	END IF;
+	IF TG_OP = 'DELETE' THEN
+	    RETURN OLD;
+	ELSE
+	    RETURN NEW;
+	END IF;
+    END;
+$trig_domains$ LANGUAGE plpgsql;
+
+-- only useful on DELETE
+CREATE TRIGGER trig_domains BEFORE DELETE ON domains
+	FOR EACH ROW EXECUTE PROCEDURE trig_domains();
+
+CREATE OR REPLACE FUNCTION trig_rrs()
+    RETURNS TRIGGER as $trig_rrs$
+    BEGIN
+	IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
+	    INSERT INTO rrs_hist (
+		domain_id,
+		ttl, rrtype_id, label, value,
+		created_on, deleted_on)
+	      VALUES (
+		OLD.domain_id,
+		OLD.ttl, OLD.rrtype_id, OLD.label, OLD.value,
+		OLD.created_on, NOW());
+	END IF;
+	IF TG_OP = 'DELETE' THEN
+	    RETURN OLD;
+	ELSE
+	    RETURN NEW;
+	END IF;
+    END;
+$trig_rrs$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trig_rrs BEFORE UPDATE OR DELETE ON rrs
+	FOR EACH ROW EXECUTE PROCEDURE trig_rrs();
+
 ---------------------------------------------------------------------
 
 --
@@ -193,6 +242,77 @@ CREATE TABLE whoisdomains_hist (
 	updated_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE OR REPLACE FUNCTION trig_contacts()
+    RETURNS TRIGGER as $trig_contacts$
+    BEGIN
+	IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
+	    INSERT INTO contacts_hist (
+		contact_id, handle, exthandle,
+		name, email, addr,
+		phone, fax,
+		passwd,
+		created_on, updated_by, updated_on, deleted_on)
+	      VALUES (
+		OLD.id, OLD.handle, OLD.exthandle,
+		OLD.name, OLD.email, OLD.addr,
+		OLD.phone, OLD.fax,
+		OLD.passwd,
+		OLD.created_on, OLD.updated_by, OLD.updated_on, NOW());
+	END IF;
+	IF TG_OP = 'DELETE' THEN
+	    RETURN OLD;
+	ELSE
+	    RETURN NEW;
+	END IF;
+    END;
+$trig_contacts$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trig_contacts BEFORE UPDATE OR DELETE ON contacts
+	FOR EACH ROW EXECUTE PROCEDURE trig_contacts();
+
+CREATE OR REPLACE FUNCTION trig_domain_contact()
+    RETURNS TRIGGER as $trig_domain_contact$
+    BEGIN
+	IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
+	    INSERT INTO domain_contact_hist (
+		whoisdomain_id, contact_id, contact_type_id,
+		created_on, deleted_on)
+	      VALUES (
+		OLD.whoisdomain_id, OLD.contact_id, OLD.contact_type_id,
+		OLD.created_on, NOW());
+	END IF;
+	IF TG_OP = 'DELETE' THEN
+	    RETURN OLD;
+	ELSE
+	    RETURN NEW;
+	END IF;
+    END;
+$trig_domain_contact$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trig_domain_contact BEFORE UPDATE OR DELETE
+	ON domain_contact
+	FOR EACH ROW EXECUTE PROCEDURE trig_domain_contact();
+
+CREATE OR REPLACE FUNCTION trig_whoisdomains()
+    RETURNS TRIGGER as $trig_whoisdomains$
+    BEGIN
+	IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
+	    INSERT INTO whoisdomains_hist (
+		whoisdomain_id, fqdn, created_on, deleted_on)
+		VALUES (OLD.id, OLD.fqdn, OLD.created_on, NOW());
+	END IF;
+	IF TG_OP = 'DELETE' THEN
+	    RETURN OLD;
+	ELSE
+	    RETURN NEW;
+	END IF;
+    END
+$trig_whoisdomains$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trig_whoisdomains BEFORE UPDATE OR DELETE
+	ON whoisdomains
+	FOR EACH ROW EXECUTE PROCEDURE trig_whoisdomains();
 
 ---------------------------------------------------------------------
 --

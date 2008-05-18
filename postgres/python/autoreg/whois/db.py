@@ -350,21 +350,6 @@ class Person(_whoisobject):
     self._dbc.execute("SELECT currval('contacts_id_seq')")
     self.cid, = self._dbc.fetchone()
     assert self._dbc.rowcount == 1
-  def _copyrecord(self):
-    """Copy record to history."""
-    assert self.cid != None
-    self._dbc.execute('SELECT * FROM contacts WHERE id=%d FOR UPDATE',
-                      (self.cid,))
-    assert self._dbc.rowcount == 1
-    self._dbc.execute('INSERT INTO contacts_hist '
-                      ' (contact_id,handle,exthandle,name,email,addr,'
-                      '  phone,fax,passwd,'
-                      '  created_on,updated_by,updated_on,deleted_on)'
-                      ' SELECT id,handle,exthandle,name,email,addr,'
-                      '  phone,fax,passwd,'
-                      '  created_on,updated_by,updated_on,NOW()'
-                      ' FROM contacts WHERE id=%d', (self.cid,))
-    assert self._dbc.rowcount == 1
   def _update(self):
     """Write back to database."""
     o = self.d
@@ -379,11 +364,9 @@ class Person(_whoisobject):
     assert self._dbc.rowcount == 1
   def update(self):
     """Write back to database, keeping history."""
-    self._copyrecord()
     self._update()
   def delete(self):
     """Delete from database, keeping history."""
-    self._copyrecord()
     self._dbc.execute('DELETE contacts WHERE id=%d', (self.cid,))
     assert self._dbc.rowcount == 1
   def fetch(self):
@@ -459,15 +442,6 @@ class Domain(_whoisobject):
       o['warn'] = c.get('warn', [])
       return None
     return self.resolve_contacts(prefs)
-  def _copyrecords(self):
-    """Copy record to history."""
-    self._dbc.execute('INSERT INTO domain_contact_hist'
-                      ' (whoisdomain_id,contact_id,contact_type_id,'
-                      '  created_on,deleted_on)'
-                      ' SELECT whoisdomain_id,contact_id,contact_type_id,'
-                      '  created_on,NOW()'
-                      '  FROM domain_contact WHERE whoisdomain_id=%d',
-                      (self.did,))
   def update(self):
     """Write back to database, keeping history."""
     assert self.did != None
@@ -480,7 +454,6 @@ class Domain(_whoisobject):
     # XXX: the line below assumes registrant contacts are not shared.
     # We'll get rid of this assumption when we drop the RIPE model.
     self.ct.update()
-    self._copyrecords()
     self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%d',
                       (self.did,))
     self._insert_domain_contact()
@@ -490,15 +463,8 @@ class Domain(_whoisobject):
     self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%d FOR UPDATE',
                       (self.did,))
     assert self._dbc.rowcount == 1
-    self._copyrecords()
     self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%d',
                       (self.did,))
-    self._dbc.execute('INSERT INTO whoisdomains_hist '
-                      ' (whoisdomain_id,fqdn,created_on,deleted_on)'
-                      ' SELECT id,fqdn,created_on,NOW()'
-                      ' FROM whoisdomains WHERE id=%d',
-                      (self.did,))
-    assert self._dbc.rowcount == 1
     self._dbc.execute('DELETE FROM whoisdomains WHERE id=%d',
                       (self.did,))
     assert self._dbc.rowcount == 1

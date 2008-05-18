@@ -228,21 +228,12 @@ class _Domain:
                           'SET updated_by=%d, updated_on=NOW() '
                           'WHERE id=%d', (login_id, self.id))
     def move_hist(self, login_id, domains=False):
-	"""Move resource records to history tables, deleting
-	original records after copy.
+	"""Move resource records to history tables, as a side effect
+	(triggers) of deleting them.
 
 	domains: if set, also move domain and associated contact records.
 	"""
 	did = self.id
-	self._dbc.execute('INSERT INTO rrs_hist '
-		'(domain_id,ttl,rrtype_id,created_on,label,value,deleted_on) '
-		'SELECT domain_id,ttl,rrtype_id,created_on,label,value,NOW() '
-		'FROM rrs WHERE domain_id=%d', (did,))
-	if domains:
-	    self._dbc.execute('INSERT INTO domains_hist '
-		'(id,name,zone_id,registrar_id,created_by,created_on,deleted_by,deleted_on) '
-		'SELECT id,name,zone_id,registrar_id,created_by,created_on,%d,NOW() '
-		'FROM domains WHERE id=%d', (login_id, did))
 	self._dbc.execute('DELETE FROM rrs WHERE domain_id=%d', (did,))
 	if domains:
 	    self._dbc.execute('DELETE FROM domains WHERE id=%d', (did,))
