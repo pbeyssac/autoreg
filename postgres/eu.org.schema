@@ -122,7 +122,7 @@ CREATE TABLE contacts (
 	addr varchar(400),
 	phone varchar(40),
 	fax varchar(40),
-	passwd varchar(16),
+	passwd varchar(34),
 	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
 	updated_by varchar(64),
 	updated_on TIMESTAMP(2) WITH TIME ZONE
@@ -178,7 +178,7 @@ CREATE TABLE contacts_hist (
 	addr varchar(400),
 	phone varchar(40),
 	fax varchar(40),
-	passwd varchar(16),
+	passwd varchar(34),
 	created_on TIMESTAMP(2) WITH TIME ZONE,
 	updated_by varchar(64),
 	updated_on TIMESTAMP(2) WITH TIME ZONE,
