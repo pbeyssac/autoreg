@@ -376,6 +376,8 @@ sub doaccept {
   }
   printf SMU $MSG_BDYAC, $rq, $domain;
 
+  my $err = 0;
+
   if ($action eq 'M' || $action eq 'MZ' || $action eq 'D') {
     print SMU $MSG_BDYZD;
     if (!open(AZ, "$AZPATH -a show -u$user $domain 2>&1 |")) {
@@ -399,6 +401,7 @@ sub doaccept {
       close(AZ);
       if ($? != 0) {
 	print "<STRONG>Error when trying to delete zone records.</STRONG><P>\n";
+	$err++;
       }
     }
   } elsif ($action eq 'N' || $action eq 'M' || $action eq 'MZ') {
@@ -406,12 +409,15 @@ sub doaccept {
     if (!open(AZ, "| $AZPATH -a $action -u$user $domain")) {
       print SMU $MSG_NOINS;
       print "<STRONG>Unable to insert records.</STRONG><P>\n";
+      $err++;
     } else {
       print AZ $dns;
       print SMU $dns;
       close (AZ);
       if ($? != 0) {
 	print "<STRONG>Error when trying to insert records.</STRONG>\n";
+	print SMU "Error when trying to insert records.\n";
+	$err++;
       }
       print SMU "\n";
     }
@@ -421,9 +427,15 @@ sub doaccept {
   my $htmltext = &tohtml($rtext);
   if ($st ne 'OK') {
     print "<STRONG>Error when trying to handle whois records.</STRONG>\n";
+    print SMU "Error when trying to handle whois records.\n";
+    $err++;
   }
   print "Whois result:\n<PRE>\n$htmltext\n</PRE>\n";
-  print "The above has been <STRONG>committed</STRONG><BR>\n";
+  if (!$err) {
+    print "The above has been <STRONG>committed</STRONG><BR>\n";
+  } else {
+    print "The above has been <STRONG>cancelled</STRONG><BR>\n";
+  }
 
   if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
     print SMU $MSG_BDYWI;
@@ -484,7 +496,7 @@ sub doaccept {
     close(SMU);
   }
 
-  if (!$alldryrun) { &rq_remove($rq, $user, $ACCDIR); }
+  if (!$alldryrun && !$err) { &rq_remove($rq, $user, $ACCDIR); }
   print "End of processing.<P>\n";
 }
 
