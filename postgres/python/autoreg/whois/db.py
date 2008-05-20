@@ -308,18 +308,10 @@ class Person(_whoisobject):
     if (not 'nh' in self.d) or self.d['nh'][0] == None:
       l = mkinitials(self.d['pn'][0])
 
-      # Find the highest allocated handle with the same initials
-      self._dbc.execute("SELECT CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
-                        " FROM contacts WHERE handle SIMILAR TO '%s[0-9]+'"
-                        " ORDER BY CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)"
-                        " DESC LIMIT 1" % _todb((l,)))
-      assert 0 <= self._dbc.rowcount <= 1
-      if self._dbc.rowcount == 0:
-        i = 1
-      else:
-        i, = _fromdb(self._dbc.fetchone())
-        i += 1
-      h = u"%s%d" % (l, i)
+      # Find the next free handle with the same initials
+      self._dbc.execute("SELECT nexthandle('%s')" % _todb((l,)))
+      assert self._dbc.rowcount == 1
+      h, = _fromdb(self._dbc.fetchone())
       self.key = suffixadd(h)
       self.d['nh'] = [ h ]
       #print "Allocated handle", self.key, "for", self.d['pn'][0]
@@ -327,10 +319,6 @@ class Person(_whoisobject):
     return suffixadd(self.d['nh'][0])
   def insert(self):
     """Create in database."""
-    # lock the table real good to avoid any race condition at
-    # handle allocation or insertion.
-    self._dbc.execute("LOCK TABLE contacts IN ACCESS EXCLUSIVE MODE")
-
     self._allocate_handle()
     o = self.d
     if o['ch'][0][1] == None:
