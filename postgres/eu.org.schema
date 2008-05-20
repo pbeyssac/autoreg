@@ -107,6 +107,35 @@ CREATE TABLE rrs_hist (
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Functions
+
+-- Return a free NIC handle for the given initials
+
+CREATE OR REPLACE FUNCTION nexthandle(initials VARCHAR)
+    RETURNS VARCHAR AS $nexthandle$
+DECLARE
+    num INT;
+    upinitials VARCHAR;
+BEGIN
+	upinitials := UPPER(initials);
+	-- lock the table to avoid an obvious race condition
+	LOCK TABLE contacts IN ACCESS EXCLUSIVE MODE;
+	-- Find the highest allocated handle with the same initials
+	SELECT CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)
+	    INTO num
+	    FROM contacts WHERE handle SIMILAR TO upinitials || '[0-9]+'
+	    ORDER BY CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)
+	    DESC LIMIT 1;
+        IF NOT FOUND THEN
+	    num := 0;
+        END IF;
+	-- Build and return new handle
+	RETURN upinitials || CAST(num + 1 AS VARCHAR);
+END;
+$nexthandle$ LANGUAGE plpgsql;
+
+-- Triggers
+
 CREATE OR REPLACE FUNCTION trig_domains()
     RETURNS TRIGGER as $trig_domains$
     BEGIN
@@ -242,6 +271,8 @@ CREATE TABLE whoisdomains_hist (
 	updated_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Triggers
 
 CREATE OR REPLACE FUNCTION trig_contacts()
     RETURNS TRIGGER as $trig_contacts$
