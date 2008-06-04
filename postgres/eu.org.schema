@@ -277,10 +277,12 @@ CREATE TABLE whoisdomains_hist (
 CREATE OR REPLACE FUNCTION trig_contacts()
     RETURNS TRIGGER as $trig_contacts$
     BEGIN
-	IF TG_OP = 'UPDATE' AND NEW.updated_on IS NULL THEN
-	    -- INSERT case handled by a DEFAULT NOW() clause;
-	    -- we need to handle the UPDATE case by hand.
-	    NEW.updated_on := NOW();
+	IF TG_OP = 'UPDATE' THEN
+	    IF NEW.updated_on IS NULL THEN
+		-- INSERT case handled by a DEFAULT NOW() clause;
+		-- we need to handle the UPDATE case by hand.
+		NEW.updated_on := NOW();
+	    END IF;
 	END IF;
 	IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
 	    INSERT INTO contacts_hist (
