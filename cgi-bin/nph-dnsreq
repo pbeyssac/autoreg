@@ -7,7 +7,7 @@
 #
 
 # local configuration.
-require "/usr/local/dns-manager/conf/config";
+require "/usr/local/autoreg/conf/config";
 require "$DNSLIB/cgi.pl";
 
 print "HTTP/1.0 200 OK\n";
