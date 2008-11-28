@@ -11,6 +11,8 @@ AZ=/usr/local/autoreg/bin/access-zone
 DEST=/etc/namedb/autoreg
 # Command to reload the nameserver. Used only if option -r is provided.
 NDC=/usr/sbin/rndc
+# DNS Zone signing
+SIGNZONE=/usr/sbin/dnssec-signzone
 #
 NDCKEY=/etc/namedb/rndc-autoreg.key
 
@@ -70,6 +72,13 @@ do
 
 		    echo ----
 		    mod=1
+		    # Sign zone, if relevant
+		    if [ -f $DEST/$i.DNSSEC ]; then
+			(
+			cd $DEST
+			$SIGNZONE -l dlv.isc.org -r /dev/random -o $i $i.DNSSEC
+			)
+		    fi
 		else
 		    echo "Error: cannot dump zone $i to $DEST/$i.new"
 		    rm -f $DEST/$i.new
