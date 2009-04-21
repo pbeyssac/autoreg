@@ -7,7 +7,7 @@ import sys
 
 import mx
 
-handlesuffix = '-FREE'
+HANDLESUFFIX = '-FREE'
 
 _tv68 = re.compile('^(\S+)\s*(?:(\d\d))?(\d\d)(\d\d)(\d\d)$')
 _tv = re.compile('^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)(?:\.(\d\d))?$')
@@ -95,12 +95,15 @@ def addrsplit(ta):
     a.append(None)
   return a
 
-_lhandlesuffix = len(handlesuffix)
+_lhandlesuffix = len(HANDLESUFFIX)
 
 def suffixadd(h):
-  return h + handlesuffix
+  return h + HANDLESUFFIX
 def suffixstrip(h):
-  return h[:-_lhandlesuffix]
+  if h.endswith(HANDLESUFFIX):
+    return h[:-_lhandlesuffix]
+  else:
+    return h
 
 ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
               'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
@@ -200,7 +203,7 @@ class _whoisobject(object):
       o[k] = r
     # move foreign NIC handle out of the way
     if 'nh' in o:
-      if o['nh'][0].endswith(handlesuffix):
+      if o['nh'][0].endswith(HANDLESUFFIX):
         o['nh'][0] = suffixstrip(o['nh'][0])
       else:
         o['eh'] = o['nh']
@@ -544,7 +547,7 @@ class Domain(_whoisobject):
         # XXX: "... AND email IS NOT NULL" is a hack
         # to exclude "registrant" contacts while (temporarily)
         # allowing regular contacts without an email.
-        if l.upper().endswith(handlesuffix):
+        if l.upper().endswith(HANDLESUFFIX):
           self._dbc.execute('SELECT id FROM contacts'
                             ' WHERE (lower(contacts.name)=%s'
                             ' AND email IS NOT NULL) OR handle=%s',
@@ -608,7 +611,7 @@ class Lookup:
     l = [ Domain(self._dbc, t[0]) for t in self._dbc.fetchall() ]
     return l
   def persons_by_handle(self, handle):
-    if handle.upper().endswith(handlesuffix):
+    if handle.upper().endswith(HANDLESUFFIX):
       self._dbc.execute('SELECT id FROM contacts WHERE handle=%s',
                         _todb((suffixstrip(handle.upper()),)))
     else:
@@ -634,7 +637,7 @@ class Lookup:
     did, upby, upon = _fromdb(self._dbc.fetchone())
     return Domain(self._dbc, did, name, upby, upon)
   def domains_by_handle(self, handle):
-    if not handle.upper().endswith(handlesuffix):
+    if not handle.upper().endswith(HANDLESUFFIX):
       # external handle
       self._dbc.execute('SELECT DISTINCT(whoisdomains.id) FROM '
                         ' whoisdomains, contacts, domain_contact'
@@ -869,7 +872,7 @@ class Main:
   def _order(self, o, dodel, persons, nohandle, domains, forcechanged):
     """Handle reordering."""
     if not dodel and 'pn' in o \
-        and (not 'nh' in o or not o['nh'][0].endswith(handlesuffix)):
+        and (not 'nh' in o or not o['nh'][0].endswith(HANDLESUFFIX)):
       # updating or creation of a person object, no handle yet.
       # keep for later allocation to avoid clashes
       nohandle.append(o)
