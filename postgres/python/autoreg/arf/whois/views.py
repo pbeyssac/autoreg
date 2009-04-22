@@ -22,9 +22,13 @@ from django.views.decorators.cache import cache_control
 from models import Whoisdomains,Contacts
 
 URIBASE = '/arf/'
-URILOGIN = URIBASE + 'login/';
-URLCHPASS = 'https://eu.org' + URIBASE + 'contact/chpass/'
+URILOGIN = URIBASE + 'login/'
+URICHPASS = URIBASE + 'contact/chpass/'
+URICHANGE = URIBASE + 'contact/change/'
+URIDOMAINS = URIBASE + 'contact/domains/'
+URILOGOUT = URIBASE + 'logout/'
 URIRESET1 = URIBASE + 'contact/reset/'
+URLCHPASS = 'https://eu.org' + URICHPASS
 URLRESET2 = 'https://eu.org' + URIBASE + 'contact/doreset/'
 FROMADDR = 'noreply@eu.org'
 RESET_TOKEN_TTL = 3*86400
@@ -310,7 +314,12 @@ def index(request):
   if not request.user.is_authenticated():
     return HttpResponseRedirect(URILOGIN)
   handle = suffixadd(request.user.username)
-  return render_to_response('whois/index.html', {'handle': handle})
+  return render_to_response('whois/index.html',
+                            {'handle': handle,
+                             'urichpass': URICHPASS,
+                             'urichange': URICHANGE,
+                             'uridomains': URIDOMAINS,
+                             'urilogout': URILOGOUT})
 
 @cache_control(private=True)
 def chpass(request):
