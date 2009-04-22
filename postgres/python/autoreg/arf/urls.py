@@ -7,7 +7,7 @@ urlpatterns = patterns('autoreg.arf.whois.views',
     #(r'^whois/(?P<id>\d+)$', include('domain')),
     #(r'^contact/(?P<handle>[A-Z0-9]+)$', 'contact'),
     #(r'^contact/(?P<handle>[A-Z0-9]+)/$', 'contact'),
-    (r'^arf/', include('autoreg.arf.urlsubs')),
+    (r'^', include('autoreg.arf.urlsubs')),
 )
 
 urlpatterns += patterns('',
