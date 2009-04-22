@@ -89,3 +89,11 @@ INSTALLED_APPS = (
 
 # Authentication backend using passwords from the whois contact database.
 AUTHENTICATION_BACKENDS = ( 'autoreg.arf.whois.contactauth.AuthBackend', )
+
+#
+# Application-specific settings
+#
+
+import os
+URIBASE = os.environ.get('ARF_BASE', '/arf/')
+URLBASE = 'https://eu.org'

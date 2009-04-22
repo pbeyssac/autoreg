@@ -9,6 +9,7 @@ import smtplib
 import time
 
 from autoreg.whois.db import HANDLESUFFIX,suffixstrip,suffixadd
+from autoreg.arf.settings import URIBASE, URLBASE
 
 import django.contrib.auth
 from django.template.loader import get_template
@@ -21,15 +22,14 @@ from django.views.decorators.cache import cache_control
 
 from models import Whoisdomains,Contacts
 
-URIBASE = '/arf/'
 URILOGIN = URIBASE + 'login/'
 URICHPASS = URIBASE + 'contact/chpass/'
 URICHANGE = URIBASE + 'contact/change/'
 URIDOMAINS = URIBASE + 'contact/domains/'
 URILOGOUT = URIBASE + 'logout/'
 URIRESET1 = URIBASE + 'contact/reset/'
-URLCHPASS = 'https://eu.org' + URICHPASS
-URLRESET2 = 'https://eu.org' + URIBASE + 'contact/doreset/'
+URLCHPASS = URLBASE + URICHPASS
+URLRESET2 = URLBASE + URIBASE + 'contact/doreset/'
 FROMADDR = 'noreply@eu.org'
 RESET_TOKEN_TTL = 3*86400
 
