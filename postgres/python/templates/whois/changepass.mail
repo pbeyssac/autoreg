@@ -1,0 +1,20 @@
+{% extends "base-varheaders.mail" %}
+{% block subject %}password change for eu.org contact{% endblock %}
+{% block content %}
+Hello,
+
+Following a request on our web site, your eu.org contact password
+has been reset.
+
+New password: {{ newpass }}
+
+Usernames (handles):
+{% for h in handles %}	{{ h }}
+{% endfor %}
+
+It is advised that you change it as soon as possible to something
+else, by going to {{ changeurl }}
+
+Best Regards,
+The EU.org team
+{% endblock %}

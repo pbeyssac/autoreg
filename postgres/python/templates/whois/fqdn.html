@@ -1,0 +1,8 @@
+<ul>
+<li>{{ whoisdomain.fqdn }}</li>
+<li>{{ whoisdomain.created_on }}</li>
+<li>{{ whoisdomain.updated_on }}</li>
+{% for dc in domaincontact_list %}
+<li>{{ dc.contact_type.name }} -- {{ dc.contact.handle }} -- {{ dc.contact.name }}</li>
+{% endfor %}
+</ul>

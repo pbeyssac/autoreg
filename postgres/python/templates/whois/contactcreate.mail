@@ -1,0 +1,14 @@
+{% extends base-varheaders.mail %}
+{% block content %}
+Hello,
+
+Your contact record has been successfully created with the following
+data. You still need to activate it, by going to the following page:
+{{ url }}
+
+Best Regards,
+The EU.org team
+
+-------------------------------------------------------------------
+{{ whoisdata }}
+{% endblock %}

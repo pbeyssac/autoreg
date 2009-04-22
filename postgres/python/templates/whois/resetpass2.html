@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Password Reset{% endblock %}
+{% block h1title %}Password Reset{% endblock %}
+{% block msg %}{% if msg %}{{ msg }}
+{% endif %}{% endblock %}
+{% block form %}
+<FORM ACTION="{{ posturi }}" METHOD="POST">
+<TABLE>
+{{ form }}
+</TABLE>
+<INPUT TYPE="submit" NAME="change" VALUE="Change Password">
+</FORM>
+{% endblock %}

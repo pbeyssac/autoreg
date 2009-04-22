@@ -1,8 +1,8 @@
+# $Id$
 
-"""autoreg"""
+"""arf"""
 
 __all__ = [
-  'arf',
   'dns',
   'whois',
 ]

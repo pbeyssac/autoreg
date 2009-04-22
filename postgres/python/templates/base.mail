@@ -1,0 +1,9 @@
+From: {% block from %}{% endblock %}
+To: {% block to %}{% endblock %}
+Subject: {% block subject %}{% endblock %}
+Mime-Version: 1.0
+Content-Type: text/plain; charset={% block charset %}utf-8{% endblock %}
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+
+{% block content %}{% endblock %}

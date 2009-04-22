@@ -1,0 +1,11 @@
+<pre>
+person:  {{ contact.name|escape }}
+{% for line in address_list %}address: {{ line|escape }}
+{% endfor %}nic-hdl: {{ contact.handle }}
+{%if contact.exthandle %}ext-hdl: {{ contact.exthandle|escape }}
+{% endif %}{% if contact.phone %}phone:   {{ contact.phone|escape }}
+{% endif %}{% if contact.fax %}fax:     {{ contact.fax|escape }}
+{% endif %}{% if contact.email %}e-mail:  {{ contact.email|escape }}
+{% endif %}created: {{ contact.created_on }}
+changed: {{ contact.updated_on }} {{ contact.updated_by|escape }}
+</pre>

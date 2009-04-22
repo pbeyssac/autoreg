@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Contact administration page{% endblock %}
+{% block h1title %}Contact administration page{% endblock %}
+{% block msg %}Logged in as: <strong>{{ handle }}</strong>{% endblock %}
+{% block content %}
+<ul>
+<li><a href="/arf/contact/change/">Modify contact information</strong></a>
+<li><a href="/arf/contact/chpass/">Change contact password</strong></a>
+<li><a href="/arf/contact/domains/">List related domains</strong></a>
+<li><a href="/arf/logout/">Logout<a>
+</ul>
+{% endblock %}

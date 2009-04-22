@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Contact Login{% endblock %}
+{% block h1title %}Contact Login{% endblock %}
+{% block msg %}{% if msg %}{{ msg }}
+{% endif %}{% endblock %}
+{% block form %}
+<FORM ACTION="{{ posturi }}" METHOD="POST">
+<TABLE>
+{{ form }}
+</TABLE>
+{% if next %}<INPUT TYPE="hidden" NAME="next" VALUE="{{ next }}">
+{% endif %}
+<INPUT TYPE="submit" NAME="login" VALUE="Login">
+</FORM>
+{% endblock %}
