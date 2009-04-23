@@ -282,12 +282,13 @@ class _whoisobject(object):
     return d1.__cmp__(d2)
 
 class Person(_whoisobject):
-  def __init__(self, dbc, cid=None, key=None):
+  def __init__(self, dbc, cid=None, key=None, passwd=None):
     fetch_dbencoding(dbc)
     self._dbc = dbc
     self.cid = cid
     self.key = key
     self.d = {}
+    self.passwd = passwd
   def _set_key(self):
     if self.d['nh'][0] != None:
       self.key = suffixadd(self.d['nh'][0])
@@ -330,11 +331,11 @@ class Person(_whoisobject):
       o['ch'] = [(o['ch'][0][0], now)]
       o['cr'] = [now]
     self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
-                      'addr,phone,fax,created_on,updated_by,updated_on) '
-                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                      'passwd,addr,phone,fax,created_on,updated_by,updated_on) '
+                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
                    _todb(
                       (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
-                       addrmake(o['ad']), o['ph'][0], o['fx'][0],
+                       self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]))))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('contacts_id_seq')")
