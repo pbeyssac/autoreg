@@ -39,11 +39,12 @@ MAILBCC="pb@eu.org"
 # Helper functions
 #
 
-def _makesalt():
-  """Return a salt suitable for MD5-based crypt"""
+def _pwcrypt(passwd):
+  """Compute a MD5-based crypt(3) hash suitable for user authentication"""
+  # Make a salt suitable for MD5-based crypt
   salt_chars = '0123456789abcdefghijklmnopqstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/.'
   t = ''.join(random.SystemRandom().choice(salt_chars) for i in range(8))
-  return '$1$' + t + '$'
+  return crypt.crypt(passwd, '$1$' + t + '$')
 
 def _render_to_mail(templatename, context, fromaddr, toaddrs):
   """Expand provided templatename and context, send the result
@@ -216,7 +217,7 @@ def resetpass2(request, handle):
       return render_to_response('whois/msgnext.html',
                                 {'next': URIRESET1,
                                  'msg': "Reset code has expired, please try to get a new one."})
-    ct.passwd = crypt.crypt(pass1, _makesalt())
+    ct.passwd = _pwcrypt(pass1)
     ct.pw_reset_token = None
     ct.save()
     return render_to_response('whois/passchanged.html',
@@ -261,7 +262,7 @@ def contactcreate(request):
       from autoreg.whois.db import Person
       from autoreg.arf.settings import DATABASE_NAME
       dbh = psycopg.connect('dbname=' + DATABASE_NAME)
-      p = Person(dbh.cursor(), passwd=crypt.crypt(p1, _makesalt()))
+      p = Person(dbh.cursor(), passwd=_pwcrypt(p1))
       if p.from_ripe(d):
         p.insert()
         #
@@ -311,7 +312,7 @@ def resetpass_old(request):
     if len(ctl) >= 1:
       sr = random.SystemRandom()
       clearpass = ''.join(sr.choice(allowed_chars) for i in range(8))
-      cryptpass = crypt.crypt(clearpass, _makesalt())
+      cryptpass = _pwcrypt(clearpass)
 
       hlist = []
       for ct in ctl:
@@ -377,7 +378,7 @@ def chpass(request):
       return render_to_response('whois/chpass.html',
                                 {'form': form, 'posturi': request.path,
                                  'msg': 'Current password is not correct.'})
-    ct.passwd = crypt.crypt(pass1, _makesalt())
+    ct.passwd = _pwcrypt(pass1)
     ct.save()
     return render_to_response('whois/passchanged.html',
                               {'next': URIBASE})
