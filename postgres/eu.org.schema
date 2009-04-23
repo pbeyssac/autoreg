@@ -202,8 +202,10 @@ CREATE TABLE contacts (
 	fax varchar(40),
 	passwd varchar(34),
 	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	validated_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
 	updated_by varchar(64),
 	updated_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	validation_token varchar(8),
 	pw_reset_token VARCHAR(16),
 	pw_reset_token_date TIMESTAMP(2) WITH TIME ZONE
 );
@@ -260,6 +262,7 @@ CREATE TABLE contacts_hist (
 	fax varchar(40),
 	passwd varchar(34),
 	created_on TIMESTAMP(2) WITH TIME ZONE,
+	validated_on TIMESTAMP(2) WITH TIME ZONE,
 	updated_by varchar(64),
 	updated_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
@@ -292,13 +295,15 @@ CREATE OR REPLACE FUNCTION trig_contacts()
 		name, email, addr,
 		phone, fax,
 		passwd,
-		created_on, updated_by, updated_on, deleted_on)
+		created_on, validated_on,
+		updated_by, updated_on, deleted_on)
 	      VALUES (
 		OLD.id, OLD.handle, OLD.exthandle,
 		OLD.name, OLD.email, OLD.addr,
 		OLD.phone, OLD.fax,
 		OLD.passwd,
-		OLD.created_on, OLD.updated_by, OLD.updated_on, NOW());
+		OLD.created_on, OLD.validated_on,
+		OLD.updated_by, OLD.updated_on, NOW());
 	END IF;
 	IF TG_OP = 'DELETE' THEN
 	    RETURN OLD;

@@ -36,6 +36,9 @@ RESET_TOKEN_TTL = RESET_TOKEN_HOURS_TTL*3600
 # for debug purposes
 MAILBCC="pb@eu.org"
 
+# chars allowed in passwords or reset/validation tokens
+allowed_chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
 #
 # Helper functions
 #
@@ -154,7 +157,6 @@ def login(request):
 
 def makeresettoken(request):
   """Password reset step 1: send a reset token to the contact email address"""
-  allowed_chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   if request.method == "GET":
     f = contactbyhandle_form()
     form = f.as_table()
@@ -263,7 +265,9 @@ def contactcreate(request):
       from autoreg.whois.db import Person
       from autoreg.arf.settings import DATABASE_NAME
       dbh = psycopg.connect('dbname=' + DATABASE_NAME)
-      p = Person(dbh.cursor(), passwd=_pwcrypt(p1))
+      sr = random.SystemRandom()
+      valtoken = ''.join(sr.choice(allowed_chars) for i in range(8))
+      p = Person(dbh.cursor(), passwd=_pwcrypt(p1), valtoken=valtoken)
       if p.from_ripe(d):
         p.insert()
         #
@@ -299,7 +303,6 @@ def domain(request, fqdn):
 
 def resetpass_old(request):
   """Deprecated: unprotected password reset page"""
-  allowed_chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   clearpass = ''
   cryptpass = ''
   if request.method == "GET":
