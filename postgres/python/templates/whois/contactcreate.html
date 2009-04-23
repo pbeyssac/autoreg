@@ -17,9 +17,9 @@
 {% block form %}
 <FORM ACTION="{{ posturi }}" METHOD="POST">
 <TABLE>
-<div class="fieldWrapper">
-    {{ form.pn1.errors }}
+<div class="fieldWrapper{% if form.pn1.errors %}error{% endif %}">
     <label for="id_pn1">Name</label>{{ form.pn1 }}
+    {% if form.pn1.errors %}{% for error in form.pn1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.em1.errors %}error{% endif %}">
     <label for="id_em1">E-mail</label>{{ form.em1 }}
@@ -57,16 +57,16 @@
     <label for="id_fx1">Fax</label>{{ form.fx1 }}
     {% if form.fx1.errors %}{% for error in form.fx1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
-<div class="fieldWrapper{% if form.p1.errors %}error{% endif %}">
+<div class="fieldWrapper{% if p_errors %}error{% endif %}">
     <label for="id_p1">Password</label>{{ form.p1 }}
-    {% if form.p1.errors %}{% for error in form.p1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
+    {% if p_errors %}{% for error in p_errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
-<div class="fieldWrapper{% if form.p2.errors %}error{% endif %}">
+<div class="fieldWrapper{% if p_errors %}error{% endif %}">
     <label for="id_p2">Confirm Password</label>{{ form.p2 }}
-    {% if form.p2.errors %}{% for error in form.p2.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
+    {% if p_errors %}{% for error in p_errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.policy.errors %}error{% endif %}">
-    <label for="id_policy">Policy</label>{{ form.policy }}
+    <label for="id_policy">I accept the Policy</label>{{ form.policy }}
     {% if form.policy.errors %}{% for error in form.policy.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 </TABLE>

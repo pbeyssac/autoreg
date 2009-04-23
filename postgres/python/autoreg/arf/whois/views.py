@@ -2,7 +2,6 @@
 
 import crypt
 import datetime
-import os
 import random
 import re
 import smtplib
@@ -79,7 +78,7 @@ class contact_form(forms.Form):
   fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   p1 = forms.CharField(max_length=20, label='Password', required=False, widget=PasswordInput)
   p2 = forms.CharField(max_length=20, label='Confirm Password', required=False, widget=PasswordInput)
-  policy = forms.BooleanField(label="I accept the Policy", required=False)
+  policy = forms.BooleanField(label="I accept the Policy", required=True)
 
 class contactlogin_form(forms.Form):
   handle = forms.CharField(max_length=15, initial=HANDLESUFFIX, help_text='Your handle')
@@ -229,27 +228,52 @@ def contactcreate(request):
     form = contact_form()
   elif request.method == "POST":
     form = contact_form(request.POST)
-    if form.is_valid():
+
+    # validate password field by hand
+    p1 = request.POST.get('p1', '')
+    p2 = request.POST.get('p2', '')
+    if p1 != p2:
+      p_errors = ["Passwords don't match"]
+    elif p1 < 8:
+      p_errors = ["Password too short"]
+    else:
+      p_errors = []
+
+    if form.is_valid() and not p_errors:
+      #
+      # Process contact creation
+      #
       d = {}
-      d['pn'] = [ form.cleaned_data['pn1'] ]
-      d['em'] = [ form.cleaned_data['em1'] ]
+      for i in ['pn', 'em', 'ph', 'fx']:
+        v = form.cleaned_data.get(i + '1', None)
+        if v != '':
+          d[i] = [v]
       ad = []
       for i in ['ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'ad6']:
         a = form.cleaned_data.get(i, None)
-        if a is not None:
+        if a is not None and a != '':
           ad.append(a)
       d['ad'] = ad
-      d['ph'] = [ form.cleaned_data.get('ph', None) ]
-      d['fx'] = [ form.cleaned_data.get('fx', None) ]
-      # XXX: use META
-      d['ch'] = [ (os.environ.get('REMOTE_ADDR', 'REMOTE_ADDR_NOT_SET'), None) ]
-      send_mail(
-        'Feedback from your site',
-        'CHECK\n\n', 'pb@fasterix.frmug.org',
-        ['pb@fasterix.frmug.org'])
-      return HttpResponse("Done")
+      d['ch'] = [(request.META.get('REMOTE_ADDR', 'REMOTE_ADDR_NOT_SET'), None)]
+
+      # XXX: the following section is a terrible hack
+      import psycopg
+      from autoreg.whois.db import Person
+      from autoreg.arf.settings import DATABASE_NAME
+      dbh = psycopg.connect('dbname=' + DATABASE_NAME)
+      p = Person(dbh.cursor(), passwd=crypt.crypt(p1, _makesalt()))
+      if p.from_ripe(d):
+        p.insert()
+        #
+        # XXX: send validation email
+        #
+        handle = p.gethandle()
+        dbh.commit()
+        return HttpResponse("Done: " + handle)
+      # else: fall through
   return render_to_response('whois/contactcreate.html',
-                            {'form': form, 'posturi': request.path})
+                            {'form': form, 'posturi': request.path,
+                             'p_errors': p_errors})
 
 def contact(request, handle):
   """Contact display from handle"""
