@@ -37,6 +37,8 @@ class Contacts(models.Model):
     passwd = models.CharField(max_length=34)
     created_on = models.DateTimeField()
     updated_by = models.CharField(max_length=64)
+    validated_on = models.DateTimeField()
+    validation_token = models.CharField(max_length=8)
     updated_on = models.DateTimeField()
     pw_reset_token = models.CharField(max_length=16)
     pw_reset_token_date = models.DateTimeField()

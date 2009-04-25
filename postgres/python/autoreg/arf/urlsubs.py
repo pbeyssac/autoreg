@@ -8,12 +8,13 @@ urlpatterns = patterns('autoreg.arf.whois.views',
     (r'^logout/$', 'logout'),
     (r'^contact/change/$', 'contactchange'),
     (r'^contact/chpass/$', 'chpass'),
-    (r'^contact/create/$', 'contactcreate'),
     (r'^contact/domains/$', 'domainlist'),
-    #(r'^contact/pw/$', 'resetpass_old'),
-    # The following two are special for lost password handling;
+    # The following are special for lost password handling;
     # putting these under /contact/... is not quite correct as they are
     # not private.
+    (r'^contact/create/$', 'contactcreate'),
     (r'^contact/reset/$', 'makeresettoken'),
     (r'^contact/doreset/(?P<handle>[A-Z0-9]+)/$', 'resetpass2'),
+    (r'^contact/validate/(?P<handle>[A-Z0-9]+)/(?P<valtoken>[a-zA-Z0-9]+)/$', 'contactvalidate'),
+    #(r'^contact/pw/$', 'resetpass_old'),
 )

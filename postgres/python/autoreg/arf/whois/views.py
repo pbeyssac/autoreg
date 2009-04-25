@@ -28,6 +28,7 @@ URIDOMAINS = URIBASE + 'contact/domains/'
 URILOGOUT = URIBASE + 'logout/'
 URIRESET1 = URIBASE + 'contact/reset/'
 URLCHPASS = URLBASE + URICHPASS
+URLCONTACTVAL = URLBASE + '/contact/validate/%s/%s/'
 URLRESET2 = URLBASE + URIBASE + 'contact/doreset/'
 FROMADDR = 'noreply@eu.org'
 RESET_TOKEN_HOURS_TTL = 24
@@ -98,6 +99,10 @@ class chpass_form(forms.Form):
   pass0 = forms.CharField(max_length=30, label='Current Password', widget=PasswordInput)
   pass1 = forms.CharField(max_length=30, label='New Password', widget=PasswordInput)
   pass2 = forms.CharField(max_length=30, label='Confirm Password', widget=PasswordInput)
+
+#class contactvalidate_form(forms.Form):
+#  handle = forms.CharField(max_length=15, initial=HANDLESUFFIX, help_text='Contact handle')
+#  valtoken = forms.CharField(max_length=8)
 
 #
 # 'view' functions called from urls.py and friends
@@ -269,16 +274,48 @@ def contactcreate(request):
       p = Person(dbh.cursor(), passwd=_pwcrypt(p1), valtoken=valtoken)
       if p.from_ripe(d):
         p.insert()
-        #
-        # XXX: send validation email
-        #
-        handle = p.gethandle()
+        handle = suffixstrip(p.gethandle())
+        url = URLCONTACTVAL % (handle.upper(), valtoken)
+        _render_to_mail('whois/contactcreate.mail',
+                        {'url': url,
+                         'whoisdata': 'Whois data -- TBD',
+                         'from': FROMADDR, 'to': d['em']},
+                        FROMADDR, [d['em']])
         dbh.commit()
-        return HttpResponse("Done: " + handle)
+        return render_to_response('whois/msgnext.html',
+                                  {'next': URIBASE,
+                                   'msg': "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(handle), d['em'])})
       # else: fall through
   return render_to_response('whois/contactcreate.html',
                             {'form': form, 'posturi': request.path,
                              'p_errors': p_errors})
+
+def contactvalidate(request, handle, valtoken):
+  """Contact validation page"""
+  if request.user.is_authenticated():
+    django.contrib.auth.logout(request)
+  ctl = Contacts.objects.filter(handle=handle)
+  if len(ctl) == 0 or len(ctl) > 1 or ctl[0].validation_token != valtoken:
+    if ctl[0].validated_on is None:
+      msg = "Sorry, contact handle or validation token is not valid."
+    else:
+      msg = "Contact has already been validated."
+    return render_to_response('whois/msgnext.html',
+                              {'next': URIBASE, 'msg': msg})
+  ct = ctl[0]
+  if request.method == "GET":
+    return render_to_response('whois/contactvalidate.html',
+                              {'handle': suffixadd(handle),
+                               'email': ct.email,
+                               'posturi': request.path})
+  elif request.method == "POST":
+    ct.validated_on = datetime.datetime.today()
+    ct.validation_token = None
+    ct.save()
+    return render_to_response('whois/msgnext.html',
+                              {'next': URIBASE,
+                               'msg': "Your contact handle is now valid."})
+  return HttpResponse("Internal error")
 
 def contact(request, handle):
   """Contact display from handle"""
