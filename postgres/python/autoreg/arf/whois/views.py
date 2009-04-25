@@ -100,10 +100,6 @@ class chpass_form(forms.Form):
   pass1 = forms.CharField(max_length=30, label='New Password', widget=PasswordInput)
   pass2 = forms.CharField(max_length=30, label='Confirm Password', widget=PasswordInput)
 
-#class contactvalidate_form(forms.Form):
-#  handle = forms.CharField(max_length=15, initial=HANDLESUFFIX, help_text='Contact handle')
-#  valtoken = forms.CharField(max_length=8)
-
 #
 # 'view' functions called from urls.py and friends
 #
