@@ -228,6 +228,7 @@ def resetpass2(request, handle):
 
 def contactcreate(request):
   """Contact creation page"""
+  p_errors = []
   if request.method == "GET":
     form = contact_form()
   elif request.method == "POST":
@@ -240,8 +241,6 @@ def contactcreate(request):
       p_errors = ["Passwords don't match"]
     elif p1 < 8:
       p_errors = ["Password too short"]
-    else:
-      p_errors = []
 
     if form.is_valid() and not p_errors:
       #
