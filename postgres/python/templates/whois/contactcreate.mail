@@ -1,4 +1,4 @@
-{% extends base-varheaders.mail %}
+{% extends "base-varheaders.mail" %}
 {% block content %}
 Hello,
 
