@@ -172,11 +172,11 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
     print d.__str__().encode(encoding, 'xmlcharrefreplace')
     pdone = []
     for k in ['technical', 'administrative', 'zone']:
-      if not k in dc:
+      if k not in dc:
         continue
       for p in dc[k]:
         p.fetch()
-        if not p.key in pdone:
+        if p.key not in pdone:
           print p.__str__().encode(encoding, 'xmlcharrefreplace')
           pdone.append(p.key)
     return
