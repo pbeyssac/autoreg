@@ -167,7 +167,7 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
     return
 
   d = l.domain_by_name(a)
-  if d != None:
+  if d is not None:
     dc = d.get_contacts()
     print d.__str__().encode(encoding, 'xmlcharrefreplace')
     pdone = []

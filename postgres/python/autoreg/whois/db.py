@@ -18,7 +18,7 @@ DEFAULTENCODING = 'ISO-8859-1'
 def fetch_dbencoding(dbc):
   """Get the current client encoding on the database connection."""
   global DBENCODING
-  if DBENCODING == None:
+  if DBENCODING is None:
     dbc.execute('SHOW client_encoding')
     assert dbc.rowcount == 1
     DBENCODING, = dbc.fetchone()
@@ -79,7 +79,7 @@ def addrmake(a):
   """Make a newline-separated string from a list."""
   ta = ''
   for l in a:
-    if l != None:
+    if l is not None:
       ta += l + '\n'
   return ta
 
@@ -213,7 +213,7 @@ class _whoisobject(object):
         maxlen, regex = self.re_map[k]
         i = 1
         for l in o[k]:
-          if l == None:
+          if l is None:
             continue
           if len(l) > maxlen:
             err.append([k + str(i), "value too long"])
@@ -291,7 +291,7 @@ class Person(_whoisobject):
     self.passwd = passwd
     self.valtoken = valtoken
   def _set_key(self):
-    if self.d['nh'][0] != None:
+    if self.d['nh'][0] is not None:
       self.key = suffixadd(self.d['nh'][0])
     else:
       self.key = self.d['pn'][0]
@@ -309,7 +309,7 @@ class Person(_whoisobject):
     return self._from_ripe(o, personattrs)
   def _allocate_handle(self):
     """Allocate ourselves a handle if we lack one."""
-    if (not 'nh' in self.d) or self.d['nh'][0] == None:
+    if ('nh' not in self.d) or self.d['nh'][0] is None:
       l = mkinitials(self.d['pn'][0])
 
       # Find the next free handle with the same initials
@@ -325,7 +325,7 @@ class Person(_whoisobject):
     """Create in database."""
     self._allocate_handle()
     o = self.d
-    if o['ch'][0][1] == None:
+    if o['ch'][0][1] is None:
       self._dbc.execute('SELECT NOW()')
       assert self._dbc.rowcount == 1
       now, = self._dbc.fetchone()
@@ -374,7 +374,7 @@ class Person(_whoisobject):
     assert self._dbc.rowcount == 1
   def fetch(self):
     """Read from database."""
-    assert self.cid != None
+    assert self.cid is not None
     self._dbc.execute('SELECT handle,exthandle,name,email,addr,'
                       ' phone,fax,created_on,updated_by,updated_on '
                       'FROM contacts WHERE id=%d', (self.cid,))
@@ -411,7 +411,7 @@ class Person(_whoisobject):
           j = str(j[1])
         elif i == 'nh':
           j = suffixadd(j)
-        if j != None:
+        if j is not None:
           s += "%-12s %s\n" % (l+':', j)
     return s
   
@@ -421,9 +421,9 @@ class Domain(_whoisobject):
     fetch_dbencoding(dbc)
     d = {}
     self._dbc = dbc
-    if fqdn != None:
+    if fqdn is not None:
       d['dn'] = [ fqdn.upper() ]
-    if updated_on != None:
+    if updated_on is not None:
       d['ch'] = [ (updated_by, updated_on) ]
     self.d = d
     self.did = did
@@ -448,7 +448,7 @@ class Domain(_whoisobject):
     return self.resolve_contacts(prefs)
   def update(self):
     """Write back to database, keeping history."""
-    assert self.did != None
+    assert self.did is not None
     self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%d FOR UPDATE',
                       (self.did,))
     assert self._dbc.rowcount == 1
@@ -463,7 +463,7 @@ class Domain(_whoisobject):
     self._insert_domain_contact()
   def delete(self):
     """Delete from database, keeping history."""
-    assert self.did != None
+    assert self.did is not None
     self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%d FOR UPDATE',
                       (self.did,))
     assert self._dbc.rowcount == 1
@@ -480,7 +480,7 @@ class Domain(_whoisobject):
       if not si in o:
         continue
       for v in o[si]:
-        if v == None: continue
+        if v is None: continue
         self._dbc.execute('INSERT INTO domain_contact '
                           '(whoisdomain_id,contact_id,contact_type_id) '
                           'VALUES (%d,%d,'
@@ -549,7 +549,7 @@ class Domain(_whoisobject):
     for k in 'ac', 'tc', 'zc':
       newd[k] = [ ]
       for l in self.d[k]:
-        if l == None: continue
+        if l is None: continue
         ll = l.lower()
         if prefs and ll in prefs and len(prefs[ll]):
           cid = prefs[ll][0].cid
@@ -703,20 +703,20 @@ class Main:
     """Handle object creation/updating/deletion.
        Return True if ok, False otherwise.
     """
-    if persons == None:
+    if persons is None:
       persons = {}
     if 'XX' in o:
       # deleted object, ignore
       return True
     encoding = o['encoding']
-    if forcechanged != None:
+    if forcechanged is not None:
       o['ch'] = [ forcechanged ]
     elif 'ch' in o:
       for i in range(len(o['ch'])):
         email, t = parse_changed(o['ch'][i])
         if (email, t) == (None, None):
           return False
-        if t == None:
+        if t is None:
           # "changed:" line without a date
           t = self.now
         o['ch'][i] = email, t
@@ -732,7 +732,7 @@ class Main:
         if not r:
           return False
         ld = self._lookup.domain_by_name(i)
-        if ld != None:
+        if ld is not None:
           ld.fetch()
           if ld != dom:
             print "ERROR: Cannot delete: not the same object"
@@ -747,13 +747,13 @@ class Main:
           return False
       self.ndom += 1
       ld = self._lookup.domain_by_name(i)
-      if ld != None:
+      if ld is not None:
         # domain already exists
         ld.fetch()
         newdom = Domain(self._dbc, ld.did)
         r = newdom.from_ripe(o, persons)
         sys.stdout.write(newdom.format_msgs().encode(encoding))
-        if r == None:
+        if r is None:
           # something incorrect in provided attributes
           return False
         ambig, inval = r
@@ -778,7 +778,7 @@ class Main:
         ld = Domain(self._dbc)
         r = ld.from_ripe(o, persons)
         sys.stdout.write(ld.format_msgs().encode(encoding))
-        if r == None:
+        if r is None:
           # something incorrect in provided attributes
           return False
         ambig, inval = r
@@ -799,11 +799,11 @@ class Main:
       if not r:
         return False
       name = o['pn'][0].lower()
-      if 'eh' in o and o['eh'][0] != None:
+      if 'eh' in o and o['eh'][0] is not None:
         ehandle = o['eh'][0].lower()
       else:
         ehandle = None
-      if 'nh' in o and o['nh'][0] != None:
+      if 'nh' in o and o['nh'][0] is not None:
         # has a NIC handle, try to find if already in the base
         handle = suffixadd(o['nh'][0]).lower()
         lp = self._lookup.persons_by_handle(handle)
@@ -916,7 +916,7 @@ class Main:
     assert self._dbc.rowcount == 1
     self.now, = self._dbc.fetchone()
 
-    if forcechangedemail != None:
+    if forcechangedemail is not None:
       forcechanged = (forcechangedemail, self.now)
     else:
       forcechanged = None
