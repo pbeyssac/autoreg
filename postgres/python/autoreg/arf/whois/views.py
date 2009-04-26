@@ -498,9 +498,7 @@ def contactchange(request):
                                  'msg': "Contact information changed successfully"})
     else:
       return render_to_response('whois/contactchange.html',
-                            {'form': form, 'msg': form.errors, 'posturi': request.path})
-  return render_to_response('whois/contactchange.html',
-                            {'form': form, 'posturi': request.path})
+                                {'form': form, 'posturi': request.path})
 
 def logout(request):
   """Logout page"""
