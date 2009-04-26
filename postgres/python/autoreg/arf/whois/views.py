@@ -275,12 +275,12 @@ def contactcreate(request):
         _render_to_mail('whois/contactcreate.mail',
                         {'url': url,
                          'whoisdata': p.__str__().encode('utf-8'),
-                         'from': FROMADDR, 'to': d['em']},
-                        FROMADDR, [d['em']])
+                         'from': FROMADDR, 'to': d['em'][0]},
+                        FROMADDR, [d['em'][0]])
         dbh.commit()
         return render_to_response('whois/msgnext.html',
                                   {'next': URIBASE,
-                                   'msg': "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(handle), d['em'])})
+                                   'msg': "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(handle), d['em'][0])})
       # else: fall through
   return render_to_response('whois/contactcreate.html',
                             {'form': form, 'posturi': request.path,
