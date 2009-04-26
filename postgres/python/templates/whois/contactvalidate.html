@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Contact Validation{% endblock %}
+{% block h1title %}Contact Validation{% endblock %}
+{% block msg %}
+Please check that the following is correct, then press the <strong>Validate</strong> button.
+<hr>
+Your handle: <strong>{{ handle }}</strong><br>
+Your email: <strong>{{ email }}<br>
+{% endblock %}
+{% block form %}
+<FORM ACTION="{{ posturi }}" METHOD="POST">
+<INPUT TYPE="submit" NAME="submit" VALUE="Validate">
+</FORM>
+{% endblock %}
