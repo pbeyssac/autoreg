@@ -71,7 +71,7 @@ class contactbyemail_form(forms.Form):
 class contactbyhandle_form(forms.Form):
   handle = forms.CharField(max_length=15, initial=HANDLESUFFIX, help_text='Your handle')
 
-class contact_form(forms.Form):
+class contactchange_form(forms.Form):
   pn1 = forms.CharField(max_length=60, label="Name")
   em1 = forms.EmailField(max_length=64, label="E-mail")
   ad1 = forms.CharField(max_length=80, label="Organization")
@@ -82,6 +82,8 @@ class contact_form(forms.Form):
   ad6 = forms.CharField(max_length=80, label="Country", required=False)
   ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
+
+class contact_form(contactchange_form):
   p1 = forms.CharField(max_length=20, label='Password', required=False, widget=PasswordInput)
   p2 = forms.CharField(max_length=20, label='Confirm Password', required=False, widget=PasswordInput)
   policy = forms.BooleanField(label="I accept the Policy", required=True)
@@ -458,9 +460,9 @@ def contactchange(request):
       # when we add a dedicated country field in the database.
       initial['ad6'] = initial[lastk]
       del initial[lastk]
-    form = contact_form(initial=initial)
+    form = contactchange_form(initial=initial)
   elif request.method == "POST":
-    form = contact_form(request.POST)
+    form = contactchange_form(request.POST)
     if form.is_valid():
       c = Contacts.objects.get(handle=handle)
       ad = []
@@ -495,8 +497,8 @@ def contactchange(request):
                                 {'next': URIBASE,
                                  'msg': "Contact information changed successfully"})
     else:
-      print "Not valid"
-      print form.errors
+      return render_to_response('whois/contactchange.html',
+                            {'form': form, 'msg': form.errors, 'posturi': request.path})
   return render_to_response('whois/contactchange.html',
                             {'form': form, 'posturi': request.path})
 
