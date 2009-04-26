@@ -4,6 +4,6 @@ Subject: {% block subject %}{% endblock %}
 Mime-Version: 1.0
 Content-Type: text/plain; charset={% block charset %}utf-8{% endblock %}
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: {% block encoding %}quoted-printable{% endblock %}
 
 {% block content %}{% endblock %}
