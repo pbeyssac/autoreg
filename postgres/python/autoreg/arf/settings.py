@@ -12,7 +12,8 @@ MANAGERS = ADMINS
 
 #DATABASE_ENGINE = 'postgresql_psycopg2'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
 DATABASE_ENGINE = 'postgresql_psycopg2'
-DATABASE_NAME = 'eudevel'      # Or path to database file if using sqlite3.
+# not set here, see bottom of file
+#DATABASE_NAME = 'eudevel'      # Or path to database file if using sqlite3.
 DATABASE_USER = 'www'          # Not used with sqlite3.
 DATABASE_PASSWORD = ''         # Not used with sqlite3.
 DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
@@ -94,6 +95,8 @@ AUTHENTICATION_BACKENDS = ( 'autoreg.arf.whois.contactauth.AuthBackend', )
 # Application-specific settings
 #
 
+from autoreg.conf import DATABASE_NAME
 import os
+
 URIBASE = os.environ.get('ARF_BASE', '/arf/')
 URLBASE = 'https://eu.org'
