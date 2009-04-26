@@ -274,7 +274,7 @@ def contactcreate(request):
         url = URLCONTACTVAL % (handle.upper(), valtoken)
         _render_to_mail('whois/contactcreate.mail',
                         {'url': url,
-                         'whoisdata': 'Whois data -- TBD',
+                         'whoisdata': p.__str__().encode('utf-8'),
                          'from': FROMADDR, 'to': d['em']},
                         FROMADDR, [d['em']])
         dbh.commit()
