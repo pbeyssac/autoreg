@@ -18,6 +18,7 @@ from django.shortcuts import render_to_response
 from django import forms
 from django.forms.widgets import PasswordInput
 from django.views.decorators.cache import cache_control
+from django.db import connection
 
 from models import Whoisdomains,Contacts,Tokens
 
@@ -288,12 +289,9 @@ def contactcreate(request):
       d['ad'] = ad
       d['ch'] = [(request.META.get('REMOTE_ADDR', 'REMOTE_ADDR_NOT_SET'), None)]
 
-      # XXX: the following section is a terrible hack
-      import psycopg
       from autoreg.whois.db import Person
-      from autoreg.arf.settings import DATABASE_NAME
-      dbh = psycopg.connect('dbname=' + DATABASE_NAME)
-      p = Person(dbh.cursor(), passwd=_pwcrypt(p1), validate=False)
+
+      p = Person(connection.cursor(), passwd=_pwcrypt(p1), validate=False)
       if p.from_ripe(d):
         p.insert()
         valtoken = _token_set(p.cid, "contactval")
@@ -305,7 +303,6 @@ def contactcreate(request):
                          'encoding': 'quoted-printable',
                          'from': FROMADDR, 'to': d['em'][0]},
                         FROMADDR, [d['em'][0]])
-        dbh.commit()
         return render_to_response('whois/msgnext.html',
                                   {'next': URIBASE,
                                    'msg': "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(handle), d['em'][0])})
