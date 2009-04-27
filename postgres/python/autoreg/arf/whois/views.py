@@ -19,7 +19,7 @@ from django import forms
 from django.forms.widgets import PasswordInput
 from django.views.decorators.cache import cache_control
 
-from models import Whoisdomains,Contacts
+from models import Whoisdomains,Contacts,Tokens
 
 URILOGIN = URIBASE + 'login/'
 URICHPASS = URIBASE + 'contact/chpass/'
@@ -60,6 +60,26 @@ def _render_to_mail(templatename, context, fromaddr, toaddrs):
   server.connect()
   server.sendmail(fromaddr, toaddrs + [ MAILBCC ], msg)
   server.quit()
+
+def _token_find(contact_id, action):
+  """Find existing token(s)"""
+  return Tokens.objects.filter(contact_id=contact_id, action=action)
+
+def _token_clear(contact_id, action):
+  """Cleanup pre-existing token(s)"""
+  _token_find(contact_id, action).delete()
+
+def _token_set(contact_id, action, ttl=3600):
+  """Create a token for the indicated action on the indicated contact"""
+  sr = random.SystemRandom()
+  token = ''.join(sr.choice(allowed_chars) for i in range(16))
+  t = time.time()
+  now = datetime.datetime.fromtimestamp(t)
+  expires = datetime.datetime.fromtimestamp(t + ttl)
+  tk = Tokens(contact_id=contact_id, date=now, expires=expires,
+              token=token, action=action)
+  tk.save()
+  return token
 
 #
 # Forms
@@ -177,15 +197,16 @@ def makeresettoken(request):
     if len(ctl) != 1:
       return HttpResponse("Internal Error")
     ct = ctl[0]
-    sr = random.SystemRandom()
-    ct.pw_reset_token = ''.join(sr.choice(allowed_chars) for i in range(16))
-    ct.pw_reset_token_date = datetime.datetime.today()
-    ct.save()
+
+    # create new token
+    _token_clear(ct.id, action="pwreset")
+    token = _token_set(ct.id, action="pwreset", ttl=RESET_TOKEN_TTL)
+
     _render_to_mail('whois/resetpass.mail',
                     { 'from': FROMADDR, 'to': ct.email,
                       'handle': fullhandle,
                       'reseturl': URLRESET2 + handle,
-                      'token': ct.pw_reset_token }, FROMADDR, [ ct.email ])
+                      'token': token }, FROMADDR, [ ct.email ])
     return render_to_response('whois/tokensent.html',
                               {'handle': suffixadd(handle), 'next': URIBASE})
 
@@ -215,17 +236,22 @@ def resetpass2(request, handle):
                                 {'form': form, 'posturi': request.path,
                                  'msg': "Password should be at least 8 chars"})
     token = request.POST.get('resettoken', 'C')
-    if token != ct.pw_reset_token:
+    tkl = _token_find(ct.id, "pwreset")
+    if len(tkl) > 1:
+      return HttpResponse("Internal error")
+    if len(tkl) == 0 or token != tkl[0].token:
       return render_to_response('whois/resetpass2.html',
                                 {'form': form, 'posturi': request.path,
                                  'msg': "Invalid reset token"})
-    if ct.pw_reset_token_date < datetime.datetime.fromtimestamp(time.time()-RESET_TOKEN_TTL):
+    tk = tkl[0]
+    if tk.expires < datetime.datetime.fromtimestamp(time.time()):
+      tk.delete()
       return render_to_response('whois/msgnext.html',
                                 {'next': URIRESET1,
                                  'msg': "Reset code has expired, please try to get a new one."})
     ct.passwd = _pwcrypt(pass1)
-    ct.pw_reset_token = None
     ct.save()
+    tk.delete()
     return render_to_response('whois/passchanged.html',
                               {'next': URIBASE})
 
