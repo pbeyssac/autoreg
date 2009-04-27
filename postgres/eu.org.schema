@@ -204,10 +204,7 @@ CREATE TABLE contacts (
 	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
 	validated_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
 	updated_by varchar(64),
-	updated_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
-	validation_token varchar(8),
-	pw_reset_token VARCHAR(16),
-	pw_reset_token_date TIMESTAMP(2) WITH TIME ZONE
+	updated_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 CREATE INDEX contacts_handle_index ON contacts(handle);
 CREATE INDEX contacts_name_index ON contacts(lower(name));
