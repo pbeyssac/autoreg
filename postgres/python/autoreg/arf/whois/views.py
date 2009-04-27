@@ -100,7 +100,7 @@ class contactchange_form(forms.Form):
   ad3 = forms.CharField(max_length=80, label="Address (line 2)", required=False)
   ad4 = forms.CharField(max_length=80, label="Address (line 3)", required=False)
   ad5 = forms.CharField(max_length=80, label="Address (line 4)", required=False)
-  ad6 = forms.CharField(max_length=80, label="Country", required=False)
+  ad6 = forms.CharField(max_length=80, label="Country")
   ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
 
