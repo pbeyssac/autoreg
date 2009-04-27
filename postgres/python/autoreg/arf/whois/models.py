@@ -1,5 +1,7 @@
 # $Id$
 
+import datetime
+
 from django.db import models
 
 class Whoisdomains(models.Model):
@@ -103,3 +105,13 @@ class DomainContactHist(models.Model):
     class Meta:
         db_table = 'domain_contact_hist'
 
+class Tokens(models.Model):
+    id = models.AutoField(primary_key=True)
+    contact_id = models.IntegerField()
+    token = models.CharField(max_length=16, null=True)
+    date = models.DateTimeField(default=datetime.datetime.today)
+    expires = models.DateTimeField()
+    action = models.CharField(max_length=10, null=True)
+    args = models.CharField(max_length=200, null=True)
+    class Meta:
+        db_table = 'arf_tokens'
