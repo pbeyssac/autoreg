@@ -282,14 +282,14 @@ class _whoisobject(object):
     return d1.__cmp__(d2)
 
 class Person(_whoisobject):
-  def __init__(self, dbc, cid=None, key=None, passwd=None, valtoken=None):
+  def __init__(self, dbc, cid=None, key=None, passwd=None, validate=True):
     fetch_dbencoding(dbc)
     self._dbc = dbc
     self.cid = cid
     self.key = key
     self.d = {}
     self.passwd = passwd
-    self.valtoken = valtoken
+    self.validate = validate
   def _set_key(self):
     if self.d['nh'][0] is not None:
       self.key = suffixadd(self.d['nh'][0])
@@ -331,14 +331,13 @@ class Person(_whoisobject):
       now, = self._dbc.fetchone()
       o['ch'] = [(o['ch'][0][0], now)]
       o['cr'] = [now]
-    if self.valtoken:
+    if not self.validate:
       self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
-                      'validated_on,validation_token,'
+                      'validated_on,'
                       'passwd,addr,phone,fax,created_on,updated_by,updated_on) '
-                      'VALUES (%s,%s,%s,%s,NULL,%s,%s,%s,%s,%s,%s,%s,%s)',
+                      'VALUES (%s,%s,%s,%s,NULL,%s,%s,%s,%s,%s,%s,%s)',
                    _todb(
                       (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
-                       self.valtoken,
                        self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]))))
     else:

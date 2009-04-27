@@ -9,6 +9,7 @@ Your email: <strong>{{ email }}<br>
 {% endblock %}
 {% block form %}
 <FORM ACTION="{{ posturi }}" METHOD="POST">
+<INPUT TYPE="hidden" NAME="valtoken" VALUE="{{ valtoken }}">
 <INPUT TYPE="submit" NAME="submit" VALUE="Validate">
 </FORM>
 {% endblock %}

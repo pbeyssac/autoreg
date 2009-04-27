@@ -293,11 +293,10 @@ def contactcreate(request):
       from autoreg.whois.db import Person
       from autoreg.arf.settings import DATABASE_NAME
       dbh = psycopg.connect('dbname=' + DATABASE_NAME)
-      sr = random.SystemRandom()
-      valtoken = ''.join(sr.choice(allowed_chars) for i in range(8))
-      p = Person(dbh.cursor(), passwd=_pwcrypt(p1), valtoken=valtoken)
+      p = Person(dbh.cursor(), passwd=_pwcrypt(p1), validate=False)
       if p.from_ripe(d):
         p.insert()
+        valtoken = _token_set(p.cid, "contactval")
         handle = suffixstrip(p.gethandle())
         url = URLCONTACTVAL % (handle.upper(), valtoken)
         _render_to_mail('whois/contactcreate.mail',
@@ -319,12 +318,22 @@ def contactvalidate(request, handle, valtoken):
   """Contact validation page"""
   if request.user.is_authenticated():
     django.contrib.auth.logout(request)
+
+  # XXX: strange bug causes a SIGSEGV if we use valtoken from URL parsing
+  # after a POST; instead we pass it as an hidden FORM variable,
+  # hence the following two lines.
+  if request.method == "POST":
+    valtoken = request.POST.get('valtoken')
+
+  msg = None
   ctl = Contacts.objects.filter(handle=handle)
-  if len(ctl) == 0 or len(ctl) > 1 or ctl[0].validation_token != valtoken:
-    if ctl[0].validated_on is None:
+  if len(ctl) != 1:
+    msg = "Sorry, contact handle or validation token is not valid."
+  else:
+    tkl = _token_find(ctl[0].id, "contactval")
+    if len(tkl) != 1 or tkl[0].token != valtoken:
       msg = "Sorry, contact handle or validation token is not valid."
-    else:
-      msg = "Contact has already been validated."
+  if msg:
     return render_to_response('whois/msgnext.html',
                               {'next': URIBASE, 'msg': msg})
   ct = ctl[0]
@@ -332,11 +341,12 @@ def contactvalidate(request, handle, valtoken):
     return render_to_response('whois/contactvalidate.html',
                               {'handle': suffixadd(handle),
                                'email': ct.email,
+                               'valtoken': valtoken,
                                'posturi': request.path})
   elif request.method == "POST":
     ct.validated_on = datetime.datetime.today()
-    ct.validation_token = None
     ct.save()
+    tkl[0].delete()
     return render_to_response('whois/msgnext.html',
                               {'next': URIBASE,
                                'msg': "Your contact handle is now valid."})
