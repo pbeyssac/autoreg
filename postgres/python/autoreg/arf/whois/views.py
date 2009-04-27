@@ -494,6 +494,8 @@ def contactchange(request):
       initial['ad6'] = initial[lastk]
       del initial[lastk]
     form = contactchange_form(initial=initial)
+    return render_to_response('whois/contactchange.html',
+                              {'form': form, 'posturi': request.path})
   elif request.method == "POST":
     form = contactchange_form(request.POST)
     if form.is_valid():
