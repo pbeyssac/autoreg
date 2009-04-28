@@ -1,3 +1,7 @@
-Password reset instructions have been emailed to <strong><tt>{{ handle }}</tt></strong>.
-{% if next %}<a href="{{ next }}">Continue</a>
-{% endif %}
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block h1title %}{{ h1title }}{% endblock %}
+{% block msg %}
+Password reset instructions have been emailed to <strong><tt>{{ ehandle }}</tt></strong>.
+{% if next %}<br><a href="{{ next }}">Continue</a>{% endif %}
+{% endblock %}

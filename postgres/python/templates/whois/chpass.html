@@ -4,6 +4,7 @@
 {% block msg %}{% if msg %}{{ msg }}
 {% endif %}{% endblock %}
 {% block form %}
+Contact handle: <strong>{{ handle }}</strong><br>
 <FORM ACTION="{{ posturi }}" METHOD="POST">
 <TABLE>
 {{ form }}

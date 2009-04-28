@@ -12,11 +12,11 @@
     }
 </style>
 {% endblock %}
-{% block title %}Contact Change Form{% endblock %}
-{% block h1title %}Contact Change Form{% endblock %}
+{% block title %}Contact Change{% endblock %}
+{% block h1title %}Contact Change{% endblock %}
 {% block form %}
+Contact handle: <strong>{{ handle }}</strong><br>
 <FORM ACTION="{{ posturi }}" METHOD="POST">
-<TABLE>
 <div class="fieldWrapper">
     {{ form.pn1 }}
     <label for="id_pn1"> Name</label>
@@ -67,7 +67,6 @@
     <label for="id_fx1"> Fax</label>
     {% if form.fx1.errors %}{% for error in form.fx1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
-</TABLE>
 
 <HR>
 <STRONG>Remember: submitting the query means that you agree with

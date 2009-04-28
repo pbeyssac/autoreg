@@ -1,11 +1,9 @@
-<HTML>
-<HEAD>
-<TITLE>Contact Domain List</TITLE>
-</HEAD>
-<BODY>
-<H1>Contact Domain List</H1>
-
-{% for domain in doms %}domain: {{ domain.fqdn }}<BR>
-{% endfor %}
-</BODY>
-</HTML>
+{% extends "base.html" %}
+{% block title %}Domain List for {{ handle }}{% endblock %}
+{% block h1title %}Domain List for {{ handle }}{% endblock %}
+{% block msg %}
+<pre>
+{% for domain in doms %}domain: {{ domain.fqdn }}
+{% endfor %}</pre>
+{% if next %}<a href="{{ next }}">Continue</a>{% endif %}
+{% endblock %}

@@ -3,18 +3,20 @@
 {% block inlinecss %}{% endblock %}
 <HTML>
 <HEAD>
-<TITLE>{% block title %}Title{% endblock %}</TITLE>
+<TITLE>{% block title %}eu.org{% endblock %}</TITLE>
 </HEAD>
-<H1>{% block h1title %}Title{% endblock %}</H1>
+<H1>{% block h1title %}{% endblock %}</H1>
 
 <BODY>
 {% block msg %}{% endblock %}
 {% block form %}{% endblock %}
 {% block content %}{% endblock %}
 <HR>
-<A HREF="http://eu.org/index.html">Home</A>
-<A HREF="http://eu.org/opendomains.html">Open domains</A>
-<A HREF="http://eu.org/policy.html">General Policy</A>
-<A HREF="http://eu.org/register.html">How to register</A>
+{% if handle %}Logged-in as <strong>{{ handle }}</strong><br>{% endif %}
+<A HREF="{{ uribase }}">Home</A>
+<A HREF="{{ urichpass }}">Change password</A>
+<A HREF="{{ urichange }}">Change information</A>
+<A HREF="{{ uridomains }}">Domains</A>
+<A HREF="{{ urilogout }}">Logout</A>
 </BODY>
 </HTML>

@@ -1,3 +1,7 @@
-Password has been successfully changed for <strong><tt>{{ handle }}</tt></strong>.
-{% if next %}<a href="{{ next }}">Continue</a>
-{% endif %}
+{% extends "base.html" %}
+{% block title %}Password changed{% endblock %}
+{% block h1title %}Password changed{% endblock %}
+{% block msg %}
+Password has been successfully changed for <strong><tt>{{ ehandle }}</tt></strong>.
+{% if next %}<br><a href="{{ next }}">Continue</a>{% endif %}
+{% endblock %}
