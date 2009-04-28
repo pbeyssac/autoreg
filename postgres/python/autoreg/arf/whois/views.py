@@ -76,6 +76,9 @@ def _uriset_render_to_response(template, vars):
 
 def _token_find(contact_id, action):
   """Find existing token(s)"""
+  # Expire old tokens beforehand
+  dbc = connection.cursor()
+  dbc.execute('DELETE FROM arf_tokens WHERE expires < NOW()')
   return Tokens.objects.filter(contact_id=contact_id, action=action)
 
 def _token_clear(contact_id, action):
@@ -251,11 +254,6 @@ def resetpass2(request, handle):
       vars['msg'] = "Invalid reset token"
       return _uriset_render_to_response('whois/resetpass2.html', vars)
     tk = tkl[0]
-    if tk.expires < datetime.datetime.fromtimestamp(time.time()):
-      tk.delete()
-      vars['msg'] = "Reset code has expired, please try to get a new one"
-      vars['next'] = URIRESET
-      return _uriset_render_to_response('whois/msgnext.html', vars)
     ct.passwd = _pwcrypt(pass1)
     ct.save()
     tk.delete()
