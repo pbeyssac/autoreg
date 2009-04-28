@@ -1,14 +1,14 @@
 #!/usr/local/bin/python
 # $Id$
 
-import psycopg
+import psycopg2
 import sys
 
 import autoreg.conf
 import autoreg.whois.db as whoisdb
 
 def main():
-  dbh = psycopg.connect(autoreg.conf.dbstring)
+  dbh = psycopg2.connect(autoreg.conf.dbstring)
   w = whoisdb.Main(dbh)
 
   # to avoid deadlock, read everything on input first

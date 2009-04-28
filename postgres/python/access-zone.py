@@ -37,7 +37,7 @@
 import getopt
 import logging
 import os
-import psycopg
+import psycopg2
 import sys
 
 # local modules
@@ -102,7 +102,7 @@ if action not in action_list:
     usage()
     sys.exit(1)
 
-dbh = psycopg.connect(conf.dbstring)
+dbh = psycopg2.connect(conf.dbstring)
 dd = dnsdb.db(dbh, nowrite)
 
 domain = args[0].upper()

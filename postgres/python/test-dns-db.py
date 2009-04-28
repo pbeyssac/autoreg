@@ -6,7 +6,7 @@ import re
 import os
 import sys
 
-import psycopg
+import psycopg2
 
 import autoreg.dns.db
 
@@ -64,24 +64,24 @@ NS2.TESTGL			AAAA	::FFFF:10.1.2.3
     sys.stdout = oldstdout
     return dom, zone, crby, upby, flags, rest
   def _dropdb(self):
-    dbh = psycopg.connect('dbname=template1')
-    dbh.autocommit(True)
+    dbh = psycopg2.connect('dbname=template1')
+    dbh.set_isolation_level(0)
     dbc = dbh.cursor()
     try:
       dbc.execute("DROP DATABASE eutest")
-    #except psycopg.ProgrammingError('database "eutest" does not exist'):
-    except psycopg.ProgrammingError:
+    #except psycopg2.ProgrammingError('database "eutest" does not exist'):
+    except psycopg2.ProgrammingError:
       pass
   def setUp(self):
     self._dropdb()
-    dbh = psycopg.connect('dbname=template1')
-    dbh.autocommit(True)
+    dbh = psycopg2.connect('dbname=template1')
+    dbh.set_isolation_level(0)
     dbc = dbh.cursor()
     dbc.execute("CREATE DATABASE eutest WITH ENCODING='UTF-8'")
     del dbc
     del dbh
     os.system("psql eutest < ../eu.org.schema >/dev/null 2>&1")
-    self.dbh = psycopg.connect('dbname=eutest')
+    self.dbh = psycopg2.connect('dbname=eutest')
     dbc = self.dbh.cursor()
     dbc.execute("INSERT INTO zones (name, soaprimary, soaemail, soaserial)"
                 " VALUES ('EU.ORG', 'NS.EU.ORG', 'hostmaster.eu.org',"

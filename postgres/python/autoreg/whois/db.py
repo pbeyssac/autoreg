@@ -358,7 +358,7 @@ class Person(_whoisobject):
     self._dbc.execute('UPDATE contacts SET handle=%s,exthandle=%s,'
                       'name=%s,email=%s,'
                       'addr=%s,phone=%s,fax=%s,updated_by=%s,updated_on=NOW() '
-                      'WHERE id=%d',
+                      'WHERE id=%s',
                    _todb(
                       (o['nh'][0], o['eh'][0], o['pn'][0], o['em'][0],
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
@@ -369,14 +369,14 @@ class Person(_whoisobject):
     self._update()
   def delete(self):
     """Delete from database, keeping history."""
-    self._dbc.execute('DELETE contacts WHERE id=%d', (self.cid,))
+    self._dbc.execute('DELETE contacts WHERE id=%s', (self.cid,))
     assert self._dbc.rowcount == 1
   def fetch(self):
     """Read from database."""
     assert self.cid is not None
     self._dbc.execute('SELECT handle,exthandle,name,email,addr,'
                       ' phone,fax,created_on,updated_by,updated_on '
-                      'FROM contacts WHERE id=%d', (self.cid,))
+                      'FROM contacts WHERE id=%s', (self.cid,))
     assert self._dbc.rowcount == 1
     d = {}
     (d['nh'], d['eh'], d['pn'], d['em'],
@@ -448,27 +448,27 @@ class Domain(_whoisobject):
   def update(self):
     """Write back to database, keeping history."""
     assert self.did is not None
-    self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%d FOR UPDATE',
+    self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%s FOR UPDATE',
                       (self.did,))
     assert self._dbc.rowcount == 1
-    self._dbc.execute('UPDATE whoisdomains SET updated_on=NOW() WHERE id=%d',
+    self._dbc.execute('UPDATE whoisdomains SET updated_on=NOW() WHERE id=%s',
                       (self.did,))
     assert self._dbc.rowcount == 1
     # XXX: the line below assumes registrant contacts are not shared.
     # We'll get rid of this assumption when we drop the RIPE model.
     self.ct.update()
-    self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%d',
+    self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%s',
                       (self.did,))
     self._insert_domain_contact()
   def delete(self):
     """Delete from database, keeping history."""
     assert self.did is not None
-    self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%d FOR UPDATE',
+    self._dbc.execute('SELECT * FROM whoisdomains WHERE id=%s FOR UPDATE',
                       (self.did,))
     assert self._dbc.rowcount == 1
-    self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%d',
+    self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%s',
                       (self.did,))
-    self._dbc.execute('DELETE FROM whoisdomains WHERE id=%d',
+    self._dbc.execute('DELETE FROM whoisdomains WHERE id=%s',
                       (self.did,))
     assert self._dbc.rowcount == 1
   def _insert_domain_contact(self):
@@ -482,14 +482,14 @@ class Domain(_whoisobject):
         if v is None: continue
         self._dbc.execute('INSERT INTO domain_contact '
                           '(whoisdomain_id,contact_id,contact_type_id) '
-                          'VALUES (%d,%d,'
+                          'VALUES (%s,%s,'
                           ' (SELECT id FROM contact_types WHERE name=%s))',
                           (self.did, v, full))
         assert self._dbc.rowcount == 1
     self.ct.insert()
     self._dbc.execute("INSERT INTO domain_contact "
                       "(whoisdomain_id,contact_id,contact_type_id) "
-                      "VALUES (%d,%d,"
+                      "VALUES (%s,%s,"
                       "(SELECT id FROM contact_types WHERE name=%s))",
                       (self.did, self.ct.cid, 'registrant'))
     assert self._dbc.rowcount == 1
@@ -511,7 +511,7 @@ class Domain(_whoisobject):
     self._insert_domain_contact()
   def fetch(self):
     self._dbc.execute('SELECT fqdn, created_on, updated_by, updated_on '
-                      'FROM whoisdomains WHERE id=%d', (self.did,))
+                      'FROM whoisdomains WHERE id=%s', (self.did,))
     assert self._dbc.rowcount == 1
     d = {}
     dn, cr, chb, cho = _fromdb(self._dbc.fetchone())
@@ -529,7 +529,7 @@ class Domain(_whoisobject):
     d = self.d
     self._dbc.execute('SELECT contact_id,contact_types.name '
                       'FROM domain_contact, contact_types '
-                      'WHERE whoisdomain_id=%d '
+                      'WHERE whoisdomain_id=%s '
                       'AND contact_types.id=contact_type_id', (self.did,))
     for k in 'tc', 'zc', 'ac', 'rc':
       d[k] = []

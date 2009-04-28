@@ -37,7 +37,7 @@ class _Zone:
 	"""Mark zone for serial update in SOA."""
 	assert self.id != None
 	self._updateserial = True
-	self._dbc.execute('UPDATE zones SET updateserial=TRUE WHERE id=%d',
+	self._dbc.execute('UPDATE zones SET updateserial=TRUE WHERE id=%s',
 			  (self.id,))
     def soa(self):
 	"""Update serial for zone in SOA if flagged as such."""
@@ -53,8 +53,8 @@ class _Zone:
 	    serial += 1
 	self._soaserial = serial
 	self._updateserial = False
-	self._dbc.execute('UPDATE zones SET soaserial=%d, updateserial=FALSE '
-			  'WHERE id=%d', (serial,zid))
+	self._dbc.execute('UPDATE zones SET soaserial=%s, updateserial=FALSE '
+			  'WHERE id=%s', (serial,zid))
 	return (True, serial)
     def fetch(self, wlock=True):
 	"""Fetch zone info from database, using self.name as a key.
@@ -78,7 +78,7 @@ class _Zone:
 	if rrtype == None: return
 	zid = self.id
 	self._dbc.execute('SELECT zone_id,rrtype_id FROM allowed_rr '
-		'WHERE allowed_rr.zone_id=%d '
+		'WHERE allowed_rr.zone_id=%s '
 		'AND allowed_rr.rrtype_id='
 		'(SELECT id FROM rrtypes WHERE rrtypes.label=%s)',
 		(zid, rrtype))
@@ -97,7 +97,7 @@ class _Zone:
 	self._dbc.execute(
 	    'SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value '
 	    'FROM domains,rrs,rrtypes '
-	    'WHERE domains.zone_id=%d AND domains.registry_hold=FALSE '
+	    'WHERE domains.zone_id=%s AND domains.registry_hold=FALSE '
 	    'AND domains.id=rrs.domain_id AND rrtypes.id=rrs.rrtype_id '
 	    'ORDER BY domains.name,rrs.label,rrtypes.label,rrs.value',
 	    (self.id,))
@@ -132,7 +132,7 @@ class _Zone:
     def lock(self):
 	"""Lock zone row for update."""
 	assert self.id != None
-	self._dbc.execute('SELECT NULL FROM zones WHERE id=%d FOR UPDATE',
+	self._dbc.execute('SELECT NULL FROM zones WHERE id=%s FOR UPDATE',
 			  (self.id,))
 
 class _Domain:
@@ -145,7 +145,7 @@ class _Domain:
 	self._dbc.execute(
 	  'INSERT INTO domains '
 	  '(name,zone_id,created_by,created_on,updated_by,updated_on,internal)'
-	  ' VALUES (%s,%d,%d,NOW(),%d,NOW(),%s)',
+	  ' VALUES (%s,%s,%s,NOW(),%s,NOW(),%s)',
 	  (self.name, z.id, login_id, login_id, internal))
 	self._dbc.execute("SELECT currval('domains_id_seq')")
 	assert self._dbc.rowcount == 1
@@ -162,7 +162,7 @@ class _Domain:
 			  'registry_lock, internal, zone_id, registrar_id, '
 			  'created_by, created_on, updated_by, updated_on '
 			  'FROM domains, zones '
-			  'WHERE domains.id=%d AND zones.id=domains.zone_id'
+			  'WHERE domains.id=%s AND zones.id=domains.zone_id'
 			  +fud, (did,))
 	if self._dbc.rowcount == 0:
 	    raise DomainError('Domain id not found', did)
@@ -174,7 +174,7 @@ class _Domain:
 	# hence the request below is done separately from the request above.
 	self._dbc.execute('SELECT ad1.login, ad2.login '
 			  'FROM admins AS ad1, admins AS ad2 '
-			  'WHERE ad1.id=%d AND ad2.id=%d', (idcr, idup))
+			  'WHERE ad1.id=%s AND ad2.id=%s', (idcr, idup))
 	assert self._dbc.rowcount == 1
 	self._created_by, self._updated_by = self._dbc.fetchone()
 	return True
@@ -220,13 +220,13 @@ class _Domain:
 		raise DomainError(DomainError.RRUNSUP, typ)
 	    self._dbc.execute('INSERT INTO rrs '
 		'(domain_id,label,ttl,rrtype_id,value) '
-		'VALUES (%d,%s,%s,(SELECT id FROM rrtypes WHERE label=%s),%s)',
+		'VALUES (%s,%s,%s,(SELECT id FROM rrtypes WHERE label=%s),%s)',
 		(did, label, ttl, typ, value))
     def set_updated_by(self, login_id):
         """Set updated_by and updated_on."""
         self._dbc.execute('UPDATE domains '
-                          'SET updated_by=%d, updated_on=NOW() '
-                          'WHERE id=%d', (login_id, self.id))
+                          'SET updated_by=%s, updated_on=NOW() '
+                          'WHERE id=%s', (login_id, self.id))
     def move_hist(self, login_id, domains=False):
 	"""Move resource records to history tables, as a side effect
 	(triggers) of deleting them.
@@ -234,9 +234,9 @@ class _Domain:
 	domains: if set, also move domain and associated contact records.
 	"""
 	did = self.id
-	self._dbc.execute('DELETE FROM rrs WHERE domain_id=%d', (did,))
+	self._dbc.execute('DELETE FROM rrs WHERE domain_id=%s', (did,))
 	if domains:
-	    self._dbc.execute('DELETE FROM domains WHERE id=%d', (did,))
+	    self._dbc.execute('DELETE FROM domains WHERE id=%s', (did,))
     def show_head(self):
 	"""Show administrative data for domain."""
 	print "; zone", self._zone_name
@@ -256,7 +256,7 @@ class _Domain:
 	self._dbc.execute(
 	    'SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value '
 	    'FROM domains,rrs,rrtypes '
-	    'WHERE domains.id=%d AND domains.id=rrs.domain_id '
+	    'WHERE domains.id=%s AND domains.id=rrs.domain_id '
 	    'AND rrtypes.id=rrs.rrtype_id '
 	    'ORDER BY domains.name,rrs.label,rrtypes.label,rrs.value',
 	    (self.id,))
@@ -294,12 +294,12 @@ class _Domain:
     def set_registry_lock(self, val):
 	"""Set value of boolean registry_lock."""
 	self._registry_lock = val
-	self._dbc.execute('UPDATE domains SET registry_lock=%s WHERE id=%d',
+	self._dbc.execute('UPDATE domains SET registry_lock=%s WHERE id=%s',
 			  (val, self.id))
     def set_registry_hold(self, val):
 	"""Set value of boolean registry_hold."""
 	self._registry_hold = val
-	self._dbc.execute('UPDATE domains SET registry_hold=%s WHERE id=%d',
+	self._dbc.execute('UPDATE domains SET registry_hold=%s WHERE id=%s',
 			  (val, self.id))
 
 class _ZoneList:
@@ -357,7 +357,7 @@ class _ZoneList:
 	    z.lock()
 	else:
 	    fu = ''
-	self._dbc.execute('SELECT id FROM domains WHERE name=%s AND zone_id=%d'
+	self._dbc.execute('SELECT id FROM domains WHERE name=%s AND zone_id=%s'
 			  +fu, (dname, z.id))
 	if self._dbc.rowcount == 0:
 	    if raise_nf:

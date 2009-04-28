@@ -18,7 +18,7 @@ import socket
 import sys
 import time
 
-import psycopg
+import psycopg2
 
 import autoreg.conf
 import autoreg.whois.db as whoisdb
@@ -153,7 +153,7 @@ class server:
 def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
   if not isinstance(a, unicode):
     a = a.decode(encoding)
-  dbh = psycopg.connect(dbstring)
+  dbh = psycopg2.connect(dbstring)
   l = whoisdb.Lookup(dbh.cursor())
 
   if not a:
