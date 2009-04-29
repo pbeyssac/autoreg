@@ -7,6 +7,7 @@ urlpatterns = patterns('autoreg.arf.whois.views',
     (r'^login/$', 'login'),
     (r'^logout/$', 'logout'),
     (r'^contact/change/$', 'contactchange'),
+    (r'^contact/changemail/$', 'changemail'),
     (r'^contact/chpass/$', 'chpass'),
     (r'^contact/domains/$', 'domainlist'),
     # The following are special for lost password handling;

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Email address changed{% endblock %}
+{% block h1title %}Email address changed{% endblock %}
+{% block msg %}
+Email address has been successfully set to <strong>{{ newemail }}</strong>.
+{% if next %}<br><a href="{{ next }}">Continue</a>{% endif %}
+{% endblock %}

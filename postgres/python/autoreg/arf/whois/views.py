@@ -27,15 +27,20 @@ URICHPASS = URIBASE + 'contact/chpass/'
 URICHANGE = URIBASE + 'contact/change/'
 URIDOMAINS = URIBASE + 'contact/domains/'
 URILOGOUT = URIBASE + 'logout/'
+URICHANGEMAIL = URIBASE + 'contact/changemail/'
 URIRESET = URIBASE + 'contact/reset/'
 URLCHPASS = URLBASE + URICHPASS
+URLCHANGEMAIL = URLBASE + URICHANGEMAIL
 URLCONTACTVAL = URLBASE + URIBASE + 'contact/validate/%s/%s/'
 URLRESET2 = URLBASE + URIBASE + 'contact/doreset/'
 FROMADDR = 'noreply@eu.org'
 RESET_TOKEN_HOURS_TTL = 24
+EMAIL_TOKEN_HOURS_TTL = 72
 RESET_TOKEN_TTL = RESET_TOKEN_HOURS_TTL*3600
+EMAIL_TOKEN_TTL = EMAIL_TOKEN_HOURS_TTL*3600
 
 uriset = {'uribase': URIBASE,
+          'urichangemail': URICHANGEMAIL,
           'urichpass': URICHPASS,
           'urichange': URICHANGE,
           'uridomains': URIDOMAINS,
@@ -87,7 +92,7 @@ def _token_clear(contact_id, action):
   """Cleanup pre-existing token(s)"""
   _token_find(contact_id, action).delete()
 
-def _token_set(contact_id, action, ttl=3600):
+def _token_set(contact_id, action, args=None, ttl=3600):
   """Create a token for the indicated action on the indicated contact"""
   sr = random.SystemRandom()
   token = ''.join(sr.choice(allowed_chars) for i in range(16))
@@ -95,7 +100,7 @@ def _token_set(contact_id, action, ttl=3600):
   now = datetime.datetime.fromtimestamp(t)
   expires = datetime.datetime.fromtimestamp(t + ttl)
   tk = Tokens(contact_id=contact_id, date=now, expires=expires,
-              token=token, action=action)
+              token=token, action=action, args=args)
   tk.save()
   return token
 
@@ -134,6 +139,9 @@ class resetpass_form(forms.Form):
   resettoken = forms.CharField(max_length=30)
   pass1 = forms.CharField(max_length=20, label='New Password', widget=PasswordInput)
   pass2 = forms.CharField(max_length=20, label='Confirm Password', widget=PasswordInput)
+
+class changemail_form(forms.Form):
+  token = forms.CharField(max_length=30)
 
 class chpass_form(forms.Form):
   pass0 = forms.CharField(max_length=30, label='Current Password', widget=PasswordInput)
@@ -500,12 +508,13 @@ def contactchange(request):
         if form.cleaned_data[k] != '':
           ad.append(form.cleaned_data[k]) 
       changed = False
+      emailchanged = False
       if c.name != form.cleaned_data['pn1']:
         c.name = form.cleaned_data['pn1']
         changed = True
       if c.email != form.cleaned_data['em1']:
-        c.email = form.cleaned_data['em1']
-        changed = True
+        newemail = form.cleaned_data['em1']
+        emailchanged = True
       for i in ['fx1', 'ph1']:
         if form.cleaned_data[i] == '':
           form.cleaned_data[i] = None
@@ -522,11 +531,60 @@ def contactchange(request):
         c.updated_on = None	# set to NOW() by the database
         c.updated_by = suffixadd(request.user.username)
         c.save()
+      if emailchanged:
+        _token_clear(c.id, "changemail")
+        token = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
+        _render_to_mail('whois/changemail.mail',
+                        {'from': FROMADDR, 'to': newemail,
+                         'handle': suffixadd(handle),
+                         'newemail': newemail,
+                         'changemailurl': URLCHANGEMAIL,
+                         'token': token }, FROMADDR, [ newemail ])
+        return HttpResponseRedirect(URICHANGEMAIL)
       vars['msg'] = "Contact information changed successfully"
       return _uriset_render_to_response('whois/msgnext.html', vars)
     else:
       vars['form'] = form
       return _uriset_render_to_response('whois/contactchange.html', vars)
+
+@cache_control(private=True)
+def changemail(request):
+  """Email change step 2:
+     check provided change email token and force indicated email
+     on the designated contact."""
+  if not request.user.is_authenticated():
+    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+  handle = request.user.username
+  f = changemail_form()
+  form = f.as_table()
+  vars = {'form': form, 'posturi': request.path, 'handle': suffixadd(handle)}
+
+  ctl = Contacts.objects.filter(handle=handle)
+  if len(ctl) != 1:
+    return HttpResponse("Internal error")
+  ct = ctl[0]
+  tkl = _token_find(ct.id, "changemail")
+  if len(tkl) > 1:
+    return HttpResponse("Internal error")
+  if len(tkl) == 0:
+      vars['msg'] = "Sorry, didn't find any waiting email address change."
+      return _uriset_render_to_response('whois/changemail.html', vars)
+  tk = tkl[0]
+
+  vars['newemail'] = tk.args
+
+  if request.method == "GET":
+    return _uriset_render_to_response('whois/changemail.html', vars)
+  elif request.method == "POST":
+    token = request.POST.get('token', 'C')
+    if token != tk.token:
+      vars['msg'] = "Invalid token"
+      return _uriset_render_to_response('whois/changemail.html', vars)
+    newemail = tk.args
+    ct.email = newemail
+    ct.save()
+    tk.delete()
+    return _uriset_render_to_response('whois/emailchanged.html', vars)
 
 def logout(request):
   """Logout page"""

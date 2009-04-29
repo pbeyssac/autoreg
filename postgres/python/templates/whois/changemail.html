@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Email address change{% endblock %}
+{% block h1title %}Email address change{% endblock %}
+{% block form %}
+Please look for email sent to <strong>{{ newemail }}</strong> and
+enter below the validation token you received from EU.org:<br>
+<FORM ACTION="{{ posturi }}" METHOD="POST">
+<TABLE>
+{{ form }}
+</TABLE>
+<P>
+Email address will be set to: <strong>{{ newemail }}</strong>
+<INPUT TYPE="submit" NAME="change" VALUE="Set email address">
+</FORM>
+{% endblock %}
