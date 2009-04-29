@@ -377,40 +377,6 @@ def domain(request, fqdn):
   vars = {'whoisdomain': dom, 'domaincontact_list': cl}
   return _uriset_render_to_response('whois/fqdn.html', vars)
 
-def resetpass_old(request):
-  """Deprecated: unprotected password reset page"""
-  clearpass = ''
-  cryptpass = ''
-  if request.method == "GET":
-    f = contactbyemail_form()
-    form = f.as_table()
-    vars = {'form': form, 'posturi': request.path}
-    return _uriset_render_to_response('whois/contactp1.html', vars)
-  elif request.method == "POST":
-    email = request.POST.get('email', '')
-    ctl = Contacts.objects.filter(email=email)
-    if len(ctl) >= 1:
-      sr = random.SystemRandom()
-      clearpass = ''.join(sr.choice(allowed_chars) for i in range(8))
-      cryptpass = _pwcrypt(clearpass)
-
-      hlist = []
-      for ct in ctl:
-        ct.passwd = cryptpass
-        hlist.append(suffixadd(ct.handle))
-        #ct.save()
-
-      _render_to_mail('whois/changepass.mail',
-                      { 'from': FROMADDR, 'to': email,
-                        'handles': hlist,
-                        'changeurl': URLCHPASS,
-                        'newpass': clearpass }, FROMADDR, [ email ])
-      return HttpResponse("OK")
-
-      #data = {'email': email}
-      #f = contactbyemail_form(data)
-    return HttpResponse("OK")
-
 # private pages
 
 @cache_control(private=True)

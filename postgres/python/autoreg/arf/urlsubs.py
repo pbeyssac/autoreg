@@ -17,5 +17,4 @@ urlpatterns = patterns('autoreg.arf.whois.views',
     (r'^contact/reset/$', 'makeresettoken'),
     (r'^contact/doreset/(?P<handle>[A-Z0-9]+)/$', 'resetpass2'),
     (r'^contact/validate/(?P<handle>[A-Z0-9]+)/(?P<valtoken>[a-zA-Z0-9]+)/$', 'contactvalidate'),
-    #(r'^contact/pw/$', 'resetpass_old'),
 )
