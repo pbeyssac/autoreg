@@ -1,14 +1,15 @@
 {% extends "base-varheaders.mail" %}
 {% block subject %}password reset for eu.org contact{% endblock %}
-{% block content %}
-Hello,
+{% block content %}Hello,
 
 Following a request on our web site, here is how to set a new
-password on your eu.org contact record identified as {{ handle }}:
+password on your eu.org contact record identified
+as {{ handle }}:
 
 - Connect to {{ reseturl }}
 - Enter the following reset code: {{ token }}
-- Then follow the instructions.
+- Enter the desired new password
+- Then validate.
 
 Best Regards,
 The EU.org team
