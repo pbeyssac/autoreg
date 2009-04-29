@@ -64,6 +64,8 @@ def _render_to_mail(templatename, context, fromaddr, toaddrs):
      by email to the indicated addresses."""
   t = get_template(templatename)
   msg = t.render(Context(context))
+  headers, body = msg.split('\n\n', 1)
+  msg = headers + '\n\n' + body.encode('utf-8').encode('quoted-printable')
   server = smtplib.SMTP()
   server.connect()
   server.sendmail(fromaddr, toaddrs + [ MAILBCC ], msg)
@@ -303,8 +305,7 @@ def contactcreate(request):
         url = URLCONTACTVAL % (handle.upper(), valtoken)
         _render_to_mail('whois/contactcreate.mail',
                         {'url': url,
-                         'whoisdata': p.__str__().encode('utf-8').encode('quoted-printable'),
-                         'encoding': 'quoted-printable',
+                         'whoisdata', p.__str__(),
                          'from': FROMADDR, 'to': d['em'][0]},
                         FROMADDR, [d['em'][0]])
         return _uriset_render_to_response('whois/msgnext.html',
