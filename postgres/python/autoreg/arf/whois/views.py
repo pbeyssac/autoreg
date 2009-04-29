@@ -136,7 +136,7 @@ class contactlogin_form(forms.Form):
   password = forms.CharField(max_length=30, help_text='Your password', widget=PasswordInput)
 
 class resetpass_form(forms.Form):
-  resettoken = forms.CharField(max_length=30)
+  resettoken = forms.CharField(max_length=30, label='Reset Token')
   pass1 = forms.CharField(max_length=20, label='New Password', widget=PasswordInput)
   pass2 = forms.CharField(max_length=20, label='Confirm Password', widget=PasswordInput)
 
