@@ -305,7 +305,7 @@ def contactcreate(request):
         url = URLCONTACTVAL % (handle.upper(), valtoken)
         _render_to_mail('whois/contactcreate.mail',
                         {'url': url,
-                         'whoisdata', p.__str__(),
+                         'whoisdata': p.__str__(),
                          'from': FROMADDR, 'to': d['em'][0]},
                         FROMADDR, [d['em'][0]])
         return _uriset_render_to_response('whois/msgnext.html',
