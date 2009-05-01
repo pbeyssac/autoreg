@@ -198,6 +198,7 @@ CREATE TABLE contacts (
 	name varchar(255),
 	email varchar(80),
 	addr varchar(400),
+	country char(2),
 	phone varchar(40),
 	fax varchar(40),
 	passwd varchar(34),
@@ -238,6 +239,12 @@ CREATE TABLE domain_contact (
 );
 CREATE INDEX domain_contact_domain_id ON domain_contact(whoisdomain_id);
 
+CREATE TABLE iso3166_countries (
+	iso_id CHAR(2) PRIMARY KEY,
+	lang CHAR(2),
+	name VARCHAR(50)
+);
+
 -- history
 
 -- deleted domain-contact associations
@@ -255,6 +262,7 @@ CREATE TABLE contacts_hist (
 	name varchar(255),
 	email varchar(80),
 	addr varchar(400),
+	country char(2),
 	phone varchar(40),
 	fax varchar(40),
 	passwd varchar(34),
@@ -290,14 +298,14 @@ CREATE OR REPLACE FUNCTION trig_contacts()
 	    INSERT INTO contacts_hist (
 		contact_id, handle, exthandle,
 		name, email, addr,
-		phone, fax,
+		country, phone, fax,
 		passwd,
 		created_on, validated_on,
 		updated_by, updated_on, deleted_on)
 	      VALUES (
 		OLD.id, OLD.handle, OLD.exthandle,
 		OLD.name, OLD.email, OLD.addr,
-		OLD.phone, OLD.fax,
+		OLD.country, OLD.phone, OLD.fax,
 		OLD.passwd,
 		OLD.created_on, OLD.validated_on,
 		OLD.updated_by, OLD.updated_on, NOW());
@@ -442,3 +450,4 @@ GRANT INSERT,SELECT ON TABLE domain_contact_hist TO www, autoreg;
 -- read-only
 GRANT SELECT ON TABLE contact_types TO www, autoreg;
 GRANT SELECT ON TABLE contacts, whoisdomains, domain_contact TO whois;
+GRANT SELECT ON TABLE iso3166_countries TO www, autoreg, whois;

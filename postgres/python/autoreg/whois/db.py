@@ -374,16 +374,21 @@ class Person(_whoisobject):
   def fetch(self):
     """Read from database."""
     assert self.cid is not None
-    self._dbc.execute('SELECT handle,exthandle,name,email,addr,'
-                      ' phone,fax,created_on,updated_by,updated_on '
-                      'FROM contacts WHERE id=%s', (self.cid,))
+    self._dbc.execute('SELECT handle,exthandle,contacts.name,email,addr,'
+                      ' phone,fax,created_on,updated_by,updated_on,'
+                      ' iso3166_countries.name'
+                      ' FROM contacts LEFT OUTER JOIN iso3166_countries'
+                      ' ON iso3166_countries.iso_id = contacts.country'
+                      ' WHERE id=%s', (self.cid,))
     assert self._dbc.rowcount == 1
     d = {}
     (d['nh'], d['eh'], d['pn'], d['em'],
      addr,
-     d['ph'], d['fx'], d['cr'], chb, cho) = _fromdb(self._dbc.fetchone())
+     d['ph'], d['fx'], d['cr'], chb, cho, cn) = _fromdb(self._dbc.fetchone())
     for k in d.keys():
       d[k] = [ d[k] ]
+    if cn is not None:
+      addr += '\n' + cn
     d['ad'] = addrsplit(addr)
     d['ch'] = [ (chb, cho) ]
     self.d = d
