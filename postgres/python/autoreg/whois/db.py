@@ -239,6 +239,10 @@ class _whoisobject(object):
     # convert address
     if len(o['ad']) < 6:
       o['ad'].extend([ None ] * (6-len(o['ad'])))
+    # No country code or name set from RIPE objects, it's supposed to be
+    # in the address field.
+    o['co'] = [ None ]
+    o['cn'] = [ None ]
     # If no created_on date, set from updated_on date
     if 'ch' in o and not 'cr' in o:
       o['cr'] = [ o['ch'][0][1] ]
@@ -333,19 +337,22 @@ class Person(_whoisobject):
       o['cr'] = [now]
     if not self.validate:
       self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
-                      'validated_on,'
+                      'validated_on,country,'
                       'passwd,addr,phone,fax,created_on,updated_by,updated_on) '
-                      'VALUES (%s,%s,%s,%s,NULL,%s,%s,%s,%s,%s,%s,%s)',
+                      'VALUES (%s,%s,%s,%s,NULL,%s,%s,%s,%s,%s,%s,%s,%s)',
                    _todb(
                       (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
+                       o['co'][0],
                        self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]))))
     else:
       self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
+                      'country,'
                       'passwd,addr,phone,fax,created_on,updated_by,updated_on) '
-                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
                    _todb(
                       (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
+                       o['co'][0],
                        self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]))))
     assert self._dbc.rowcount == 1
@@ -357,10 +364,12 @@ class Person(_whoisobject):
     o = self.d
     self._dbc.execute('UPDATE contacts SET handle=%s,exthandle=%s,'
                       'name=%s,email=%s,'
+                      'country=%s,'
                       'addr=%s,phone=%s,fax=%s,updated_by=%s,updated_on=NOW() '
                       'WHERE id=%s',
                    _todb(
                       (o['nh'][0], o['eh'][0], o['pn'][0], o['em'][0],
+                       o['co'][0],
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        o['ch'][0][0], self.cid)))
     assert self._dbc.rowcount == 1
@@ -374,7 +383,8 @@ class Person(_whoisobject):
   def fetch(self):
     """Read from database."""
     assert self.cid is not None
-    self._dbc.execute('SELECT handle,exthandle,contacts.name,email,addr,'
+    self._dbc.execute('SELECT handle,exthandle,contacts.name,email,'
+                      ' addr,country,'
                       ' phone,fax,created_on,updated_by,updated_on,'
                       ' iso3166_countries.name'
                       ' FROM contacts LEFT OUTER JOIN iso3166_countries'
@@ -383,12 +393,11 @@ class Person(_whoisobject):
     assert self._dbc.rowcount == 1
     d = {}
     (d['nh'], d['eh'], d['pn'], d['em'],
-     addr,
-     d['ph'], d['fx'], d['cr'], chb, cho, cn) = _fromdb(self._dbc.fetchone())
+     addr, d['co'],
+     d['ph'], d['fx'], d['cr'], chb, cho,
+     d['cn']) = _fromdb(self._dbc.fetchone())
     for k in d.keys():
       d[k] = [ d[k] ]
-    if cn is not None:
-      addr += '\n' + cn
     d['ad'] = addrsplit(addr)
     d['ch'] = [ (chb, cho) ]
     self.d = d
@@ -403,11 +412,14 @@ class Person(_whoisobject):
     """
     s = u''
     d = self.d
-    for i in ['pn', 'nh', 'eh', 'ad', 'ph', 'fx', 'em', 'ch']:
+    for i in ['pn', 'nh', 'eh', 'ad', 'cn', 'ph', 'fx', 'em', 'ch']:
       if i == 'pn':
         l = title
       elif i in ['nh', 'eh'] and embed:
         continue
+      elif i == 'cn':
+        # Got a country name from the ISO code, append it to the address
+        l = "address"
       else:
         l = ripe_stol[i]
       for j in d[i]:
