@@ -359,8 +359,8 @@ class Person(_whoisobject):
     self._dbc.execute("SELECT currval('contacts_id_seq')")
     self.cid, = self._dbc.fetchone()
     assert self._dbc.rowcount == 1
-  def _update(self):
-    """Write back to database."""
+  def update(self):
+    """Write back to database, keeping history."""
     o = self.d
     self._dbc.execute('UPDATE contacts SET handle=%s,exthandle=%s,'
                       'name=%s,email=%s,'
@@ -373,9 +373,6 @@ class Person(_whoisobject):
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        o['ch'][0][0], self.cid)))
     assert self._dbc.rowcount == 1
-  def update(self):
-    """Write back to database, keeping history."""
-    self._update()
   def delete(self):
     """Delete from database, keeping history."""
     self._dbc.execute('DELETE contacts WHERE id=%s', (self.cid,))
