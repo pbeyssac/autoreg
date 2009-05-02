@@ -283,7 +283,7 @@ def contactcreate(request):
     p2 = request.POST.get('p2', '')
     if p1 != p2:
       p_errors = ["Passwords don't match"]
-    elif p1 < 8:
+    elif len(p1) < 8:
       p_errors = ["Password too short"]
 
     if form.is_valid() and not p_errors:
