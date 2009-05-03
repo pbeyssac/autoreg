@@ -589,11 +589,13 @@ class Domain(_whoisobject):
         if l.upper().endswith(HANDLESUFFIX):
           self._dbc.execute('SELECT id FROM contacts'
                             ' WHERE (lower(contacts.name)=%s'
+                            ' AND validated_on IS NOT NULL'
                             ' AND email IS NOT NULL) OR handle=%s',
                             _todb((l.lower(), suffixstrip(l.upper()))))
         else:
           self._dbc.execute('SELECT id FROM contacts'
                             ' WHERE (lower(contacts.name)=%s'
+                            ' AND validated_on IS NOT NULL'
                             ' AND email IS NOT NULL) OR exthandle=%s',
                             _todb((l.lower(), l.upper())))
         # check the returned number of found lines and
@@ -651,18 +653,22 @@ class Lookup:
     return l
   def persons_by_handle(self, handle):
     if handle.upper().endswith(HANDLESUFFIX):
-      self._dbc.execute('SELECT id FROM contacts WHERE handle=%s',
+      self._dbc.execute('SELECT id FROM contacts WHERE handle=%s'
+                        ' AND validated_on IS NOT NULL',
                         _todb((suffixstrip(handle.upper()),)))
     else:
-      self._dbc.execute('SELECT id FROM contacts WHERE exthandle=%s',
+      self._dbc.execute('SELECT id FROM contacts WHERE exthandle=%s'
+                        ' AND validated_on IS NOT NULL',
                         _todb((handle.upper(),)))
     return self._makeplist()
   def persons_by_name(self, name):
     self._dbc.execute('SELECT id FROM contacts WHERE lower(name)=%s' \
+                      ' AND validated_on IS NOT NULL'
                       ' AND email IS NOT NULL', _todb((name.lower(),)))
     return self._makeplist()
   def persons_by_email(self, email):
-    self._dbc.execute('SELECT id FROM contacts WHERE lower(email)=%s',
+    self._dbc.execute('SELECT id FROM contacts WHERE lower(email)=%s'
+                      ' AND validated_on IS NOT NULL',
                       _todb((email.lower(),)))
     return self._makeplist()
   def domain_by_name(self, name):
@@ -681,6 +687,7 @@ class Lookup:
       self._dbc.execute('SELECT DISTINCT(whoisdomains.id) FROM '
                         ' whoisdomains, contacts, domain_contact'
                         ' WHERE contacts.exthandle=%s'
+                        ' AND contacts.validated_on IS NOT NULL'
                         ' AND contacts.id = domain_contact.contact_id'
                         ' AND whoisdomains.id = domain_contact.whoisdomain_id',
                         _todb((handle.upper(),)))
@@ -688,6 +695,7 @@ class Lookup:
       self._dbc.execute('SELECT DISTINCT(whoisdomains.id) FROM '
                         ' whoisdomains, contacts, domain_contact'
                         ' WHERE contacts.handle=%s'
+                        ' AND contacts.validated_on IS NOT NULL'
                         ' AND contacts.id = domain_contact.contact_id'
                         ' AND whoisdomains.id = domain_contact.whoisdomain_id',
                         _todb((suffixstrip(handle.upper()),)))
