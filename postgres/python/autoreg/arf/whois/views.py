@@ -47,6 +47,9 @@ uriset = {'uribase': URIBASE,
           'urireset': URIRESET,
           'urilogout': URILOGOUT}
 
+# will be initialized by the first call to _countries_get()
+countries = []
+
 # for debug purposes
 MAILBCC="pb@eu.org"
 
@@ -104,6 +107,26 @@ def _token_set(contact_id, action, args=None, ttl=3600):
   tk.save()
   return token
 
+def _countries_get():
+  """Return a list of tuples containing ISO 3166 2-letter codes and names
+     for countries."""
+  if not countries:
+    countries.append(('', 'Select one'))
+    dbc = connection.cursor()
+    dbc.execute('SELECT iso_id, name FROM iso3166_countries ORDER BY name')
+    for cn in dbc.fetchall():
+      countries.append(cn)
+  return countries
+
+def _country_from_name(name):
+  """Lookup country code from name"""
+  nl = name.lower()
+  for cn in countries:
+    c, n = cn
+    if n.lower() == nl:
+      return c
+  return None
+
 #
 # Forms
 #
@@ -122,7 +145,8 @@ class contactchange_form(forms.Form):
   ad3 = forms.CharField(max_length=80, label="Address (line 2)", required=False)
   ad4 = forms.CharField(max_length=80, label="Address (line 3)", required=False)
   ad5 = forms.CharField(max_length=80, label="Address (line 4)", required=False)
-  ad6 = forms.CharField(max_length=80, label="Country")
+  ad6 = forms.ChoiceField(initial='', label="Country (required)",
+                          choices=_countries_get())
   ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
 
@@ -296,10 +320,13 @@ def contactcreate(request):
         if v != '':
           d[i] = [v]
       ad = []
-      for i in ['ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'ad6']:
+      for i in ['ad1', 'ad2', 'ad3', 'ad4', 'ad5']:
         a = form.cleaned_data.get(i, None)
         if a is not None and a != '':
           ad.append(a)
+      co = form.cleaned_data.get('ad6', None)
+      if co is not None and co != '':
+        d['co'] = [ co ]
       d['ad'] = ad
       d['ch'] = [(request.META.get('REMOTE_ADDR', 'REMOTE_ADDR_NOT_SET'), None)]
 
@@ -437,7 +464,6 @@ def domainlist(request):
 @cache_control(private=True)
 def contactchange(request):
   """Contact modification page"""
-  re_country = re.compile('^[a-zA-Z \t]+$')
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   handle = request.user.username
@@ -456,12 +482,16 @@ def contactchange(request):
       lastk = 'ad%d' % n
       initial[lastk] = i
       n += 1
-    if lastk and lastk != 'ad6' and re_country.match(initial[lastk]):
-      # If the last address line looks like a country, move it
-      # to 'ad6'. This is a kludge, we'll get rid of it
-      # when we add a dedicated country field in the database.
-      initial['ad6'] = initial[lastk]
-      del initial[lastk]
+    if c.country is not None:
+      initial['ad6'] = c.country
+    elif lastk and lastk != 'ad6':
+      co = _country_from_name(initial[lastk])
+      if co:
+        # For "legacy" contact records, if the last address line
+        # looks like a country, convert it to an ISO country code
+        # and move it to the 'ad6' field in the form.
+        initial['ad6'] = co
+        del initial[lastk]
     vars['form'] = contactchange_form(initial=initial)
     return _uriset_render_to_response('whois/contactchange.html', vars)
   elif request.method == "POST":
@@ -469,7 +499,7 @@ def contactchange(request):
     if form.is_valid():
       c = Contacts.objects.get(handle=handle)
       ad = []
-      for i in '123456':
+      for i in '12345':
         k = 'ad%c' % i
         if form.cleaned_data[k] != '':
           ad.append(form.cleaned_data[k]) 
@@ -489,6 +519,9 @@ def contactchange(request):
         changed = True
       if c.fax != form.cleaned_data['fx1']:
         c.fax = form.cleaned_data['fx1']
+        changed = True
+      if c.country != form.cleaned_data['ad6']:
+        c.country = form.cleaned_data['ad6']
         changed = True
       if c.addr != '\n'.join(ad):
         c.addr = '\n'.join(ad)
