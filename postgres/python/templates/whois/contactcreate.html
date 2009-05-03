@@ -53,7 +53,7 @@
 </div>
 <div class="fieldWrapper{% if form.ad6.errors %}error{% endif %}">
     {{ form.ad6 }}
-    <label for="id_ad6"> Country</label>
+    <label for="id_ad6"> Country (required)</label>
     {% if form.ad6.errors %}{% for error in form.ad6.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ph1.errors %}error{% endif %}">
