@@ -121,6 +121,11 @@ registrantattrs = {'pn': (0,1), 'ad': (0,6),
                    'em': (0,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
 
 personattrs = {'pn': (1,1), 'ad': (0,6),
+               # The following two correspond to country code
+               # and are not from classic RIPE objects, 'co' can
+               # be optionaly passed-in and 'cn' is looked up from 'co' in
+               # the ISO 3166 country names.
+               'co': (0,1), 'cn': (0,1),
                'ph': (0,1), 'fx': (0,1),
                'em': (1,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
 
@@ -239,10 +244,11 @@ class _whoisobject(object):
     # convert address
     if len(o['ad']) < 6:
       o['ad'].extend([ None ] * (6-len(o['ad'])))
-    # No country code or name set from RIPE objects, it's supposed to be
-    # in the address field.
-    o['co'] = [ None ]
-    o['cn'] = [ None ]
+    # Init country code & name if not provided
+    if 'co' not in o:
+      o['co'] = [ None ]
+    if 'cn' not in o:
+      o['cn'] = [ None ]
     # If no created_on date, set from updated_on date
     if 'ch' in o and not 'cr' in o:
       o['cr'] = [ o['ch'][0][1] ]
@@ -310,6 +316,12 @@ class Person(_whoisobject):
     return self._from_ripe(o, registrantattrs)
   def from_ripe(self, o):
     """Fill from RIPE-style attributes."""
+    if 'co' in o and 'cn' not in o:
+      # expand country name if ISO 3166 code is provided
+      self._dbc.execute("SELECT name FROM iso3166_countries WHERE iso_id=%s",
+                        o['co'])
+      assert self._dbc.rowcount == 1
+      o['cn'], = _fromdb(self._dbc.fetchone())
     return self._from_ripe(o, personattrs)
   def _allocate_handle(self):
     """Allocate ourselves a handle if we lack one."""
