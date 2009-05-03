@@ -34,6 +34,7 @@ class Contacts(models.Model):
     name = models.CharField(max_length=255)
     email = models.CharField(max_length=80)
     addr = models.CharField(max_length=400)
+    country = models.CharField(max_length=2)
     phone = models.CharField(max_length=40)
     fax = models.CharField(max_length=40)
     passwd = models.CharField(max_length=34)
