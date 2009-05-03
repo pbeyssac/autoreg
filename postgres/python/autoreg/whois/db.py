@@ -186,9 +186,9 @@ class _whoisobject(object):
     # find ignored attributes, warn
     dlist = []
     for k in o:
-      if not k in attrlist:
+      if k not in attrlist:
         dlist.append(k)
-        if not k in ['so', 'mb', 'encoding', 'err', 'warn']:
+        if k not in ['so', 'mb', 'encoding', 'err', 'warn']:
           for v in o[k]:
             warn.append([k, "Ignoring"])
     # cleanup ignored attributes
@@ -232,7 +232,7 @@ class _whoisobject(object):
     # check attribute constraints
     for k, mm in attrlist.iteritems():
       minl, maxl = mm
-      if not k in o:
+      if k not in o:
         if minl > 0:
           err.append([k, "Missing"])
         o[k] = [ None ]
@@ -250,7 +250,7 @@ class _whoisobject(object):
     if 'cn' not in o:
       o['cn'] = [ None ]
     # If no created_on date, set from updated_on date
-    if 'ch' in o and not 'cr' in o:
+    if 'ch' in o and 'cr' not in o:
       o['cr'] = [ o['ch'][0][1] ]
     # hide lists of errors/warnings in the returned attributes...
     if len(err):
@@ -503,7 +503,7 @@ class Domain(_whoisobject):
     o = self.d
     for i in [('tc','technical'), ('zc','zone'), ('ac','administrative')]:
       si, full = i
-      if not si in o:
+      if si not in o:
         continue
       for v in o[si]:
         if v is None: continue
@@ -911,7 +911,7 @@ class Main:
   def _order(self, o, dodel, persons, nohandle, domains, forcechanged):
     """Handle reordering."""
     if not dodel and 'pn' in o \
-        and (not 'nh' in o or not o['nh'][0].endswith(HANDLESUFFIX)):
+        and ('nh' not in o or not o['nh'][0].endswith(HANDLESUFFIX)):
       # updating or creation of a person object, no handle yet.
       # keep for later allocation to avoid clashes
       nohandle.append(o)
@@ -981,7 +981,7 @@ class Main:
           err += 1
           continue
         a, v = m.groups()
-        if not a in ripe_ltos:
+        if a not in ripe_ltos:
           print "ERROR: Unrecognized attribute \"%s\"" % a
           err += 1
           continue
