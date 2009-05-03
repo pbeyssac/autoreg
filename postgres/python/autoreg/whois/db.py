@@ -319,9 +319,10 @@ class Person(_whoisobject):
     if 'co' in o and 'cn' not in o:
       # expand country name if ISO 3166 code is provided
       self._dbc.execute("SELECT name FROM iso3166_countries WHERE iso_id=%s",
-                        o['co'])
+                        (o['co'][0],))
       assert self._dbc.rowcount == 1
-      o['cn'], = _fromdb(self._dbc.fetchone())
+      # Note: store the result as a tuple, hence no ","
+      o['cn'] = _fromdb(self._dbc.fetchone())
     return self._from_ripe(o, personattrs)
   def _allocate_handle(self):
     """Allocate ourselves a handle if we lack one."""
