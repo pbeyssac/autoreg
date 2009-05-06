@@ -484,8 +484,10 @@ class Domain(_whoisobject):
     # XXX: the line below assumes registrant contacts are not shared.
     # We'll get rid of this assumption when we drop the RIPE model.
     self.ct.update()
+    # delete the previous set of contacts for domain
     self._dbc.execute('DELETE FROM domain_contact WHERE whoisdomain_id=%s',
                       (self.did,))
+    # add new contacts
     self._insert_domain_contact()
   def delete(self):
     """Delete from database, keeping history."""
