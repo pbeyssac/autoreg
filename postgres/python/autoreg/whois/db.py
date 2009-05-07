@@ -515,7 +515,9 @@ class Domain(_whoisobject):
                           ' (SELECT id FROM contact_types WHERE name=%s))',
                           (self.did, v, full))
         assert self._dbc.rowcount == 1
-    self.ct.insert()
+    if self.ct.cid is None:
+      # Create registrant contact, if not done already
+      self.ct.insert()
     self._dbc.execute("INSERT INTO domain_contact "
                       "(whoisdomain_id,contact_id,contact_type_id) "
                       "VALUES (%s,%s,"
