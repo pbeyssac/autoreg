@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Domain contact modification{% endblock %}
+{% block h1title %}Domain contact modification{% endblock %}
+{% block msg %}{% if msg %}{{ msg }}
+{% endif %}{% endblock %}
+{% block form %}
+Contact modification for domain <b>{{ whoisdomain.fqdn }}</b>
+<p>
+Domain created on: {{ whoisdomain.created_on }}<p>
+Domain last changed on: {{ whoisdomain.updated_on }}<p>
+<hr>
+<B>Remove an existing contact</B><P>
+{% for f in formlist %}
+<FORM ACTION="{{ f.posturi }}" METHOD="POST">
+{{ f.contact_type }} contact: {{ f.handle }}
+<INPUT TYPE="hidden" NAME="contact_type" VALUE="{{ f.contact_type }}">
+<INPUT TYPE="hidden" NAME="handle" VALUE="{{ f.handle }}">
+<INPUT TYPE="submit" NAME="submit" VALUE="Delete">
+</FORM>
+{% endfor %}
+<hr>
+<B>Add a new contact</B><P>
+<FORM ACTION="{{ addform.posturi }}" METHOD="POST">
+{{ addform.domcontact_form }}
+<INPUT TYPE="submit" NAME="submit" VALUE="Add">
+</FORM>
+{% endblock %}

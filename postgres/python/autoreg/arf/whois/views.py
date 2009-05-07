@@ -18,7 +18,7 @@ from django.shortcuts import render_to_response
 from django import forms
 from django.forms.widgets import PasswordInput
 from django.views.decorators.cache import cache_control
-from django.db import connection
+from django.db import connection, transaction
 
 from models import Whoisdomains,Contacts,Tokens
 
@@ -26,6 +26,7 @@ URILOGIN = URIBASE + 'login/'
 URICHPASS = URIBASE + 'contact/chpass/'
 URICHANGE = URIBASE + 'contact/change/'
 URIDOMAINS = URIBASE + 'contact/domains/'
+URIDOMAINEDIT = URIBASE + 'domain/edit/'
 URILOGOUT = URIBASE + 'logout/'
 URICHANGEMAIL = URIBASE + 'contact/changemail/'
 URIRESET = URIBASE + 'contact/reset/'
@@ -44,11 +45,16 @@ uriset = {'uribase': URIBASE,
           'urichpass': URICHPASS,
           'urichange': URICHANGE,
           'uridomains': URIDOMAINS,
+          'uridomainedit': URIDOMAINEDIT,
           'urireset': URIRESET,
           'urilogout': URILOGOUT}
 
 # will be initialized by the first call to _countries_get()
 countries = []
+
+domcontact_choices = [('technical', 'technical'),
+                      ('administrative', 'administrative'),
+                      ('zone', 'zone')]
 
 # for debug purposes
 MAILBCC="pb@eu.org"
@@ -154,6 +160,10 @@ class contact_form(contactchange_form):
   p1 = forms.CharField(max_length=20, label='Password', required=False, widget=PasswordInput)
   p2 = forms.CharField(max_length=20, label='Confirm Password', required=False, widget=PasswordInput)
   policy = forms.BooleanField(label="I accept the Policy", required=True)
+
+class domcontact_form(forms.Form):
+  handle = forms.CharField(max_length=10, initial=HANDLESUFFIX)
+  contact_type = forms.ChoiceField(choices=domcontact_choices, label="type")
 
 class contactlogin_form(forms.Form):
   handle = forms.CharField(max_length=15, initial=HANDLESUFFIX, help_text='Your handle')
@@ -584,6 +594,86 @@ def changemail(request):
     ct.save()
     tk.delete()
     return _uriset_render_to_response('whois/emailchanged.html', vars)
+
+@transaction.commit_on_success
+@cache_control(private=True)
+def domainedit(request, fqdn):
+  """Edit domain contacts"""
+  # list of shown and editable contact types
+  typelist = ["administrative", "technical", "zone"]
+
+  if not request.user.is_authenticated():
+    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+  handle = request.user.username
+
+  f = fqdn.upper()
+  try:
+    dom = Whoisdomains.objects.get(fqdn=f)
+  except Whoisdomains.DoesNotExist:
+    dom = None
+  if dom is None:
+    vars = {'fqdn': fqdn}
+    return _uriset_render_to_response('whois/domainnotfound.html', vars)
+
+  # check handle is authorized on domain
+  cl = dom.domaincontact_set.all()
+  for c in cl:
+    if handle == c.contact.handle:
+      break
+  else:
+    # XXX
+    return HttpResponse("Unauthorized")
+
+  if request.method == "POST":
+    if 'submit' in request.POST:
+      contact_type = request.POST['contact_type']
+      chandle = suffixstrip(request.POST['handle'])
+      ctl = Contacts.objects.filter(handle=chandle)
+      if len(ctl) != 1:
+        # XXX
+        return HttpResponse("Contact not found")
+      cid = ctl[0].id
+      if contact_type[0] not in 'atz':
+        return HttpResponse("Internal error")
+      code = contact_type[0] + 'c'
+      from autoreg.whois.db import Domain
+      dbdom = Domain(connection.cursor(), did=dom.id)
+      dbdom.fetch()
+      if request.POST['submit'] == 'Delete':
+        if not cid in dbdom.d[code]:
+          # XXX
+          return HttpResponse("Not a contact")
+        dbdom.d[code].remove(cid)
+        dbdom.update()
+        transaction.set_dirty()
+        # Fall through to updated form display
+      elif request.POST['submit'] == 'Add':
+        if cid in dbdom.d[code]:
+          # XXX
+          return HttpResponse("Already a contact")
+        dbdom.d[code].append(cid)
+        dbdom.update()
+        transaction.set_dirty()
+        # Fall through to updated form display
+    else:
+      return HttpResponse("Internal error")
+
+  # refresh contact list
+  cl = dom.domaincontact_set.all()
+  formlist = []
+  for c in cl:
+    ct = c.contact_type.name
+    if ct in typelist:
+      cthandle = c.contact.handle
+      formlist.append({'contact_type': ct,
+                       'handle': suffixadd(cthandle),
+                       'posturi': request.path })
+
+  vars = {'whoisdomain': dom, 'domaincontact_list': cl,
+          'formlist': formlist,
+          'addform': {'posturi': request.path,
+                      'domcontact_form': domcontact_form().as_table()}}
+  return _uriset_render_to_response('whois/domainedit.html', vars)
 
 def logout(request):
   """Logout page"""
