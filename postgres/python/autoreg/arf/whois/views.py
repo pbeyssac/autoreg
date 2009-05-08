@@ -165,7 +165,8 @@ class contact_form(contactchange_form):
 
 class registrant_form(forms.Form):
   pn1 = forms.CharField(max_length=60, label="Name")
-  em1 = forms.EmailField(max_length=64, label="E-mail", required=False)
+  # disabled until we get rid of the RIPE model (unshared registrant records)
+  #em1 = forms.EmailField(max_length=64, label="E-mail", required=False)
   ad1 = forms.CharField(max_length=80, label="Organization")
   ad2 = forms.CharField(max_length=80, label="Address (line 1)")
   ad3 = forms.CharField(max_length=80, label="Address (line 2)", required=False)
@@ -560,7 +561,9 @@ def contactchange(request, registrantdomain=None):
       if c.name != form.cleaned_data['pn1']:
         c.name = form.cleaned_data['pn1']
         changed = True
-      if form.cleaned_data['em1'] != '' and c.email != form.cleaned_data['em1']:
+      if ('em1' in form.cleaned_data
+          and form.cleaned_data['em1'] != ''
+          and c.email != form.cleaned_data['em1']):
         newemail = form.cleaned_data['em1']
         emailchanged = True
       for i in ['fx1', 'ph1']:

@@ -22,10 +22,10 @@ Contact handle: <strong>{{ ehandle }}</strong><br>
     <label for="id_pn1"> Name</label>
     {{ form.pn1.errors }}
 </div>
-<div class="fieldWrapper{% if form.em1.errors %}error{% endif %}">
+{% if form.em1 %}<div class="fieldWrapper{% if form.em1.errors %}error{% endif %}">
     {{ form.em1 }}
     <label for="id_em1"> E-mail</label>
-    {% if form.em1.errors %}{% for error in form.em1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
+    {% if form.em1.errors %}{% for error in form.em1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad1.errors %}error{% endif %}">
     {{ form.ad1 }}
