@@ -115,6 +115,12 @@ def _token_set(contact_id, action, args=None, ttl=3600):
   tk.save()
   return token
 
+def _check_handle_domain_auth(handle, domain):
+  """check handle is authorized on domain."""
+  dom = Whoisdomains.objects.get(fqdn=domain.upper())
+  cl = dom.domaincontact_set.filter(contact__handle__exact=handle)
+  return len(cl) > 0
+
 def _countries_get():
   """Return a list of tuples containing ISO 3166 2-letter codes and names
      for countries."""
@@ -496,21 +502,15 @@ def contactchange(request, registrantdomain=None):
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   handle = request.user.username
   if registrantdomain:
-    dom = Whoisdomains.objects.get(fqdn=registrantdomain)
     # check handle is authorized on domain
-    cl = dom.domaincontact_set.all()
-    for c in cl:
-      if handle == c.contact.handle:
-        break
-    else:
+    if not _check_handle_domain_auth(handle, registrantdomain):
       # XXX
       return HttpResponse("Unauthorized")
-    ehandle = None
-    for c in cl:
-      if c.contact_type.name == 'registrant':
-        ehandle = c.contact.handle
-        break
-    assert ehandle is not None
+    dom = Whoisdomains.objects.get(fqdn=registrantdomain)
+    cl = dom.domaincontact_set.filter(contact_type__name='registrant')
+    if len(cl) != 1:
+      return HttpResponse("Internal error")
+    ehandle = cl[0].contact.handle
   else:
     ehandle = handle
 
@@ -664,45 +664,47 @@ def domainedit(request, fqdn):
     return _uriset_render_to_response('whois/domainnotfound.html', vars)
 
   # check handle is authorized on domain
-  cl = dom.domaincontact_set.all()
-  for c in cl:
-    if handle == c.contact.handle:
-      break
-  else:
+  if not _check_handle_domain_auth(handle, registrantdomain):
     # XXX
     return HttpResponse("Unauthorized")
 
   dbdom = Domain(connection.cursor(), did=dom.id)
   dbdom.fetch()
 
+  msg = None
+
   if request.method == "POST":
     if 'submit' in request.POST:
       contact_type = request.POST['contact_type']
       chandle = suffixstrip(request.POST['handle'])
       ctl = Contacts.objects.filter(handle=chandle)
-      if len(ctl) != 1:
-        # XXX
-        return HttpResponse("Contact not found")
-      cid = ctl[0].id
-      if contact_type[0] not in 'atz':
+      if len(ctl) == 0:
+        msg = "Contact %s not found" % suffixadd(chandle)
+      elif len(ctl) != 1:
         return HttpResponse("Internal error")
-      code = contact_type[0] + 'c'
-      if request.POST['submit'] == 'Delete':
-        if not cid in dbdom.d[code]:
-          # XXX
-          return HttpResponse("Not a contact")
-        dbdom.d[code].remove(cid)
-        dbdom.update()
-        transaction.set_dirty()
-        # Fall through to updated form display
-      elif request.POST['submit'] == 'Add':
-        if cid in dbdom.d[code]:
-          # XXX
-          return HttpResponse("Already a contact")
-        dbdom.d[code].append(cid)
-        dbdom.update()
-        transaction.set_dirty()
-        # Fall through to updated form display
+      else:
+        cid = ctl[0].id
+        if contact_type[0] not in 'atz':
+          return HttpResponse("Internal error")
+        code = contact_type[0] + 'c'
+        if request.POST['submit'] == 'Delete':
+          if cid in dbdom.d[code]:
+            dbdom.d[code].remove(cid)
+            dbdom.update()
+            transaction.set_dirty()
+            msg = "%s removed from %s contacts" % (chandle, contact_type)
+          else:
+            msg = "%s is not a contact" % suffixadd(chandle)
+          # Fall through to updated form display
+        elif request.POST['submit'] == 'Add':
+          if cid not in dbdom.d[code]:
+            dbdom.d[code].append(cid)
+            dbdom.update()
+            transaction.set_dirty()
+            msg = "%s added to %s contacts" % (chandle, contact_type)
+          else:
+            msg = "%s is already a %s contact" % (chandle, contact_type)
+          # Fall through to updated form display
     else:
       return HttpResponse("Internal error")
   elif request.method != "GET":
@@ -710,8 +712,8 @@ def domainedit(request, fqdn):
 
   # handle GET or end of POST
 
-  # refresh contact list
-  cl = dom.domaincontact_set.all()
+  # get contact list
+  cl = dom.domaincontact_set.order_by('contact_type', 'contact__handle')
   formlist = []
   for c in cl:
     ct = c.contact_type.name
@@ -722,6 +724,7 @@ def domainedit(request, fqdn):
                        'posturi': request.path })
 
   vars = {'whoisdomain': dom, 'domaincontact_list': cl,
+          'msg': msg,
           'formlist': formlist,
           'whoisdisplay': unicode(dbdom),
           'addform': {'posturi': request.path,

@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Domain contact modification{% endblock %}
 {% block h1title %}Domain contact modification{% endblock %}
-{% block msg %}{% if msg %}{{ msg }}
+{% block msg %}{% if msg %}{{ msg }}<hr>
 {% endif %}{% endblock %}
 {% block form %}
-Contact modification for domain <b>{{ whoisdomain.fqdn }}</b>
-<hr>
-<strong>Whois data</strong><P>
+Whois data for domain <strong>{{ whoisdomain.fqdn }}</strong><P>
 <pre>
 {{ whoisdisplay }}
 </pre>
