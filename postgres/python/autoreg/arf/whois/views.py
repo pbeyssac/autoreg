@@ -705,6 +705,10 @@ def domainedit(request, fqdn):
         # Fall through to updated form display
     else:
       return HttpResponse("Internal error")
+  elif request.method != "GET":
+    return HttpResponse("Internal error")
+
+  # handle GET or end of POST
 
   # refresh contact list
   cl = dom.domaincontact_set.all()
