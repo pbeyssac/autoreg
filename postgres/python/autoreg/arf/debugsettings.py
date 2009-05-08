@@ -1,7 +1,7 @@
 # Django settings for arf project.
 # $Id$
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (

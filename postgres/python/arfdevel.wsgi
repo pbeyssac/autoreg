@@ -5,7 +5,7 @@
 
 import os
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'autoreg.arf.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'autoreg.arf.debugsettings'
 os.environ['ARF_BASE'] = '/darf/'
 os.environ['AUTOREG_DBSTRING'] = 'dbname=eudevel'
 
