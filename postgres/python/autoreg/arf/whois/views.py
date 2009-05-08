@@ -480,7 +480,7 @@ def contactchange(request):
   vars = {'posturi': request.path, 'handle': suffixadd(handle)}
   if request.method == "GET":
     c = Contacts.objects.get(handle=handle)
-    adlist = c.addr.split('\n')
+    adlist = c.addr.rstrip().split('\n')
     initial = { 'nh1': suffixadd(c.handle),
                 'pn1': c.name,
                 'em1': c.email,
