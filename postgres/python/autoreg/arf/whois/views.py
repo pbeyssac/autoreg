@@ -664,7 +664,7 @@ def domainedit(request, fqdn):
     return _uriset_render_to_response('whois/domainnotfound.html', vars)
 
   # check handle is authorized on domain
-  if not _check_handle_domain_auth(handle, registrantdomain):
+  if not _check_handle_domain_auth(handle, f):
     # XXX
     return HttpResponse("Unauthorized")
 
