@@ -115,12 +115,14 @@ def _token_set(contact_id, action, args=None, ttl=3600):
   tk.save()
   return token
 
+# XXX: this should probably be moved to autoreg.whois.db
 def _check_handle_domain_auth(handle, domain):
   """check handle is authorized on domain."""
   dom = Whoisdomains.objects.get(fqdn=domain.upper())
   cl = dom.domaincontact_set.filter(contact__handle__exact=handle)
   return len(cl) > 0
 
+# XXX: this should probably be moved to autoreg.whois.db
 def _countries_get():
   """Return a list of tuples containing ISO 3166 2-letter codes and names
      for countries."""
@@ -132,6 +134,7 @@ def _countries_get():
       countries.append(cn)
   return countries
 
+# XXX: this should probably be moved to autoreg.whois.db
 def _country_from_name(name):
   """Lookup country code from name"""
   nl = name.lower()
@@ -170,6 +173,7 @@ class contact_form(contactchange_form):
   policy = forms.BooleanField(label="I accept the Policy", required=True)
 
 class registrant_form(forms.Form):
+  # same as contactchange_form minus the email field
   pn1 = forms.CharField(max_length=60, label="Name")
   # disabled until we get rid of the RIPE model (unshared registrant records)
   #em1 = forms.EmailField(max_length=64, label="E-mail", required=False)
