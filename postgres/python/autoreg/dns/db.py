@@ -35,7 +35,7 @@ class _Zone:
 	self.id = id
     def set_updateserial(self):
 	"""Mark zone for serial update in SOA."""
-	assert self.id != None
+	assert self.id is not None
 	self._updateserial = True
 	self._dbc.execute('UPDATE zones SET updateserial=TRUE WHERE id=%s',
 			  (self.id,))
@@ -43,7 +43,7 @@ class _Zone:
 	"""Update serial for zone in SOA if flagged as such."""
 	zid = self.id
 	serial = self._soaserial
-	assert zid != None and serial != None
+	assert zid is not None and serial is not None
 	if not self._updateserial: return (False, serial)
 	year, month, day, h, m, s, wd, yd, dst = time.localtime()
 	newserial = int("%04d%02d%02d00"%(year,month,day))
@@ -75,7 +75,7 @@ class _Zone:
 	 self.minlen, self.maxlen) = self._dbc.fetchone()
     def checktype(self, rrtype):
 	"""Check rrtype is allowed in zone."""
-	if rrtype == None: return
+	if rrtype is None: return
 	zid = self.id
 	self._dbc.execute('SELECT zone_id,rrtype_id FROM allowed_rr '
 		'WHERE allowed_rr.zone_id=%s '
@@ -88,7 +88,7 @@ class _Zone:
     def cat(self):
 	"""Output zone file to stdout."""
 	print "; zone name=%s id=%d" % (self.name, self.id)
-	if self._ttl != None: print '$TTL', self._ttl
+	if self._ttl is not None: print '$TTL', self._ttl
 	print ("@\tSOA\t%s %s %d %d %d %d %d" %
 	    (self._soaprimary, self._soaemail, self._soaserial,
 	     self._soarefresh, self._soaretry,
@@ -118,7 +118,7 @@ class _Zone:
 		l = label + domain
 	    if l == self.name+'.':
 		l = '@'
-	    if ttl == None: ttl = ''
+	    if ttl is None: ttl = ''
 	    else: ttl = str(ttl)+'\t'
 	    # print line, removing label if possible
 	    # for compactness and clarity
@@ -131,7 +131,7 @@ class _Zone:
 	print "_EU-ORG-END-MARKER\tTXT\t\"%s\"" % self._soaserial
     def lock(self):
 	"""Lock zone row for update."""
-	assert self.id != None
+	assert self.id is not None
 	self._dbc.execute('SELECT NULL FROM zones WHERE id=%s FOR UPDATE',
 			  (self.id,))
 
@@ -185,13 +185,13 @@ class _Domain:
 	domain_name, zone_name and domain_id should be set.
 	"""
 	dom, zone, did = self.name, self._zone_name, self.id
-	assert dom != None and zone != None and did != None
+	assert dom is not None and zone is not None and did is not None
 	dp = parser.DnsParser()
 	# convenient default label if none provided on first line of file
 	label = ''
 	for l in f:
 	    t = dp.parseline(l)
-	    if t == None:
+	    if t is None:
 		# Was a comment or empty line
 		continue
 	    newlabel, ttl, typ, value = t
@@ -280,7 +280,7 @@ class _Domain:
 	    if len(l) > 15: pass
 	    elif len(l) > 7: l += '\t'
 	    else: l += "\t\t"
-	    if ttl == None: ttl = ''
+	    if ttl is None: ttl = ''
 	    else: ttl = str(ttl)
 
 	    print "\t".join((l, ttl, typ, val))
@@ -316,10 +316,10 @@ class _ZoneList:
     def split(self, domain, zone=None):
 	"""Split domain name according to known zones."""
 	domain = domain.upper()
-	if zone != None:
+	if zone is not None:
             # zone name is provided, just check it exists
 	    zone = zone.upper()
-	    if not zone in self.zones:
+	    if zone not in self.zones:
 		return (None, None)
 	    if domain.endswith('.'+zone):
 		dom = domain[:-len(zone)-1]
@@ -350,7 +350,7 @@ class _ZoneList:
 	Return _Domain object, _Zone object.
 	"""
 	dname, z = self.split(domain, zone)
-	if z == None:
+	if z is None:
 	    raise DomainError(DomainError.ZNOTFOUND, domain)
 	if wlock:
 	    fu = ' FOR UPDATE'
@@ -396,11 +396,11 @@ class db:
 	return self._login_id
     def _check_login_perm(self, zone=None):
 	"""Check someone has logged-in and has permission for the zone."""
-	if self._login_id == None:
+	if self._login_id is None:
 	    raise AccessError(AccessError.NOTLOGGED)
 	if self._nowrite:
 	    return
-	if zone != None and not self._za.check(zone, self._login):
+	if zone is not None and not self._za.check(zone, self._login):
 	    raise AccessError(AccessError.NOAUTH, self._login, zone)
     def logout(self):
 	"""Logout current user."""
@@ -463,7 +463,7 @@ class db:
 	"""
 	d, z = self._zl.find(domain, zone, wlock=True, raise_nf=False)
 	self._check_login_perm(z.name)
-	if d.id != None:
+	if d.id is not None:
 	    raise DomainError(DomainError.DEXISTS, domain)
 	z.checktype(typ)
 	z.fetch()

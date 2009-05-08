@@ -38,7 +38,7 @@ class DnsParser:
 	m = self._label_re.search(l)
 	if not m: raise ParseError('Unable to parse line', l)
 	label, ttl, typ, value = m.groups()
-	if label == None:
+	if label is None:
 	    label = ''
 	else:
 	    label = label.upper()
