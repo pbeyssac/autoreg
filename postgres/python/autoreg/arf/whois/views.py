@@ -7,7 +7,7 @@ import re
 import smtplib
 import time
 
-from autoreg.whois.db import HANDLESUFFIX,suffixstrip,suffixadd
+from autoreg.whois.db import HANDLESUFFIX,suffixstrip,suffixadd,Domain
 from autoreg.arf.settings import URIBASE, URLBASE
 
 import django.contrib.auth
@@ -27,6 +27,7 @@ URICHPASS = URIBASE + 'contact/chpass/'
 URICHANGE = URIBASE + 'contact/change/'
 URIDOMAINS = URIBASE + 'contact/domains/'
 URIDOMAINEDIT = URIBASE + 'domain/edit/'
+URIREGISTRANTEDIT = URIBASE + 'registrant/edit/'
 URILOGOUT = URIBASE + 'logout/'
 URICHANGEMAIL = URIBASE + 'contact/changemail/'
 URIRESET = URIBASE + 'contact/reset/'
@@ -46,6 +47,7 @@ uriset = {'uribase': URIBASE,
           'urichange': URICHANGE,
           'uridomains': URIDOMAINS,
           'uridomainedit': URIDOMAINEDIT,
+          'uriregistrantedit': URIREGISTRANTEDIT,
           'urireset': URIRESET,
           'urilogout': URILOGOUT}
 
@@ -160,6 +162,19 @@ class contact_form(contactchange_form):
   p1 = forms.CharField(max_length=20, label='Password', required=False, widget=PasswordInput)
   p2 = forms.CharField(max_length=20, label='Confirm Password', required=False, widget=PasswordInput)
   policy = forms.BooleanField(label="I accept the Policy", required=True)
+
+class registrant_form(forms.Form):
+  pn1 = forms.CharField(max_length=60, label="Name")
+  em1 = forms.EmailField(max_length=64, label="E-mail", required=False)
+  ad1 = forms.CharField(max_length=80, label="Organization")
+  ad2 = forms.CharField(max_length=80, label="Address (line 1)")
+  ad3 = forms.CharField(max_length=80, label="Address (line 2)", required=False)
+  ad4 = forms.CharField(max_length=80, label="Address (line 3)", required=False)
+  ad5 = forms.CharField(max_length=80, label="Address (line 4)", required=False)
+  ad6 = forms.ChoiceField(initial='', label="Country (required)",
+                          choices=_countries_get())
+  ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
+  fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
 
 class domcontact_form(forms.Form):
   handle = forms.CharField(max_length=10, initial=HANDLESUFFIX)
@@ -472,17 +487,37 @@ def domainlist(request):
   return _uriset_render_to_response('whois/domainlist.html', vars)
 
 @cache_control(private=True)
-def contactchange(request):
-  """Contact modification page"""
+def contactchange(request, registrantdomain=None):
+  """Contact or registrant modification page.
+     If registrant, registrantdomain contains the associated domain FQDN.
+  """
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   handle = request.user.username
+  if registrantdomain:
+    dom = Whoisdomains.objects.get(fqdn=registrantdomain)
+    # check handle is authorized on domain
+    cl = dom.domaincontact_set.all()
+    for c in cl:
+      if handle == c.contact.handle:
+        break
+    else:
+      # XXX
+      return HttpResponse("Unauthorized")
+    ehandle = None
+    for c in cl:
+      if c.contact_type.name == 'registrant':
+        ehandle = c.contact.handle
+        break
+    assert ehandle is not None
+  else:
+    ehandle = handle
+
   vars = {'posturi': request.path, 'handle': suffixadd(handle)}
   if request.method == "GET":
-    c = Contacts.objects.get(handle=handle)
+    c = Contacts.objects.get(handle=ehandle)
     adlist = c.addr.rstrip().split('\n')
-    initial = { 'nh1': suffixadd(c.handle),
-                'pn1': c.name,
+    initial = { 'pn1': c.name,
                 'em1': c.email,
                 'ph1': c.phone,
                 'fx1': c.fax }
@@ -502,12 +537,19 @@ def contactchange(request):
         # and move it to the 'ad6' field in the form.
         initial['ad6'] = co
         del initial[lastk]
-    vars['form'] = contactchange_form(initial=initial)
+    if registrantdomain:
+      vars['form'] = registrant_form(initial=initial)
+    else:
+      vars['ehandle'] = suffixadd(ehandle)
+      vars['form'] = contactchange_form(initial=initial)
     return _uriset_render_to_response('whois/contactchange.html', vars)
   elif request.method == "POST":
-    form = contactchange_form(request.POST)
+    if registrantdomain:
+      form = registrant_form(request.POST)
+    else:
+      form = contactchange_form(request.POST)
     if form.is_valid():
-      c = Contacts.objects.get(handle=handle)
+      c = Contacts.objects.get(handle=ehandle)
       ad = []
       for i in '12345':
         k = 'ad%c' % i
@@ -518,7 +560,7 @@ def contactchange(request):
       if c.name != form.cleaned_data['pn1']:
         c.name = form.cleaned_data['pn1']
         changed = True
-      if c.email != form.cleaned_data['em1']:
+      if form.cleaned_data['em1'] != '' and c.email != form.cleaned_data['em1']:
         newemail = form.cleaned_data['em1']
         emailchanged = True
       for i in ['fx1', 'ph1']:
@@ -545,13 +587,16 @@ def contactchange(request):
         token = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
         _render_to_mail('whois/changemail.mail',
                         {'from': FROMADDR, 'to': newemail,
-                         'handle': suffixadd(handle),
+                         'handle': suffixadd(ehandle),
                          'newemail': newemail,
                          'changemailurl': URLCHANGEMAIL,
                          'token': token }, FROMADDR, [ newemail ])
         return HttpResponseRedirect(URICHANGEMAIL)
-      vars['msg'] = "Contact information changed successfully"
-      return _uriset_render_to_response('whois/msgnext.html', vars)
+      if registrantdomain:
+        return HttpResponseRedirect(URIDOMAINEDIT + registrantdomain)
+      else:
+        vars['msg'] = "Contact information changed successfully"
+        return _uriset_render_to_response('whois/msgnext.html', vars)
     else:
       vars['form'] = form
       return _uriset_render_to_response('whois/contactchange.html', vars)
@@ -624,6 +669,9 @@ def domainedit(request, fqdn):
     # XXX
     return HttpResponse("Unauthorized")
 
+  dbdom = Domain(connection.cursor(), did=dom.id)
+  dbdom.fetch()
+
   if request.method == "POST":
     if 'submit' in request.POST:
       contact_type = request.POST['contact_type']
@@ -636,9 +684,6 @@ def domainedit(request, fqdn):
       if contact_type[0] not in 'atz':
         return HttpResponse("Internal error")
       code = contact_type[0] + 'c'
-      from autoreg.whois.db import Domain
-      dbdom = Domain(connection.cursor(), did=dom.id)
-      dbdom.fetch()
       if request.POST['submit'] == 'Delete':
         if not cid in dbdom.d[code]:
           # XXX
@@ -671,6 +716,7 @@ def domainedit(request, fqdn):
 
   vars = {'whoisdomain': dom, 'domaincontact_list': cl,
           'formlist': formlist,
+          'whoisdisplay': unicode(dbdom),
           'addform': {'posturi': request.path,
                       'domcontact_form': domcontact_form().as_table()}}
   return _uriset_render_to_response('whois/domainedit.html', vars)
