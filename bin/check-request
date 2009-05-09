@@ -2,6 +2,9 @@
 #
 # $Id$
 #
+# XXX: not compatible with forms generated for the previous version,
+#      hence currently installed as check-request2.
+#
 # Option -s is used by receive-mail and means we have to output a
 # Subject: header with our request id.
 #
@@ -41,7 +44,6 @@ $YMD=`date +%Y%m%d`; chop $YMD;
 $date=`date`; chop $date;
 
 local ($k)=0;
-local ($onect)=0;
 local ($v)="";
 local ($domain)="";
 local (@fqdn);
@@ -150,8 +152,16 @@ if ($opt_s) { printf $MSG_RQSUB, $REQID; };
 
 $req =~ tr/a-z/A-Z/;
 $domain =~ tr/a-z/A-Z/;
-if ($ref{"ah"}) { $ref{"ah"} =~ tr/a-z/A-Z/ }
-if ($ref{"th"}) { $ref{"th"} =~ tr/a-z/A-Z/ }
+
+# handles are mandatory
+if (!$ref{"ah"}) {
+	&pr_error($ERR_NONH);
+} else {
+	$ref{"ah"} =~ tr/a-z/A-Z/;
+}
+if (!$ref{"th"}) {
+	$ref{"th"} = $ref{"ah"}
+}
 
 &stoperrs;
 
@@ -299,40 +309,14 @@ if ($ref{"tt"} && $ref{"tt"} !~ /^\+?[0-9 -]*$/) {
 }
 
 if ($makewhois) {
-	$onect=0;
-	if (!$ref{"ah"} && !$ref{"am"}) {
-	    if (!$ref{"th"} && !$ref{"tm"}) {
-		    &pr_error($ERR_NOCTC);
-	    } else {
-		print $MSG_NOADM;
-		foreach $i ('h', 'm', 'o', 'a', 'c', 's', 'p', 'n', 't', 'e') {
-		    $ref{"a".$i} = $ref{"t".$i};
-		}
-		$onect=1;
-	    }
-	    &pr_error($ERR_NONAM) unless $ref{"am"};
-	    &pr_error($ERR_NOEML) unless $ref{"ae"};
-	} elsif (!$ref{"th"} && !$ref{"tm"}) {
-	    print $MSG_NOTEC;
-	    foreach $i ('h', 'm', 'o', 'a', 'c', 's', 'p', 'n', 't', 'e') {
-		$ref{"t".$i} = $ref{"a".$i};
-	    }
-	    $onect=1;
-	    &pr_error($ERR_NONAM) unless $ref{"am"};
-	    &pr_error($ERR_NOEML) unless $ref{"ae"};
+	$ref{"ae"} = &whois_contact_email("whois.eu.org", $ref{"ah"});
+	if ($ref{"th"} ne $ref{"ah"}) {
+	    $ref{"te"} = &whois_contact_email("whois.eu.org", $ref{"th"})
 	} else {
-	    &pr_error($ERR_NOANM) unless $ref{"am"};
-	    &pr_error($ERR_NOAEM) unless $ref{"ae"};
-	    &pr_error($ERR_NOTNM) unless $ref{"tm"};
-	    &pr_error($ERR_NOTEM) unless $ref{"te"};
-	    $onect=1;
-	    foreach $i ('h', 'm') {
-		if ($ref{"t".$i} ne $ref{"a".$i}) { $onect=0; break; }
-	    }
-	    if ($onect) {
-		print $MSG_ONECT;
-	    }
+	    $ref{"te"} = $ref{"ae"}
 	}
+	&pr_error($ERR_NOAEM) unless $ref{"ae"};
+	&pr_error($ERR_NOTEM) unless $ref{"te"};
 
 	&pr_error($ERR_NOORG) unless $ref{"om"};
 	#&pr_error($ERR_NOOAD) unless $ref{"oa"};
@@ -497,23 +481,8 @@ sub checkname {
 	}
 }
 
-sub whodata_person {
-	local ($hdl, $pfx) = ($_[0], $_[1]);
-	print $hdl "person:  ", $ref{$pfx."m"}, "\n";
-	print $hdl "nic-hdl: ", $ref{$pfx."h"}, "\n" if $ref{$pfx."h"};
-	print $hdl "e-mail:  ", $ref{$pfx."e"}, "\n" if $ref{$pfx."e"};
-	print $hdl "address: ", $ref{$pfx."a"}, "\n" if $ref{$pfx."a"};
-	print $hdl "address: ", $ref{$pfx."p"}, "\n" if $ref{$pfx."p"};
-	print $hdl "address: ", $ref{$pfx."c"}, "\n" if $ref{$pfx."c"};
-	print $hdl "address: ", $ref{$pfx."s"}, "\n" if $ref{$pfx."s"};
-	print $hdl "address: ", $ref{$pfx."n"}, "\n" if $ref{$pfx."n"};
-	print $hdl "phone:   ", $ref{$pfx."t"}, "\n" if $ref{$pfx."t"};
-	print $hdl "source:  $DBNAME\n";
-	print $hdl "\n";
-}
-
 sub whodata_domain {
-	local ($hdl, $pfx) = ($_[0], $_[1]);
+	local ($hdl) = $_[0];
 	print $hdl "domain:  ", $domain, "\n";
 	print $hdl "address: ", $ref{"om"}, "\n" if $ref{"om"};
 	print $hdl "address: ", $ref{"oa"}, "\n" if $ref{"oa"};
@@ -522,20 +491,16 @@ sub whodata_domain {
 	print $hdl "address: ", $ref{"os"}, "\n" if $ref{"os"};
 	print $hdl "address: ", $ref{"on"}, "\n" if $ref{"on"};
 
-	if ($ref{"am"}) {
-	    if ($ref{"ah"}) {
-		print $hdl "admin-c: ", $ref{"ah"}, "\n";
-	    } else {
-		print $hdl "admin-c: ", $ref{"am"}, "\n";
-	    }
+	if ($ref{"ah"}) {
+	    print $hdl "admin-c: ", $ref{"ah"}, "\n";
+	} elsif ($ref{"am"}) {
+	    print $hdl "admin-c: ", $ref{"am"}, "\n";
 	}
 
-	if ($ref{"tm"}) {
-	    if ($ref{"th"}) {
-		print $hdl "tech-c:  ", $ref{"th"}, "\n";
-	    } else {
-		print $hdl "tech-c:  ", $ref{"tm"}, "\n";
-	    }
+	if ($ref{"th"}) {
+	    print $hdl "tech-c:  ", $ref{"th"}, "\n";
+	} elsif ($ref{"tm"}) {
+	    print $hdl "tech-c:  ", $ref{"tm"}, "\n";
 	}
 
 	#print $hdl "mnt-by:  $MNTBY\n";
@@ -548,8 +513,6 @@ sub whodata {
 	local ($hdl) = $_[0];
 
 	&whodata_domain($hdl);
-	&whodata_person($hdl, "a");
-	&whodata_person($hdl, "t") unless $onect;
 }
 
 sub tabify {

@@ -94,4 +94,29 @@ sub whois_email {
    return sort keys(%emails);
 }
 
+sub whois_contact_email {
+   local ($server, $request) = ($_[0], $_[1]);
+   local (%emails);
+   $server =~ s/["';&]//g;
+   $request =~ s/["';&]//g;
+
+   if (!&whois_socket($server, "$request")) {
+      return "";
+   }
+   #
+   # Skip until we find a person.
+   #
+   while (<WHOIS>) {
+      last if (/^person:/i);
+   }
+   while (<WHOIS>) {
+      if (/^e-mail:\s*(.*)$/i) {
+	close(WHOIS);
+	return $1;
+      }
+   }
+   close(WHOIS);
+   return undef;
+}
+
 1;
