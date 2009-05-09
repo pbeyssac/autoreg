@@ -8,7 +8,7 @@ identified as {{ handle }}:
 
 - Connect to {{ changemailurl }}
 - Login using your handle and password, if necessary
-- Enter the following reset code: {{ token }}
+- Enter the following validation token: {{ token }}
 - Then validate to set the email address to
   {{ newemail }}
 
