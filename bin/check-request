@@ -153,16 +153,6 @@ if ($opt_s) { printf $MSG_RQSUB, $REQID; };
 $req =~ tr/a-z/A-Z/;
 $domain =~ tr/a-z/A-Z/;
 
-# handles are mandatory
-if (!$ref{"ah"}) {
-	&pr_error($ERR_NONH);
-} else {
-	$ref{"ah"} =~ tr/a-z/A-Z/;
-}
-if (!$ref{"th"}) {
-	$ref{"th"} = $ref{"ah"}
-}
-
 &stoperrs;
 
 print $MSG_BASCK;
@@ -267,6 +257,18 @@ if (!$ref{"ah"} && !$ref{"am"} && !$ref{"th"} && !$ref{"tm"}) {
 		$makewhois=0
 	}
 }
+# handles are mandatory at domain creation
+if ($req eq 'N') {
+    if (!$ref{"ah"}) {
+	&pr_error($ERR_NONH);
+    } else {
+	$ref{"ah"} =~ tr/a-z/A-Z/;
+    }
+    if (!$ref{"th"}) {
+	$ref{"th"} = $ref{"ah"}
+    }
+}
+
 if ($req eq 'MZ' && $makewhois) {
   &pr_error($ERR_NOCON);
   $makewhois=0;
