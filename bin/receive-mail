@@ -149,12 +149,10 @@ if ($rqid) {
 #
 # No valid request id found in the subject, assume it's a new request
 #
-open(CHECK, "$CRPATH -s -l$ENV{'ARLANG'} < $REQFILE mail 2>&1 |") || die "Cannot start $CRPATH: $!\n";
-while (<CHECK>) {
-	print VF;
-}
-close(CHECK);
 
+print VF "Sorry, we don't accept mail requests anymore.\n";
+print VF "Please use our web-based forms: http://eu.org/form.html\n";
+print VF $MSG_BYE;
 close(VF);
 die "Error sending mail: $!\n" if $?;
 
