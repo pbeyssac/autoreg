@@ -693,11 +693,18 @@ def domainedit(request, fqdn):
         code = contact_type[0] + 'c'
         if request.POST['submit'] == 'Delete':
           if cid in dbdom.d[code]:
-            dbdom.d[code].remove(cid)
-            dbdom.update()
-            # this shouldn't be necessary due to @transaction.commit_on_success
-            transaction.set_dirty()
-            msg = "%s removed from %s contacts" % (chandle, contact_type)
+            numcontacts = 0
+            for i in 'atz':
+              numcontacts += len(dbdom.d[i+'c'])
+            if numcontacts == 1:
+              # Refuse deletion of the last contact
+              msg = "Sorry, must leave at least one contact!"
+            else:
+              dbdom.d[code].remove(cid)
+              dbdom.update()
+              # this shouldn't be necessary due to @transaction.commit_on_success
+              transaction.set_dirty()
+              msg = "%s removed from %s contacts" % (chandle, contact_type)
           else:
             msg = "%s is not a contact" % suffixadd(chandle)
           # Fall through to updated form display
