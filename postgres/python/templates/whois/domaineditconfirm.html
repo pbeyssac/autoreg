@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Domain contact deletion{% endblock %}
+{% block h1title %}Domain contact deletion{% endblock %}
+{% block form %}
+<strong>WARNING</strong>: by removing yourself ({{ handle }}) from
+contacts for <strong>{{ fqdn }}</strong>, you may lose some or all
+of your privileges on this domain.
+<P>
+Please confirm or cancel this operation.
+<P>
+<FORM ACTION="{{ posturi }}" METHOD="POST">
+<INPUT TYPE="hidden" NAME="contact_type" VALUE="{{ contact_type }}">
+<INPUT TYPE="hidden" NAME="handle" VALUE="{{ handle }}">
+<INPUT TYPE="submit" NAME="submit" VALUE="Confirm Delete">
+<INPUT TYPE="submit" NAME="submit" VALUE="Cancel">
+</FORM>
+{% endblock %}

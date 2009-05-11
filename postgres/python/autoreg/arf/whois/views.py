@@ -27,6 +27,7 @@ URICHPASS = URIBASE + 'contact/chpass/'
 URICHANGE = URIBASE + 'contact/change/'
 URIDOMAINS = URIBASE + 'contact/domains/'
 URIDOMAINEDIT = URIBASE + 'domain/edit/'
+URIDOMAINEDITCONFIRM = URIBASE + 'domain/edit/confirm/'
 URIREGISTRANTEDIT = URIBASE + 'registrant/edit/'
 URILOGOUT = URIBASE + 'logout/'
 URICHANGEMAIL = URIBASE + 'contact/changemail/'
@@ -47,6 +48,7 @@ uriset = {'uribase': URIBASE,
           'urichange': URICHANGE,
           'uridomains': URIDOMAINS,
           'uridomainedit': URIDOMAINEDIT,
+          'uridomaineditconfirm': URIDOMAINEDITCONFIRM,
           'uriregistrantedit': URIREGISTRANTEDIT,
           'urireset': URIRESET,
           'urilogout': URILOGOUT}
@@ -647,6 +649,22 @@ def changemail(request):
     tk.delete()
     return _uriset_render_to_response('whois/emailchanged.html', vars)
 
+@cache_control(private=True)
+def domaineditconfirm(request, fqdn):
+  """Request confirmation for self-deletion of a contact"""
+  if not request.user.is_authenticated():
+    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+  nexturi = URIDOMAINEDIT + fqdn + '/'
+  vars = {'fqdn': fqdn, 'handle': suffixadd(request.user.username),
+          'posturi': nexturi}
+  contact_type = request.POST.get('contact_type', None)
+  handle = request.POST.get('handle', None)
+  if request.method == "POST" and contact_type and handle:
+    vars.update({'contact_type': contact_type, 'handle': handle})
+    return _uriset_render_to_response('whois/domaineditconfirm.html', vars)
+  else:
+    return HttpResponseRedirect(nexturi)
+
 @transaction.commit_on_success
 @cache_control(private=True)
 def domainedit(request, fqdn):
@@ -691,7 +709,8 @@ def domainedit(request, fqdn):
         if contact_type[0] not in 'atz':
           return HttpResponse("Internal error")
         code = contact_type[0] + 'c'
-        if request.POST['submit'] == 'Delete':
+        if request.POST['submit'] == 'Delete' \
+           or request.POST['submit'] == 'Confirm Delete':
           if cid in dbdom.d[code]:
             numcontacts = 0
             for i in 'atz':
@@ -718,6 +737,9 @@ def domainedit(request, fqdn):
           else:
             msg = "%s is already a %s contact" % (chandle, contact_type)
           # Fall through to updated form display
+        elif request.POST['submit'] == 'Cancel':
+          # Fall through to updated form display
+          pass
     else:
       return HttpResponse("Internal error")
   elif request.method != "GET":
@@ -732,9 +754,13 @@ def domainedit(request, fqdn):
     ct = c.contact_type.name
     if ct in typelist:
       cthandle = c.contact.handle
+      if cthandle == handle:
+        posturi = URIDOMAINEDITCONFIRM + f + '/'
+      else:
+        posturi = request.path
       formlist.append({'contact_type': ct,
                        'handle': suffixadd(cthandle),
-                       'posturi': request.path })
+                       'posturi': posturi })
 
   vars = {'whoisdomain': dom, 'domaincontact_list': cl,
           'msg': msg,
