@@ -17,10 +17,10 @@
 {% block form %}{% if ehandle %}
 Contact handle: <strong>{{ ehandle }}</strong><br>
 {% endif %}<FORM ACTION="{{ posturi }}" METHOD="POST">
-<div class="fieldWrapper">
+<div class="fieldWrapper{% if form.pn1.errors %}error{% endif %}">
     {{ form.pn1 }}
     <label for="id_pn1"> Name</label>
-    {{ form.pn1.errors }}
+    {% if form.pn1.errors %}{% for error in form.pn1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 {% if form.em1 %}<div class="fieldWrapper{% if form.em1.errors %}error{% endif %}">
     {{ form.em1 }}
