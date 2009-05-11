@@ -695,6 +695,7 @@ def domainedit(request, fqdn):
           if cid in dbdom.d[code]:
             dbdom.d[code].remove(cid)
             dbdom.update()
+            # this shouldn't be necessary due to @transaction.commit_on_success
             transaction.set_dirty()
             msg = "%s removed from %s contacts" % (chandle, contact_type)
           else:
@@ -704,6 +705,7 @@ def domainedit(request, fqdn):
           if cid not in dbdom.d[code]:
             dbdom.d[code].append(cid)
             dbdom.update()
+            # this shouldn't be necessary due to @transaction.commit_on_success
             transaction.set_dirty()
             msg = "%s added to %s contacts" % (chandle, contact_type)
           else:
