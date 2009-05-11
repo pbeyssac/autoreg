@@ -1,7 +1,6 @@
 {% extends "base-varheaders.mail" %}
 {% block subject %}new eu.org contact{% endblock %}
-{% block content %}
-Hello,
+{% block content %}Hello,
 
 Your contact record has been successfully created with the following
 data. You still need to activate it, by going to the following page:
