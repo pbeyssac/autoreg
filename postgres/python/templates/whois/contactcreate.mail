@@ -1,5 +1,5 @@
 {% extends "base-varheaders.mail" %}
-{% block subject %}new eu.org contact{% endblock %}
+{% block subject %}new eu.org contact {{ handle }}{% endblock %}
 {% block content %}Hello,
 
 Your contact record has been successfully created with the following

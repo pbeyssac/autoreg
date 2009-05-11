@@ -1,5 +1,5 @@
 {% extends "base-varheaders.mail" %}
-{% block subject %}password reset for eu.org contact{% endblock %}
+{% block subject %}password reset for eu.org contact {{ handle }}{% endblock %}
 {% block content %}Hello,
 
 Following a request on our web site, here is how to set a new

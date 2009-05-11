@@ -1,5 +1,5 @@
 {% extends "base-varheaders.mail" %}
-{% block subject %}email change for eu.org contact{% endblock %}
+{% block subject %}email change for eu.org contact {{ handle }}{% endblock %}
 {% block content %}Hello,
 
 Following a request on our web site (possibly by you), here is how
