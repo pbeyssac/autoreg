@@ -2,9 +2,6 @@
 #
 # $Id$
 #
-# XXX: not compatible with forms generated for the previous version,
-#      hence currently installed as check-request2.
-#
 # Option -s is used by receive-mail and means we have to output a
 # Subject: header with our request id.
 #
