@@ -379,7 +379,8 @@ def contactcreate(request):
         _render_to_mail('whois/contactcreate.mail',
                         {'url': url,
                          'whoisdata': p.__str__(),
-                         'from': FROMADDR, 'to': d['em'][0]},
+                         'from': FROMADDR, 'to': d['em'][0],
+                         'handle': suffixadd(handle)},
                         FROMADDR, [d['em'][0]])
         return _uriset_render_to_response('whois/msgnext.html',
                  {'msg': "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(handle), d['em'][0])})
