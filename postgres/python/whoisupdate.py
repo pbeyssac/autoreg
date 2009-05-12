@@ -9,12 +9,12 @@ import psycopg2
 import autoreg.conf
 import autoreg.whois.db as whoisdb
 
-encoding = 'ISO-8859-1'
-
 def usage(argv):
   print "Usage: %s [-e encoding] [-n]" % argv[0]
 
 def main():
+  encoding = 'ISO-8859-1'
+
   dbh = psycopg2.connect(autoreg.conf.dbstring)
   w = whoisdb.Main(dbh)
 
