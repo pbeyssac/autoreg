@@ -10,7 +10,7 @@ import autoreg.conf
 import autoreg.whois.db as whoisdb
 
 def usage(argv):
-  print "Usage: %s [-e encoding] [-n]" % argv[0]
+  print "Usage: %s [-e encoding] [-U] [-n]" % argv[0]
 
 def main():
   encoding = 'ISO-8859-1'
@@ -19,7 +19,7 @@ def main():
   w = whoisdb.Main(dbh)
 
   try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'ne:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'Une:')
   except getopt.GetoptError, err:
     print str(err)
     usage(sys.argv)
@@ -32,6 +32,8 @@ def main():
       commit = False
     elif opt == '-e':
       encoding = val
+    elif opt == '-U':
+      encoding = 'utf-8'
 
   # to avoid deadlock, read everything on input first
   lines = sys.stdin.readlines()
