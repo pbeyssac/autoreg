@@ -9,30 +9,30 @@ if ($ENV{'ARLANG'} eq 'fr') {
 
 $MSG_ADDR=$MAILACKFR;
 $MSG_SUBIN="Subject: requete [%s] (domaine %s)\n";
-$MSG_BDYIN="Bonjour,\n\nVotre requête [%s] sur le domaine %s\nnécessite un complément d'informations :\n\n%s\n";
+$MSG_BDYIN="Bonjour,\n\nVotre requÃªte [%s] sur le domaine %s\nnÃ©cessite un complÃ©ment d'informations :\n\n%s\n";
 $MSG_SUBRJ="Subject: rejet de votre requete [%s] (domaine %s)\n";
-$MSG_BDYRJ="Bonjour,\n\nMalheureusement, votre requête [%s] sur le domaine %s\na été rejetée pour la raison suivante :\n\n%s\n";
+$MSG_BDYRJ="Bonjour,\n\nMalheureusement, votre requÃªte [%s] sur le domaine %s\na Ã©tÃ© rejetÃ©e pour la raison suivante :\n\n%s\n";
 $MSG_SUBAC="Subject: requete [%s] (domaine %s) acceptee\n";
-$MSG_BDYAC="Bonjour,\n\nVotre requête [%s] (domaine %s)\na été acceptée.\n\n";
-$MSG_BDYZD="Les enregistrements suivants seront détruits du fichier de zone :\n\n";
-$MSG_BDYZI="Les enregistrements suivants seront insérés dans le fichier de zone :\n\n";
+$MSG_BDYAC="Bonjour,\n\nVotre requÃªte [%s] (domaine %s)\na Ã©tÃ© acceptÃ©e.\n\n";
+$MSG_BDYZD="Les enregistrements suivants seront dÃ©truits du fichier de zone :\n\n";
+$MSG_BDYZI="Les enregistrements suivants seront insÃ©rÃ©s dans le fichier de zone :\n\n";
 $MSG_BDYZR="Enregistrements DNS :\n\n";
-$MSG_BDYWI="Les enregistrements suivants seront insérés dans la base WHOIS :\n\n";
+$MSG_BDYWI="Les enregistrements suivants seront insÃ©rÃ©s dans la base WHOIS :\n\n";
 $MSG_BDYWR="Enregistrements WHOIS :\n\n";
-$MSG_RQOK0="Bonjour,\n\nNous avons reçu de vous la requête suivante.\n\n";
-$MSG_RQOK1="Cette requête est correcte, mais vous devez la confirmer.\n";
-$MSG_RQOK2="Pour cela, il vous suffira de répondre au courrier qui va vous être\nenvoyé à l'adresse :\n\t%s\n\n";
-$MSG_RQOKM="Vous devez envoyer un courrier électronique à %s,\navec un Subject: contenant :\n\n\t[%s]\n\nNormalement il vous suffit de répondre au présent message.\n";
-$MSG_RQOKR="Copie de votre requête :\n\n";
+$MSG_RQOK0="Bonjour,\n\nNous avons reÃ§u de vous la requÃªte suivante.\n\n";
+$MSG_RQOK1="Cette requÃªte est correcte, mais vous devez la confirmer.\n";
+$MSG_RQOK2="Pour cela, il vous suffira de rÃ©pondre au courrier qui va vous Ãªtre\nenvoyÃ© Ã  l'adresse :\n\t%s\n\n";
+$MSG_RQOKM="Vous devez envoyer un courrier Ã©lectronique Ã  %s,\navec un Subject: contenant :\n\n\t[%s]\n\nNormalement il vous suffit de rÃ©pondre au prÃ©sent message.\n";
+$MSG_RQOKR="Copie de votre requÃªte :\n\n";
 $MSG_RQOKW="Enregistrements whois :\n\n";
 $MSG_RQOKD="Enregistrements DNS :\n\n";
 $MSG_RQM="Modification du domaine %s\n";
 $MSG_RQN="Nouveau domaine %s\n";
 $MSG_RQD="Destruction du domaine %s\n";
-$MSG_ACKOK="Bonjour,\n\nVotre confirmation de la requête [%s] est acceptée.\n\nVous serez notifié dès le traitement de la requête.\n";
-$MSG_ACKKO="Votre confirmation de la requête [%s] ne correspond pas\nà une requête en attente, et n'a donc pas été prise en compte.\n";
-$MSG_OKBYE="\nLeur propagation prendra environ une demi-journée.\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
-$MSG_OKRMB="\nLa zone étant tenue à jour manuellement, votre requête est transmise\nau responsable.\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
+$MSG_ACKOK="Bonjour,\n\nVotre confirmation de la requÃªte [%s] est acceptÃ©e.\n\nVous serez notifiÃ© dÃ¨s le traitement de la requÃªte.\n";
+$MSG_ACKKO="Votre confirmation de la requÃªte [%s] ne correspond pas\nÃ  une requÃªte en attente, et n'a donc pas Ã©tÃ© prise en compte.\n";
+$MSG_OKBYE="\nLeur propagation prendra environ une demi-journÃ©e.\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
+$MSG_OKRMB="\nLa zone Ã©tant tenue Ã  jour manuellement, votre requÃªte est transmise\nau responsable.\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
 $MSG_BYE="\n\n\tSalutations virtuelles,\n\tles gestionnaires de EU.org.\n\n";
 
 } else {

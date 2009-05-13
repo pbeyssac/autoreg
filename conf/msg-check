@@ -6,95 +6,95 @@
 # Messages for check-*
 
 if ($ENV{'ARLANG'} eq 'fr') {
-$ERR_BADD0="\nErreur: %s: domaine intermédiaire vide.\n";
+$ERR_BADD0="\nErreur: %s: domaine intermÃ©diaire vide.\n";
 $ERR_BADDB="\nErreur: %s: chaque partie doit commencer par une lettre\n";
 $ERR_BADDE="\nErreur: %s: chaque partie doit se terminer par une lettre ou un chiffre\n";
-$ERR_BADDM="\nErreur: %s: caractère(s) interdit(s) dans un nom de domaine.\n";
+$ERR_BADDM="\nErreur: %s: caractÃ¨re(s) interdit(s) dans un nom de domaine.\n";
 $ERR_BADEM="Erreur: \"%s\" n'est pas de la forme user\@host.domain.\n";
-$ERR_BADNH="Erreur: \"%s\" ne ressemble pas à un NIC-Handle.\n";
-$ERR_BADPH="Erreur: \"%s\": téléphone incorrect (doit débuter par +code-pays\n\tet ne contenir que des chiffres ou espaces).\n";
-$ERR_BADRP="Erreur: l'adresse de réponse \"%s\" n'est pas de la forme user\@host.domain.\n";
+$ERR_BADNH="Erreur: \"%s\" ne ressemble pas Ã  un NIC-Handle.\n";
+$ERR_BADPH="Erreur: \"%s\": tÃ©lÃ©phone incorrect (doit dÃ©buter par +code-pays\n\tet ne contenir que des chiffres ou espaces).\n";
+$ERR_BADRP="Erreur: l'adresse de rÃ©ponse \"%s\" n'est pas de la forme user\@host.domain.\n";
 $ERR_BADRR="Erreur: type d'enregistrement DNS \"%s\" non reconnu\n";
-$ERR_BADRT="Erreur: type de requête \"%s\" non reconnu\n";
-$ERR_INVCH="Erreur: \"%s\" contient des caractères invalides.\n";
+$ERR_BADRT="Erreur: type de requÃªte \"%s\" non reconnu\n";
+$ERR_INVCH="Erreur: \"%s\" contient des caractÃ¨res invalides.\n";
 $ERR_INVCN="Erreur: \"%s\" n'est pas un nom complet de personne.\n";
-$ERR_MISCT="Erreur: les contacts doivent être cités lors d'une création de domaine.\n";
+$ERR_MISCT="Erreur: les contacts doivent Ãªtre citÃ©s lors d'une crÃ©ation de domaine.\n";
 $ERR_MISRC="Erreur: type d'enregistrement DNS manquant.\n";
-$ERR_MISRQ="Erreur: type de requête manquant.\n";
-$ERR_NOAEM="Erreur: pas d'adresse de courrier électronique pour le contact administratif.\n";
+$ERR_MISRQ="Erreur: type de requÃªte manquant.\n";
+$ERR_NOAEM="Erreur: pas d'adresse de courrier Ã©lectronique pour le contact administratif.\n";
 $ERR_NOANM="Erreur: pas de nom pour le contact administratif.\n";
-$ERR_NOTEM="Erreur: pas d'adresse de courrier électronique pour le contact technique.\n";
+$ERR_NOTEM="Erreur: pas d'adresse de courrier Ã©lectronique pour le contact technique.\n";
 $ERR_NOCTC="Erreur: aucun contact technique ni administratif.\n";
-$ERR_NODOM="Erreur: pas de domaine spécifié.\n";
-$ERR_NOEML="Erreur: pas d'adresse de courrier électronique pour le contact.\n";
+$ERR_NODOM="Erreur: pas de domaine spÃ©cifiÃ©.\n";
+$ERR_NOEML="Erreur: pas d'adresse de courrier Ã©lectronique pour le contact.\n";
 $ERR_NONAM="Erreur: pas de nom pour le contact.\n";
 $ERR_NONH="Erreur: pas de handle pour le contact.\n";
 $ERR_NOOAD="Erreur: pas d'adresse pour l'organisme.\n";
 $ERR_NOORG="Erreur: aucun organisme.\n";
 $ERR_BDORG="Erreur: nom de personne ou d'organisme invalide.\n";
-$ERR_NOPAR="Erreur: le domaine .%s n'est pas géré ici.\n";
-$ERR_NOSRV="Erreur: aucun serveur spécifié.\n";
-$ERR_NOTAM="Erreur: pas d'adresse de courrier électronique pour le contact technique.\n";
+$ERR_NOPAR="Erreur: le domaine .%s n'est pas gÃ©rÃ© ici.\n";
+$ERR_NOSRV="Erreur: aucun serveur spÃ©cifiÃ©.\n";
+$ERR_NOTAM="Erreur: pas d'adresse de courrier Ã©lectronique pour le contact technique.\n";
 $ERR_NOTNM="Erreur: pas de nom pour le contact technique.\n";
-$ERR_TWICE="Erreur: champ \"%s\" trouvé plus d'une fois.\n";
+$ERR_TWICE="Erreur: champ \"%s\" trouvÃ© plus d'une fois.\n";
 $ERR_UNKFT="Erreur: version de format inconnue.\n";
 $ERR_UREPL="Erreur: \"%s\" n'est pas une des adresses de contact.\n";
-$ERR_EMPTY="Erreur: requête vide.\n";
-$ERR_NOCON="Erreur: ne pas fournir de contact dans ce type de requête.\n";
-$ERR_NORR="Erreur: ne pas fournir de serveur de nom dans ce type de requête.\n";
+$ERR_EMPTY="Erreur: requÃªte vide.\n";
+$ERR_NOCON="Erreur: ne pas fournir de contact dans ce type de requÃªte.\n";
+$ERR_NORR="Erreur: ne pas fournir de serveur de nom dans ce type de requÃªte.\n";
 $ERR_ONENS="Erreur: vous devez donner au moins 2 serveurs de noms.\n";
 
-$MSG_BASCK="---- Vérifications de base\n\n";
-$MSG_CNTCK="\n---- Vérification des contacts\n\n";
-$MSG_ENDCK="\n---- Fin des vérifications\n\n";
-$MSG_GENRC="\n---- Génération des enregistrements pour la zone %s\n\n";
-$MSG_NBERR="%d erreur(s), arrêt.\n";
+$MSG_BASCK="---- VÃ©rifications de base\n\n";
+$MSG_CNTCK="\n---- VÃ©rification des contacts\n\n";
+$MSG_ENDCK="\n---- Fin des vÃ©rifications\n\n";
+$MSG_GENRC="\n---- GÃ©nÃ©ration des enregistrements pour la zone %s\n\n";
+$MSG_NBERR="%d erreur(s), arrÃªt.\n";
 $MSG_NOADM="Pas de contact administratif, utilisation du contact technique.\n";
 $MSG_NOTEC="Pas de contact technique, utilisation du contact administratif.\n";
 $MSG_ONECT="Nom et/ou NIC handle identiques ; utilisation contact administratif.\n";
-$MSG_RQOK1="Votre requête est correcte, mais vous allez devoir la confirmer.\n";
-$MSG_RQOK2="Pour cela, vous allez devoir répondre au courrier qui va\nvous être envoyé à l'adresse :\n\t%s\n\n";
-$MSG_RQOKM="Vous devez envoyer un courrier électronique à %s,\navec un Subject: contenant :\n\t[%s]\nNormalement il vous suffit de répondre au présent message.\n";
+$MSG_RQOK1="Votre requÃªte est correcte, mais vous allez devoir la confirmer.\n";
+$MSG_RQOK2="Pour cela, vous allez devoir rÃ©pondre au courrier qui va\nvous Ãªtre envoyÃ© Ã  l'adresse :\n\t%s\n\n";
+$MSG_RQOKM="Vous devez envoyer un courrier Ã©lectronique Ã  %s,\navec un Subject: contenant :\n\t[%s]\nNormalement il vous suffit de rÃ©pondre au prÃ©sent message.\n";
 $MSG_RQSUB="Subject: votre requete [%s]\n\n";
 $MSG_TPSUB="Subject: votre message\n\n";
-$MSG_TMPLT="Aucune requête n'a pu être trouvée dans votre message.\nVeuillez remplir et renvoyer le formulaire suivant :\n\n";
-$MSG_WHOIS="\n---- Génération des informations WHOIS pour le domaine \"%s\"\n\n";
+$MSG_TMPLT="Aucune requÃªte n'a pu Ãªtre trouvÃ©e dans votre message.\nVeuillez remplir et renvoyer le formulaire suivant :\n\n";
+$MSG_WHOIS="\n---- GÃ©nÃ©ration des informations WHOIS pour le domaine \"%s\"\n\n";
 
 # for check-ns
 
-$MSG_CSERV="\n---- Vérification des adresses de serveurs de noms\n\n";
-$MSG_CNSRR="---- Vérification des enregistrements NS pour \"%s\" sur %s\n\n";
-$MSG_ACCIP="Adresse IP %s acceptée pour %s (dans le domaine)\n";
-$MSG_SERNO="Numéro de série %s sur %s (ayant autorité).\n";
-$MSG_MAXSN="Numéro de série maximum trouvé %s ; %d serveur(s) pas à jour.\n";
-$MSG_PRSOA="Le serveur primaire indiqué par le SOA est %s.\n";
+$MSG_CSERV="\n---- VÃ©rification des adresses de serveurs de noms\n\n";
+$MSG_CNSRR="---- VÃ©rification des enregistrements NS pour \"%s\" sur %s\n\n";
+$MSG_ACCIP="Adresse IP %s acceptÃ©e pour %s (dans le domaine)\n";
+$MSG_SERNO="NumÃ©ro de sÃ©rie %s sur %s (ayant autoritÃ©).\n";
+$MSG_MAXSN="NumÃ©ro de sÃ©rie maximum trouvÃ© %s ; %d serveur(s) pas Ã  jour.\n";
+$MSG_PRSOA="Le serveur primaire indiquÃ© par le SOA est %s.\n";
 $MSG_PRNNS="Attention: primaire %s absent de la liste de NS.\n";
 $MSG_NSLOK="Liste de NS pour \"%s\" sur %s correcte.\n";
 $MSG_OK="ok.\n";
-$MSG_CHKNM="---- Vérification des serveurs et noms de domaine\n\n";
-$MSG_CHKIP="Vérification adresse IP %s pour %s...";
-$MSG_GETIP="Récupération de l'adresse IP pour %s...";
+$MSG_CHKNM="---- VÃ©rification des serveurs et noms de domaine\n\n";
+$MSG_CHKIP="VÃ©rification adresse IP %s pour %s...";
+$MSG_GETIP="RÃ©cupÃ©ration de l'adresse IP pour %s...";
 $MSG_NOREC="Impossible de montrer les enregistrements actuels.\n\n";
-$MSG_NOINS="Impossible d'insérer les nouveaux enregistrements.\n\n";
+$MSG_NOINS="Impossible d'insÃ©rer les nouveaux enregistrements.\n\n";
 
 $ERR_GHBNM="\nErreur: gethostbyname(%s): $s\n";
-$ERR_NSMIS="Erreur: La liste de NS sur %s diffère de ce que vous avez fourni.\n";
+$ERR_NSMIS="Erreur: La liste de NS sur %s diffÃ¨re de ce que vous avez fourni.\n";
 $ERR_MISIP="Erreur: manque l'adresse IP pour %s (dans le domaine)\n";
-$ERR_PROLD="Erreur: le numéro de série sur %s n'est pas le plus élevé !\n";
+$ERR_PROLD="Erreur: le numÃ©ro de sÃ©rie sur %s n'est pas le plus Ã©levÃ© !\n";
 $ERR_HOSTU="\nErreur: machine inconnue.\n";
 $ERR_CNAME="\nErreur: CNAME (vers %s).\n";
 $ERR_NOARR="\nErreur: enregistrement A introuvable ou non concordant.\n";
 $ERR_INVIP="\nErreur: %s: adresse IP invalide.\n";
 $ERR_NSERR="Erreur: %s NS %s: erreur de serveur de nom (lame?):\n";
-$ERR_NOAUT="Erreur: %s n'a pas autorité pour le domaine %s.\n";
-$ERR_LAMEN="Erreur: mauvaise délégation (n'a pas autorité pour le domaine).\n";
-$ERR_ERRNS="Erreur: impossible d'obtenir une réponse du serveur de noms %s.\n";
+$ERR_NOAUT="Erreur: %s n'a pas autoritÃ© pour le domaine %s.\n";
+$ERR_LAMEN="Erreur: mauvaise dÃ©lÃ©gation (n'a pas autoritÃ© pour le domaine).\n";
+$ERR_ERRNS="Erreur: impossible d'obtenir une rÃ©ponse du serveur de noms %s.\n";
 
 # for check-mx / check-cname
 
 $ERR_ISCAN="Erreur: %s est un CNAME vers %s\n";
 $ERR_DOMNA="Erreur: %s n'a pas d'enregistrement A.\n";
-$ERR_NOTF="Erreur: %s non trouvé (%s).\n";
+$ERR_NOTF="Erreur: %s non trouvÃ© (%s).\n";
 
 } else {
 

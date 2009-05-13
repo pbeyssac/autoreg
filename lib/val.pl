@@ -28,9 +28,9 @@ sub tohtml {
 sub dowhoisupdate {
     my $text = shift;
     my $dryrun = shift;
-    my $opt = "";
+    my $opt = "-U";
 
-    if ($dryrun) { $opt = "-n" }
+    if ($dryrun) { $opt .= " -n" }
 
     my $pid = open2(*RD, *WR, "$WUPATH $opt 2>&1");
     print WR $text;

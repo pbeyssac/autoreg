@@ -66,10 +66,10 @@ $MAILACK="dns-manager\@eu.org";
 $MAILACKFR="dns-manager-fr\@eu.org";
 
 # headers for replies to mail queries
-$MAILHEADERS="From: hostmaster\@EU.org\nReply-To: %s\nMime-Version: 1.0\nContent-Type: text/plain; charset=iso-8859-1\nContent-Disposition: inline\nContent-Transfer-Encoding: 8bit\n";
+$MAILHEADERS="From: hostmaster\@EU.org\nReply-To: %s\nMime-Version: 1.0\nContent-Type: text/plain; charset=utf-8\nContent-Disposition: inline\nContent-Transfer-Encoding: 8bit\n";
 #
 # headers for validation/rejection mail to the requester
-$VALHEADERS="From: hostmaster\@EU.org\nReply-To: %s\nMime-Version: 1.0\nContent-Type: text/plain; charset=iso-8859-1\nContent-Disposition: inline\nContent-Transfer-Encoding: 8bit\n";
+$VALHEADERS="From: hostmaster\@EU.org\nReply-To: %s\nMime-Version: 1.0\nContent-Type: text/plain; charset=utf-8\nContent-Disposition: inline\nContent-Transfer-Encoding: 8bit\n";
 #
 # address to send whois database updates to
 $WHOISDBM="auto-dbm\@EU.org";

@@ -11,7 +11,7 @@ require "/usr/local/autoreg/conf/config";
 require "$DNSLIB/cgi.pl";
 
 print "HTTP/1.0 200 OK\n";
-print "Content-type: text/html\n";
+print "Content-type: text/html; charset=utf-8\n";
 print "Server: $ENV{'SERVER_SOFTWARE'}\n\n";
 
 print "<HTML><HEAD>";

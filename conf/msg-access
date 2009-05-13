@@ -7,11 +7,11 @@
 
 if ($ENV{'ARLANG'} eq 'fr') {
 
-$MSG_ALLOC="Erreur: le domaine %s est dÈj‡ allouÈ.\n";
+$MSG_ALLOC="Erreur: le domaine %s est d√©j√† allou√©.\n";
 $MSG_SHORT="Erreur: la longueur minimale pour les sous-domaines dans %s est %d.\n";
 $MSG_LONG="Erreur: la longueur maximale pour les sous-domaines dans %s est %d.\n";
-$MSG_LOCKD="Erreur: le domaine %s est verrouillÈ.\n";
-$MSG_EXIST="Erreur: le domaine %s existe dÈj‡, crÈation impossible.\n";
+$MSG_LOCKD="Erreur: le domaine %s est verrouill√©.\n";
+$MSG_EXIST="Erreur: le domaine %s existe d√©j√†, cr√©ation impossible.\n";
 $MSG_NODOM="Erreur: le domaine %s n'existe pas, \"%s\" impossible.\n";
 $MSG_NOTYP="Erreur: les enregistrements %s ne sont pas permis dans cette zone.\n";
 $MSG_NUSER="Erreur: l'utilisateur %s n'a pas la permission de modifier la zone.\n";
