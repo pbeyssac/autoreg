@@ -159,6 +159,11 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
   if not a:
     return
 
+  args = a.split()
+  if len(args) > 1 and args[0] == '-U':
+    encoding = 'utf-8'
+    a = args[1]
+
   if a[0] == '/' and not remote:
     ld = l.domains_by_handle(a[1:])
     for d in ld:
