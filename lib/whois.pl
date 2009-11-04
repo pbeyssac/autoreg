@@ -7,6 +7,8 @@ $WHOIS_PORT = 43;
 $AF_INET = 2;
 $SOCK_STREAM = 1;
 
+use Socket;
+
 sub whois_socket {
    local ($whoishost, $request) = ($_[0], $_[1]);
    local ($name, $aliases, $type, $len, $thataddr, $sockaddr, $that);
@@ -16,10 +18,9 @@ sub whois_socket {
       $whoishost, $whoisport = ($1, $2);
    }
 
-   $sockaddr = 'S n a4 x8';
-   ($name, $aliases, $type, $len, $thataddr) = gethostbyname($whoishost);
-   $that = pack($sockaddr, $AF_INET, $whoisport, $thataddr);
-   socket(WHOIS, $AF_INET, $SOCK_STREAM, $proto) || return "";
+   my $iaddr = gethostbyname($whoishost);
+   $that = sockaddr_in($whoisport, $iaddr);
+   socket(WHOIS, $AF_INET, $SOCK_STREAM, 0) || return "";
    if (!connect(WHOIS, $that)) {
       close(WHOIS);
       return "";
