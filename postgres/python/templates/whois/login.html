@@ -12,5 +12,8 @@
 {% endif %}
 <INPUT TYPE="submit" NAME="login" VALUE="Login">
 </FORM>
-<a href="{{ urireset }}">Forgot your password or didn't set one yet?</a>
+<br>
+If you remember your contact handle, you can <a href="{{ urireset }}">set a new password here</a> if you forgot it or never set it.<p>
+
+If you have no contact record, you must <a href="{{ uricreate }}">create one here</a>.
 {% endblock %}

@@ -25,6 +25,7 @@ from models import Whoisdomains,Contacts,Tokens
 URILOGIN = URIBASE + 'login/'
 URICHPASS = URIBASE + 'contact/chpass/'
 URICHANGE = URIBASE + 'contact/change/'
+URICREATE = URIBASE + 'contact/create/'
 URIDOMAINS = URIBASE + 'contact/domains/'
 URIDOMAINEDIT = URIBASE + 'domain/edit/'
 URIDOMAINEDITCONFIRM = URIBASE + 'domain/edit/confirm/'
@@ -46,6 +47,7 @@ uriset = {'uribase': URIBASE,
           'urichangemail': URICHANGEMAIL,
           'urichpass': URICHPASS,
           'urichange': URICHANGE,
+          'uricreate': URICREATE,
           'uridomains': URIDOMAINS,
           'uridomainedit': URIDOMAINEDIT,
           'uridomaineditconfirm': URIDOMAINEDITCONFIRM,
