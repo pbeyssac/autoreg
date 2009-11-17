@@ -2,9 +2,11 @@
 
 import crypt
 import datetime
+import errno
 import random
 import re
 import smtplib
+import socket
 import time
 
 from autoreg.whois.db import HANDLESUFFIX,suffixstrip,suffixadd,Domain
@@ -82,14 +84,36 @@ def _pwcrypt(passwd):
 def _render_to_mail(templatename, context, fromaddr, toaddrs):
   """Expand provided templatename and context, send the result
      by email to the indicated addresses."""
+  failed = False
   t = get_template(templatename)
   msg = t.render(Context(context))
   headers, body = msg.split('\n\n', 1)
   msg = headers + '\n\n' + body.encode('utf-8').encode('quoted-printable')
-  server = smtplib.SMTP()
-  server.connect()
-  server.sendmail(fromaddr, toaddrs + [ MAILBCC ], msg)
+
+  try:
+    server = smtplib.SMTP()
+    server.connect()
+  except socket.error, msg:
+    if msg[0] != errno.ECONNREFUSED:
+      raise
+    failed = True
+  if failed:
+    return False
+
+  try:
+    recdict = server.sendmail(fromaddr, toaddrs + [ MAILBCC ], msg)
+  except smtplib.SMTPRecipientsRefused, recdict:
+    failed = True
+  if failed:
+    return False
+
+  # XXX: should be more clever handling recipient errors
+  if len(recdict):
+    return False
+
   server.quit()
+
+  return True
 
 def _uriset_render_to_response(template, vars):
   """Update vars with uriset then proceed with render_to_response()"""
@@ -290,11 +314,13 @@ def makeresettoken(request):
     _token_clear(ct.id, action="pwreset")
     token = _token_set(ct.id, action="pwreset", ttl=RESET_TOKEN_TTL)
 
-    _render_to_mail('whois/resetpass.mail',
-                    { 'from': FROMADDR, 'to': ct.email,
-                      'handle': fullhandle,
-                      'reseturl': URLRESET2 + handle,
-                      'token': token }, FROMADDR, [ ct.email ])
+    if not _render_to_mail('whois/resetpass.mail',
+                           { 'from': FROMADDR, 'to': ct.email,
+                             'handle': fullhandle,
+                             'reseturl': URLRESET2 + handle,
+                             'token': token }, FROMADDR, [ ct.email ]):
+       return _uriset_render_to_response('whois/msgnext.html',
+         {'msg': "Sorry, error while sending mail. Please try again later."})
     return _uriset_render_to_response('whois/tokensent.html',
                                       {'ehandle': suffixadd(handle)})
 
@@ -378,12 +404,14 @@ def contactcreate(request):
         valtoken = _token_set(p.cid, "contactval")
         handle = suffixstrip(p.gethandle())
         url = URLCONTACTVAL % (handle.upper(), valtoken)
-        _render_to_mail('whois/contactcreate.mail',
-                        {'url': url,
-                         'whoisdata': p.__str__(),
-                         'from': FROMADDR, 'to': d['em'][0],
-                         'handle': suffixadd(handle)},
-                        FROMADDR, [d['em'][0]])
+        if not _render_to_mail('whois/contactcreate.mail',
+                               {'url': url,
+                                'whoisdata': p.__str__(),
+                                'from': FROMADDR, 'to': d['em'][0],
+                                'handle': suffixadd(handle)},
+                               FROMADDR, [d['em'][0]]):
+         return _uriset_render_to_response('whois/msgnext.html',
+           {'msg': "Sorry, error while sending mail. Please try again later."})
         return _uriset_render_to_response('whois/msgnext.html',
                  {'msg': "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(handle), d['em'][0])})
       # else: fall through
@@ -597,12 +625,14 @@ def contactchange(request, registrantdomain=None):
       if emailchanged:
         _token_clear(c.id, "changemail")
         token = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
-        _render_to_mail('whois/changemail.mail',
-                        {'from': FROMADDR, 'to': newemail,
-                         'handle': suffixadd(ehandle),
-                         'newemail': newemail,
-                         'changemailurl': URLCHANGEMAIL,
-                         'token': token }, FROMADDR, [ newemail ])
+        if not _render_to_mail('whois/changemail.mail',
+                               {'from': FROMADDR, 'to': newemail,
+                                'handle': suffixadd(ehandle),
+                                'newemail': newemail,
+                                'changemailurl': URLCHANGEMAIL,
+                                'token': token }, FROMADDR, [ newemail ]):
+          return _uriset_render_to_response('whois/msgnext.html',
+            {'msg': "Sorry, error while sending mail. Please try again later."})
         return HttpResponseRedirect(URICHANGEMAIL)
       if registrantdomain:
         return HttpResponseRedirect(URIDOMAINEDIT + registrantdomain)
