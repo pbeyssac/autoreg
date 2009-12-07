@@ -23,6 +23,7 @@
         unhold:	unhold domain.
         lock:	protect domain from 'modify' or 'delete' unless forced with -i.
         unlock:	unprotect domain.
+	list:	show list of known zones.
 
 -u: username, used to check access permissions with respect to the
     zones-auth config file. Defaults to USER environment variable.
@@ -53,7 +54,7 @@ logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
 
 action_list = ['cat', 'delete', 'lock', 'modify', 'unlock',
 		'hold', 'unhold',
-		'new', 'show', 'soa']
+		'new', 'show', 'soa', 'list']
 def usage():
     print >> sys.stderr, __doc__
 
@@ -90,9 +91,19 @@ for o, a in opts:
     elif o == "-z":
 	zone = a.upper()
 
-if action == None or user == None or len(args) != 1:
+if action == None or user == None:
     usage()
     sys.exit(1)
+if action == 'list':
+    if len(args) != 0:
+        usage()
+        sys.exit(1)
+    domain = None
+elif len(args) != 1:
+    usage()
+    sys.exit(1)
+else:
+    domain = args[0].upper()
 
 if action.startswith('n'): action='new'
 elif action.startswith('m'): action='modify'
@@ -104,8 +115,6 @@ if action not in action_list:
 
 dbh = psycopg2.connect(conf.dbstring)
 dd = dnsdb.db(dbh, nowrite)
-
-domain = args[0].upper()
 
 dd.login(user)
 
@@ -134,6 +143,9 @@ try:
     if not updated:
 	r = 1
     print serial
+  elif action == 'list':
+    for zone in dd.zonelist():
+        print zone
   else:
     usage()
     r = 1

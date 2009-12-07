@@ -313,6 +313,12 @@ class _ZoneList:
 	    name, zid = t
 	    self.zones[name] = _Zone(dbc, id=zid, name=name)
 	    t = self._dbc.fetchone()
+    def get(self):
+        """Return list of all known zones except root."""
+        zonelist = self.zones.keys()
+        zonelist.remove('')
+        zonelist.sort()
+        return zonelist
     def split(self, domain, zone=None):
 	"""Split domain name according to known zones."""
 	domain = domain.upper()
@@ -505,3 +511,6 @@ class db:
 	z = self._zl.zones[zone.upper()]
 	z.fetch()
 	z.cat()
+    def zonelist(self):
+        """Return zone list."""
+        return self._zl.get()
