@@ -26,6 +26,10 @@ sub whois_socket {
       return "";
    }
    select(WHOIS); $| = 1; select(STDOUT);
+   if ($whoishost eq 'whois.eu.org') {
+      # Use UTF-8 encoding
+      $request = "-U $request";
+   }
    print WHOIS "$request\r\n";
    return 1;
 }
