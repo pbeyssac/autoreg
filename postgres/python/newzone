@@ -1,0 +1,38 @@
+#!/bin/sh
+
+DOM=`echo "$1" | tr a-z A-Z`
+PARENT=`echo "$DOM" | cut -d. -f2-`
+
+if [ "`whoami`" != "root" ]; then
+	echo "Must be run as 'root'"
+	exit 1
+fi
+
+AZ=/usr/local/autoreg/bin/access-zone
+ZONESAUTH=/usr/local/autoreg/conf/zones-auth
+
+# Create zone record
+$AZ -uautoreg -anewzone "$DOM"
+
+# Create zone delegation
+$AZ -uautoreg -i -anew -z "$PARENT" "$DOM" << EOF
+	NS NS.EU.ORG.
+EOF
+
+# create NS records in zone
+$AZ -uautoreg -i -anew -z "$DOM" "$DOM" << EOF
+	NS NS.EU.ORG.
+EOF
+
+# Create initial zone file
+$AZ -acat "$DOM" > "/etc/namedb/autoreg/$DOM"
+chown autoreg:autoreg "/etc/namedb/autoreg/$DOM"
+
+# Add it to BIND configuration
+echo "zone \"$DOM\" { type master; file \"autoreg/$DOM\"; };" >> /etc/namedb/zones-autoreg.conf
+
+# set legacy permissions
+AUTHLIST=`awk -F: '$1 == "EU.ORG" { print $2 }' < $ZONESAUTH`
+echo "$DOM:$AUTHLIST" >> $ZONESAUTH
+
+echo "Now run 'rndc reconfig'"

@@ -12,6 +12,7 @@ class DnsDbError(Exception):
 class DomainError(DnsDbError):
     DNOTFOUND = 'Domain not found'
     ZNOTFOUND = 'Zone not found'
+    ZEXISTS = 'Zone already exists'
     DEXISTS = 'Domain already exists'
     NOTINDOM = 'Label value not in domain'
     NODOT = 'Resource-record value not dot-terminated'
@@ -313,6 +314,24 @@ class _ZoneList:
 	    name, zid = t
 	    self.zones[name] = _Zone(dbc, id=zid, name=name)
 	    t = self._dbc.fetchone()
+    def newzone(self, name):
+	"""Create a new zone."""
+	name = name.upper()
+	if name in self.zones:
+	    raise DomainError(DomainError.ZEXISTS, self.name)
+	self._dbc.execute(
+	  'INSERT INTO zones '
+	  '(name,minlen,maxlen,ttl,updateserial,'
+	  'soaserial,soarefresh,soaretry,soaexpires,soaminimum,'
+	  'soaprimary,soaemail)'
+	  ' VALUES (%s,2,24,259200,FALSE,1,3600,1800,12096000,259200,'
+	  '%s,%s)',
+	  (name, 'ns.eu.org.', 'hostmaster.eu.org.'))
+	self._dbc.execute("SELECT currval('zones_id_seq')")
+	assert self._dbc.rowcount == 1
+	zid, = self._dbc.fetchone()
+	self.zones[name] = _Zone(self._dbc, id=zid, name=name)
+	return self.zones[name]
     def get(self):
         """Return list of all known zones except root."""
         zonelist = self.zones.keys()
@@ -514,3 +533,7 @@ class db:
     def zonelist(self):
         """Return zone list."""
         return self._zl.get()
+    def newzone(self, zone):
+	"Create a new zone for which we are master."""
+	z = self._zl.newzone(zone.upper())
+	self._dbh.commit()

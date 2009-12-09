@@ -24,6 +24,7 @@
         lock:	protect domain from 'modify' or 'delete' unless forced with -i.
         unlock:	unprotect domain.
 	list:	show list of known zones.
+	newzone:	create a new zone.
 
 -u: username, used to check access permissions with respect to the
     zones-auth config file. Defaults to USER environment variable.
@@ -54,7 +55,7 @@ logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
 
 action_list = ['cat', 'delete', 'lock', 'modify', 'unlock',
 		'hold', 'unhold',
-		'new', 'show', 'soa', 'list']
+		'new', 'show', 'soa', 'list', 'newzone']
 def usage():
     print >> sys.stderr, __doc__
 
@@ -105,7 +106,7 @@ elif len(args) != 1:
 else:
     domain = args[0].upper()
 
-if action.startswith('n'): action='new'
+if action == 'n': action='new'
 elif action.startswith('m'): action='modify'
 elif action.startswith('d'): action='delete'
 
@@ -146,6 +147,8 @@ try:
   elif action == 'list':
     for zone in dd.zonelist():
         print zone
+  elif action == 'newzone':
+    dd.newzone(domain)
   else:
     usage()
     r = 1
