@@ -388,7 +388,7 @@ class Person(_whoisobject):
     assert self._dbc.rowcount == 1
   def delete(self):
     """Delete from database, keeping history."""
-    self._dbc.execute('DELETE contacts WHERE id=%s', (self.cid,))
+    self._dbc.execute('DELETE FROM contacts WHERE id=%s', (self.cid,))
     assert self._dbc.rowcount == 1
   def fetch(self):
     """Read from database."""
