@@ -856,8 +856,8 @@ class Main:
               return False
             else:
               print "Object deleted:"
-              print ct.__str__().encode(encoding)
-              ct.delete()
+              print c.__str__().encode(encoding)
+              c.delete()
           else:
             if ct != c:
               print "Object updated from:"
