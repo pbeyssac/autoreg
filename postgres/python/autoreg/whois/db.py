@@ -772,9 +772,6 @@ class Main:
         ld = self._lookup.domain_by_name(i)
         if ld is not None:
           ld.fetch()
-          if ld != dom:
-            print "ERROR: Cannot delete: not the same object"
-            return False
           ld.delete()
           print "Object deleted:"
           print ld.__str__().encode(encoding)
@@ -851,13 +848,9 @@ class Main:
           # found, compare
           c.fetch()
           if dodel:
-            if ct != c:
-              print "ERROR: Cannot delete: not the same object"
-              return False
-            else:
-              print "Object deleted:"
-              print c.__str__().encode(encoding)
-              c.delete()
+            print "Object deleted:"
+            print c.__str__().encode(encoding)
+            c.delete()
           else:
             if ct != c:
               print "Object updated from:"
