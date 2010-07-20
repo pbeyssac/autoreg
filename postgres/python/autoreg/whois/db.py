@@ -9,7 +9,8 @@ import mx
 HANDLESUFFIX = '-FREE'
 
 _tv68 = re.compile('^(\S+)\s*(?:(\d\d))?(\d\d)(\d\d)(\d\d)$')
-_tv = re.compile('^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)(?:\.(\d\d))?$')
+_tv = re.compile('^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)'
+                 '(?:\.(\d+)(?:\+\d\d:\d\d)?)?$')
 _notv = re.compile('^(\S+)\s*$')
 
 DBENCODING = None
@@ -63,6 +64,7 @@ def parse_changed(changed):
       else:
         y += 2000
   else:
+    # SQL-style date
     ma = _tv.search(changed)
     if ma:
       y, m, d, h, min, s, fs = ma.groups()
