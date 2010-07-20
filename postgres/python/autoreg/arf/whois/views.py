@@ -327,7 +327,7 @@ def makeresettoken(request):
 def resetpass2(request, handle):
   """Password reset step 2:
      check provided reset token and force indicated password
-     on the desginated contact."""
+     on the designated contact."""
   f = resetpass_form()
   form = f.as_table()
   vars = {'form': form, 'posturi': request.path}
