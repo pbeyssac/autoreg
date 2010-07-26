@@ -5,6 +5,7 @@ import re
 import sys
 
 import mx
+import mx.DateTime
 
 HANDLESUFFIX = '-FREE'
 
