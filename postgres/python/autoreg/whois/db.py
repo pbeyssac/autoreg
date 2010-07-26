@@ -11,7 +11,7 @@ HANDLESUFFIX = '-FREE'
 
 _tv68 = re.compile('^(\S+)\s*(?:(\d\d))?(\d\d)(\d\d)(\d\d)$')
 _tv = re.compile('^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)'
-                 '(?:\.(\d+)(?:\+\d\d:\d\d)?)?$')
+                 '(?:(?:\.(\d+))?(?:\+\d\d:\d\d)?)?$')
 _notv = re.compile('^(\S+)\s*$')
 
 DBENCODING = None
