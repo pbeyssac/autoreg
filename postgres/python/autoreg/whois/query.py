@@ -95,7 +95,12 @@ class server:
               raise e
 
       if nfree > 0:
-        c, a = s.accept()
+        try:
+          c, a = s.accept()
+        except socket.error:
+          c = None
+        if c is None:
+          continue
         try:
           f = os.fork()
         except OSError, e:
