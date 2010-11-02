@@ -123,6 +123,7 @@ class server:
           sys.exit(0)
         elif f > 0:
           # in parent process
+          c.close() # prevent descriptor leak
           pidinfo[f] = (time.time(), a)
           nfree -= 1
           if nfree == 0:
