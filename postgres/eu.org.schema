@@ -219,10 +219,16 @@ CREATE TABLE contact_types (
 );
 
 -- Secrets used to generate obfuscated email addresses for contacts
+
 CREATE TABLE handle_secrets (
 	secret varchar(32),
 	expires TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW() + '1 week'
-)
+);
+
+CREATE VIEW contacts_email AS
+	SELECT id, handle, lower(handle) || '-' || MD5(h.secret || handle || '-' || id::text) AS email
+	FROM contacts, handle_secrets h LEFT JOIN handle_secrets h2 ON (h.expires < h2.expires)
+	WHERE h2.secret IS NULL;
 
 CREATE TABLE whoisdomains (
 	id SERIAL PRIMARY KEY,
