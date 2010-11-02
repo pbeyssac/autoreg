@@ -1,7 +1,7 @@
 query = SELECT email
-          FROM contacts
-          WHERE handle = substring (lower('%u') FROM '^([a-z0-9-]+)-')
-            AND MD5('AnnieR41evR' || handle || id::text) =
+          FROM contacts, handle_secrets
+          WHERE handle = substring (upper('%u') FROM '^([A-Z]+[0-9]+)-')
+            AND MD5(handle_secrets.secret || handle || '-' || id::text) =
                 substring (lower('%u') from '-([0-9a-f]+)$')
 domain = handles.eu.org
 user = postfix
