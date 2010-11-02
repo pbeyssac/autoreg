@@ -365,7 +365,7 @@ if ($req ne 'D' && !$makewhois && !$makerr) {
 
 if ($req eq 'MZ' || $req eq 'D' || ($req eq 'M' && !$makewhois)) {
 	my $cok = 0;
-	foreach $i (&whois_email("whois.eu.org", $domain)) {
+	foreach $i (&whois_email($domain)) {
 		if ($i eq $replyto) { $cok = 1; last; }
 	}
 	if (!$cok) { &pr_error($ERR_UREPL, $replyto); }
