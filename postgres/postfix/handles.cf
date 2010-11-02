@@ -4,6 +4,8 @@ query = SELECT email
             AND MD5(handle_secrets.secret || handle || '-' || id::text) =
                 substring (lower('%u') from '-([0-9a-f]+)$')
 domain = handles.eu.org
+expansion_limit = 1
+
+dbname = eu.org
 user = postfix
 hosts = unix:
-expansion_limit = 1
