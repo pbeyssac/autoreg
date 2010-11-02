@@ -8,6 +8,7 @@ import mx
 import mx.DateTime
 
 HANDLESUFFIX = '-FREE'
+HANDLEMAILHOST = 'handles.eu.org'
 
 _tv68 = re.compile('^(\S+)\s*(?:(\d\d))?(\d\d)(\d\d)(\d\d)$')
 _tv = re.compile('^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)'
@@ -415,6 +416,14 @@ class Person(_whoisobject):
     d['ch'] = [ (chb, cho) ]
     self.d = d
     self._set_key()
+  def fetch_obfuscated(self):
+    self.fetch()
+    self._dbc.execute('SELECT email FROM contacts_email WHERE id=%s',
+                      (self.cid,))
+    assert self._dbc.rowcount == 1
+    email, = _fromdb(self._dbc.fetchone())
+    email += '@' + HANDLEMAILHOST
+    self.d['oe'] = [email]
   def digest(self, seed=''):
     self.fetch()
     import hashlib
@@ -435,7 +444,11 @@ class Person(_whoisobject):
         l = "address"
       else:
         l = ripe_stol[i]
-      for j in d[i]:
+      if i == 'em' and 'oe' in d:
+        vlist = d['oe']
+      else:
+        vlist = d[i]
+      for j in vlist:
         if i == 'ch':
           j = str(j[1])
         elif i == 'nh':
