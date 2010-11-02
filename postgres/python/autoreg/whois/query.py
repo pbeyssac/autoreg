@@ -165,10 +165,15 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
   if not a:
     return
 
+  real_email = False
   args = a.split()
-  if len(args) > 1 and args[0] == '-U':
-    encoding = 'utf-8'
-    a = args[1]
+  if len(args) > 1:
+    if args[0] == '-U':
+      encoding = 'utf-8'
+      a = args[1]
+    elif args[0] == '-R' and not remote:
+      real_email = True
+      a = args[1]
 
   if a[0] == '/' and not remote:
     ld = l.domains_by_handle(a[1:])
@@ -186,7 +191,10 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
       if k not in dc:
         continue
       for p in dc[k]:
-        p.fetch()
+        if real_email:
+          p.fetch()
+        else:
+          p.fetch_obfuscated()
         if p.key not in pdone:
           print p.__str__().encode(encoding, 'xmlcharrefreplace')
           pdone.append(p.key)
@@ -201,7 +209,10 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
     print >>out, "Key not found"
     return
   for p in lp:
-    p.fetch()
+    if real_email:
+      p.fetch()
+    else:
+      p.fetch_obfuscated()
     print p.__str__().encode(encoding, 'xmlcharrefreplace')
 
 def usage():
