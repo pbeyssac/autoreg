@@ -101,12 +101,14 @@ sub whois_email {
 }
 
 sub whois_contact_email {
-   local ($server, $request) = ($_[0], $_[1]);
+   # warning: returns real (unobfuscated) email addresses,
+   # use only for contact email checks.
+   local ($request) = ($_[0]);
    local (%emails);
    $server =~ s/["';&]//g;
    $request =~ s/["';&]//g;
 
-   if (!&whois_socket($server, "$request")) {
+   if (!&whois_socket("localhost", "-R $request")) {
       return "";
    }
    #
