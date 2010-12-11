@@ -169,14 +169,21 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
     return
 
   real_email = False
-  args = a.split()
-  if len(args) > 1:
-    if args[0] == '-U':
-      encoding = 'utf-8'
-      a = args[1]
-    elif args[0] == '-R' and not remote:
+  try:
+    opts, args = getopt.getopt(a.split(), "UR")
+  except getopt.GetoptError:
+    return
+
+  for optval, aval in opts:                                                    
+    if optval == '-R' and not remote:
       real_email = True
-      a = args[1]
+    elif optval == '-U':                                                       
+      encoding = 'utf-8'
+
+  if len(args) > 1:
+    return
+
+  a = args[0]
 
   if a[0] == '/' and not remote:
     ld = l.domains_by_handle(a[1:])
