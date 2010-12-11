@@ -144,11 +144,11 @@ class server:
         if ip.startswith('::ffff:'):
               ip = ip[7:]
 	self.log("%s %s" % (ip, q))
-        # XXX: the 192.168.0.1 check is a terrible hack until the
+        # XXX: the 192.168.0.* check is a terrible hack until the
         # Perl query interface is rewritten.
 	query(q, self.dbstring, w,
               remote = (ip != '127.0.0.1' and ip != '::1'
-                        and ip != '192.168.0.1'))
+                        and not ip.startswith('192.168.0.')))
 	c.shutdown(socket.SHUT_WR)
 	break
       r = c.recv(256)
