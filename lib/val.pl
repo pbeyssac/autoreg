@@ -81,8 +81,8 @@ sub dowhoisforms {
 sub dowhoisperson {
     my ($p) = $_[0];
     print "<HR><H2>Current whois records for person $p:</H2>\n";
-    # -R: show real email rather than obfuscated one                           
-    return &whois_html($WHOISHOST, "-R ".$p, 'person');                        
+    # -R: show real email rather than obfuscated one
+    return &whois_html($WHOISHOST, "-R ".$p, 'person');
 }
 
 sub dodir {
