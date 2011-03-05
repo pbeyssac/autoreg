@@ -434,10 +434,10 @@ class Person(_whoisobject):
     """
     s = u''
     d = self.d
-    for i in ['pn', 'nh', 'eh', 'ad', 'cn', 'ph', 'fx', 'em', 'ch']:
+    for i in ['pn', 'nh', 'ad', 'cn', 'ph', 'fx', 'em', 'ch']:
       if i == 'pn':
         l = title
-      elif i in ['nh', 'eh'] and embed:
+      elif i == 'nh' and embed:
         continue
       elif i == 'cn':
         # Got a country name from the ISO code, append it to the address
