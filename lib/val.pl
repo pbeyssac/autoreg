@@ -98,6 +98,7 @@ sub dodir {
 
   print "\n";
 
+  print "<table>\n";
   foreach $rq (@dirlist) {
     local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo)
 	= &rq_get_info($rq, $user);
@@ -118,23 +119,26 @@ sub dodir {
       }
       my $wreplyto = &mkwhoisform("localhost", $replyto, $replyto);
       if ($state eq 'Open') {
-	$rqhtml = "<A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $wreplyto<BR>\n";
+	$rqhtml = "<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
       } elsif ($state eq 'Answered' && $stateinfo) {
-	$rqhtml = "<A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $wreplyto ($state by $stateinfo)<BR>\n";
+	$rqhtml = "<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
       } else {
-	$rqhtml = "<A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A> $action $lang $domain $wreplyto ($state)<BR>\n";
+	$rqhtml = "<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
       }
       if ($domlist{$domain}) {
-	$rqlist{$domlist{$domain}} = $rqlist{$domlist{$domain}} . "see also " . $rqhtml;
+	$rqlist{$domlist{$domain}} = $rqlist{$domlist{$domain}} . "<tr><td>" . $rqhtml;
       } else {
 	$domlist{$domain} = $rq;
 	$rqlist{$rq} = $rqhtml;
       }
     }
   }
+  my $n = 1;
   foreach $key (sort(keys %rqlist)) {
-	print $rqlist{$key};
+	print "<tr><td>$n$rqlist{$key}";
+	$n++;
   }
+  print "</table>\n";
   if (!$foundone) {
       print "Sorry, no request found...<BR>\n";
   }
