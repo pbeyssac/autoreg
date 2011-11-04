@@ -80,7 +80,7 @@ sub dowhoisforms {
 
 sub dowhoisperson {
     my ($p) = $_[0];
-    print "<HR><H2>Current whois records for person $p:</H2>\n";
+    print "<H3>Current whois records for person $p</H3>\n";
     # -R: show real email rather than obfuscated one
     return &whois_html($WHOISHOST, "-R ".$p, 'person');
 }
@@ -574,14 +574,14 @@ sub dodisplay {
   }
 
   if ($action eq 'N' || $action eq 'M' || $action eq 'MZ') {
-    print "<HR><H2>Records to be inserted in zone file:</H2><PRE>\n";
+    print "<H3>Records to be inserted in zone file</H3><PRE style=\"background-color:#eee\">\n";
     print $dns;
     print "</PRE>\n";
   }
 
   if ($action eq 'N' || $action eq 'M' || $action eq 'MC') {
     $nh = "";
-    print "<HR><H2>Records to be inserted in WHOIS base:</H2>\n";
+    print "<H3>Records to be inserted in WHOIS base</H3>\n";
 
     print "(lines with a \"_\" by itself are considered empty)<BR>\n";
 
@@ -610,6 +610,7 @@ sub dodisplay {
     $htmltext = &tohtml($htmltext);
 
     $act="editwhois";
+    print "<div style=\"float:left\">";
     print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
     print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
@@ -619,21 +620,22 @@ sub dodisplay {
     print "If necessary, edit the above then\n";
     print "<INPUT TYPE=\"submit\" VALUE=\"submit\"> to save changes\n";
     print "</FORM>\n";
+    print "</div>\n";
 
-    print "<BR><STRONG>Uncommitted</STRONG> dry-run results:<BR>\n";
+    print "<div style=\"background-color:#eee\"><STRONG>Uncommitted</STRONG> dry-run results:\n";
     my ($st, $rtext) = &dowhoisupdate($text, 1);
     if ($st ne 'OK') {
 	print "<STRONG>Error</STRONG>\n";
     }
     my $htmltext = &tohtml($rtext);
-    print "<PRE>\n$htmltext</PRE>\n";
-
-    print "<HR>\n";
+    print "<PRE>\n$htmltext</PRE></div>\n";
 
     #
     # Local form only for whois on domain name
     #
+    print "<div style=\"clear:both\">\n";
     &dolocalwhoisform($domain);
+    print "</div>\n";
     #
     # Forms for whois on NIC handles
     #
@@ -664,7 +666,7 @@ sub dodisplay {
   }
 
   if ($action eq 'MZ' || $action eq 'D' || $action eq 'M') {
-    print "<HR><H2>Records to be deleted from zone file:</H2><PRE>\n";
+    print "<HR><H3>Records to be deleted from zone file</H3><PRE>\n";
     if (!open(AZ, "$AZPATH -a show -u$user $domain 2>&1 |")) {
       print "Unable to show existing records.\n";
     } else {
@@ -680,7 +682,7 @@ sub dodisplay {
   }
 
   if ($action ne 'N') {
-    print "<HR><H2>Current whois records for domain:</H2>\n";
+    print "<HR><H3>Current whois records for domain</H3>\n";
     &whois_html($WHOISHOST, $domain);
   }
 
@@ -702,8 +704,6 @@ sub dodisplay {
     print "<INPUT TYPE=\"submit\" VALUE=\"Accept and mail to $replyto\">\n";
     print "</FORM>\n";
 
-    print "<P>\n";
-
     $act='reject';
     print "Pre-filled answers:\n";
     print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
@@ -715,8 +715,6 @@ sub dodisplay {
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
     print "</FORM>\n";
 
-    print "<P>\n";
-
     $act='reject';
     print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
     print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
@@ -725,8 +723,6 @@ sub dodisplay {
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
     print "</FORM>\n";
 
-    print "<P>\n";
-
     $act='setanswered';
     print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
     print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
@@ -734,8 +730,6 @@ sub dodisplay {
     print "<INPUT TYPE=\"submit\" VALUE=\"Set state = Answered\"><BR>\n";
     print "(to mark the request as waiting for more details from the requester)<BR>\n";
     print "</FORM>\n";
-
-    print "<P>\n";
 
   } else {
     print "(request not yet confirmed by user)<P>\n";
@@ -746,7 +740,6 @@ sub dodisplay {
     print "<INPUT TYPE=\"submit\" VALUE=\"Set state = Open\"><BR>\n";
     print "(to consider the request as acknowledged by the user)<BR>\n";
     print "</FORM>\n";
-    print "<P>\n";
   }
 
 #  $act='info';
@@ -756,8 +749,6 @@ sub dodisplay {
 #  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
 #  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
 #  print "</FORM>\n";
-#
-#  print "<P>\n";
 
   $act='delete';
   print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
