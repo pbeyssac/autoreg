@@ -123,11 +123,11 @@ sub dodir {
 	my $st = '';
 	if ($domlist{$domain}) { $st=' style="background-color:#fcc"' }
 	elsif ($domain =~ /\.[^\.]+\.[^\.]+\.[^\.]+/) { $st=' style="background-color:#cfc"' }
-	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
+	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
       } elsif ($state eq 'Answered' && $stateinfo) {
-	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
+	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
       } else {
-	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
+	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
       }
       $n++;
       if ($domlist{$domain}) {
