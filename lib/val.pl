@@ -98,6 +98,7 @@ sub dodir {
 
   print "\n";
 
+  my $n = 1;
   print "<table>\n";
   foreach $rq (@dirlist) {
     local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo)
@@ -119,24 +120,26 @@ sub dodir {
       }
       my $wreplyto = &mkwhoisform("localhost", $replyto, $replyto);
       if ($state eq 'Open') {
-	$rqhtml = "<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
+	my $st = '';
+	if ($domlist{$domain}) { $st=' style="background-color:#fcc"' }
+	elsif ($domain =~ /\.[^\.]+\.[^\.]+\.[^\.]+/) { $st=' style="background-color:#cfc"' }
+	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
       } elsif ($state eq 'Answered' && $stateinfo) {
-	$rqhtml = "<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
+	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
       } else {
-	$rqhtml = "<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
+	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
       }
+      $n++;
       if ($domlist{$domain}) {
-	$rqlist{$domlist{$domain}} = $rqlist{$domlist{$domain}} . "<tr><td>" . $rqhtml;
+	$rqlist{$domlist{$domain}} = $rqlist{$domlist{$domain}} . $rqhtml;
       } else {
 	$domlist{$domain} = $rq;
 	$rqlist{$rq} = $rqhtml;
       }
     }
   }
-  my $n = 1;
   foreach $key (sort(keys %rqlist)) {
-	print "<tr><td>$n$rqlist{$key}";
-	$n++;
+	print "$rqlist{$key}";
   }
   print "</table>\n";
   if (!$foundone) {
