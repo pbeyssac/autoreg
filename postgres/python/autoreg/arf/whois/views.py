@@ -215,9 +215,7 @@ class registrant_form(forms.Form):
                           choices=_countries_get())
   ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
-  private = forms.BooleanField(label="Hide address/phone/fax in public whois",
-                               widget=forms.HiddenInput,
-                               required=False)
+  private = forms.BooleanField(label="Hide address/phone/fax in public whois", required=False)
 
 class domcontact_form(forms.Form):
   handle = forms.CharField(max_length=10, initial=HANDLESUFFIX)
