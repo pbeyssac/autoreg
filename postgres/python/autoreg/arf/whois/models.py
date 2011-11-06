@@ -42,6 +42,7 @@ class Contacts(models.Model):
     updated_by = models.CharField(max_length=64)
     validated_on = models.DateTimeField()
     updated_on = models.DateTimeField()
+    private = models.BooleanField(default=False)
     class Meta:
         db_table = 'contacts'
         ordering = ['handle']
@@ -90,6 +91,7 @@ class ContactsHist(models.Model):
     updated_by = models.CharField(max_length=64)
     updated_on = models.DateTimeField()
     deleted_on = models.DateTimeField()
+    private = models.BooleanField(default=False)
     class Meta:
         db_table = 'contacts_hist'
 

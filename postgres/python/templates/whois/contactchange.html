@@ -67,6 +67,12 @@ Contact handle: <strong>{{ ehandle }}</strong><br>
     <label for="id_fx1"> Fax</label>
     {% if form.fx1.errors %}{% for error in form.fx1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
+<div class="fieldWrapper{% if form.private.errors %}error{% endif %}">
+    {{ form.private }}
+    <label for="id_private"> Private</label>
+    {% if form.private.errors %}{% for error in form.private.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
+This will stop your contact information from being visible in the public Whois interface.
+</div>
 
 <HR>
 <STRONG>Remember: submitting the query means that you agree with

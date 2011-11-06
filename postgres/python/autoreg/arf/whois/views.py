@@ -194,6 +194,7 @@ class contactchange_form(forms.Form):
                           choices=_countries_get())
   ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
+  private = forms.BooleanField(label="Hide address/phone/fax in public whois", required=False)
 
 class contact_form(contactchange_form):
   p1 = forms.CharField(max_length=20, label='Password', required=False, widget=PasswordInput)
@@ -214,6 +215,9 @@ class registrant_form(forms.Form):
                           choices=_countries_get())
   ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
+  private = forms.BooleanField(label="Hide address/phone/fax in public whois",
+                               widget=forms.HiddenInput,
+                               required=False)
 
 class domcontact_form(forms.Form):
   handle = forms.CharField(max_length=10, initial=HANDLESUFFIX)
@@ -558,7 +562,8 @@ def contactchange(request, registrantdomain=None):
     initial = { 'pn1': c.name,
                 'em1': c.email,
                 'ph1': c.phone,
-                'fx1': c.fax }
+                'fx1': c.fax,
+                'private': c.private }
     n = 1
     lastk = None
     for i in adlist:
@@ -617,6 +622,9 @@ def contactchange(request, registrantdomain=None):
         changed = True
       if c.addr != '\n'.join(ad):
         c.addr = '\n'.join(ad)
+        changed = True
+      if c.private != form.cleaned_data['private']:
+        c.private = form.cleaned_data['private']
         changed = True
       if changed:
         c.updated_on = None	# set to NOW() by the database
