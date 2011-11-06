@@ -168,7 +168,7 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
   if not a:
     return
 
-  real_email = False
+  real_info = False
   try:
     opts, args = getopt.getopt(a.split(), "UR")
   except getopt.GetoptError:
@@ -176,7 +176,7 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
 
   for optval, aval in opts:                                                    
     if optval == '-R' and not remote:
-      real_email = True
+      real_info = True
     elif optval == '-U':                                                       
       encoding = 'utf-8'
 
@@ -201,7 +201,7 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
       if k not in dc:
         continue
       for p in dc[k]:
-        if real_email:
+        if real_info:
           p.fetch()
         else:
           p.fetch_obfuscated()
@@ -219,7 +219,7 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
     print >>out, "Key not found"
     return
   for p in lp:
-    if real_email:
+    if real_info:
       p.fetch()
     else:
       p.fetch_obfuscated()
