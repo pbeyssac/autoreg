@@ -304,6 +304,7 @@ class Person(_whoisobject):
     self.d = {}
     self.passwd = passwd
     self.validate = validate
+    self.private = False
   def _set_key(self):
     if self.d['nh'][0] is not None:
       self.key = suffixadd(self.d['nh'][0])
@@ -355,23 +356,27 @@ class Person(_whoisobject):
     if not self.validate:
       self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
                       'validated_on,country,'
-                      'passwd,addr,phone,fax,created_on,updated_by,updated_on) '
-                      'VALUES (%s,%s,%s,%s,NULL,%s,%s,%s,%s,%s,%s,%s,%s)',
+                      'passwd,addr,phone,fax,'
+                      'created_on,updated_by,updated_on,private) '
+                      'VALUES (%s,%s,%s,%s,NULL,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
                    _todb(
                       (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
                        o['co'][0],
                        self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
-                       str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]))))
+                       str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]),
+                       self.private)))
     else:
       self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
                       'country,'
-                      'passwd,addr,phone,fax,created_on,updated_by,updated_on) '
-                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                      'passwd,addr,phone,fax,'
+                      'created_on,updated_by,updated_on,private) '
+                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
                    _todb(
                       (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
                        o['co'][0],
                        self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
-                       str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]))))
+                       str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]),
+                       self.private)))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('contacts_id_seq')")
     self.cid, = self._dbc.fetchone()
@@ -382,13 +387,14 @@ class Person(_whoisobject):
     self._dbc.execute('UPDATE contacts SET handle=%s,exthandle=%s,'
                       'name=%s,email=%s,'
                       'country=%s,'
-                      'addr=%s,phone=%s,fax=%s,updated_by=%s,updated_on=NOW() '
+                      'addr=%s,phone=%s,fax=%s,updated_by=%s,updated_on=NOW(),'
+                      'private=%s '
                       'WHERE id=%s',
                    _todb(
                       (o['nh'][0], o['eh'][0], o['pn'][0], o['em'][0],
                        o['co'][0],
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
-                       o['ch'][0][0], self.cid)))
+                       o['ch'][0][0], self.private, self.cid)))
     assert self._dbc.rowcount == 1
   def delete(self):
     """Delete from database, keeping history."""
@@ -399,7 +405,7 @@ class Person(_whoisobject):
     assert self.cid is not None
     self._dbc.execute('SELECT handle,exthandle,contacts.name,email,'
                       ' addr,country,'
-                      ' phone,fax,created_on,updated_by,updated_on,'
+                      ' phone,fax,created_on,updated_by,updated_on,private,'
                       ' iso3166_countries.name'
                       ' FROM contacts LEFT OUTER JOIN iso3166_countries'
                       ' ON iso3166_countries.iso_id = contacts.country'
@@ -408,13 +414,14 @@ class Person(_whoisobject):
     d = {}
     (d['nh'], d['eh'], d['pn'], d['em'],
      addr, d['co'],
-     d['ph'], d['fx'], d['cr'], chb, cho,
+     d['ph'], d['fx'], d['cr'], chb, cho, private,
      d['cn']) = _fromdb(self._dbc.fetchone())
     for k in d.keys():
       d[k] = [ d[k] ]
     d['ad'] = addrsplit(addr)
     d['ch'] = [ (chb, cho) ]
     self.d = d
+    self.private = private
     self._set_key()
   def fetch_obfuscated(self):
     self.fetch()
@@ -424,6 +431,12 @@ class Person(_whoisobject):
     email, = _fromdb(self._dbc.fetchone())
     email += '@' + HANDLEMAILHOST
     self.d['oe'] = [email]
+    if self.private:
+      self.d['pn'] = ['UNDISCLOSED BY REQUEST']
+      self.d['ad'] = ['UNDISCLOSED BY REQUEST']
+      self.d['cn'] = []
+      self.d['ph'] = []
+      self.d['fx'] = []
   def digest(self, seed=''):
     self.fetch()
     import hashlib
