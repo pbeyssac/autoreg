@@ -397,6 +397,11 @@ INSERT INTO rrtypes values (7, 'SRV');
 INSERT INTO rrtypes values (8, 'HINFO');
 INSERT INTO rrtypes values (9, 'DNAME');
 INSERT INTO rrtypes values (10, 'SSHFP');
+INSERT INTO rrtypes values (11, 'PTR');
+INSERT INTO rrtypes values (12, 'DNSKEY');
+INSERT INTO rrtypes values (13, 'RRSIG');
+INSERT INTO rrtypes values (14, 'DLV');
+INSERT INTO rrtypes values (15, 'DS');
 INSERT INTO rrtypes values (1000, 'WMX');
 
 INSERT INTO contact_types VALUES (1,'technical');

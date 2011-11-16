@@ -55,7 +55,7 @@ class DnsParser:
                 dummy = socket.inet_pton(socket.AF_INET, value)
             except socket.error:
                 raise ParseError('Bad IPv4 address', value)
-        elif typ in ['CNAME', 'NS', 'SRV']:
+        elif typ in ['CNAME', 'DNAME', 'NS', 'SRV']:
 	    value = value.upper()
 	elif typ == 'MX':
 	    m = self._mx_re.search(value)
@@ -64,7 +64,8 @@ class DnsParser:
 	    pri = int(pri)
 	    if pri > 255: raise ParseError('Bad priority for MX record', pri)
 	    value = "%d %s" % (pri, fqdn.upper())
-        elif typ in ['TXT', 'PTR', 'DNSKEY', 'RRSIG', 'DLV', 'DS']:
+        elif typ in ['TXT', 'PTR', 'DNSKEY', 'RRSIG', 'DLV', 'DS',
+                     'HINFO', 'SSHFP']:
 	    pass
         elif typ == 'SOA':
             if self._soa_begin_re.search(value.strip()):
