@@ -395,6 +395,8 @@ INSERT INTO rrtypes values (5, 'AAAA');
 INSERT INTO rrtypes values (6, 'TXT');
 INSERT INTO rrtypes values (7, 'SRV');
 INSERT INTO rrtypes values (8, 'HINFO');
+INSERT INTO rrtypes values (9, 'DNAME');
+INSERT INTO rrtypes values (10, 'SSHFP');
 INSERT INTO rrtypes values (1000, 'WMX');
 
 INSERT INTO contact_types VALUES (1,'technical');

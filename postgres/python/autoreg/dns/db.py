@@ -109,7 +109,7 @@ class _Zone:
 	while t:
 	    (label, domain, ttl, typ, value) = t
 	    # "uncompress"
-	    if typ in ['CNAME', 'MX', 'NS']: value += '.'
+	    if typ in ['CNAME', 'DNAME', 'MX', 'NS']: value += '.'
 	    # prepare label
 	    if label != '' and domain != '':
 		l = label + '.' + domain
@@ -211,11 +211,11 @@ class _Domain:
 		    label = ''
 	    # More tests which do not belong in the parser.
 	    # Check & "compress" the value field somewhat.
-	    if typ in ['CNAME', 'MX', 'NS']:
+	    if typ in ['CNAME', 'DNAME', 'MX', 'NS']:
 		if not value.endswith('.'):
 		    raise DomainError(DomainError.NODOT, value)
 		value = value[:-1]
-	    elif typ in ['A', 'AAAA', 'SRV', 'TXT', 'HINFO']:
+	    elif typ in ['A', 'AAAA', 'SRV', 'TXT', 'HINFO', 'SSHFP']:
 		pass
 	    else:
 		raise DomainError(DomainError.RRUNSUP, typ)
@@ -267,7 +267,7 @@ class _Domain:
 	    label, dom, ttl, typ, val = t
 
 	    # "uncompress"
-	    if typ in ['CNAME', 'MX', 'NS']: val += '.'
+	    if typ in ['CNAME', 'DNAME', 'MX', 'NS']: val += '.'
 
 	    # handle label
 	    if label != '' and dom != '':
