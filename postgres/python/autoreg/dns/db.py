@@ -215,7 +215,7 @@ class _Domain:
 		if not value.endswith('.'):
 		    raise DomainError(DomainError.NODOT, value)
 		value = value[:-1]
-	    elif typ in ['A', 'AAAA', 'SRV', 'TXT']:
+	    elif typ in ['A', 'AAAA', 'SRV', 'TXT', 'HINFO']:
 		pass
 	    else:
 		raise DomainError(DomainError.RRUNSUP, typ)
