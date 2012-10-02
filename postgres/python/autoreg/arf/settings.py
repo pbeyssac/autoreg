@@ -10,15 +10,6 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-#DATABASE_ENGINE = 'postgresql_psycopg2'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
-DATABASE_ENGINE = 'postgresql_psycopg2'
-# not set here, see bottom of file
-#DATABASE_NAME = 'eudevel'      # Or path to database file if using sqlite3.
-DATABASE_USER = 'www'          # Not used with sqlite3.
-DATABASE_PASSWORD = ''         # Not used with sqlite3.
-DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
-DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
-
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 # although not all variations may be possible on all operating systems.
@@ -56,9 +47,8 @@ SECRET_KEY = open('/usr/local/autoreg/arf/SECRET_KEY').read()[:-1]
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.load_template_source',
-    'django.template.loaders.app_directories.load_template_source',
-#     'django.template.loaders.eggs.load_template_source',
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -95,7 +85,16 @@ AUTHENTICATION_BACKENDS = ( 'autoreg.arf.whois.contactauth.AuthBackend', )
 #
 
 from autoreg.conf import DATABASE_NAME
+
+DATABASES = {
+  'default': {
+    'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    'NAME': DATABASE_NAME,
+    'USER': 'www'
+  }
+}
 import os
+
 
 URIBASE = os.environ.get('ARF_BASE', '/arf/')
 URLBASE = 'https://eu.org'
