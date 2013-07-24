@@ -107,6 +107,8 @@ sub dodir {
   local (@dirlist) = &rq_list();
   local (@domlist);
   local (@rqlist);
+  local (@duprq);
+  local (@l3rq);
   local ($foundone) = 0;
 
   local ($rq);
@@ -137,19 +139,20 @@ sub dodir {
       }
       my $wreplyto = &mkwhoisform("localhost", $replyto, $replyto);
       if ($state eq 'Open') {
-	my $st = '';
-	if ($domlist{$domain}) { $st=' style="background-color:#fcc"' }
-	elsif ($domain =~ /\.[^\.]+\.[^\.]+\.[^\.]+/) { $st=' style="background-color:#cfc"' }
-	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
+	$rqhtml = "<tr><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
       } elsif ($state eq 'Answered' && $stateinfo) {
-	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
+	$rqhtml = "<tr><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
       } else {
-	$rqhtml = "<tr$st><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
+	$rqhtml = "<tr><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
       }
       $n++;
       if ($domlist{$domain}) {
 	$rqlist{$domlist{$domain}} = $rqlist{$domlist{$domain}} . $rqhtml;
+	$duprq{$domlist{$domain}} = 1;
       } else {
+	if ($domain =~ /\.[^\.]+\.[^\.]+\.[^\.]+/) {
+		$l3rq{$rq} = 1;
+	}
 	$domlist{$domain} = $rq;
 	$rqlist{$rq} = $rqhtml;
       }
@@ -163,7 +166,13 @@ sub dodir {
   &mkpages($page, $npages);
   print "<table>\n";
   foreach $key (@rqs[$startat..$startat+$nbypage-1]) {
-	print "$rqlist{$key}";
+	my $rql = $rqlist{$key};
+	if ($duprq{$key}) {
+		$rql =~ s/<tr>/<tr style="background-color:#fcc">/g;
+	} elsif ($l3rq{$key}) {
+		$rql =~ s/<tr>/<tr style="background-color:#cfc">/g;
+	}
+	print $rql;
   }
   print "</table>\n";
   &mkpages($page, $npages);
