@@ -79,7 +79,7 @@ if ($content{'action'} eq 'editwhois') {
     print "Deleted $content{'rq'}<P>\n";
   }
 } else {
-    &dodir($user, $scriptname);
+    &dodir($user, $scriptname, $content{'page'});
 }
 
 print "</BODY></HTML>\n";

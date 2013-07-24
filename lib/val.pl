@@ -85,9 +85,25 @@ sub dowhoisperson {
     return &whois_html($WHOISHOST, "-R ".$p, 'person');
 }
 
+sub mkpages {
+  my ($page) = $_[0];
+  my ($npages) = $_[1];
+  if ($page ne 0) { print "<a href=\"?page=".($page-1)."\">&lt;</a> "; }
+  foreach $np (0..$npages-1) {
+	if ($np ne $page) {
+		print "<a href=\"?page=$np\">$np</a> ";
+	} else {
+		print "$np ";
+	}
+  }
+  if ($page ne $npages-1) { print "<a href=\"?page=".($page+1)."\">&gt;</a> "; }
+}
+
 sub dodir {
   local ($user) = $_[0];
   local ($scriptname) = $_[1];
+  local ($page) = $_[2];
+  local ($nbypage) = $_[3];
   local (@dirlist) = &rq_list();
   local (@domlist);
   local (@rqlist);
@@ -96,10 +112,11 @@ sub dodir {
   local ($rq);
   local ($rqhtml);
 
+  if ($page eq '') { $page = 0 }
+  if ($nbypage eq '') { $nbypage = 100 }
   print "\n";
 
   my $n = 1;
-  print "<table>\n";
   foreach $rq (@dirlist) {
     local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo)
 	= &rq_get_info($rq, $user);
@@ -138,10 +155,18 @@ sub dodir {
       }
     }
   }
-  foreach $key (sort(keys %rqlist)) {
+  my @rqs = sort(keys %rqlist);
+  my $num = @rqs;
+  my $startat = $page*$nbypage;
+
+  my $npages = int(($num+$nbypage-1)/$nbypage);
+  &mkpages($page, $npages);
+  print "<table>\n";
+  foreach $key (@rqs[$startat..$startat+$nbypage-1]) {
 	print "$rqlist{$key}";
   }
   print "</table>\n";
+  &mkpages($page, $npages);
   if (!$foundone) {
       print "Sorry, no request found...<BR>\n";
   }
