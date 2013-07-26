@@ -129,23 +129,24 @@ sub dodir {
       $foundone = 1;
 
       if ($action eq 'N') {
-	$action = "New       ";
+	$action = "New";
       } elsif ($action eq 'M') {
-	$action = "Modify    ";
+	$action = "Modify";
       } elsif ($action eq 'MZ') {
-	$action = "Mod Zone  ";
+	$action = "Mod Zone";
       } elsif ($action eq 'MC') {
 	$action = "Mod Contact";
       } elsif ($action eq 'D') {
 	$action = "DEL";
       }
       my $wreplyto = &mkwhoisform("localhost", $replyto, $replyto);
+      chop $wreplyto;
       if ($state eq 'Open') {
-	$rqhtml = "<tr><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
+	$rqhtml = "<tr><td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
       } elsif ($state eq 'Answered' && $stateinfo) {
-	$rqhtml = "<tr><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
+	$rqhtml = "<tr><td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
       } else {
-	$rqhtml = "<tr><td>$n<td><A HREF=\"$scriptname?action=display\&rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
+	$rqhtml = "<tr><td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
       }
       $n++;
       if ($domlist{$domain}) {
@@ -166,13 +167,16 @@ sub dodir {
 
   my $npages = int(($num+$nbypage-1)/$nbypage);
   &mkpages($page, $npages);
+  print "\n<style>\n";
+  print ".dup {background-color:#fcc}\n.l3 {background-color:#cfc}\n";
+  print "</style>\n";
   print "<table>\n";
   foreach $key (@rqs[$startat..$startat+$nbypage-1]) {
 	my $rql = $rqlist{$key};
 	if ($duprq{$key}) {
-		$rql =~ s/<tr>/<tr style="background-color:#fcc">/g;
+		$rql =~ s/<tr>/<tr class="dup">/g;
 	} elsif ($l3rq{$key}) {
-		$rql =~ s/<tr>/<tr style="background-color:#cfc">/g;
+		$rql =~ s/<tr>/<tr class="l3">/g;
 	}
 	print $rql;
   }

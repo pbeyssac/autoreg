@@ -51,6 +51,8 @@ if ($content{'action'} eq 'editwhois') {
   &dodisplay($content{'rq'}, $user, $scriptname);
 } elsif ($content{'action'} eq 'display') {
   &dodisplay($content{'rq'}, $user);
+} elsif ($content{'action'} eq '' && $content{'rq'} ne '') {
+  &dodisplay($content{'rq'}, $user);
 } elsif ($content{'action'} eq 'reject') {
   &doreject($content{'rq'}, $user, $date, $content{'reason'}, $content{'submit'});
 } elsif ($content{'action'} eq 'info') {
