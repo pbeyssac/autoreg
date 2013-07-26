@@ -350,7 +350,7 @@ if ($makerr) {
 		&pr_error($ERR_NOPAR, $parentdom);
 	}
 
-	&valdata(STDOUT);
+	print STDOUT &valdata;
 
 	#select(STDOUT); $| = 1; print ""; $| = 0;
 	#select(STDERR); $| = 1; print ""; $| = 0;
@@ -443,12 +443,12 @@ if ($opt_s) {
 
   if ($makerr) {
     print SMU $MSG_RQOKD;
-    &valdata(SMU);
+    print SMU $rrdata;
     print  SMU "\n";
   }
   if ($makewhois) {
     print SMU $MSG_RQOKW;
-    print SMU &whodata();
+    print SMU $whoisdata;
     print  SMU "\n";
   }
 
