@@ -104,11 +104,8 @@ sub dodir {
   local ($scriptname) = $_[1];
   local ($page) = $_[2];
   local ($nbypage) = $_[3];
-  local (@dirlist) = &rq_list();
-  local (@domlist);
-  local (@rqlist);
-  local (@duprq);
-  local (@l3rq);
+  my ($offset, $limit) = ($_[4], $_[5]);
+
   local ($foundone) = 0;
 
   local ($rq);
@@ -116,13 +113,24 @@ sub dodir {
 
   if ($page eq '') { $page = 0 }
   if ($nbypage eq '') { $nbypage = 100 }
+
+  my $num = &rq_num();
+  my $offset = $page*$nbypage;
+  my (@dirlist) = &rq_list($offset, $nbypage);
+  my $npages = int(($num+$nbypage-1)/$nbypage);
+
   print "\n";
 
   my $dbh = &rq_get_db();
 
-  my $n = 1;
+  &mkpages($page, $npages);
+  print "\n<style>\n";
+  print ".dup {background-color:#fcc}\n.l3 {background-color:#cfc}\n";
+  print "</style>\n";
+  print "<table>\n";
+
   foreach $rq (@dirlist) {
-    local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo)
+    local ($error, $replyto, $action, $domain, $lang, $state, $ndom)
 	= &rq_db_get_info($dbh, $rq, $user);
 
     if (!$error && $state ne 'WaitAck') {
@@ -141,44 +149,21 @@ sub dodir {
       }
       my $wreplyto = &mkwhoisform("localhost", $replyto, $replyto);
       chop $wreplyto;
+      my $tr = '<tr>';
+      if ($ndom > 1) {
+	$tr = '<tr class="dup">';
+      } elsif ($domain =~ /\.[^\.]+\.[^\.]+\.[^\.]+/) {
+	$tr = '<tr class="l3">';
+      }
       if ($state eq 'Open') {
-	$rqhtml = "<tr><td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
+	$rqhtml = "$tr<td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
       } elsif ($state eq 'Answered' && $stateinfo) {
-	$rqhtml = "<tr><td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
+	$rqhtml = "$tr<td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
       } else {
-	$rqhtml = "<tr><td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
+	$rqhtml = "$tr<td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
       }
-      $n++;
-      if ($domlist{$domain}) {
-	$rqlist{$domlist{$domain}} = $rqlist{$domlist{$domain}} . $rqhtml;
-	$duprq{$domlist{$domain}} = 1;
-      } else {
-	if ($domain =~ /\.[^\.]+\.[^\.]+\.[^\.]+/) {
-		$l3rq{$rq} = 1;
-	}
-	$domlist{$domain} = $rq;
-	$rqlist{$rq} = $rqhtml;
-      }
+      print $rqhtml;
     }
-  }
-  my @rqs = sort(keys %rqlist);
-  my $num = @rqs;
-  my $startat = $page*$nbypage;
-
-  my $npages = int(($num+$nbypage-1)/$nbypage);
-  &mkpages($page, $npages);
-  print "\n<style>\n";
-  print ".dup {background-color:#fcc}\n.l3 {background-color:#cfc}\n";
-  print "</style>\n";
-  print "<table>\n";
-  foreach $key (@rqs[$startat..$startat+$nbypage-1]) {
-	my $rql = $rqlist{$key};
-	if ($duprq{$key}) {
-		$rql =~ s/<tr>/<tr class="dup">/g;
-	} elsif ($l3rq{$key}) {
-		$rql =~ s/<tr>/<tr class="l3">/g;
-	}
-	print $rql;
   }
   print "</table>\n";
   &mkpages($page, $npages);

@@ -88,10 +88,14 @@ sub rq_db_get_info {
     return "Access to request $rq not authorized.";
   }
 
+  $sth = $dbh->prepare("SELECT COUNT(*) FROM requests WHERE fqdn=? AND state != 'WaitAck'");
+  $sth->execute($domain);
+  @row = $sth->fetchrow_array;
+
   $dbrecords =~ s/\nmnt-by:/\nMNT-BY:/sg;
   $dbrecords =~ s/\nsource:/\nCHANGED: \nsource:/sg;
 
-  return ("", $replyto, $action, $domain, $lang, $state, "",
+  return ("", $replyto, $action, $domain, $lang, $state, @row[0],
 	  $dns, $dbrecords);
 }
 
@@ -120,15 +124,31 @@ sub rq_remove {
   return "";
 }
 
+sub rq_num {
+  my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
+  my $sth = $dbh->prepare("SELECT count(*) FROM requests WHERE state != 'WaitAck'");
+  $sth->execute();
+  my @rows = $sth->fetchrow_array;
+  return @rows[0];
+}
+
 #
 # Return list of current requests
 #
 sub rq_list {
   local (@rqlist);
+  my ($offset, $limit) = ($_[0], $_[1]);
    
   my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
-  my $sth = $dbh->prepare("SELECT id FROM requests ORDER BY id");
-  $sth->execute();
+  my $sth;
+
+  if ($offset ne '' && $limit ne '') {
+    $sth = $dbh->prepare("SELECT id FROM requests ORDER BY id OFFSET ? LIMIT ?");
+    $sth->execute($offset, $limit);
+  } else {
+    $sth = $dbh->prepare("SELECT id FROM requests ORDER BY id");
+    $sth->execute();
+  }
 
   my @row;
   while (@row = $sth->fetchrow_array) {
