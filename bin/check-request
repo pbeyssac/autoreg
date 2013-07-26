@@ -329,7 +329,7 @@ if ($makewhois) {
 
 if ($makewhois) {
 	printf $MSG_WHOIS, $domain;
-	&whodata(STDOUT);
+	print STDOUT &whodata();
 	&stoperrs;
 }
 
@@ -393,20 +393,19 @@ if ($req eq 'M') {
   }
 }
 
-$vr = &rq_create($REQID, $replyto, $req, $domain, $ENV{'ARLANG'})
-		|| die ("Cannot open $REQID: $!\n");
+my $rrdata;
+my $whoisdata;
 
 if ($makerr) {
-	&valdata($vr);
+	$rrdata = &valdata()
 }
 if ($makewhois) {
-	&rq_end_dns($REQID, $vr);
-	&whodata($vr);
+	$whoisdata = &whodata()
 }
-&rq_end_create($REQID, $vr);
 
-&rq_set_attr($REQID, 'DNSADMIN',
-	     "checkack", &md5_compute("$MD5SEED:$REQID:".time().":$$:"));
+$vr = &rq_create($REQID, $replyto, $req, $domain, $ENV{'ARLANG'},
+	$rrdata, $whoisdata)
+		|| die ("Cannot open $REQID: $!\n");
 
 print $MSG_ENDCK;
 print $MSG_RQOK1;
@@ -449,7 +448,7 @@ if ($opt_s) {
   }
   if ($makewhois) {
     print SMU $MSG_RQOKW;
-    &whodata(SMU);
+    print SMU &whodata();
     print  SMU "\n";
   }
 
@@ -481,37 +480,35 @@ sub checkname {
 }
 
 sub whodata_domain {
-	local ($hdl) = $_[0];
-	print $hdl "domain:  ", $domain, "\n";
-	print $hdl "address: ", $ref{"om"}, "\n" if $ref{"om"};
-	print $hdl "address: ", $ref{"oa"}, "\n" if $ref{"oa"};
-	print $hdl "address: ", $ref{"op"}, "\n" if $ref{"op"};
-	print $hdl "address: ", $ref{"oc"}, "\n" if $ref{"oc"};
-	print $hdl "address: ", $ref{"os"}, "\n" if $ref{"os"};
-	print $hdl "address: ", $ref{"on"}, "\n" if $ref{"on"};
+	$h = "domain:  ", $domain, "\n";
+	$h .= "address: ", $ref{"om"}, "\n" if $ref{"om"};
+	$h .= "address: ", $ref{"oa"}, "\n" if $ref{"oa"};
+	$h .= "address: ", $ref{"op"}, "\n" if $ref{"op"};
+	$h .= "address: ", $ref{"oc"}, "\n" if $ref{"oc"};
+	$h .= "address: ", $ref{"os"}, "\n" if $ref{"os"};
+	$h .= "address: ", $ref{"on"}, "\n" if $ref{"on"};
 
 	if ($ref{"ah"}) {
-	    print $hdl "admin-c: ", $ref{"ah"}, "\n";
+	    $h .= "admin-c: ", $ref{"ah"}, "\n";
 	} elsif ($ref{"am"}) {
-	    print $hdl "admin-c: ", $ref{"am"}, "\n";
+	    $h .= "admin-c: ", $ref{"am"}, "\n";
 	}
 
 	if ($ref{"th"}) {
-	    print $hdl "tech-c:  ", $ref{"th"}, "\n";
+	    $h .= "tech-c:  ", $ref{"th"}, "\n";
 	} elsif ($ref{"tm"}) {
-	    print $hdl "tech-c:  ", $ref{"tm"}, "\n";
+	    $h .= "tech-c:  ", $ref{"tm"}, "\n";
 	}
 
-	#print $hdl "mnt-by:  $MNTBY\n";
-	print $hdl "mnt-by:  \n";
-	print $hdl "source:  $DBNAME\n";
-	print $hdl "\n";
+	#$h .= "mnt-by:  $MNTBY\n";
+	$h .= "mnt-by:  \n";
+	$h .= "source:  $DBNAME\n";
+	$h .= "\n";
+	return $h;
 }
 
 sub whodata {
-	local ($hdl) = $_[0];
-
-	&whodata_domain($hdl);
+	return &whodata_domain();
 }
 
 sub tabify {
@@ -528,17 +525,17 @@ sub tabify {
 # output records for zone
 #
 sub valdata {
-	local ($hdl) = $_[0];
 	my $labeldone;
 
+	my $h = "";
 	if ($rectype =~ /^N/) {
 	    for ($i=0; $i <= 6; $i++) {
 		if (defined($fqdn[$i])) {
 		    if (!$labeldone) {
-			print $hdl &tabify($newdom, "IN NS\t$fqdn[$i].\n", 24);
+			$h .= &tabify($newdom, "IN NS\t$fqdn[$i].\n", 24);
 			$labeldone = 1;
 		    } else {
-			print $hdl "\t\t\tIN NS\t$fqdn[$i].\n";
+			$h .= "\t\t\tIN NS\t$fqdn[$i].\n";
 		    }
 		}
 	    }
@@ -546,9 +543,9 @@ sub valdata {
 	    for ($i=0; $i <= 6; $i++) {
 		if (defined($ip[$i]) && &isasubdomain($fqdn[$i], $domain)) {
 		    if ($ip[$i] !~ /:/) {
-			print $hdl &tabify("$fqdn[$i].", "IN A\t$ip[$i]\n", 24);
+			$h .= &tabify("$fqdn[$i].", "IN A\t$ip[$i]\n", 24);
 		    } else {
-			print $hdl &tabify("$fqdn[$i].", "IN AAAA\t$ip[$i]\n", 24);
+			$h .= &tabify("$fqdn[$i].", "IN AAAA\t$ip[$i]\n", 24);
 		    }
 		}
 	    }
@@ -556,33 +553,34 @@ sub valdata {
 	    for ($i=0; $i <= 6; $i++) {
 		$pri=$i * 10;
 		if (!$labeldone) {
-		    print $hdl &tabify($newdom, "IN MX\t 0 $fqdn[$i].\n", 24);
+		    $h .= &tabify($newdom, "IN MX\t 0 $fqdn[$i].\n", 24);
 		    $labeldone = 1;
 		} else {
-		    print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+		    $h .= "\t\t\tIN MX\t$pri $fqdn[$i].\n";
 		}
 	    }
 	} elsif ($rectype =~ /^C/) {
-	    print $hdl &tabify($newdom, "IN CNAME\t$fqdn[1].\n", 24);
+	    $h .= &tabify($newdom, "IN CNAME\t$fqdn[1].\n", 24);
 	} else {
 	    for ($i=0; $i <= 6; $i++) {
 		$pri=$i * 10;
 		if (!$labeldone) {
-		    print $hdl &tabify($newdom, "IN MX\t 0 $fqdn[$i].\n", 24);
+		    $h .= &tabify($newdom, "IN MX\t 0 $fqdn[$i].\n", 24);
 		    $labeldone = 1;
 		} else {
-		    print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+		    $h .= "\t\t\tIN MX\t$pri $fqdn[$i].\n";
 		}
 	    }
 	    $labeldone = 0;
 	    for ($i=0; $i <= 6; $i++) {
 		$pri=$i * 10;
 		if (!$labeldone) {
-		    print $hdl &tabify("*.$newdom", "IN MX\t 0 $fqdn[$i].\n", 24);
+		    $h .= &tabify("*.$newdom", "IN MX\t 0 $fqdn[$i].\n", 24);
 		    $labeldone = 1;
 		} else {
-		    print $hdl "\t\t\tIN MX\t$pri $fqdn[$i].\n";
+		    $h .= "\t\t\tIN MX\t$pri $fqdn[$i].\n";
 		}
 	    }
 	}
+	return $h;
 }

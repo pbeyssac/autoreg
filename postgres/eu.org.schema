@@ -379,6 +379,55 @@ CREATE TRIGGER trig_whoisdomains BEFORE UPDATE OR DELETE
 	FOR EACH ROW EXECUTE PROCEDURE trig_whoisdomains();
 
 ---------------------------------------------------------------------
+
+--
+-- Requests database
+--
+
+CREATE TABLE requests (
+	id VARCHAR(30) PRIMARY KEY,
+	email VARCHAR(80),
+	action VARCHAR(8),
+	fqdn VARCHAR(200),
+	language CHAR(2),
+	state VARCHAR(10),
+	zonerecord VARCHAR(500),
+	whoisrecord VARCHAR(2000)
+);
+
+CREATE TABLE requests_hist (
+	id VARCHAR(30),
+	email VARCHAR(80),
+	action VARCHAR(8),
+	fqdn VARCHAR(200),
+	language CHAR(2),
+	state VARCHAR(10),
+	zonerecord VARCHAR(500),
+	whoisrecord VARCHAR(2000),
+	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Triggers
+
+CREATE OR REPLACE FUNCTION trig_del_requests()
+    RETURNS TRIGGER as $trig_del_requests$
+    BEGIN
+	INSERT INTO requests_hist (
+		id, email, action, fqdn, language,
+		state, zonerecord, whoisrecord)
+	    VALUES (
+		OLD.id, OLD.email, OLD.action, OLD.fqdn, OLD.language,
+		OLD.state, OLD.zonerecord, OLD.whoisrecord);
+	RETURN OLD;
+    END;
+$trig_del_requests$ LANGUAGE plpgsql;
+
+-- only useful on DELETE
+CREATE TRIGGER trig_del_requests BEFORE DELETE ON requests
+	FOR EACH ROW EXECUTE PROCEDURE trig_del_requests();
+
+
+---------------------------------------------------------------------
 --
 -- Database initialization
 --
@@ -475,3 +524,9 @@ GRANT SELECT ON TABLE contact_types TO www, autoreg;
 GRANT SELECT ON TABLE contacts, contacts_email, handle_secrets, whoisdomains, domain_contact TO whois;
 GRANT SELECT ON TABLE iso3166_countries TO www, autoreg, whois;
 GRANT SELECT ON TABLE contacts, handle_secrets TO postfix;
+
+-- Permissions on requests database
+-- read-write
+GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE requests TO autoreg;
+-- append-only
+GRANT INSERT ON TABLE requests_hist TO autoreg;

@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-# Primitives to control access to pending requests in $VALDIR.
+# Primitives to control access to pending requests
 #
 
 # local configuration.
@@ -10,176 +10,41 @@ require "/usr/local/autoreg/conf/config";
 require "$DNSLIB/auth.pl";
 require "$DNSLIB/misc.pl";
 
-# for flock()
-$LOCK_SH = 1;
-$LOCK_EX = 2;
-$LOCK_UN = 8;
+use DBI;
+
+my $dbparam = "dbi:PgPP:dbname=eu.org";
+my $dbuser = "autoreg";
+
+sub rq_get_db {
+  return $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
+}
+
+sub rq_db_get_domain {
+  my ($dbh, $rq) = ($_[0], $_[1]);
+  my $sth = $dbh->prepare("SELECT fqdn FROM requests WHERE id=?");
+  $sth->execute($rq);
+  my @row = $sth->fetchrow_array;
+  return @row[0];
+}
 
 #
 # Update whois info in request
 #
 sub rq_set_whois {
   local ($rq, $user, $newwhois) = ($_[0], $_[1], $_[2]);
-  local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo);
 
-  if (!open (F, "$VALDIR/$rq")) {
-    return "Cannot find request $rq.";
-  }
-  flock(F, $LOCK_EX);
-
-  $replyto = <F>; chop $replyto;
-  $line = <F>; chop $line;
-  ($action, $domain, $lang, $state, $stateinfo) = split(/ /, $line);
-
-  if (!&zauth_check(&parent_of($domain), $user)) {
-    close(F);
-    return "Access to request $rq not authorized.";
+  my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
+  if (!&zauth_check(&parent_of(&rq_db_get_domain($dbh, $rq)), $user)) {
+    return "Access to request $rq in domain $domain not authorized.";
   }
 
-  umask 022;
-  if (!open(NF, ">$VALDIR/.$rq.new")) {
-    close(F);
-    return "Unable to update request file.";
-  }
-  flock(NF, $LOCK_EX);
+  $sth = $dbh->prepare("UPDATE requests SET whoisrecord=? WHERE id=?");
+  $sth->execute($newwhois, $rq);
 
-  print NF "$replyto\n$line\n";
-  # add zone tag, if not yet converted
-  if ($_ = <F>) {
-     if (!/^;;zone/) { print NF ";;zone\n"; print NF $_; }
-     else { print NF $_; }
-  }
-  # Copy zone info
-  while (<F>) {
-    if (/^;;/) { last; };
-    print NF $_;
-  }
-  # Skip old whois info
-  while (<F>) {
-    if (/^;;/) { last; };
-  }
-  print NF ";;whois\n";
-  print NF $newwhois;
-  print NF ";;attr\n";
-
-  # Copy additional info
-  while (<F>) {
-    print NF;
-  }
-
-  # We need to keep the locks until after the rename.
-
-  if (!rename("$VALDIR/.$rq.new", "$VALDIR/$rq")) {
-    local ($err) = $!;
-    unlink("$VALDIR/.$rq.new");
-    close(F);
-    close(NF);
-    return "Unable to update request file: $err";
+  if ($sth->rows ne 1) {
+    return "UPDATE didn't find request $rq";
   } else {
-    close(F);
-    close(NF);
-    return ("", $replyto, $action, $domain, $lang, $state, $stateinfo);
-  }
-}
-
-#
-# Update attribute in request
-#
-sub rq_set_attr {
-  local ($rq, $user, $newattr, $newval) = ($_[0], $_[1], $_[2], $_[3]);
-  local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo);
-
-  if (!open (F, "$VALDIR/$rq")) {
-    return "Cannot find request $rq.";
-  }
-  flock(F, $LOCK_EX);
-
-  $replyto = <F>; chop $replyto;
-  $line = <F>; chop $line;
-  ($action, $domain, $lang, $state, $stateinfo) = split(/ /, $line);
-
-  if (!&zauth_check(&parent_of($domain), $user)) {
-    close(F);
-    return "Access to request $rq not authorized.";
-  }
-
-  umask 022;
-  if (!open(NF, ">$VALDIR/.$rq.new")) {
-    close(F);
-    return "Unable to update request file.";
-  }
-  flock(NF, $LOCK_EX);
-
-  print NF "$replyto\n$line\n";
-  # add zone tag, if not yet converted
-  if ($_ = <F>) {
-     if (!/^;;zone/) { print NF ";;zone\n"; print NF $_; }
-     else { print NF $_; }
-  }
-
-  # Copy zone info
-  while (<F>) {
-    if (/^;;/) { last; };
-    print NF $_;
-  }
-  # force whois tag
-  print NF ";;whois\n";
-  # Copy old whois info
-  while (<F>) {
-    if (/^;;/) { last; };
-    print NF $_;
-  }
-
-  if (/^;;attr/) {
-    # attr section found, update the attribute we're looking for
-    local ($found) = 0;
-    print NF $_;
-    while (<F>) {
-      if (/^;;/) { last }
-      if (!$found && /^$newattr:/) {
-	print NF "$newattr: $newval\n";
-        $found = 1;
-      } else {
-	print NF $_;
-      }
-    }
-    if (!$found) {
-      print NF "$newattr: $newval\n";
-    }
-    print NF $_;
-  } elsif (/^;;$/) {
-    # no attr section, old format:
-    # convert format, insert attr section
-    print NF ";;attr\n";
-    print NF "$newattr: $newval\n";
-    # force additional info tag
-    print NF ";;add\n";
-  } else {
-    # no attr section, new format: insert attr section
-    local ($savetag) = $_;
-    # no attribute yet
-    print NF ";;attr\n";
-    print NF "$newattr: $newval\n";
-    print NF "$savetag";
-  }
-
-  # Copy additional info
-  while (<F>) {
-    print NF $_;
-  }
-
-  # We need to keep the locks until after the rename.
-
-  if (!rename("$VALDIR/.$rq.new", "$VALDIR/$rq")) {
-    local ($err) = $!;
-    unlink("$VALDIR/.$rq.new");
-    close(F);
-    close(NF);
-    return "Unable to update request file: $err";
-  } else {
-    close(F);
-    close(NF);
-    return ("", $replyto, $action, $domain, $lang, $state, $stateinfo);
+    return "";
   }
 }
 
@@ -190,136 +55,67 @@ sub rq_set_state {
   local ($rq, $user, $newstate, $newstateinfo) = ($_[0], $_[1], $_[2], $_[3]);
   local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo);
 
-  if (!open (F, "$VALDIR/$rq")) {
-    return "Cannot find request $rq.";
-  }
-  flock(F, $LOCK_EX);
+  my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
 
-  $replyto = <F>; chop $replyto;
-  $line = <F>; chop $line;
-  ($action, $domain, $lang, $state, $stateinfo) = split(/ /, $line);
-
-  if (!&zauth_check(&parent_of($domain), $user)) {
-    close(F);
+  if (!&zauth_check(&parent_of(&rq_db_get_domain($dbh, $rq)), $user)) {
     return "Access to request $rq not authorized.";
   }
 
-  umask 022;
-  if (!open(NF, ">$VALDIR/.$rq.new")) {
-    close(F);
-    return "Unable to update request file.";
-  }
-  flock(NF, $LOCK_EX);
+  my $sth = $dbh->prepare("UPDATE requests SET state=? WHERE id=?");
+  $sth->execute($newstate, $rq);
 
-  print NF "$replyto\n$action $domain $lang $newstate $newstateinfo\n";
-  # add zone tag, if not yet converted
-  if ($_ = <F>) {
-     if (!/^;;zone/) { print NF ";;zone\n"; print NF $_; }
-     else { print NF $_; }
-  }
-  while (<F>) {
-    print NF $_;
-  }
-
-  # We need to keep the locks until after the rename.
-
-  if (!rename("$VALDIR/.$rq.new", "$VALDIR/$rq")) {
-    local ($err) = $!;
-    unlink("$VALDIR/.$rq.new");
-    close(F);
-    close(NF);
-    return "Unable to update request file: $err";
+  if ($sth->rows ne 1) {
+    return "UPDATE didn't find request $rq";
   } else {
-    close(F);
-    close(NF);
-    return ("", $replyto, $action, $domain, $lang, $state, $stateinfo);
+    return "";
   }
 }
 
 #
 # Return request info
 #
-sub rq_get_info {
-  local ($rq, $user) = ($_[0], $_[1]);
-  local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo,
-	 $dns, $dbrecords);
+sub rq_db_get_info {
+  local ($dbh, $rq, $user) = ($_[0], $_[1], $_[2]);
 
-  if (!open (F, "$VALDIR/$rq")) {
-    return "Cannot find request $rq.";
-  }
-  flock(F, $LOCK_SH);
+  my $sth = $dbh->prepare("SELECT email, action, fqdn, language, state,
+	zonerecord, whoisrecord FROM requests WHERE id=?");
+  $sth->execute($rq);
 
-  $replyto = <F>; chop $replyto;
-  $line = <F>; chop $line;
-
-  ($action, $domain, $lang, $state, $stateinfo) = split(/ /, $line);
+  my @row = $sth->fetchrow_array;
+  my ($replyto, $action, $domain, $lang, $state, $dns, $dbrecords) = @row;
 
   if (!&zauth_check(&parent_of($domain), $user)) {
-    close(F);
     return "Access to request $rq not authorized.";
   }
 
-  if ($_ = <F>) {
-    if (!/^;;zone/) { $dns = $_; }
-  }
+  $dbrecords =~ s/\nmnt-by:/\nMNT-BY:/sg;
+  $dbrecords =~ s/\nsource:/\nCHANGED: \nsource:/sg;
 
-  # Read zone info
-  while (<F>) {
-    last if (/^;;/);
-    $dns .= $_;
-  }
-
-  # Read whois info
-  local ($in_obj);
-  while (<F>) {
-    if (/^;;/) {
-      if ($in_obj) { $dbrecords .= "CHANGED: \n\n"; }
-      $in_obj = 0; last
-    } elsif (/^$/) {
-      if ($in_obj) { $dbrecords .= "CHANGED: \n\n"; }
-      $in_obj = 0; next
-    } elsif (/^mnt-by:/) {
-      $dbrecords .= "MNT-BY: \n"; next
-    }
-    $dbrecords .= $_; $in_obj = 1;
-  }
-  if ($in_obj) { $dbrecords .= "CHANGED: \n\n"; }
-
-  close(F);
-
-  return ("", $replyto, $action, $domain, $lang, $state, $stateinfo,
+  return ("", $replyto, $action, $domain, $lang, $state, "",
 	  $dns, $dbrecords);
+}
+
+sub rq_get_info {
+  local ($rq, $user) = ($_[0], $_[1]);
+  my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
+  return &rq_db_get_info($dbh, $rq, $user);
 }
 
 #
 # Delete request
 #
 sub rq_remove {
-  local ($rq, $user, $moveto) = ($_[0], $_[1], $_[2]);
-  local ($replyto, $action, $domain, $lang, $line, $state, $stateinfo,
-	 $dns, $dbrecords);
+  local ($rq, $user, $state) = ($_[0], $_[1], $_[2]);
 
-  if (!open (F, "$VALDIR/$rq")) {
-    return "Cannot find request $rq.";
-  }
-  flock(F, $LOCK_EX);
-  $replyto = <F>; chop $replyto;
-  $line = <F>; chop $line;
-  ($action, $domain, $lang, $state, $stateinfo) = split(/ /, $line);
+  my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
 
-  if (!&zauth_check(&parent_of($domain), $user)) {
-    close(F);
+  if (!&zauth_check(&parent_of(&rq_db_get_domain($dbh, $rq)), $user)) {
     return "Access to request $rq not authorized.";
   }
-
-  # We need to keep the lock until after the rename
-
-  if (!rename("$VALDIR/$rq", "$moveto/$rq")) {
-    local ($err) = $!;
-    close(F);
-    return "rename: $err";
-  }
-  close(F);
+  my $sth = $dbh->prepare("UPDATE requests SET state=? WHERE id=?");
+  $sth->execute($state, $rq);
+  $sth = $dbh->prepare("DELETE FROM requests WHERE id=?");
+  $sth->execute($rq);
 
   return "";
 }
@@ -330,17 +126,15 @@ sub rq_remove {
 sub rq_list {
   local (@rqlist);
    
-  opendir(D, "$VALDIR") || die "Can't open $VALDIR: $!";
-  local (@dirlist) = readdir(D);
-  closedir(D);
+  my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
+  my $sth = $dbh->prepare("SELECT id FROM requests ORDER BY id");
+  $sth->execute();
 
-  @dirlist = sort(@dirlist);
-
-  for (@dirlist) {
-     next if $_ =~ /^\./;
-     @rqlist = (@rqlist, $_);
+  my @row;
+  while (@row = $sth->fetchrow_array) {
+    my ($rq) = @row;
+    @rqlist = (@rqlist, $rq);
   }
-
   return @rqlist;
 }
 
@@ -348,29 +142,13 @@ sub rq_list {
 # Create a new request
 #
 sub rq_create {
-  local ($rq, $replyto, $action, $domain, $lang)
-	= ($_[0], $_[1], $_[2], $_[3], $_[4]);
-  local ($dns, $dbrecords);
+  local ($rq, $replyto, $action, $domain, $lang, $dns, $dbrecords)
+	= ($_[0], $_[1], $_[2], $_[3], $_[4], $_[5], $_[6]);
 
-  umask 022;
-  open(VR, ">$VALDIR/.$rq.tmp") || die "Cannot open $VALDIR/.$rq.tmp: $!\n";
-  flock(VR, $LOCK_EX);
-  print VR "$replyto\n";
-  print VR "$req $domain $lang WaitAck\n;;zone\n";
-  return "VR";
-}
-
-sub rq_end_dns {
-  local ($rq, $fh) = ($_[0], $_[1]);
-  print $fh ";;whois\n";
-}
-
-sub rq_end_create {
-  local ($rq, $fh) = ($_[0], $_[1]);
-  print $fh ";;add\n";
-  rename("$VALDIR/.$rq.tmp", "$VALDIR/$rq")
-	|| die "Cannot rename $VALDIR/.$rq.tmp: $!\n";
-  close($fh);
+  my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
+  my $sth = $dbh->prepare("INSERT INTO requests (id, email, action, fqdn, language, state, zonerecord, whoisrecord) VALUES (?,?,?,?,?,?,?,?)");
+  $sth->execute($rq, $replyto, $action, $domain, $lang, "WaitAck",
+	$dns, $dbrecords);
 }
 
 #
@@ -389,9 +167,10 @@ sub rq_make_id {
 #
 sub rq_exists {
   local ($rq) = $_[0];
-  if (!open(REQFILE, "$VALDIR/$rq")) { return ""; }
-  close(REQFILE);
-  return 1;
+  my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
+  my $sth = $dbh->prepare("SELECT NULL FROM requests WHERE id=?");
+  $sth->execute($rq);
+  return $sth->rows;
 }
 
 #

@@ -118,10 +118,12 @@ sub dodir {
   if ($nbypage eq '') { $nbypage = 100 }
   print "\n";
 
+  my $dbh = &rq_get_db();
+
   my $n = 1;
   foreach $rq (@dirlist) {
     local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo)
-	= &rq_get_info($rq, $user);
+	= &rq_db_get_info($dbh, $rq, $user);
 
     if (!$error && $state ne 'WaitAck') {
       $foundone = 1;
@@ -191,12 +193,6 @@ sub dostate {
 
   local ($error, $replyto, $action, $domain, $lang, $state)
 	= &rq_set_state($rq, $user, $newstate, $newstateinfo);
-
-  local ($curdate) = `date`; chop $curdate;
-
-  &rq_set_attr($rq, $user,
-	       "state-changed",
-	       "$newstate($newstateinfo) by $user, $curdate");
 
   if ($error) {
     print "Error: $error.<P>\n";
