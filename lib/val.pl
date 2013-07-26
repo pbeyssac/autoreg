@@ -296,7 +296,7 @@ sub doreject {
     print "<STRONG>sendmail returned an error !</STRONG><P>\n";
     print "Request kept.\n";
   } else {
-    &rq_remove($rq, $user, $REJDIR);
+    &rq_remove($rq, $user, 'Rej');
     print "End of processing.<P>\n";
   }
 }
@@ -534,7 +534,7 @@ sub doaccept {
     close(SMU);
   }
 
-  if (!$alldryrun && !$err) { &rq_remove($rq, $user, $ACCDIR); }
+  if (!$alldryrun && !$err) { &rq_remove($rq, $user, 'Acc'); }
   print "End of processing.<P>\n";
 }
 
