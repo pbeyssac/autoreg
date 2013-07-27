@@ -143,7 +143,7 @@ sub rq_list {
   my $sth;
 
   if ($offset ne '' && $limit ne '') {
-    $sth = $dbh->prepare("SELECT id FROM requests ORDER BY id OFFSET ? LIMIT ?");
+    $sth = $dbh->prepare("SELECT id FROM requests WHERE state != 'WaitAck' ORDER BY id OFFSET ? LIMIT ?");
     $sth->execute($offset, $limit);
   } else {
     $sth = $dbh->prepare("SELECT id FROM requests ORDER BY id");
