@@ -159,6 +159,29 @@ sub rq_list {
 }
 
 #
+# Return list of current acked requests for a given domain
+#
+sub rq_list_dom {
+  my (@rqlist);
+  my ($domain) = ($_[0]);
+
+  $domain =~ tr/a-z/A-Z/;
+
+  my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
+  my $sth;
+
+  $sth = $dbh->prepare("SELECT id FROM requests WHERE fqdn=? AND state != 'WaitAck' ORDER BY id");
+  $sth->execute($domain);
+
+  my @row;
+  while (@row = $sth->fetchrow_array) {
+    my ($rq) = @row;
+    @rqlist = (@rqlist, $rq);
+  }
+  return @rqlist;
+}
+
+#
 # Create a new request
 #
 sub rq_create {

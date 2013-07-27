@@ -99,6 +99,58 @@ sub mkpages {
   if ($page ne $npages-1) { print "<a href=\"?page=".($page+1)."\">&gt;</a> "; }
 }
 
+sub dorqhtml {
+  my ($rq, $replyto, $action, $domain, $lang, $state, $ndom, $args) = @_;
+
+  if ($action eq 'N') {
+	$action = "New";
+  } elsif ($action eq 'M') {
+	$action = "Modify";
+  } elsif ($action eq 'MZ') {
+	$action = "Mod Zone";
+  } elsif ($action eq 'MC') {
+	$action = "Mod Contact";
+  } elsif ($action eq 'D') {
+	$action = "DEL";
+  }
+
+  my $wreplyto = &mkwhoisform("localhost", $replyto, $replyto);
+  chop $wreplyto;
+  my $tr = '<tr>';
+  if ($ndom > 1) {
+    $tr = '<tr class="dup">';
+  } elsif ($domain =~ /\.[^\.]+\.[^\.]+\.[^\.]+/) {
+    $tr = '<tr class="l3">';
+  }
+  if ($state eq 'Open') {
+    $rqhtml = "$tr<td><A HREF=\"?$args\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
+  } elsif ($state eq 'Answered' && $stateinfo) {
+    $rqhtml = "$tr<td><A HREF=\"?$args\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
+  } else {
+    $rqhtml = "$tr<td><A HREF=\"?$args\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
+  }
+  return $rqhtml;
+}
+
+sub dodup {
+  my ($user, $scriptname, $domain) = ($_[0], $_[1], $_[2]);
+  my @rqlist = &rq_list_dom($domain);
+  my $ndom = @rqlist;
+
+  print "\n<style>\n";
+  print ".dup {background-color:#fcc}\n.l3 {background-color:#cfc}\n";
+  print "</style>\n";
+  print "<table>\n";
+  my $dbh = &rq_get_db();
+  foreach $rq (@rqlist) {
+    my ($error, $replyto, $action, $domain, $lang, $state, $ndom)
+	= &rq_db_get_info($dbh, $rq, $user);
+    print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
+	"rq=$rq");
+  }
+  print "</table>\n";
+}
+
 sub dodir {
   local ($user) = $_[0];
   local ($scriptname) = $_[1];
@@ -109,7 +161,6 @@ sub dodir {
   local ($foundone) = 0;
 
   local ($rq);
-  local ($rqhtml);
 
   if ($page eq '') { $page = 0 }
   if ($nbypage eq '') { $nbypage = 100 }
@@ -136,33 +187,13 @@ sub dodir {
     if (!$error && $state ne 'WaitAck') {
       $foundone = 1;
 
-      if ($action eq 'N') {
-	$action = "New";
-      } elsif ($action eq 'M') {
-	$action = "Modify";
-      } elsif ($action eq 'MZ') {
-	$action = "Mod Zone";
-      } elsif ($action eq 'MC') {
-	$action = "Mod Contact";
-      } elsif ($action eq 'D') {
-	$action = "DEL";
-      }
-      my $wreplyto = &mkwhoisform("localhost", $replyto, $replyto);
-      chop $wreplyto;
-      my $tr = '<tr>';
       if ($ndom > 1) {
-	$tr = '<tr class="dup">';
-      } elsif ($domain =~ /\.[^\.]+\.[^\.]+\.[^\.]+/) {
-	$tr = '<tr class="l3">';
-      }
-      if ($state eq 'Open') {
-	$rqhtml = "$tr<td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto\n";
-      } elsif ($state eq 'Answered' && $stateinfo) {
-	$rqhtml = "$tr<td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state by $stateinfo)\n";
+        print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
+		"dup=$domain");
       } else {
-	$rqhtml = "$tr<td><A HREF=\"?rq=$rq\" target=\"_blank\"><TT>$rq</TT></A><td>$action<td>$lang<td>$domain<td>$wreplyto ($state)\n";
+        print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
+		"rq=$rq");
       }
-      print $rqhtml;
     }
   }
   print "</table>\n";
