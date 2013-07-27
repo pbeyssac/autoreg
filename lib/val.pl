@@ -675,14 +675,6 @@ sub dodisplay {
     print "</FORM>\n";
     print "</div>\n";
 
-    print "<div style=\"background-color:#eee\"><STRONG>Uncommitted</STRONG> dry-run results:\n";
-    my ($st, $rtext) = &dowhoisupdate($text, 1);
-    if ($st ne 'OK') {
-	print "<STRONG>Error</STRONG>\n";
-    }
-    my $htmltext = &tohtml($rtext);
-    print "<PRE>\n$htmltext</PRE></div>\n";
-
     #
     # Local form only for whois on domain name
     #
