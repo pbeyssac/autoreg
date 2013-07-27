@@ -188,9 +188,10 @@ sub rq_make_id {
 sub rq_exists {
   local ($rq) = $_[0];
   my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
-  my $sth = $dbh->prepare("SELECT NULL FROM requests WHERE id=?");
+  my $sth = $dbh->prepare("SELECT COUNT(*) FROM requests WHERE id=?");
   $sth->execute($rq);
-  return $sth->rows;
+  my @rows = $sth->fetchrow_array;
+  return @rows[0];
 }
 
 #
