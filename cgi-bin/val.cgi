@@ -15,7 +15,9 @@ require "$DNSLIB/val.pl";
   
 $date=`date +%Y%m%d`; chop $date;
 
-print "Content-Type: text/html; charset=utf-8\n\n<HTML><HEAD>";
+print "Content-Type: text/html; charset=utf-8\n\n";
+print "<HTML><HEAD>";
+print "<link rel=\"stylesheet\" type=\"text/css\" href=\"/adm/admstyle.css\">";
 print "</HEAD><BODY>\n";
 
 &content;

@@ -144,10 +144,6 @@ sub dodom {
   my @rqlist = &rq_list_dom($domain);
   my $ndom = @rqlist;
 
-  print "\n<style>\n";
-  print ".dup {background-color:#fdd}\n.l3 {background-color:#cfc}\n";
-  print ".dup2 {background-color:#fbb}\n";
-  print "</style>\n";
   print "<table>\n";
   my $dbh = &rq_get_db();
   foreach $rq (@rqlist) {
@@ -184,10 +180,6 @@ sub dodir {
   my $dbh = &rq_get_db();
 
   &mkpages($page, $npages);
-  print "\n<style>\n";
-  print ".dup {background-color:#fdd}\n.l3 {background-color:#cfc}\n";
-  print ".dup2 {background-color:#fbb}\n";
-  print "</style>\n";
   print "<table>\n";
 
   foreach $rq (@dirlist) {
@@ -638,7 +630,7 @@ sub dodisplay {
   }
 
   if ($action eq 'N' || $action eq 'M' || $action eq 'MZ') {
-    print "<H3>Records to be inserted in zone file</H3><PRE style=\"background-color:#eee\">\n";
+    print "<H3>Records to be inserted in zone file</H3><PRE class=\"zone\">\n";
     print $dns;
     print "</PRE>\n";
   }
@@ -674,7 +666,7 @@ sub dodisplay {
     $htmltext = &tohtml($htmltext);
 
     $act="editwhois";
-    print "<div style=\"float:left\">";
+    print "<div class=\"edwhois\">";
     print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
     print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
@@ -689,7 +681,7 @@ sub dodisplay {
     #
     # Local form only for whois on domain name
     #
-    print "<div style=\"clear:both\">\n";
+    print "<div class=\"formwhois\">\n";
     &dolocalwhoisform($domain);
     print "</div>\n";
     #
