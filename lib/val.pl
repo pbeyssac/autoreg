@@ -100,7 +100,8 @@ sub mkpages {
 }
 
 sub dorqhtml {
-  my ($rq, $replyto, $action, $domain, $lang, $state, $ndom, $args) = @_;
+  my ($rq, $replyto, $action, $domain, $lang, $state, $ndom,
+	$args, $nemail) = @_;
 
   if ($action eq 'N') {
 	$action = "New";
@@ -117,7 +118,9 @@ sub dorqhtml {
   my $wreplyto = &mkwhoisform("localhost", $replyto, $replyto);
   chop $wreplyto;
   my $tr = '<tr>';
-  if ($ndom > 1) {
+  if ($ndom > 1 && $nemail > 1) {
+    $tr = '<tr class="dup2">';
+  } elsif ($ndom > 1) {
     $tr = '<tr class="dup">';
   } elsif ($domain =~ /\.[^\.]+\.[^\.]+\.[^\.]+/) {
     $tr = '<tr class="l3">';
@@ -138,15 +141,17 @@ sub dodup {
   my $ndom = @rqlist;
 
   print "\n<style>\n";
-  print ".dup {background-color:#fcc}\n.l3 {background-color:#cfc}\n";
+  print ".dup {background-color:#fdd}\n.l3 {background-color:#cfc}\n";
+  print ".dup2 {background-color:#fbb}\n";
   print "</style>\n";
   print "<table>\n";
   my $dbh = &rq_get_db();
   foreach $rq (@rqlist) {
-    my ($error, $replyto, $action, $domain, $lang, $state, $ndom)
+    my ($error, $replyto, $action, $domain, $lang, $state, $ndom,
+	$dns, $dbrecords, $nemail)
 	= &rq_db_get_info($dbh, $rq, $user);
     print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
-	"rq=$rq");
+	"rq=$rq", $nemail);
   }
   print "</table>\n";
 }
@@ -176,12 +181,14 @@ sub dodir {
 
   &mkpages($page, $npages);
   print "\n<style>\n";
-  print ".dup {background-color:#fcc}\n.l3 {background-color:#cfc}\n";
+  print ".dup {background-color:#fdd}\n.l3 {background-color:#cfc}\n";
+  print ".dup2 {background-color:#fbb}\n";
   print "</style>\n";
   print "<table>\n";
 
   foreach $rq (@dirlist) {
-    local ($error, $replyto, $action, $domain, $lang, $state, $ndom)
+    local ($error, $replyto, $action, $domain, $lang, $state, $ndom,
+	$dns, $dbrecords, $nemail)
 	= &rq_db_get_info($dbh, $rq, $user);
 
     if (!$error && $state ne 'WaitAck') {
@@ -189,7 +196,7 @@ sub dodir {
 
       if ($ndom > 1) {
         print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
-		"dup=$domain");
+		"dup=$domain", $nemail);
       } else {
         print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
 		"rq=$rq");

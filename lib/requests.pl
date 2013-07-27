@@ -91,12 +91,18 @@ sub rq_db_get_info {
   $sth = $dbh->prepare("SELECT COUNT(*) FROM requests WHERE fqdn=? AND state != 'WaitAck'");
   $sth->execute($domain);
   @row = $sth->fetchrow_array;
+  my $dups = @row[0];
+
+  $sth = $dbh->prepare("SELECT COUNT(*) FROM  (SELECT email, count(email) FROM requests WHERE fqdn=? AND state != 'WaitAck' GROUP BY email ORDER BY email) AS tmp");
+  $sth->execute($domain);
+  @row = $sth->fetchrow_array;
+  my $emails = @row[0];
 
   $dbrecords =~ s/\nmnt-by:/\nMNT-BY:/sg;
   $dbrecords =~ s/\nsource:/\nCHANGED: \nsource:/sg;
 
-  return ("", $replyto, $action, $domain, $lang, $state, @row[0],
-	  $dns, $dbrecords);
+  return ("", $replyto, $action, $domain, $lang, $state, $dups,
+	  $dns, $dbrecords, $emails);
 }
 
 sub rq_get_info {
