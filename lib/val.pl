@@ -609,6 +609,52 @@ sub doeditwhois {
   if ($error) { print "Error: $error.<P>\n"; return; }
 }
 
+sub mkwhoistext {
+  my ($dbrecords) = @_;
+  my ($line, $text, $htmltext, $nrows);
+  $nrows=0;
+  $dbrecords =~ s/\n$//sg;
+  foreach $line (split('\n', $dbrecords)) {
+    if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
+	if ($1 eq "CHANGED") { next; }
+	elsif ($1 eq "MNT-BY") { next; }
+	elsif ($1 eq "source") { next; }
+	elsif ($1 eq "nic-hdl" && $nh1) { $nh2 = $2; }
+	elsif ($1 eq "nic-hdl") { $nh1 = $2; }
+	elsif ($1 eq "tech-c") { $tc = $2; }
+	elsif ($1 eq "admin-c") { $ac = $2; }
+	elsif ($1 eq "person" && $pn1) { $pn2 = $2; }
+	elsif ($1 eq "person") { $pn1 = $2; };
+	$text .= $line."\n";
+    }
+    $nrows++;
+  }
+  return $text, $nrows
+}
+
+sub dodisplayeditwhois {
+  my ($rq, $user, $scriptname) = @_;
+  my ($error, $replyto, $action, $domain, $lang, $state, $stateinfo,
+	$dns, $dbrecords)
+	= &rq_get_info($rq, $user);
+  if ($error) { print "Error: $error.<P>\n"; return; }
+
+  my ($text, $nrows) = &mkwhoistext($dbrecords);
+
+  $act="editwhois";
+  print "Whois info domain $domain $rq\n";
+  print "<div class=\"edwhois\">";
+  print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
+  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
+  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+  print "<TEXTAREA NAME=\"whois\" COLS=70 ROWS=$nrows>\n";
+  print "$text";
+  print "</TEXTAREA><BR>\n";
+  print "<INPUT TYPE=\"submit\" VALUE=\"Save\">\n";
+  print "</FORM>\n";
+  print "</div>\n";
+}
+
 sub dodisplay {
   local ($rq) = $_[0];
   local ($user) = $_[1];
@@ -639,38 +685,19 @@ sub dodisplay {
     $nh = "";
     print "<H3>Records to be inserted in WHOIS base</H3>\n";
 
-    local ($line, $text, $htmltext, $nrows);
-    $nrows=0;
+    local ($htmltext);
+    local ($text, $nrows) = &mkwhoistext($dbrecords);
+    $htmltext = &tohtml($text);
 
-    $line =~ s/\n$//sg;
-    foreach $line (split('\n', $dbrecords)) {
-      if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
-	  if ($1 eq "CHANGED") { next; }
-	  elsif ($1 eq "MNT-BY") { next; }
-	  elsif ($1 eq "source") { next; }
-	  elsif ($1 eq "nic-hdl" && $nh1) { $nh2 = $2; }
-	  elsif ($1 eq "nic-hdl") { $nh1 = $2; }
-	  elsif ($1 eq "tech-c") { $tc = $2; }
-	  elsif ($1 eq "admin-c") { $ac = $2; }
-	  elsif ($1 eq "person" && $pn1) { $pn2 = $2; }
-	  elsif ($1 eq "person") { $pn1 = $2; };
-	  $text .= $line."\n";
-	  $htmltext .= $line."\n";
-      }
-      $nrows++;
-    }
-    $htmltext = &tohtml($htmltext);
-
-    $act="editwhois";
-    print "<div class=\"edwhois\">";
-    print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
+    $act="dewhois";
+    print "<div>\n";
+    print "<FORM ACTION=\"$scriptname\" METHOD=\"GET\">\n";
     print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-    print "<TEXTAREA NAME=\"whois\" COLS=70 ROWS=$nrows>\n";
+    print "<PRE>\n";
     print "$text";
-    print "</TEXTAREA><BR>\n";
-    print "If necessary, edit the above then\n";
-    print "<INPUT TYPE=\"submit\" VALUE=\"submit\"> to save changes\n";
+    print "</PRE>\n";
+    print "<INPUT TYPE=\"submit\" VALUE=\"Edit whois\">\n";
     print "</FORM>\n";
     print "</div>\n";
 

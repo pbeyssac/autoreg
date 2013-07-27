@@ -51,6 +51,8 @@ if (!$user_mail) {
 if ($content{'action'} eq 'editwhois') {
   &doeditwhois($content{'rq'}, $user, $content{'whois'});
   &dodisplay($content{'rq'}, $user, $scriptname);
+} elsif ($content{'action'} eq 'dewhois') {
+  &dodisplayeditwhois($content{'rq'}, $user, $scriptname);
 } elsif ($content{'action'} eq 'display') {
   &dodisplay($content{'rq'}, $user);
 } elsif ($content{'action'} eq '' && $content{'rq'} ne '') {
