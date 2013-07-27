@@ -97,6 +97,10 @@ sub mkpages {
 	}
   }
   if ($page ne $npages-1) { print "<a href=\"?page=".($page+1)."\">&gt;</a> "; }
+  print "<FORM ACTION=\"\" METHOD=\"GET\">\n";
+  print "Domain: <INPUT NAME=\"dom\" TYPE=\"text\">\n";
+  print "<INPUT TYPE=\"submit\" VALUE=\"Search\">\n";
+  print "</FORM>\n";
 }
 
 sub dorqhtml {
