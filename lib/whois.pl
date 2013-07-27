@@ -61,7 +61,6 @@ sub whois_html {
       return -1;
    }
    my $c = 0;
-   print "<TT>\"$request\" at $server</TT>\n";
    print "<PRE>\n";
    while (<WHOIS>) {
       if (defined($typecount) && /^$typecount:/) { $c++ }

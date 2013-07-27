@@ -639,19 +639,15 @@ sub dodisplay {
     $nh = "";
     print "<H3>Records to be inserted in WHOIS base</H3>\n";
 
-    print "(lines with a \"_\" by itself are considered empty)<BR>\n";
-
     local ($line, $text, $htmltext, $nrows);
-    $nrows=3;
+    $nrows=0;
 
+    $line =~ s/\n$//sg;
     foreach $line (split('\n', $dbrecords)) {
-      if ($line =~ /^\s*$/) {
-	  $text .= $line."\n";
-          $line = "_";
-	  $htmltext .= "_\n";
-      } elsif ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
-	  if ($1 eq "CHANGED") { $line = "changed: $user_mail"; }
-	  elsif ($1 eq "MNT-BY") { $line = "mnt-by:  $user_mntby"; }
+      if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
+	  if ($1 eq "CHANGED") { next; }
+	  elsif ($1 eq "MNT-BY") { next; }
+	  elsif ($1 eq "source") { next; }
 	  elsif ($1 eq "nic-hdl" && $nh1) { $nh2 = $2; }
 	  elsif ($1 eq "nic-hdl") { $nh1 = $2; }
 	  elsif ($1 eq "tech-c") { $tc = $2; }
@@ -672,23 +668,12 @@ sub dodisplay {
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
     print "<TEXTAREA NAME=\"whois\" COLS=70 ROWS=$nrows>\n";
     print "$text";
-    print "_\n_\n_\n</TEXTAREA><BR>\n";
+    print "</TEXTAREA><BR>\n";
     print "If necessary, edit the above then\n";
     print "<INPUT TYPE=\"submit\" VALUE=\"submit\"> to save changes\n";
     print "</FORM>\n";
     print "</div>\n";
 
-    #
-    # Local form only for whois on domain name
-    #
-    print "<div class=\"formwhois\">\n";
-    &dolocalwhoisform($domain);
-    print "</div>\n";
-    #
-    # Forms for whois on NIC handles
-    #
-    if ($nh1) { &dowhoisforms($nh1); }
-    if ($nh2 && $nh1 ne $nh2) { &dowhoisforms($nh2); }
     #
     # whois outputs for technical/admin contacts and person names
     #
@@ -700,17 +685,6 @@ sub dodisplay {
 	{ $dups += (&dowhoisperson($pn1) > 0); }
     if ($pn2 && $pn2 ne $pn1 && $pn2 ne $tc && $pn2 ne $ac)
 	{ $dups += (&dowhoisperson($pn2) > 0); }
-    #
-    # Forms for whois on technical/admin contacts and person names
-    #
-    if ($tc && $tc ne $nh1 && $tc ne $nh2)
-	{ &dowhoisforms($tc); }
-    if ($ac && $ac ne $tc && $ac ne $nh1 && $ac ne $nh2)
-	{ &dowhoisforms($ac); }
-    if ($pn1 && $pn1 ne $tc && $pn1 ne $ac)
-	{ &dolocalwhoisform($pn1); }
-    if ($pn2 && $pn2 ne $pn1 && $pn2 ne $tc && $pn2 ne $ac)
-	{ &dolocalwhoisform($pn2); }
   }
 
   if ($action eq 'MZ' || $action eq 'D' || $action eq 'M') {
@@ -766,7 +740,7 @@ sub dodisplay {
     $act='reject';
     print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
     print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
-    print "Reason:<BR><TEXTAREA NAME=\"reason\" ROWS=6 COLS=77></TEXTAREA>\n";
+    print "Reason:<BR><TEXTAREA NAME=\"reason\" ROWS=3 COLS=77></TEXTAREA>\n";
     print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
     print "</FORM>\n";
