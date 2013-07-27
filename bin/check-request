@@ -308,9 +308,9 @@ if ($ref{"tt"} && $ref{"tt"} !~ /^\+?[0-9 -]*$/) {
 }
 
 if ($makewhois) {
-	$ref{"ae"} = &whois_contact_email("whois.eu.org", $ref{"ah"});
+	$ref{"ae"} = &whois_contact_email($ref{"ah"});
 	if ($ref{"th"} ne $ref{"ah"}) {
-	    $ref{"te"} = &whois_contact_email("whois.eu.org", $ref{"th"})
+	    $ref{"te"} = &whois_contact_email($ref{"th"})
 	} else {
 	    $ref{"te"} = $ref{"ae"}
 	}
