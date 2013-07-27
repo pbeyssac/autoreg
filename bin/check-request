@@ -479,25 +479,25 @@ sub checkname {
 	}
 }
 
-sub whodata_domain {
-	$h = "domain:  ", $domain, "\n";
-	$h .= "address: ", $ref{"om"}, "\n" if $ref{"om"};
-	$h .= "address: ", $ref{"oa"}, "\n" if $ref{"oa"};
-	$h .= "address: ", $ref{"op"}, "\n" if $ref{"op"};
-	$h .= "address: ", $ref{"oc"}, "\n" if $ref{"oc"};
-	$h .= "address: ", $ref{"os"}, "\n" if $ref{"os"};
-	$h .= "address: ", $ref{"on"}, "\n" if $ref{"on"};
+sub whodata {
+	$h = "domain:  $domain\n";
+	$h .= "address: $ref{'om'}\n" if $ref{"om"};
+	$h .= "address: $ref{'oa'}\n" if $ref{"oa"};
+	$h .= "address: $ref{'op'}\n" if $ref{"op"};
+	$h .= "address: $ref{'oc'}\n" if $ref{"oc"};
+	$h .= "address: $ref{'os'}\n" if $ref{"os"};
+	$h .= "address: $ref{'on'}\n" if $ref{"on"};
 
 	if ($ref{"ah"}) {
-	    $h .= "admin-c: ", $ref{"ah"}, "\n";
+	    $h .= "admin-c: $ref{'ah'}\n";
 	} elsif ($ref{"am"}) {
-	    $h .= "admin-c: ", $ref{"am"}, "\n";
+	    $h .= "admin-c: $ref{'am'}\n";
 	}
 
 	if ($ref{"th"}) {
-	    $h .= "tech-c:  ", $ref{"th"}, "\n";
+	    $h .= "tech-c:  $ref{'th'}\n";
 	} elsif ($ref{"tm"}) {
-	    $h .= "tech-c:  ", $ref{"tm"}, "\n";
+	    $h .= "tech-c:  $ref{'tm'}\n";
 	}
 
 	#$h .= "mnt-by:  $MNTBY\n";
@@ -505,10 +505,6 @@ sub whodata_domain {
 	$h .= "source:  $DBNAME\n";
 	$h .= "\n";
 	return $h;
-}
-
-sub whodata {
-	return &whodata_domain();
 }
 
 sub tabify {
