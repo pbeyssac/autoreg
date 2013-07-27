@@ -135,7 +135,7 @@ sub dorqhtml {
   return $rqhtml;
 }
 
-sub dodup {
+sub dodom {
   my ($user, $scriptname, $domain) = ($_[0], $_[1], $_[2]);
   my @rqlist = &rq_list_dom($domain);
   my $ndom = @rqlist;
@@ -196,7 +196,7 @@ sub dodir {
 
       if ($ndom > 1) {
         print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
-		"dup=$domain", $nemail);
+		"dom=$domain", $nemail);
       } else {
         print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
 		"rq=$rq");
