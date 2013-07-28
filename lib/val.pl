@@ -571,33 +571,16 @@ sub doeditwhois {
     return "";
   }
   # Remove trailing \r
-  # Remove empty lines (some browsers suppress them when POSTing)
-  # Remove leading "_" lines
-  # Replace other "_" with empty lines
   # Remove trailing empty lines
   # Remove any content for mnt-by:
   # Remove changed:
-  # Force an empty line before "person:" and "domain:"
 
   foreach $line (split('\n', $newwhois, $nl)) {
     if ($line =~ /\r$/) { chop $line }
-    if ($line =~ /^$/) {
-        next;
-    } elsif ($line =~ /^_$/) {
-        $nempty++;
-        next;
-    } elsif ($line =~ /^person:/) {
-        $nempty = 1;
-    } elsif ($line =~ /^domain:/) {
-        $nempty = 1;
-    } elsif ($line =~ /^mnt-by:/) {
+    if ($line =~ /^mnt-by:/) {
         $line = "mnt-by: ";
     } elsif ($line =~ /^changed:/) {
 	next;
-    }
-    if ($nempty) {
-      if ($nl) { $wh .= "\n" }
-      $nempty = 0;
     }
     $wh .= $line."\n";
     $nl++;
@@ -625,8 +608,8 @@ sub mkwhoistext {
 	elsif ($1 eq "admin-c") { $ac = $2; }
 	elsif ($1 eq "person" && $pn1) { $pn2 = $2; }
 	elsif ($1 eq "person") { $pn1 = $2; };
-	$text .= $line."\n";
     }
+    $text .= $line."\n";
     $nrows++;
   }
   return $text, $nrows
