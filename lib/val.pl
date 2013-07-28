@@ -718,19 +718,11 @@ sub dodisplay {
     &whois_html($WHOISHOST, $domain);
   }
 
-#  $mymd5 = &md5_get($rq);
-#
-#  if (!$mymd5) {
-#    print "<STRONG>Unable to compute MD5 for \"$rq\"</STRONG><P>\n";
-#  }
-
   print "<HR>\n";
 
   if ($state ne 'WaitAck') {
     $act='accept';
     print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
-#    print ":$mymd5:$user:$act:$rq<BR>\n";
-#    print "<INPUT NAME=\"md5val\" SIZE=34> MD5<BR>\n";
     print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
     print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
     print "<INPUT TYPE=\"submit\" VALUE=\"Accept and mail to $replyto\">\n";
@@ -762,25 +754,7 @@ sub dodisplay {
     print "<INPUT TYPE=\"submit\" VALUE=\"Set state = Answered\"><BR>\n";
     print "(to mark the request as waiting for more details from the requester)<BR>\n";
     print "</FORM>\n";
-
-  } else {
-    print "(request not yet confirmed by user)<P>\n";
-    $act='setopen';
-    print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
-    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-    print "<INPUT TYPE=\"submit\" VALUE=\"Set state = Open\"><BR>\n";
-    print "(to consider the request as acknowledged by the user)<BR>\n";
-    print "</FORM>\n";
   }
-
-#  $act='info';
-#  print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
-#  print "<INPUT TYPE=\"submit\" VALUE=\"Ask more info to $replyto\"><BR>\n";
-#  print "Reason:<TEXTAREA NAME=\"reason\" ROWS=10 COLS=77></TEXTAREA>\n";
-#  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-#  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-#  print "</FORM>\n";
 
   $act='delete';
   print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
