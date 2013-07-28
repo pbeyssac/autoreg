@@ -979,7 +979,7 @@ class Main:
     if forcechangedemail is not None:
       forcechanged = (forcechangedemail, self.now)
     else:
-      forcechanged = None
+      forcechanged = (None, self.now)
 
     # lock contact table from the start;
     # this is necessary to avoid deadlocks if we need to allocate handles:
