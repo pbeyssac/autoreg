@@ -70,15 +70,7 @@ if ($content{'action'} eq 'editwhois') {
 } elsif ($content{'action'} eq 'setanswered') {
   &dostate($content{'rq'}, $user, "Answered");
 } elsif ($content{'action'} eq 'accept') {
-#  local ($err) = &md5_check("$user_pass:".&md5_get($content{'rq'}).
-#			     ":$user:accept:$content{'rq'}",
-#			     $content{'md5val'});
-#  if (!$err) {
-    &doaccept($content{'rq'}, $user, $date);
-#  } else {
-#    print "<STRONG>$err</STRONG></P>\n";
-#    print "The MD5 you have provided is incorrect, or the file has been deleted.<P>\n";
-#  }
+  &doaccept($content{'rq'}, $user, $date);
 } elsif ($content{'action'} eq 'delete') {
   local ($err) = &rq_remove($content{'rq'}, $user, 'DelQuiet');
   if ($err) {
