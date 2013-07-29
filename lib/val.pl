@@ -285,7 +285,7 @@ sub doreject {
   }
 
   my $reason;
-  if (defined($creason)) {
+  if ($creason) {
     $reason = $creason;
   } else {
     $reason = $csubmit;
