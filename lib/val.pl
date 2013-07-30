@@ -144,6 +144,7 @@ sub dodom {
   my @rqlist = &rq_list_dom($domain);
   my $ndom = @rqlist;
 
+  print "<a href=\"?action=mdisplay&dom=$domain\">Show/Edit on one page</a>\n";
   print "<table>\n";
   my $dbh = &rq_get_db();
   foreach $rq (@rqlist) {
@@ -190,9 +191,12 @@ sub dodir {
     if (!$error && $state ne 'WaitAck') {
       $foundone = 1;
 
-      if ($ndom > 1) {
+      if ($ndom > 1 && $nemail > 1) {
         print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
 		"dom=$domain", $nemail);
+      } elsif ($ndom > 1) {
+        print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
+		"action=mdisplay&dom=$domain", $nemail);
       } else {
         print &dorqhtml($rq, $replyto, $action, $domain, $lang, $state, $ndom,
 		"rq=$rq");
@@ -638,15 +642,16 @@ sub dodisplayeditwhois {
   print "</div>\n";
 }
 
-sub dodisplay {
-  local ($rq) = $_[0];
-  local ($user) = $_[1];
-  local ($scriptname) = $_[2];
+sub dodisplay1 {
+  my ($rq, $user, $scriptname, $suffix) = @_;
   my $dups = 0;
 
   local ($error, $replyto, $action, $domain, $lang, $state, $stateinfo,
 	 $dns, $dbrecords)
 	= &rq_get_info($rq, $user);
+
+  print "<H2>Request $rq</H2>\n";
+
   if ($error) { print "Error: $error.<P>\n"; return; }
 
   $ENV{'ARLANG'} = $lang;
@@ -673,16 +678,10 @@ sub dodisplay {
     $htmltext = &tohtml($text);
 
     $act="dewhois";
-    print "<div>\n";
-    print "<FORM ACTION=\"$scriptname\" METHOD=\"GET\">\n";
-    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
     print "<PRE>\n";
     print "$text";
     print "</PRE>\n";
-    print "<INPUT TYPE=\"submit\" VALUE=\"Edit whois\">\n";
-    print "</FORM>\n";
-    print "</div>\n";
+    print "<A HREF=\"$scriptname?rq=$rq&action=$act\" target=\"_blank\">Edit whois</a>\n";
 
     #
     # whois outputs for technical/admin contacts and person names
@@ -718,52 +717,63 @@ sub dodisplay {
     &whois_html($WHOISHOST, $domain);
   }
 
-  print "<HR>\n";
+  print "Requester: <a href=\"mailto:$replyto\">$replyto</a>\n";
+  print "<INPUT NAME=\"rq$suffix\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
+  print "<div>\n";
+  print "Action: <select name=\"action$suffix\">\n";
 
   if ($state ne 'WaitAck') {
-    $act='accept';
-    print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
-    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-    print "<INPUT TYPE=\"submit\" VALUE=\"Accept and mail to $replyto\">\n";
-    print "</FORM>\n";
+    print "<option value=\"none\">None</option>\n";
+    print "<option value=\"accept\">Accept</option>\n";
 
-    $act='reject';
-    print "Pre-filled answers:\n";
-    print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
-    print "<INPUT TYPE=\"submit\" NAME=\"submit\" VALUE=\"Duplicate request\">\n";
-    print "<INPUT TYPE=\"submit\" NAME=\"submit\" VALUE=\"Bogus address information\">\n";
-    print "<INPUT TYPE=\"submit\" NAME=\"submit\" VALUE=\"Please provide a full name\">\n";
-    print "<INPUT TYPE=\"submit\" NAME=\"submit\" VALUE=\"Sorry, this domain is already allocated\">\n";
-    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-    print "</FORM>\n";
+    print "<option value=\"rejectdup\">Duplicate request</option>\n";
+    print "<option value=\"rejectbog\">Reject: Bogus address</option>\n";
+    print "<option value=\"rejectful\">Reject: no full name</option>\n";
+    print "<option value=\"rejectnok\">Reject: already allocated</option>\n";
 
-    $act='reject';
-    print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
-    print "<INPUT TYPE=\"submit\" VALUE=\"Reject and mail to $replyto\"><BR>\n";
-    print "Reason:<BR><TEXTAREA NAME=\"reason\" ROWS=3 COLS=77></TEXTAREA>\n";
-    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-    print "</FORM>\n";
-
-    $act='setanswered';
-    print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
-    print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-    print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-    print "<INPUT TYPE=\"submit\" VALUE=\"Set state = Answered\"><BR>\n";
-    print "(to mark the request as waiting for more details from the requester)<BR>\n";
-    print "</FORM>\n";
+    print "<option value=\"rejectcust\">Reject (write reason below)</option>\n";
+    print "<option value=\"setanswered\">Set state = Answered</option>\n";
   }
+  print "<option value=\"delete\">Delete quietly</option>\n";
 
-  $act='delete';
-  print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
-  print "<INPUT NAME=\"action\" TYPE=\"hidden\" VALUE=\"$act\">\n";
-  print "<INPUT NAME=\"rq\" TYPE=\"hidden\" VALUE=\"$rq\">\n";
-  print "<INPUT TYPE=\"submit\" VALUE=\"Delete quietly\">\n";
+  print "</select>\n";
+  print "</div>\n";
+  if ($state ne 'WaitAck') {
+    print "Reason:<div><TEXTAREA NAME=\"reason$suffix\" ROWS=3 COLS=77></TEXTAREA></div>\n";
+  }
+  print "<HR>\n";
+}
+
+sub dodisplaytail {
+  my ($rq, $user, $scriptname) = @_;
+  print "<INPUT TYPE=\"submit\" VALUE=\"Submit all\">\n";
   print "</FORM>\n";
-
   print "<HR><A HREF=\"$scriptname\">Return to directory</A>\n";
+}
+
+sub dodisplay {
+  my ($rq, $user, $scriptname) = @_;
+  print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
+  &dodisplay1($rq, $user, $scriptname, 1);
+  &dodisplaytail($rq, $user, $scriptname);
+}
+
+sub dodomdisplay {
+  my ($user, $scriptname, $domain) = ($_[0], $_[1], $_[2]);
+  my @rqlist = &rq_list_dom($domain);
+  my $ndom = @rqlist;
+
+  my $dbh = &rq_get_db();
+  print "<FORM ACTION=\"$scriptname\" METHOD=\"POST\">\n";
+  my $suffix = 1;
+  foreach $rq (@rqlist) {
+    my ($error, $replyto, $action, $domain, $lang, $state, $ndom,
+	$dns, $dbrecords, $nemail)
+	= &rq_db_get_info($dbh, $rq, $user);
+    &dodisplay1($rq, $user, $scriptname, $suffix);
+    $suffix++;
+  }
+  &dodisplaytail($rq, $user, $scriptname);
 }
 
 1;
