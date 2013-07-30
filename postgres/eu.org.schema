@@ -394,6 +394,7 @@ CREATE TABLE requests (
 	zonerecord VARCHAR(500),
 	whoisrecord VARCHAR(2000)
 );
+CREATE INDEX requests_fqdn_index ON requests(fqdn);
 
 CREATE TABLE requests_hist (
 	id VARCHAR(30),
