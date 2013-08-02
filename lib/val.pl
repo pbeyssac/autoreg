@@ -122,7 +122,9 @@ sub dorqhtml {
   my $wreplyto = &mkwhoisform("localhost", $replyto, $replyto);
   chop $wreplyto;
   my $tr = '<tr>';
-  if ($ndom > 1 && $nemail > 1) {
+  if ($action eq "DEL") {
+    $tr = '<tr class="del">';
+  } elsif ($ndom > 1 && $nemail > 1) {
     $tr = '<tr class="dup2">';
   } elsif ($ndom > 1) {
     $tr = '<tr class="dup">';
