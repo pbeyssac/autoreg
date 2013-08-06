@@ -98,3 +98,7 @@ import os
 
 URIBASE = os.environ.get('ARF_BASE', '/arf/')
 URLBASE = 'https://eu.org'
+
+ALLOWED_HOSTS = [
+  'eu.org', 'www.eu.org'
+]
