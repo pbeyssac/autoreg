@@ -170,13 +170,15 @@ sub dodir {
 
   local ($rq);
 
-  if ($page eq '') { $page = 0 }
   if ($nbypage eq '') { $nbypage = 100 }
 
   my $num = &rq_num();
+  my $npages = int(($num+$nbypage-1)/$nbypage);
+
+  if ($page eq '') { $page = $npages-1 }
+
   my $offset = $page*$nbypage;
   my (@dirlist) = &rq_list($offset, $nbypage);
-  my $npages = int(($num+$nbypage-1)/$nbypage);
 
   print "\n";
 
