@@ -25,6 +25,8 @@ def fetch_dbencoding(dbc):
     dbc.execute('SHOW client_encoding')
     assert dbc.rowcount == 1
     DBENCODING, = dbc.fetchone()
+    if DBENCODING == 'SQL_ASCII':
+      DBENCODING = 'ASCII'
   return DBENCODING
 
 def _todb(atuple):
