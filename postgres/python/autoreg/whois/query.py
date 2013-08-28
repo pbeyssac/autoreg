@@ -189,13 +189,13 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
     ld = l.domains_by_handle(a[1:])
     for d in ld:
       d.fetch()
-      print d.__str__().encode(encoding, 'xmlcharrefreplace')
+      print >>out, d.__str__().encode(encoding, 'xmlcharrefreplace')
     return
 
   d = l.domain_by_name(a)
   if d is not None:
     dc = d.get_contacts()
-    print d.__str__().encode(encoding, 'xmlcharrefreplace')
+    print >>out, d.__str__().encode(encoding, 'xmlcharrefreplace')
     pdone = []
     for k in ['technical', 'administrative', 'zone']:
       if k not in dc:
@@ -206,7 +206,7 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
         else:
           p.fetch_obfuscated()
         if p.key not in pdone:
-          print p.__str__().encode(encoding, 'xmlcharrefreplace')
+          print >>out, p.__str__().encode(encoding, 'xmlcharrefreplace')
           pdone.append(p.key)
     return
 
@@ -223,7 +223,7 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
       p.fetch()
     else:
       p.fetch_obfuscated()
-    print p.__str__().encode(encoding, 'xmlcharrefreplace')
+    print >>out, p.__str__().encode(encoding, 'xmlcharrefreplace')
 
 def usage():
   print >>sys.stderr, __doc__
