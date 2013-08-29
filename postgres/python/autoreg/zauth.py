@@ -36,3 +36,10 @@ class ZAuth:
 	if zone in self._zauth and user in self._zauth[zone]:
 	    return True
 	return False
+    def checkparent(self, domain, user):
+	"""Same as check(), after extracting the zone name from domain.
+	"""
+	if '.' not in domain:
+	    return False
+	zone = '.'.join(domain.split('.')[1:])
+	return self.check(zone, user)
