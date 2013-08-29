@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Request display{% endblock %}
+{% block h1title %}Request display{% endblock %}
+{% block msg %}
+
+<FORM ACTION="https://eu.org/adm/cgi-bin/val.cgi" METHOD="POST">
+
+{% for r in rlist %}
+<h2>Request {{ r.id }}</h2>
+
+{% if r.action == 'D' %}
+<h3>Records to be deleted from zone file</h3>
+<pre class="zone">
+{{ r.azout }}
+</pre>
+{% endif %}
+
+{% if r.zonerecord %}
+<h3>Records to be inserted in zone file</h3>
+<pre class="zone">{{ r.zonerecord }}</pre>
+{% endif %}
+
+{% if r.whoisrecord %}
+<h3>Records to be inserted in WHOIS base</h3>
+<pre>
+{{ r.whoisfiltered }}
+</pre>
+<a href="{% url 'autoreg.arf.requests.views.rqedit' r.id %}" target="_blank">Edit whois</a>
+{% endif %}
+
+<br>
+{% for w in r.wlistout %}
+<h3>Current whois record for {{ w.0 }}</h3>
+<pre>{{ w.1 }}</pre>
+{% endfor %}
+
+Requester: <a href="mailto:{{ r.email }}">{{ r.email }}</a>
+
+<INPUT NAME="rq{{ r.suffix }}" TYPE="hidden" VALUE="{{ r.id }}">
+<div>
+Action: <select name="action{{ r.suffix }}">
+
+<option value="none">None</option>
+<option value="accept">Accept</option>
+
+<option value="rejectdup">Duplicate request</option>
+<option value="rejectbog">Reject: Bogus address</option>
+<option value="rejectful">Reject: no full name</option>
+<option value="rejectnok">Reject: already allocated</option>
+
+<option value="rejectcust">Reject (write reason below)</option>
+<option value="setanswered">Set state = Answered</option>
+<option value="delete">Delete quietly</option>
+
+</select>
+</div>
+Reason:<div><TEXTAREA NAME="reason{{ r.suffix }}" ROWS=3 COLS=77></TEXTAREA></div>
+<HR>
+{% endfor %}
+<INPUT TYPE="submit" VALUE="Submit all">
+</FORM>
+{% endblock %}

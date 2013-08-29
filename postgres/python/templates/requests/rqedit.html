@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Whois edit{% endblock %}
+{% block h1title %}Whois edit{% endblock %}
+{% block msg %}
+
+<FORM ACTION="{% url 'autoreg.arf.requests.views.rqedit' r.id %}" METHOD="POST">
+<TEXTAREA NAME="whois" COLS=70 ROWS=7>
+{{ r.whoisrecord }}
+</TEXTAREA>
+<INPUT TYPE="submit" VALUE="Save">
+</FORM>
+{% endblock %}

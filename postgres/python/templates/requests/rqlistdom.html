@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Request List{% endblock %}
+{% block h1title %}Request List{% endblock %}
+{% block msg %}
+{% if prev %}<a href="{{ prev }}">&lt; </a> {% endif %}
+{% for p in pages %}{% if p == cpage %}{{ p }} {% else %}<a href="{{ p }}">{{ p }} </a>{% endif %}{% endfor %}
+{% if next %}<a href="{{ next }}">&gt;</a> {% endif %}
+<a href="{% url 'autoreg.arf.requests.views.rqdom' fqdn %}">Show/Edit on one page</a>
+<table>
+{% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}><td><a href="{% url 'autoreg.arf.requests.views.rqdom' r.fqdn %}">{{ r.id }}</a><td>{{ r.action }}<td>{{ r.fqdn }}<td>{{ r.email }}
+{% endfor %}
+</table>
+{% endblock %}

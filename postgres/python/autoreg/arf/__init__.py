@@ -4,5 +4,6 @@
 
 __all__ = [
   'dns',
+  'requests',
   'whois',
 ]

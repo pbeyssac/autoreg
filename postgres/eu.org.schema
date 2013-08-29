@@ -14,7 +14,8 @@ CREATE TABLE rrtypes (
 -- id lookup table for admins
 CREATE TABLE admins (
 	id SERIAL PRIMARY KEY,
-	login VARCHAR(16) UNIQUE
+	login VARCHAR(16) UNIQUE,
+	contact_id INTEGER REFERENCES contacts(id)
 );
 
 -- zone table
@@ -515,7 +516,7 @@ GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE whoisdomains TO www, autoreg;
 GRANT SELECT,UPDATE ON TABLE whoisdomains_id_seq TO www, autoreg;
 GRANT INSERT,SELECT,DELETE ON TABLE domain_contact TO www, autoreg;
 -- note: SELECT required below for DELETE based on expiration date
-GRANT INSERT,SELECT,DELETE ON TABLE handle_secrets to autoreg;
+GRANT INSERT,SELECT,DELETE ON TABLE handle_secrets to www, autoreg;
 -- append-only
 GRANT INSERT,SELECT ON TABLE contacts_hist TO www, autoreg;
 GRANT INSERT,SELECT ON TABLE whoisdomains_hist TO www, autoreg;
@@ -523,11 +524,12 @@ GRANT INSERT,SELECT ON TABLE domain_contact_hist TO www, autoreg;
 -- read-only
 GRANT SELECT ON TABLE contact_types TO www, autoreg;
 GRANT SELECT ON TABLE contacts, contacts_email, handle_secrets, whoisdomains, domain_contact TO whois;
+GRANT SELECT ON TABLE contacts_email, TO www, autoreg;
 GRANT SELECT ON TABLE iso3166_countries TO www, autoreg, whois;
 GRANT SELECT ON TABLE contacts, handle_secrets TO postfix;
 
 -- Permissions on requests database
 -- read-write
-GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE requests TO autoreg;
+GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE requests TO autoreg, www;
 -- append-only
-GRANT INSERT ON TABLE requests_hist TO autoreg;
+GRANT INSERT ON TABLE requests_hist TO autoreg, www;
