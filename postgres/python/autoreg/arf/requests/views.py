@@ -51,7 +51,7 @@ def _rq_ndom(fqdn):
 
 def _rq_nemail(fqdn):
   """Return the number of distinct emails in the pending requests for fqdn"""
-  return _rq_list_unordered.filter(fqdn=fqdn) \
+  return _rq_list_unordered().filter(fqdn=fqdn) \
          .order_by('email').distinct('email').count()
 
 def _is_admin(user):
