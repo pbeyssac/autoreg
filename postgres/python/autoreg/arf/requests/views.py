@@ -132,7 +132,7 @@ def _rq1(request, r):
 
 def rqedit(request, rqid):
   if not request.user.is_authenticated():
-    return HttpResponseRedirect(URILOGIN)
+    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   if not _is_admin(request.user):
     raise PermissionDenied
   r = autoreg.arf.requests.models.Requests.objects.get(id=rqid)
@@ -154,7 +154,7 @@ def rq(request, rqid):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
-    return HttpResponseRedirect(URILOGIN)
+    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   if not _is_admin(request.user):
     raise PermissionDenied
   r = autoreg.arf.requests.models.Requests.objects.get(id=rqid)
@@ -169,7 +169,7 @@ def rqdom(request, domain):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
-    return HttpResponseRedirect(URILOGIN)
+    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   if not _is_admin(request.user):
     raise PermissionDenied
   if domain.upper() != domain:
@@ -189,7 +189,7 @@ def rqlistdom(request, domain):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
-    return HttpResponseRedirect(URILOGIN)
+    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   if not _is_admin(request.user):
     raise PermissionDenied
   if domain.upper() != domain:
@@ -212,7 +212,7 @@ def rqlist(request, page=None):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
-    return HttpResponseRedirect(URILOGIN)
+    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   if not _is_admin(request.user):
     raise PermissionDenied
 
