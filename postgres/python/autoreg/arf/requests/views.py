@@ -20,7 +20,7 @@ from django.shortcuts import render_to_response
 URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
 
 _l3match = re.compile('^[^\.]+\.[^\.]+\.[^\.]+\..+$')
-_attrval = re.compile('^([a-z0-9A-Z-]+):\s*(.*[^\s]+|)$')
+_attrval = re.compile('^([a-z0-9A-Z-]+):\s*(.*[^\s]+|)\s*$')
 
 #
 # 'view' functions called from urls.py and friends
