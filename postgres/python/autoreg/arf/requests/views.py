@@ -41,6 +41,9 @@ def _rq_list_dom(domain):
   domain = domain.upper()
   return _rq_list().filter(fqdn=domain)
 
+def _rq_list_email(email):
+  return _rq_list().filter(email=email)
+
 def _rq_num():
   """Return the number of pending requests"""
   return _rq_list_unordered().count()
@@ -207,6 +210,26 @@ def rqlistdom(request, domain):
 
   return render_to_response('requests/rqlistdom.html',
                             { 'rlist': rlist, 'fqdn': domain })
+
+def rqlistemail(request, email):
+  if request.method != "GET":
+    raise SuspiciousOperation
+  if not request.user.is_authenticated():
+    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+  if not _is_admin(request.user):
+    raise PermissionDenied
+
+  z = autoreg.zauth.ZAuth()
+  login =  _get_login(request.user)
+
+  rlist = _rq_list_email(email)
+  for r in rlist:
+    if not z.checkparent(r.fqdn, login):
+      continue
+    _rq_decorate(r)
+
+  return render_to_response('requests/rqlistemail.html',
+                            { 'rlist': rlist, 'email': email })
 
 def rqlist(request, page=None):
   if request.method != "GET":
