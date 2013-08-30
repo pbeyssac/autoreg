@@ -3,9 +3,9 @@
 {% block h1title %}Contact administration{% endblock %}
 {% block content %}
 <ul>
-<li><a href="{% url 'autoreg.arf.whois.views.contactchange' %}">Modify contact information</strong></a>
-<li><a href="{% url 'autoreg.arf.whois.views.chpass' %}">Change contact password</strong></a>
-<li><a href="{% url 'autoreg.arf.whois.views.domainlist' %}">Show/edit contact domains</strong></a>
-<li><a href="{% url 'autoreg.arf.whois.views.logout' %}">Logout<a>
+<li><a href="{% url 'arf.whois.views.contactchange' %}">Modify contact information</strong></a>
+<li><a href="{% url 'arf.whois.views.chpass' %}">Change contact password</strong></a>
+<li><a href="{% url 'arf.whois.views.domainlist' %}">Show/edit contact domains</strong></a>
+<li><a href="{% url 'arf.whois.views.logout' %}">Logout<a>
 </ul>
 {% endblock %}

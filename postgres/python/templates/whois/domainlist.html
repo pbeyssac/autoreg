@@ -3,7 +3,7 @@
 {% block h1title %}Domain List for {{ handle }}{% endblock %}
 {% block msg %}
 <pre>
-{% for domain in doms %}<A HREF="{% url 'autoreg.arf.whois.views.domainedit' domain.fqdn %}">Show/Edit</A> domain {{ domain.fqdn}}
+{% for domain in doms %}<A HREF="{% url 'arf.whois.views.domainedit' domain.fqdn %}">Show/Edit</A> domain {{ domain.fqdn}}
 {% endfor %}</pre>
 {% if next %}<a href="{{ next }}">Continue</a>{% endif %}
 {% endblock %}

@@ -13,6 +13,7 @@ from autoreg.whois.db import HANDLESUFFIX,suffixstrip,suffixadd,Domain
 from autoreg.arf.settings import URIBASE, URLBASE
 
 import django.contrib.auth
+from django.core.urlresolvers import reverse
 from django.template.loader import get_template
 from django.template import Context
 from django.http import HttpResponse, HttpResponseRedirect
@@ -25,37 +26,11 @@ from django.db import connection, transaction
 from models import Whoisdomains,Contacts,Tokens
 
 URILOGIN = URIBASE + 'login/'
-URICHPASS = URIBASE + 'contact/chpass/'
-URICHANGE = URIBASE + 'contact/change/'
-URICREATE = URIBASE + 'contact/create/'
-URIDOMAINS = URIBASE + 'contact/domains/'
-URIDOMAINEDIT = URIBASE + 'domain/edit/'
-URIDOMAINEDITCONFIRM = URIBASE + 'domain/edit/confirm/'
-URIREGISTRANTEDIT = URIBASE + 'registrant/edit/'
-URILOGOUT = URIBASE + 'logout/'
-URICHANGEMAIL = URIBASE + 'contact/changemail/'
-URIRESET = URIBASE + 'contact/reset/'
-URLCHPASS = URLBASE + URICHPASS
-URLCHANGEMAIL = URLBASE + URICHANGEMAIL
-URLCONTACTVAL = URLBASE + URIBASE + 'contact/validate/%s/%s/'
-URLRESET2 = URLBASE + URIBASE + 'contact/doreset/'
 FROMADDR = 'noreply@eu.org'
 RESET_TOKEN_HOURS_TTL = 24
 EMAIL_TOKEN_HOURS_TTL = 72
 RESET_TOKEN_TTL = RESET_TOKEN_HOURS_TTL*3600
 EMAIL_TOKEN_TTL = EMAIL_TOKEN_HOURS_TTL*3600
-
-uriset = {'uribase': URIBASE,
-          'urichangemail': URICHANGEMAIL,
-          'urichpass': URICHPASS,
-          'urichange': URICHANGE,
-          'uricreate': URICREATE,
-          'uridomains': URIDOMAINS,
-          'uridomainedit': URIDOMAINEDIT,
-          'uridomaineditconfirm': URIDOMAINEDITCONFIRM,
-          'uriregistrantedit': URIREGISTRANTEDIT,
-          'urireset': URIRESET,
-          'urilogout': URILOGOUT}
 
 # will be initialized by the first call to _countries_get()
 countries = []
@@ -114,11 +89,6 @@ def _render_to_mail(templatename, context, fromaddr, toaddrs):
   server.quit()
 
   return True
-
-def _uriset_render_to_response(template, vars):
-  """Update vars with uriset then proceed with render_to_response()"""
-  vars.update(uriset)
-  return render_to_response(template, vars)
 
 def _token_find(contact_id, action):
   """Find existing token(s)"""
@@ -258,7 +228,7 @@ def login(request):
     if next == URIBASE:
       next = None
     vars = {'form': form, 'posturi': request.path, 'next': next}
-    return _uriset_render_to_response('whois/login.html', vars)
+    return render_to_response('whois/login.html', vars)
   elif request.method == "POST":
     next = request.POST.get('next', URIBASE)
     vars = {'next': next}
@@ -269,7 +239,7 @@ def login(request):
     if not request.session.test_cookie_worked():
       vars['msg'] = "Please enable cookies"
       vars['form'] = contactlogin_form().as_table()
-      return _uriset_render_to_response('whois/login.html', vars)
+      return render_to_response('whois/login.html', vars)
     else:
       #request.session.delete_test_cookie()
       pass
@@ -286,28 +256,28 @@ def login(request):
         return HttpResponseRedirect(next)
       else:
         vars['msg'] = "Sorry, your account has been disabled"
-        return _uriset_render_to_response('whois/login.html', vars)
+        return render_to_response('whois/login.html', vars)
     else:
       vars['msg'] = "Your username and/or password is incorrect"
-      return _uriset_render_to_response('whois/login.html', vars)
+      return render_to_response('whois/login.html', vars)
 
 def makeresettoken(request):
   """Password reset step 1: send a reset token to the contact email address"""
   if request.method == "GET":
     f = contactbyhandle_form()
     form = f.as_table()
-    return _uriset_render_to_response('whois/resetpass.html',
-                                      {'form': form, 'posturi': request.path})
+    return render_to_response('whois/resetpass.html',
+                              {'form': form, 'posturi': request.path})
   elif request.method == "POST":
     handle = request.POST.get('handle', '').upper()
     fullhandle = handle
     handle = suffixstrip(handle)
     ctl = Contacts.objects.filter(handle=handle)
     if len(ctl) == 0:
-      return _uriset_render_to_response('whois/contactnotfound.html',
-                                        {'posturi': request.path,
-                                         'ehandle': suffixadd(handle),
-                                         'next': request.path})
+      return render_to_response('whois/contactnotfound.html',
+                                {'posturi': request.path,
+                                 'ehandle': suffixadd(handle),
+                                 'next': request.path})
     if len(ctl) != 1:
       return HttpResponse("Internal Error")
     ct = ctl[0]
@@ -318,13 +288,14 @@ def makeresettoken(request):
 
     if not _render_to_mail('whois/resetpass.mail',
                            { 'from': FROMADDR, 'to': ct.email,
+                             'urlbase': URLBASE,
                              'handle': fullhandle,
-                             'reseturl': URLRESET2 + handle,
+                             'handleshort': handle,
                              'token': token }, FROMADDR, [ ct.email ]):
-       return _uriset_render_to_response('whois/msgnext.html',
+       return render_to_response('whois/msgnext.html',
          {'msg': "Sorry, error while sending mail. Please try again later."})
-    return _uriset_render_to_response('whois/tokensent.html',
-                                      {'ehandle': suffixadd(handle)})
+    return render_to_response('whois/tokensent.html',
+                              {'ehandle': suffixadd(handle)})
 
 def resetpass2(request, handle):
   """Password reset step 2:
@@ -334,33 +305,33 @@ def resetpass2(request, handle):
   form = f.as_table()
   vars = {'form': form, 'posturi': request.path}
   if request.method == "GET":
-    return _uriset_render_to_response('whois/resetpass2.html', vars)
+    return render_to_response('whois/resetpass2.html', vars)
   elif request.method == "POST":
     ctl = Contacts.objects.filter(handle=handle)
     if len(ctl) < 1:
-      return _uriset_render_to_response('whois/resetpass2.html', vars)
+      return render_to_response('whois/resetpass2.html', vars)
     ct = ctl[0]
     pass1 = request.POST.get('pass1', 'A')
     pass2 = request.POST.get('pass2', 'B')
     if pass1 != pass2:
       vars['msg'] = "They don't match, try again"
-      return _uriset_render_to_response('whois/resetpass2.html', vars)
+      return render_to_response('whois/resetpass2.html', vars)
     if len(pass1) < 8:
       vars['msg'] = "Password should be at least 8 chars"
-      return _uriset_render_to_response('whois/resetpass2.html', vars)
+      return render_to_response('whois/resetpass2.html', vars)
     token = request.POST.get('resettoken', 'C')
     tkl = _token_find(ct.id, "pwreset")
     if len(tkl) > 1:
       return HttpResponse("Internal error")
     if len(tkl) == 0 or token != tkl[0].token:
       vars['msg'] = "Invalid reset token"
-      return _uriset_render_to_response('whois/resetpass2.html', vars)
+      return render_to_response('whois/resetpass2.html', vars)
     tk = tkl[0]
     ct.passwd = _pwcrypt(pass1)
     ct.save()
     tk.delete()
-    return _uriset_render_to_response('whois/passchanged.html',
-                                      {'ehandle': suffixadd(handle)})
+    return render_to_response('whois/passchanged.html',
+                              {'ehandle': suffixadd(handle)})
 
 def contactcreate(request):
   """Contact creation page"""
@@ -405,21 +376,22 @@ def contactcreate(request):
         p.insert()
         valtoken = _token_set(p.cid, "contactval")
         handle = suffixstrip(p.gethandle())
-        url = URLCONTACTVAL % (handle.upper(), valtoken)
         if not _render_to_mail('whois/contactcreate.mail',
-                               {'url': url,
+                               {'urlbase': URLBASE,
+                                'handleshort': handle.upper(),
+                                'valtoken': valtoken,
                                 'whoisdata': p.__str__(),
                                 'from': FROMADDR, 'to': d['em'][0],
                                 'handle': suffixadd(handle)},
                                FROMADDR, [d['em'][0]]):
-         return _uriset_render_to_response('whois/msgnext.html',
+         return render_to_response('whois/msgnext.html',
            {'msg': "Sorry, error while sending mail. Please try again later."})
-        return _uriset_render_to_response('whois/msgnext.html',
+        return render_to_response('whois/msgnext.html',
                  {'msg': "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(handle), d['em'][0])})
       # else: fall through
-  return _uriset_render_to_response('whois/contactcreate.html',
-                                    {'form': form, 'posturi': request.path,
-                                     'p_errors': p_errors})
+  return render_to_response('whois/contactcreate.html',
+                            {'form': form, 'posturi': request.path,
+                             'p_errors': p_errors})
 
 def contactvalidate(request, handle, valtoken):
   """Contact validation page"""
@@ -441,25 +413,25 @@ def contactvalidate(request, handle, valtoken):
     if len(tkl) != 1 or tkl[0].token != valtoken:
       msg = "Sorry, contact handle or validation token is not valid."
   if msg:
-    return _uriset_render_to_response('whois/msgnext.html', {'msg': msg})
+    return render_to_response('whois/msgnext.html', {'msg': msg})
   ct = ctl[0]
   if request.method == "GET":
     vars = {'handle': suffixadd(handle), 'email': ct.email,
             'valtoken': valtoken, 'posturi': request.path}
-    return _uriset_render_to_response('whois/contactvalidate.html', vars)
+    return render_to_response('whois/contactvalidate.html', vars)
   elif request.method == "POST":
     ct.validated_on = datetime.datetime.today()
     ct.save()
     tkl[0].delete()
     vars = {'msg': "Your contact handle is now valid."}
-    return _uriset_render_to_response('whois/msgnext.html', vars)
+    return render_to_response('whois/msgnext.html', vars)
   return HttpResponse("Internal error")
 
 def contact(request, handle):
   """Contact display from handle"""
   c = Contacts.objects.get(handle=handle)
   vars = {'contact': c, 'address_list': c.addr.split('\n')[:-1]}
-  return _uriset_render_to_response('whois/contact.html', vars)
+  return render_to_response('whois/contact.html', vars)
 
 def domain(request, fqdn):
   """Whois from domain FQDN"""
@@ -470,10 +442,10 @@ def domain(request, fqdn):
     dom = None
   if dom is None:
     vars = {'fqdn': fqdn}
-    return _uriset_render_to_response('whois/domainnotfound.html', vars)
+    return render_to_response('whois/domainnotfound.html', vars)
   cl = dom.domaincontact_set.all()
   vars = {'whoisdomain': dom, 'domaincontact_list': cl}
-  return _uriset_render_to_response('whois/fqdn.html', vars)
+  return render_to_response('whois/fqdn.html', vars)
 
 # private pages
 
@@ -481,10 +453,10 @@ def domain(request, fqdn):
 def index(request):
   """Startup page after login"""
   if not request.user.is_authenticated():
-    return HttpResponseRedirect(URILOGIN)
+    return HttpResponseRedirect(reverse(login))
   handle = suffixadd(request.user.username)
   vars = {'handle': handle}
-  return _uriset_render_to_response('whois/index.html', vars)
+  return render_to_response('whois/index.html', vars)
 
 @cache_control(private=True)
 def chpass(request):
@@ -496,17 +468,17 @@ def chpass(request):
   form = f.as_table()
   vars = {'form': form, 'posturi': request.path, 'handle': suffixadd(handle)}
   if request.method == "GET":
-    return _uriset_render_to_response('whois/chpass.html', vars)
+    return render_to_response('whois/chpass.html', vars)
   elif request.method == "POST":
     pass0 = request.POST.get('pass0', '')
     pass1 = request.POST.get('pass1', '')
     pass2 = request.POST.get('pass2', '')
     if pass1 != pass2:
       vars['msg'] = "They don't match, try again"
-      return _uriset_render_to_response('whois/chpass.html', vars)
+      return render_to_response('whois/chpass.html', vars)
     if len(pass1) < 8:
       vars['msg'] = "Password should be at least 8 chars"
-      return _uriset_render_to_response('whois/chpass.html', vars)
+      return render_to_response('whois/chpass.html', vars)
 
     ctlist = Contacts.objects.filter(handle=handle)
     if len(ctlist) != 1:
@@ -515,11 +487,11 @@ def chpass(request):
     ct = ctlist[0]
     if ct.passwd != crypt.crypt(pass0, ct.passwd):
       vars['msg'] = "Current password is not correct"
-      return _uriset_render_to_response('whois/chpass.html', vars)
+      return render_to_response('whois/chpass.html', vars)
     ct.passwd = _pwcrypt(pass1)
     ct.save()
     del vars['form']
-    return _uriset_render_to_response('whois/passchanged.html', vars)
+    return render_to_response('whois/passchanged.html', vars)
 
 @cache_control(private=True)
 def domainlist(request):
@@ -530,7 +502,7 @@ def domainlist(request):
   c = Contacts.objects.get(handle=handle)
   dc = Whoisdomains.objects.filter(domaincontact__contact__exact=c.id).distinct().order_by('fqdn')
   vars = {'posturi': request.path, 'handle': suffixadd(handle), 'doms': dc}
-  return _uriset_render_to_response('whois/domainlist.html', vars)
+  return render_to_response('whois/domainlist.html', vars)
 
 @cache_control(private=True)
 def contactchange(request, registrantdomain=None):
@@ -583,7 +555,7 @@ def contactchange(request, registrantdomain=None):
     else:
       vars['ehandle'] = suffixadd(ehandle)
       vars['form'] = contactchange_form(initial=initial)
-    return _uriset_render_to_response('whois/contactchange.html', vars)
+    return render_to_response('whois/contactchange.html', vars)
   elif request.method == "POST":
     if registrantdomain:
       form = registrant_form(request.POST)
@@ -633,21 +605,22 @@ def contactchange(request, registrantdomain=None):
         token = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
         if not _render_to_mail('whois/changemail.mail',
                                {'from': FROMADDR, 'to': newemail,
+                                'urlbase': URLBASE,
                                 'handle': suffixadd(ehandle),
                                 'newemail': newemail,
-                                'changemailurl': URLCHANGEMAIL,
                                 'token': token }, FROMADDR, [ newemail ]):
-          return _uriset_render_to_response('whois/msgnext.html',
+          return render_to_response('whois/msgnext.html',
             {'msg': "Sorry, error while sending mail. Please try again later."})
-        return HttpResponseRedirect(URICHANGEMAIL)
+        return HttpResponseRedirect(reverse(changemail))
       if registrantdomain:
-        return HttpResponseRedirect(URIDOMAINEDIT + registrantdomain)
+        return HttpResponseRedirect(reverse(domainedit,
+                                            args=[registrantdomain]))
       else:
         vars['msg'] = "Contact information changed successfully"
-        return _uriset_render_to_response('whois/msgnext.html', vars)
+        return render_to_response('whois/msgnext.html', vars)
     else:
       vars['form'] = form
-      return _uriset_render_to_response('whois/contactchange.html', vars)
+      return render_to_response('whois/contactchange.html', vars)
 
 @cache_control(private=True)
 def changemail(request):
@@ -670,37 +643,37 @@ def changemail(request):
     return HttpResponse("Internal error")
   if len(tkl) == 0:
       vars['msg'] = "Sorry, didn't find any waiting email address change."
-      return _uriset_render_to_response('whois/changemail.html', vars)
+      return render_to_response('whois/changemail.html', vars)
   tk = tkl[0]
 
   vars['newemail'] = tk.args
 
   if request.method == "GET":
-    return _uriset_render_to_response('whois/changemail.html', vars)
+    return render_to_response('whois/changemail.html', vars)
   elif request.method == "POST":
     token = request.POST.get('token', 'C')
     if token != tk.token:
       vars['msg'] = "Invalid token"
-      return _uriset_render_to_response('whois/changemail.html', vars)
+      return render_to_response('whois/changemail.html', vars)
     newemail = tk.args
     ct.email = newemail
     ct.save()
     tk.delete()
-    return _uriset_render_to_response('whois/emailchanged.html', vars)
+    return render_to_response('whois/emailchanged.html', vars)
 
 @cache_control(private=True)
 def domaineditconfirm(request, fqdn):
   """Request confirmation for self-deletion of a contact"""
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
-  nexturi = URIDOMAINEDIT + fqdn + '/'
+  nexturi = reverse(domainedit, args=[fqdn])
   vars = {'fqdn': fqdn, 'handle': suffixadd(request.user.username),
           'posturi': nexturi}
   contact_type = request.POST.get('contact_type', None)
   handle = request.POST.get('handle', None)
   if request.method == "POST" and contact_type and handle:
     vars.update({'contact_type': contact_type, 'handle': handle})
-    return _uriset_render_to_response('whois/domaineditconfirm.html', vars)
+    return render_to_response('whois/domaineditconfirm.html', vars)
   else:
     return HttpResponseRedirect(nexturi)
 
@@ -722,7 +695,7 @@ def domainedit(request, fqdn):
     dom = None
   if dom is None:
     vars = {'fqdn': fqdn}
-    return _uriset_render_to_response('whois/domainnotfound.html', vars)
+    return render_to_response('whois/domainnotfound.html', vars)
 
   # check handle is authorized on domain
   if not _check_handle_domain_auth(handle, f):
@@ -794,7 +767,7 @@ def domainedit(request, fqdn):
     if ct in typelist:
       cthandle = c.contact.handle
       if cthandle == handle:
-        posturi = URIDOMAINEDITCONFIRM + f + '/'
+        posturi = reverse(domaineditconfirm, args=[f])
       else:
         posturi = request.path
       formlist.append({'contact_type': ct,
@@ -807,9 +780,9 @@ def domainedit(request, fqdn):
           'whoisdisplay': unicode(dbdom),
           'addform': {'posturi': request.path,
                       'domcontact_form': domcontact_form().as_table()}}
-  return _uriset_render_to_response('whois/domainedit.html', vars)
+  return render_to_response('whois/domainedit.html', vars)
 
 def logout(request):
   """Logout page"""
   django.contrib.auth.logout(request)
-  return HttpResponseRedirect(URILOGIN)
+  return HttpResponseRedirect(reverse(login))

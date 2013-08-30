@@ -14,10 +14,10 @@
 {% block content %}{% endblock %}
 <HR>
 {% if handle %}Logged-in as <strong>{{ handle }}</strong><br>{% endif %}
-<A HREF="{{ uribase }}">Home</A>
-<A HREF="{{ urichpass }}">Change password</A>
-<A HREF="{{ urichange }}">Change information</A>
-<A HREF="{{ uridomains }}">Domains</A>
-<A HREF="{{ urilogout }}">Logout</A>
+<A HREF="{% url 'arf.whois.views.index' %}">Home</A>
+<A HREF="{% url 'arf.whois.views.chpass' %}">Change password</A>
+<A HREF="{% url 'arf.whois.views.contactchange' %}">Change information</A>
+<A HREF="{% url 'arf.whois.views.domainlist' %}">Domains</A>
+<A HREF="{% url 'arf.whois.views.logout' %}">Logout</A>
 </BODY>
 </HTML>
