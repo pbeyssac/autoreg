@@ -160,8 +160,6 @@ class server:
     self.logf.flush()
 
 def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
-  if not isinstance(a, unicode):
-    a = a.decode(encoding)
   dbh = psycopg2.connect(dbstring)
   l = whoisdb.Lookup(dbh.cursor())
 
@@ -180,10 +178,9 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
     elif optval == '-U':                                                       
       encoding = 'utf-8'
 
-  if len(args) > 1:
-    return
-
-  a = args[0]
+  a = ' '.join(args)
+  if not isinstance(a, unicode):
+    a = a.decode(encoding)
 
   if a[0] == '/' and not remote:
     ld = l.domains_by_handle(a[1:])
