@@ -6,7 +6,7 @@ Following a request on our web site (possibly by you), here is how
 to validate this email address on your eu.org contact record
 identified as {{ handle }}:
 
-- Connect to {{ changemailurl }}
+- Connect to {{ uribase }}{% url 'autoreg.arf.whois.views.changemail' %}
 - Login using your handle and password, if necessary
 - Enter the following validation token: {{ token }}
 - Then validate to set the email address to

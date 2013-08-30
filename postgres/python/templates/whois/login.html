@@ -13,7 +13,7 @@
 <INPUT TYPE="submit" NAME="login" VALUE="Login">
 </FORM>
 <br>
-If you remember your contact handle, you can <a href="{{ urireset }}">set a new password here</a> if you forgot it or never set it.<p>
+If you remember your contact handle, you can <a href="{% url 'autoreg.arf.whois.views.makeresettoken' %}">set a new password here</a> if you forgot it or never set it.<p>
 
-If you have no contact record, you must <a href="{{ uricreate }}">create one here</a>.
+If you have no contact record, you must <a href="{% url 'autoreg.arf.whois.views.contactcreate' %}">create one here</a>.
 {% endblock %}

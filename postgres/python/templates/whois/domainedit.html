@@ -8,7 +8,7 @@ Whois data for domain <strong>{{ whoisdomain.fqdn }}</strong><P>
 <pre>
 {{ whoisdisplay }}
 </pre>
-<A HREF="{{ uriregistrantedit }}/{{ whoisdomain.fqdn}}">Edit registrant data</A>
+<A HREF="{% url 'autoreg.arf.whois.views.contactchange' whoisdomain.fqdn %}">Edit registrant data</A>
 <hr>
 <strong>Remove an existing contact</strong><P>
 {% for f in formlist %}
