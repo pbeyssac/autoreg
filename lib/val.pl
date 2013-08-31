@@ -309,10 +309,14 @@ sub doreject {
     print SMU $MSG_BDYWR;
     foreach $line (split('\n', $dbrecords)) {
       if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
-	  if ($1 eq "CHANGED") { $line = "changed: $user_mail $date"; }
-	  elsif ($1 eq "MNT-BY") { $line = "mnt-by:  $user_mntby"; }
+	  if ($1 eq "CHANGED") { }
+	  elsif ($1 eq "MNT-BY") { }
+	  elsif ($1 eq "mnt-by") { }
+	  elsif ($1 eq "changed") { }
+	  else { print SMU $line."\n"; }
+      } else {
+          print SMU $line."\n";
       }
-      print SMU $line."\n";
     }
     print SMU "\n";
   }
@@ -409,15 +413,18 @@ sub doaccept {
   foreach $line (split('\n', $output)) {
       if ($line =~ /^([a-zA-Z0-9-]*):\s*(.*)$/) {
 	if ($1 eq "CHANGED") {
-	  $line = "changed: $user_mail";
 	} elsif ($1 eq "MNT-BY") {
-	  $line = "mnt-by:  $user_mntby";
 	} elsif ($1 eq "mnt-by") {
+	} elsif ($1 eq "changed") {
 	} elsif ($1 eq "domain") {
+          $text .= $line."\n";
 	  if ($action eq 'D') { $text .= "delete: $user_mail $date\n" }
+	} else {
+          $text .= $line."\n";
 	}
+      } else {
+        $text .= $line."\n";
       }
-      $text .= $line."\n";
   }
   print "Checking whois...<BR>\n";
   my ($st, $rtext) = &dowhoisupdate($text, 1);
