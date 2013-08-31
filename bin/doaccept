@@ -5,16 +5,24 @@
 
 # local configuration.
 require "/usr/local/autoreg/conf/config";
+require "$DNSLIB/auth.pl";
+require "$DNSLIB/user.pl";
 require "$DNSLIB/val.pl";
+
+# DO NOT REMOVE! Used inside &doaccept.
+&zauth_read;
 
 $date=`date +%Y%m%d`; chop $date;
 
 my $rq = $ARGV[0];
 my $user = $ARGV[1];
 
+# DO NOT REMOVE! Used inside &doaccept.
+($user_pass, $user_mail, $user_mntby, $user_pmnt)
+        = &user_get($user);
+
 if ($rq && $rq !~ /[a-zA-Z0-9-_]/) {
   print "Bad filename: $rq\n";
   exit;
 }
-
 &doaccept($rq, $user, $date);
