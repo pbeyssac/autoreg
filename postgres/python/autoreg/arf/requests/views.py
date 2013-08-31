@@ -279,13 +279,13 @@ def rqlist(request, page=None):
 
 def _doaccept(out, rqid, login):
   output = subprocess.check_output([autoreg.conf.DOACCEPT_PATH, rqid, login])
-  out.write(output)
+  out.write(output.decode('UTF-8'))
 
 def _doreject(out, rqid, login, creason, csubmit):
   output = subprocess.check_output([autoreg.conf.DOREJECT_PATH, rqid, login,
                                    creason.encode('UTF-8'),
                                    csubmit.encode('UTF-8')])
-  out.write(output)
+  out.write(output.decode('UTF-8'))
 
 def _rqexec(rq, out, za, login, action, reason):
 
@@ -328,7 +328,7 @@ def rqval(request):
 
   za = autoreg.zauth.ZAuth()
   login =  _get_login(request.user)
-  out = StringIO.StringIO(u'')
+  out = StringIO.StringIO()
 
   # get our current transaction out of the way
   # (has a lock on the user's row in the "contacts" table due to the above)
