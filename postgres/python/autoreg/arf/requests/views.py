@@ -254,6 +254,8 @@ def rqlist(request, page=None):
     page = npages-1
   else:
     page = int(page)
+    if page > npages-1:
+      return HttpResponseRedirect(reverse(rqlist, args=[str(npages-1)]))
 
   z = autoreg.zauth.ZAuth()
   login =  _get_login(request.user)
