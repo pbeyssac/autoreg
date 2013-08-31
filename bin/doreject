@@ -1,0 +1,31 @@
+#!/usr/bin/perl
+#
+# $Id$
+#
+
+# local configuration.
+require "/usr/local/autoreg/conf/config";
+require "$DNSLIB/auth.pl";
+require "$DNSLIB/user.pl";
+require "$DNSLIB/val.pl";
+
+# DO NOT REMOVE! Used inside doreject.
+&zauth_read;
+
+$date=`date +%Y%m%d`; chop $date;
+
+my $rq = $ARGV[0];
+my $user = $ARGV[1];
+my $creason = $ARGV[2];
+my $csubmit = $ARGV[3];
+
+# DO NOT REMOVE! Used inside doreject.
+($user_pass, $user_mail, $user_mntby, $user_pmnt)
+        = &user_get($user);
+
+if ($rq && $rq !~ /[a-zA-Z0-9-_]/) {
+  print "Bad filename: $rq\n";
+  exit;
+}
+
+&doreject($rq, $user, $date, $creason, $csubmit);
