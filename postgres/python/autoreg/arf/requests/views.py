@@ -2,6 +2,7 @@
 
 import re
 import StringIO
+import subprocess
 import sys
 
 import psycopg2
@@ -14,6 +15,7 @@ import autoreg.zauth
 
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.urlresolvers import reverse, reverse_lazy
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 
@@ -56,6 +58,12 @@ def _rq_nemail(fqdn):
   """Return the number of distinct emails in the pending requests for fqdn"""
   return _rq_list_unordered().filter(fqdn=fqdn) \
          .order_by('email').distinct('email').count()
+
+def _rq_remove(rqid, state):
+  r = autoreg.arf.requests.models.Requests.objects.get(id=rqid)
+  r.state = state
+  r.save()
+  r.delete()
 
 def _is_admin(user):
   """Return True if the current user is in the admins table"""
@@ -267,3 +275,75 @@ def rqlist(request, page=None):
 
   return render_to_response('requests/rqlist.html', v)
 
+def _doaccept(out, rqid, login):
+  output = subprocess.check_output([autoreg.conf.DOACCEPT_PATH, rqid, login])
+  out.write(output)
+
+def _doreject(out, rqid, login, creason, csubmit):
+  output = subprocess.check_output([autoreg.conf.DOREJECT_PATH, rqid, login,
+                                   creason.encode('UTF-8'),
+                                   csubmit.encode('UTF-8')])
+  out.write(output)
+
+def _rqexec(rq, out, za, login, action, reason):
+
+  if action == 'rejectcust':
+    _doreject(out, rq, login, reason, reason)
+  elif action == 'rejectdup':
+    _doreject(out, rq, login, reason, 'Duplicate request')
+  elif action == 'rejectbog':
+    _doreject(out, rq, login, reason, 'Bogus address information')
+  elif action == 'rejectful':
+    _doreject(out, rq, login, reason, 'Please provide a full name')
+  elif action == 'rejectnok':
+    _doreject(out, rq, login, reason, 'Sorry, this domain is already allocated')
+  elif action == 'accept':
+    _doaccept(out, rq, login)
+  else:
+    if not autoreg.arf.requests.models.Requests.objects.filter(id=rq).exists():
+      print >>out, "Request not found: %s<P>" % rq
+      return
+    r = autoreg.arf.requests.models.Requests.objects.get(id=rq)
+    if not za.checkparent(r.fqdn, login):
+      print >>out, "Permission denied on %s<P>" % rq
+      return
+    if action == 'delete':
+      _rq_remove(rq, 'DelQuiet');
+      print >>out, "Deleted %s<P>" % rq
+    elif action == 'none':
+      print >>out, "Nothing done on %s<P>" % rq
+    else:
+      print >>out, "What? On rq=%s action=%s reason=%s<P>" % (rq, action, reason)
+
+@transaction.commit_manually
+def rqval(request):
+  if request.method != "POST":
+    raise SuspiciousOperation
+  if not request.user.is_authenticated():
+    raise PermissionDenied
+  if not _is_admin(request.user):
+    raise PermissionDenied
+
+  za = autoreg.zauth.ZAuth()
+  login =  _get_login(request.user)
+  out = StringIO.StringIO(u'')
+
+  # get our current transaction out of the way
+  # (has a lock on the user's row in the "contacts" table due to the above)
+  # to avoid deadlocking subprocesses
+  transaction.commit()
+
+  i = 1
+  while 'action' + str(i) in request.POST:
+    action = request.POST['action' + str(i)]
+    rq = request.POST['rq' + str(i)]
+    reason = request.POST['reason' + str(i)]
+    print >>out, "Processing %s...<P>" % rq
+    _rqexec(rq, out, za, login, action, reason)
+    i += 1
+
+  page = render_to_response('requests/rqval.html', { 'out': out.getvalue() })
+  # the above may yield a SELECT to the ISO countries table, so
+  # we need to put the last commit right there below.
+  transaction.commit()
+  return page

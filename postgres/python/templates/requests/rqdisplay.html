@@ -3,7 +3,7 @@
 {% block h1title %}Request display{% endblock %}
 {% block msg %}
 
-<FORM ACTION="https://eu.org/adm/cgi-bin/val.cgi" METHOD="POST">
+<FORM ACTION="{% url 'autoreg.arf.requests.views.rqval' %}" METHOD="POST">
 
 {% for r in rlist %}
 <h2>Request {{ r.id }}</h2>
@@ -49,7 +49,6 @@ Action: <select name="action{{ r.suffix }}">
 <option value="rejectnok">Reject: already allocated</option>
 
 <option value="rejectcust">Reject (write reason below)</option>
-<option value="setanswered">Set state = Answered</option>
 <option value="delete">Delete quietly</option>
 
 </select>
