@@ -5,13 +5,8 @@
 
 # local configuration.
 require "/usr/local/autoreg/conf/config";
-#require "$DNSLIB/md5.pl";
-require "$DNSLIB/user.pl";
-require "$DNSLIB/auth.pl";
 require "$DNSLIB/val.pl";
 
-&zauth_read;
-  
 $date=`date +%Y%m%d`; chop $date;
 
 my $rq = $ARGV[0];
@@ -19,12 +14,7 @@ my $rq = $ARGV[0];
 if ($rq && $rq !~ /[a-zA-Z0-9-_]/) {
   print "Bad filename: $rq\n";
   exit;
-} elsif (!chdir($VALDIR)) {
-  print "Can't cd to $VALDIR: $!\n";
-  exit;
 }
 $user = "autoreg";
-($user_pass, $user_mail, $user_mntby, $user_pmnt)
-	= &user_get($user);
 
 &doaccept($rq, $user, $date);
