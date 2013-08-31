@@ -10,11 +10,11 @@ require "$DNSLIB/val.pl";
 $date=`date +%Y%m%d`; chop $date;
 
 my $rq = $ARGV[0];
+my $user = $ARGV[1];
 
 if ($rq && $rq !~ /[a-zA-Z0-9-_]/) {
   print "Bad filename: $rq\n";
   exit;
 }
-$user = "autoreg";
 
 &doaccept($rq, $user, $date);

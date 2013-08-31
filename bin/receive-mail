@@ -137,7 +137,7 @@ if ($rqid) {
     print  VF $MSG_BYE;
 
     if ($action eq 'MZ') {
-	system "/usr/local/autoreg/bin/doaccept $rqid >> /tmp/doaccept.log";
+	system "/usr/local/autoreg/bin/doaccept $rqid autoreg >> /tmp/doaccept.log";
     }
 
     close(VF);
