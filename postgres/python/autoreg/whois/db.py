@@ -623,15 +623,15 @@ class Domain(_whoisobject):
         # allowing regular contacts without an email.
         if l.upper().endswith(HANDLESUFFIX):
           self._dbc.execute('SELECT id FROM contacts'
-                            ' WHERE (lower(contacts.name)=%s'
+                            ' WHERE (lower(contacts.name)=%s OR handle=%s)'
                             ' AND validated_on IS NOT NULL'
-                            ' AND email IS NOT NULL) OR handle=%s',
+                            ' AND email IS NOT NULL',
                             _todb((l.lower(), suffixstrip(l.upper()))))
         else:
           self._dbc.execute('SELECT id FROM contacts'
-                            ' WHERE (lower(contacts.name)=%s'
+                            ' WHERE (lower(contacts.name)=%s OR exthandle=%s)'
                             ' AND validated_on IS NOT NULL'
-                            ' AND email IS NOT NULL) OR exthandle=%s',
+                            ' AND email IS NOT NULL',
                             _todb((l.lower(), l.upper())))
         # check the returned number of found lines and
         # issue an approriate warning message if it differs from 1.
