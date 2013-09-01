@@ -146,7 +146,11 @@ def rqedit(request, rqid):
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   if not _is_admin(request.user):
     raise PermissionDenied
-  r = autoreg.arf.requests.models.Requests.objects.get(id=rqid)
+  r = autoreg.arf.requests.models.Requests.objects.filter(id=rqid)
+  if r.count() < 1:
+    return render_to_response('requests/rqmsg.html',
+                              {'msg': 'Request not found'})
+  r = r[0]
   if not autoreg.zauth.ZAuth().checkparent(r.fqdn, _get_login(request.user)):
     raise PermissionDenied
   if request.method == "GET":
@@ -168,7 +172,11 @@ def rq(request, rqid):
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   if not _is_admin(request.user):
     raise PermissionDenied
-  r = autoreg.arf.requests.models.Requests.objects.get(id=rqid)
+  r = autoreg.arf.requests.models.Requests.objects.filter(id=rqid)
+  if r.count() < 1:
+    return render_to_response('requests/rqmsg.html',
+                              {'msg': 'Request not found'})
+  r = r[0]
   if not autoreg.zauth.ZAuth().checkparent(r.fqdn, _get_login(request.user)):
     raise PermissionDenied
   _rq1(request, r)
