@@ -9,5 +9,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'autoreg.arf.settings'
 os.environ['ARF_BASE'] = '/arf/'
 os.environ['AUTOREG_DBSTRING'] = 'dbname=eu.org'
 
-import django.core.handlers.wsgi
-application = django.core.handlers.wsgi.WSGIHandler()
+# This application object is used by the development server
+# as well as any WSGI server configured to use this file.
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
