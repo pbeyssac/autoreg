@@ -97,7 +97,7 @@ DATABASES = {
 
 import os
 
-URIBASE = os.environ.get('ARF_BASE', '/arf/')
+URIBASE = os.environ.get('ARF_BASE', '/darf/')
 URLBASE = 'https://eu.org'
 SESSION_COOKIE_NAME = 'dsession_id'
 
