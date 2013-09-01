@@ -13,6 +13,7 @@ from autoreg.whois.db import HANDLESUFFIX,suffixstrip,suffixadd,Domain
 from autoreg.arf.settings import URIBASE, URLBASE
 
 import django.contrib.auth
+from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
 from django.template.loader import get_template
 from django.template import Context
@@ -23,7 +24,7 @@ from django.forms.widgets import PasswordInput
 from django.views.decorators.cache import cache_control
 from django.db import connection, transaction
 
-from models import Whoisdomains,Contacts,Tokens
+from models import Whoisdomains,Contacts,Tokens,DomainContact
 
 URILOGIN = URIBASE + 'login/'
 FROMADDR = 'noreply@eu.org'
@@ -152,6 +153,9 @@ class contactbyemail_form(forms.Form):
 class contactbyhandle_form(forms.Form):
   handle = forms.CharField(max_length=15, initial=HANDLESUFFIX, help_text='Your handle')
 
+class contactbydomain_form(forms.Form):
+  domain = forms.CharField(max_length=80, initial='.eu.org', help_text='Domain')
+
 class contactchange_form(forms.Form):
   pn1 = forms.RegexField(max_length=60, label="Name", regex='^[a-zA-Z \.-]+\s+[a-zA-Z \.-]')
   em1 = forms.EmailField(max_length=64, label="E-mail")
@@ -261,10 +265,30 @@ def login(request):
       vars['msg'] = "Your username and/or password is incorrect"
       return render_to_response('whois/login.html', vars)
 
-def makeresettoken(request):
+def contactbydomain(request):
+  if request.method == "GET":
+    f = contactbydomain_form()
+    form = f.as_table()
+    return render_to_response('whois/contactdomainform.html',
+                              { 'form': form })
+  elif request.method == "POST":
+    fqdn = request.POST.get('domain', '')
+    handles = DomainContact.objects \
+               .filter(whoisdomain_id__fqdn=fqdn.upper(),
+                       contact_id__email__isnull=False) \
+               .values_list('contact_id__handle', flat=True)
+    return render_to_response('whois/contactdomain.html',
+                              { 'handles': handles, 'suffix': HANDLESUFFIX })
+  else:
+    raise SuspiciousOperation
+
+def makeresettoken(request, handle=None):
   """Password reset step 1: send a reset token to the contact email address"""
   if request.method == "GET":
-    f = contactbyhandle_form()
+    if handle:
+      f = contactbyhandle_form(initial={ 'handle': suffixadd(handle) })
+    else:
+      f = contactbyhandle_form()
     form = f.as_table()
     return render_to_response('whois/resetpass.html',
                               {'form': form, 'posturi': request.path})

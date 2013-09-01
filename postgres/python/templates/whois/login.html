@@ -13,7 +13,10 @@
 <INPUT TYPE="submit" NAME="login" VALUE="Login">
 </FORM>
 <br>
-If you remember your contact handle, you can <a href="{% url 'arf.whois.views.makeresettoken' %}">set a new password here</a> if you forgot it or never set it.<p>
-
-If you have no contact record, you must <a href="{% url 'arf.whois.views.contactcreate' %}">create one here</a>.
+<strong>You can't remember the contact handle or password?</strong>
+<ul>
+<li>If you forgot your password or never had one, <a href="{% url 'arf.whois.views.makeresettoken' %}">set a new password here</a>.
+<li>If you remember your domain name, you can <a href="{% url 'arf.whois.views.contactbydomain' %}">find your contact handle</a>.
+<li>If you have no contact record, <a href="{% url 'arf.whois.views.contactcreate' %}">create one here</a>.
+</ul>
 {% endblock %}
