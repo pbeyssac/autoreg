@@ -368,10 +368,12 @@ def contactcreate(request):
         d['co'] = [ co ]
       d['ad'] = ad
       d['ch'] = [(request.META.get('REMOTE_ADDR', 'REMOTE_ADDR_NOT_SET'), None)]
+      private = form.cleaned_data['private']
 
       from autoreg.whois.db import Person
 
-      p = Person(connection.cursor(), passwd=_pwcrypt(p1), validate=False)
+      p = Person(connection.cursor(), passwd=_pwcrypt(p1), private=private,
+                 validate=False)
       if p.from_ripe(d):
         p.insert()
         valtoken = _token_set(p.cid, "contactval")

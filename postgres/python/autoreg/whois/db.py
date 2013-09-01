@@ -298,7 +298,8 @@ class _whoisobject(object):
     return d1.__cmp__(d2)
 
 class Person(_whoisobject):
-  def __init__(self, dbc, cid=None, key=None, passwd=None, validate=True):
+  def __init__(self, dbc, cid=None, key=None, passwd=None, private=True,
+               validate=True):
     fetch_dbencoding(dbc)
     self._dbc = dbc
     self.cid = cid
@@ -306,7 +307,7 @@ class Person(_whoisobject):
     self.d = {}
     self.passwd = passwd
     self.validate = validate
-    self.private = False
+    self.private = private
   def _set_key(self):
     if self.d['nh'][0] is not None:
       self.key = suffixadd(self.d['nh'][0])
