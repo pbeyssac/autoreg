@@ -247,7 +247,7 @@ def rqlistemail(request, email):
   return render_to_response('requests/rqlistemail.html',
                             { 'rlist': rlist, 'email': email })
 
-def rqlist(request, page=None):
+def rqlist(request, page='0'):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
@@ -258,29 +258,28 @@ def rqlist(request, page=None):
   nbypage = 100
   num = _rq_num()
   npages = (num+nbypage-1) // nbypage
-  if page is None:
-    page = npages-1
-  else:
-    page = int(page)
-    if page > npages-1:
-      return HttpResponseRedirect(reverse(rqlist, args=[str(npages-1)]))
+  if npages == 0:
+    npages = 1
+  page = int(page)
+  if page > npages or page <= 0:
+    return HttpResponseRedirect(reverse(rqlist, args=[str(npages)]))
 
   z = autoreg.zauth.ZAuth()
   login =  _get_login(request.user)
 
   rql = []
-  for r in _rq_list()[page*nbypage:(page+1)*nbypage]:
+  for r in _rq_list()[(page-1)*nbypage:page*nbypage]:
     if not z.checkparent(r.fqdn, login):
       continue
     _rq_decorate(r)
     rql.append(r)
 
   v = { 'cpage': page,
-        'pages': range(npages),
+        'pages': range(1, npages+1),
         'rlist': rql }
-  if page != 0:
+  if page != 1:
     v['prev'] = page-1
-  if page < npages-1:
+  if page < npages:
     v['next'] = page+1
 
   return render_to_response('requests/rqlist.html', v)
