@@ -254,16 +254,24 @@ def login(request):
     vars = {'posturi': request.path, 'next': request.path,
             'form': contactlogin_form().as_table()}
     user = django.contrib.auth.authenticate(username=handle, password=password)
+    c = Contacts.objects.filter(handle=handle)
+    if c.count() != 1:
+      raise SuspiciousOperation
+    v = c[0].validated_on
     if user is not None:
-      if user.is_active:
+      if not v:
+        vars['msg'] = "You need to validate your account. " \
+                      "Please check your e-mail for the validation link."
+      elif user.is_active:
         django.contrib.auth.login(request, user)
         return HttpResponseRedirect(next)
       else:
         vars['msg'] = "Sorry, your account has been disabled"
-        return render_to_response('whois/login.html', vars)
     else:
       vars['msg'] = "Your username and/or password is incorrect"
-      return render_to_response('whois/login.html', vars)
+    return render_to_response('whois/login.html', vars)
+  else:
+    raise SuspiciousOperation
 
 def contactbydomain(request):
   if request.method == "GET":
