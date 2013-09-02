@@ -7,7 +7,7 @@
 #
 
 require "getopts.pl";
-do Getopts("l:s");
+&Getopts("l:s");
 
 $ENV{PATH} = "/sbin:/bin:/usr/sbin:/usr/bin";
 
@@ -53,7 +53,7 @@ $multi = 0;
 
 while (<STDIN>) {
 	chop;
-	if (?^Domain Version Number:?) {
+	if ($_ =~ /^Domain Version Number:/) {
 		$v = substr($_, index($_, ":") + 1);
 		if ($v =~ /^\s*(\S+)\s*$/) { $v = $1 } else { $v = "" }
 		if ($v ne "E1.0") {
@@ -61,7 +61,7 @@ while (<STDIN>) {
 		}
 		$formatok=1;
 	}
-	if (?^mr\.: ?) {
+	if ($_ =~ /^mr\.: /) {
 		$replyto = substr($_, index($_, ":") + 1);
 		if ($replyto =~ /^\s*(.*\S)\s*$/) {
 			$replyto = $1
@@ -71,7 +71,7 @@ while (<STDIN>) {
 			$replyto = ""
 		}
 	}
-	if (?^ln\.: ?) {
+	if ($_ =~ /^ln\.: /) {
 		$LANG = substr($_, index($_, ":") + 1);
 		if ($LANG =~ /^\s*(.*\S)\s*$/) {
 			$ENV{'ARLANG'} = $1;
