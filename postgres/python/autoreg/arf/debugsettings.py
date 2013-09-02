@@ -75,6 +75,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'autoreg.arf.dns',
+    'autoreg.arf.requests',
     'autoreg.arf.whois'
 )
 
