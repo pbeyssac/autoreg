@@ -6,8 +6,8 @@
 # Subject: header with our request id.
 #
 
-require "getopts.pl";
-&Getopts("l:s");
+use Getopt::Std;
+&getopt("l:s");
 
 $ENV{PATH} = "/sbin:/bin:/usr/sbin:/usr/bin";
 

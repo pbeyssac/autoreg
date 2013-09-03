@@ -5,8 +5,8 @@
 # script to handle a mailed form and pipe it to $CRPATH
 #
 
-require "getopts.pl";
-do Getopts("l:");
+use Getopt::Std;
+&getopt("l:");
 
 if ($#ARGV != -1) { die "Usage: receive-mail [-l language-iso-code]\n"; }
 
