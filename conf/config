@@ -43,7 +43,7 @@ $CHECKNSPATH="$DNSBIN/check-ns";
 $CHECKCNAMEPATH="$DNSBIN/check-cname";
 $CHECKMXPATH="$DNSBIN/check-mx";
 $CRPATH="$DNSBIN/check-request";
-$WUPATH="$DNSBIN/whoisupdate.py";
+$WUPATH="$DNSBIN/whoisupdate";
 
 $PASSFILE="$DNSCONF/user-info";		# user info file
 $ZAUTFILE="$DNSCONF/zones-auth";	# zone authorizations file

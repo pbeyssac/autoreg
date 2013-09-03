@@ -3,10 +3,10 @@
 
 """Usage:
 Client mode:
-whois.py request
+whoisdb request
 
 Server mode:
-whois.py [-D database-string] [-l request log] [-e stderr log] [-u user] [-d]
+whoisdb [-D database-string] [-l request log] [-e stderr log] [-u user] [-d]
 """
 
 import errno

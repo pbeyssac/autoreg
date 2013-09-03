@@ -1,0 +1,13 @@
+#!/bin/sh
+
+CMD=whoisdb
+
+if [ "$1" == "stop" -o "$1" == "restart" ]; then
+  kill `ps -U whois -o pid -o command | grep 'python.*'$CMD | awk '{ print $1 }'`
+fi
+if [ "$1" == "start" -o "$1" == "restart" ]; then
+  # Next generation whois on production database
+  /usr/local/autoreg/bin/$CMD -D dbname=eu.org -p 43 -u whois
+  # Next generation whois on development database
+  /usr/local/autoreg/bin/$CMD -l /var/log/whoisd-devel.log -e /var/log/whoisd-devel.err -D dbname=eudevel -p 4343 -u whois
+fi
