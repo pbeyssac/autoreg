@@ -43,11 +43,12 @@ if ($#ARGV == 0) {
 	$domain	= &fqdncanon($domain);
 
 	while (<STDIN>) {
-		chop; split;
-		$i = &fqdncanon($_[0]);
+		chop;
+		my ($a0, $a1) = split;
+		$i = &fqdncanon($a0);
 		push(@fqdn, $i);
-		if ($_[1] !~ /^\s*$/) {
-			$ip{$i} = $_[1];
+		if ($a1 !~ /^\s*$/) {
+			$ip{$i} = $a1;
 		}
 	}
 }
