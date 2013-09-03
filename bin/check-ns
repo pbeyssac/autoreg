@@ -115,7 +115,7 @@ def main():
     #
     # Fetch NS list from public DNS
     #
-    print "Querying NS list for", domain, "...",
+    print "Querying NS list for %s..." % domain,
     try:
       ans = r.query(domain, 'NS', tcp=tcp)
     except dns.resolver.NXDOMAIN:
