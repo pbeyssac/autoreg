@@ -1,4 +1,20 @@
 #!/usr/local/bin/python
+# $Id$
+#
+# Gets on stdin :
+# 1)    a domain name
+# 2)    lines giving, for each server, its fqdn and
+#       (optionally) its IP address.
+#
+#       -- OR --
+#
+# Gets a domain name in argument then retrieves the NS list on the Internet.
+#
+# Checks :
+# 1)    IP addresses of servers not in domain
+# 2)    primary and secondaries are authoritative for the domain
+# 3)    NS records for domain on all listed server match the provided list.
+#
 
 import re
 import socket
@@ -12,63 +28,67 @@ import dns.rdatatype
 import dns.resolver
 
 def sendquery(q, server):
+  trytcp = False
   try:
     r = dns.query.udp(q, server, timeout=10)
   except dns.query.BadResponse:
-    print "BadResponse"
-    return False
+    return None, "BadResponse"
   except dns.query.UnexpectedSource:
-    print "UnexpectedSource"
-    return False
+    return None, "UnexpectedSource"
   except dns.exception.Timeout:
-    print "Timeout"
-    return False
+    trytcp = True
   except socket.error, e:
-    print "socket error", e.val
-    return False
-  return r
+    return None, e
 
-def checksoa(qsoa, server):
+  if not trytcp:
+    return True, r
+
+  try:
+    r = dns.query.tcp(q, server, timeout=10)
+  except dns.query.BadResponse:
+    return None, "BadResponse"
+  except dns.query.UnexpectedSource:
+    return None, "UnexpectedSource"
+  except dns.exception.Timeout:
+    return None, "Timeout"
+  except socket.error, e:
+    return None, e
+
+  return True, r
+
+def getsoa(qsoa, server):
   """Send SOA query to server and wait for reply.
      Return master name and serial.
   """
-  r = sendquery(qsoa, server)
-  if not r:
-    return False
+  ok, r = sendquery(qsoa, server)
+  if not ok:
+    return None, r
   if (r.flags & dns.flags.AA) == 0:
-    print "Answer not authoritative"
-    return False
+    return None, "Answer not authoritative"
   if len(r.answer) == 0:
-    print "Empty answer"
-    return False
+    return None, "Empty answer"
   if len(r.answer) != 1:
-    print "Unexpected answer length"
-    return False
+    return None, "Unexpected answer length"
   if len(r.answer[0].items) != 1:
-    print "Unexpected number of items"
-    return False
+    return None, "Unexpected number of items"
   if r.answer[0].items[0].rdtype != dns.rdatatype.SOA:
-    print "Answer type mismatch"
-    return False
-  mname = r.answer[0].items[0].mname.__str__().upper()
+    return None, "Answer type mismatch"
+  mastername = r.answer[0].items[0].mname.__str__().upper()
   serial = r.answer[0].items[0].serial
-  return mname, serial
+  return True, (mastername, serial)
 
 def getnslist(domain, server):
   qns = dns.message.make_query(domain, 'NS')
   qns.flags = 0
-  r = sendquery(qns, server)
-  if not r:
-    return False
+  ok, r = sendquery(qns, server)
+  if not ok:
+    return None, r
   if (r.flags & dns.flags.AA) == 0:
-    print "Answer not authoritative"
-    return False
+    return None, "Answer not authoritative"
   if len(r.answer) == 0:
-    print "Empty answer"
-    return False
+    return None, "Empty answer"
   if len(r.answer) != 1:
-    print "Unexpected answer length"
-    return False
+    return None, "Unexpected answer length"
   nslist = []
   for a in r.answer[0].items:
     v = a.to_text().upper()
@@ -76,42 +96,51 @@ def getnslist(domain, server):
       v = v[:-1]
     nslist.append(v)
   nslist.sort()
-  return nslist
+  return True, nslist
 
 def main():
   tcp=False
+  errs = 0
+  warns = 0
   fqdnlist = []
   r = dns.resolver.Resolver()
 
   print "---- Servers and domain names check"
+  print
+
+  manualip = { }
 
   if len(sys.argv) == 2:
     domain = sys.argv[1].upper()
     #
     # Fetch NS list from public DNS
     #
-    print "Querying NS list for", domain
+    print "Querying NS list for", domain, "...",
     try:
       ans = r.query(domain, 'NS', tcp=tcp)
     except dns.resolver.NXDOMAIN:
-      print "Domain not found"
+      print "Error: Domain not found"
       sys.exit(1)
     except dns.exception.Timeout:
-      print "Timeout"
+      print "Error: Timeout"
       sys.exit(1)
     except dns.resolver.NoAnswer:
-      print "NoAnswer"
+      print "Error: No answer"
       sys.exit(1)
     except dns.resolver.NoNameservers:
-      print "NoNameservers"
+      print "Error: No name servers"
       sys.exit(1)
-    print "Got", len(ans.rrset.items), "answers"
+    print len(ans.rrset.items), "records"
+    print
     for i in ans.rrset.items:
       fqdn = i.to_text().upper()
       if fqdn.endswith('.'):
         fqdn = fqdn[:-1]
       fqdnlist.append(fqdn)
   else:
+    #
+    # Fetch domain and NS list from stdin
+    #
     fqdnip = re.compile('^([a-zA-Z0-9\.-]+)(?:\s+(\S+))?\s*$')
     domain = sys.stdin.readline()
     domain = domain[:-1].upper()
@@ -119,23 +148,57 @@ def main():
       l = l[:-1]
       m = fqdnip.match(l)
       if not m:
-        print "Invalid line"
+        print "Error: Invalid line"
+        errs += 1
         continue
       fqdn, ip = m.groups()
-      if ip != None:
+      if ip is not None:
         ip = ip.upper()
-      fqdn = fqdn.upper()
-      print "fqdn", fqdn, "ip", ip
-      fqdnlist.append(fqdn)
-  
-  fqdnlist.sort()
-  print fqdnlist
 
-  if not domain.endswith('.'):
-    domain += '.'
+        try:
+          if ':' in ip:
+            socket.inet_pton(socket.AF_INET6, ip)
+          else:
+            socket.inet_pton(socket.AF_INET, ip)
+        except socket.error:
+          print "Error: Invalid IP address", ip
+          ip = None
+          errs += 1
+
+      if ip is not None:
+        if fqdn.endswith('.'+domain):
+          manualip[fqdn] = ip
+        else:
+          print "Error: don't specify IP %s for %s (not in %s)" % (ip, fqdn, domain)
+          errs += 1
+
+      fqdn = fqdn.upper()
+      fqdnlist.append(fqdn)
+
+    if fqdnlist:
+      mastername = fqdnlist[0]
+
+  if not domain:
+    print "Error: no domain specified"
+    errs += 1
+  if not fqdnlist:
+    print "Error: empty name server list"
+    errs += 1
+
+  if errs:
+    print errs, "errors(s)",
+    sys.exit(1)
+
+  fqdnlist.sort()
+
   if domain.startswith('.'):
     domain = domain[1:]
-  
+  domaindot = domain
+  if domain.endswith('.'):
+    domain = domain[:-1]
+  else:
+    domaindot += '.'
+
   #
   # Build IP address list
   #
@@ -143,6 +206,11 @@ def main():
   for fqdn in fqdnlist:
     if fqdn.endswith('.'):
       fqdn = fqdn[:-1]
+
+    if fqdn in manualip:
+      print "Accepted IP for %s: %s" % (fqdn, manualip[fqdn])
+      continue
+
     print "Getting IP for %s..." % fqdn,
     n = 0
     for t in ['A', 'AAAA']:
@@ -161,50 +229,57 @@ def main():
         ips.append((fqdn, t, iprr.to_text()))
         n += 1
     if n == 0:
-      print "failed",
+      print "FAILED",
+      errs += 1
     print
-  
+
+  if errs:
+    print errs, "errors(s)",
+    sys.exit(1)
+
   qsoa = dns.message.make_query(domain, 'SOA')
   qsoa.flags = 0
-  mname = None
+  mastername = None
   serial = None
+
+  print
+  print "---- Checking SOA & NS records for", domain
+  print
+
   for fqdnip in ips:
     fqdn, t, i = fqdnip
-    #if t == 'AAAA':
-    #  continue
-    print "Querying", fqdn, "at", i
-    soa = checksoa(qsoa, i)
-    print "SOA:", soa
-    nslist = getnslist(domain, i)
-    if nslist == False:
-      fail = True
-    elif nslist != fqdnlist:
-      print "Bad NS list:", nslist
-      fail = True
-  
-  sys.exit(0)
-  
-  qns = dns.message.make_query(domain, 'NS')
-  qns.flags = 0
-  print "Fetching NS list from", mname
-  try:
-    rns = dns.query.udp(qns, mname, timeout=10)
-  except dns.query.BadResponse:
-    print "BadResponse"
-  except dns.query.UnexpectedSource:
-    print "UnexpectedSource"
-  except dns.exception.Timeout:
-    print "Timeout"
-  except socket.error, e:
-    print "socket error", e.val
-  else:
-    if (rns.flags & dns.flags.AA) == 0:
-      print "Answer not authoritative"
-    elif len(rns.answer) == 0:
-      print "Empty answer"
+    print "Getting SOA from %s at %s..." % (fqdn, i),
+    ok, soa = getsoa(qsoa, i)
+    if not ok:
+      print "Error:", soa
+      errs += 1
     else:
-      for a in rns.answer:
-        print a.to_text()
+      print "serial", soa[1]
+    print "Getting NS from %s at %s..." % (fqdn, i),
+    ok, nslist = getnslist(domain, i)
+    if not ok:
+      print "Error:", nslist
+      errs += 1
+    elif nslist != fqdnlist:
+      if mastername and mastername == fqdn:
+        print "Error: Bad NS list", nslist
+        errs += 1
+      else:
+        print "Warning: Bad NS list", nslist
+        warns += 1
+    else:
+      print "ok"
+
+  if errs or warns:
+    print
+  if errs:
+    print errs, "errors(s)",
+  if warns:
+    print warns, "warning(s)",
+  print
+  if errs:
+    sys.exit(1)
+  sys.exit(0)
 
 if __name__ == "__main__":
   main()
