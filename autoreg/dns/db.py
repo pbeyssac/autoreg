@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 # $Id$
 
+import cStringIO
 import time
 
 # local modules
@@ -454,13 +455,15 @@ class db:
 	d.move_hist(login_id=self._login_id, domains=True)
 	z.set_updateserial()
 	self._dbh.commit()
-    def modify(self, domain, zone, typ, file, override_internal=False):
+    def modify(self, domain, zone, typ, file, override_internal=False,
+	       _commit=True):
 	"""Modify domain.
 
 	domain: FQDN of domain name
 	file: RR records in zone file format
 	typ: string; if set, check zone allows this resource-record type
 	override_internal: if set, allow modifications to internal domains
+	_commit: default True, can be set to False to skip the DB commit
 	"""
 	d, z = self._zl.find(domain, zone, wlock=True)
 	self._check_login_perm(z.name)
@@ -476,7 +479,27 @@ class db:
 	d.add_rr(file)
 	d.set_updated_by(self._login_id)
 	z.set_updateserial()
-	self._dbh.commit()
+	if _commit:
+	    self._dbh.commit()
+    def modifydeleg(self, domain, file, override_internal=False):
+	"""Modify a domain delegation in the child and the parent at the
+	same time.
+
+	domain: FQDN of domain name
+	file: RR records in zone file format
+	override_internal: if set, allow modifications to internal domains
+	"""
+	records = ''.join([l for l in file])
+        if '.' not in domain:
+	    raise DomainError(DomainError.DNOTFOUND)
+	label, parent = domain.split('.', 1)
+	rrfile = cStringIO.StringIO(records)
+	self.modify(domain, parent, None, rrfile,
+		    override_internal, _commit=False)
+	rrfile = cStringIO.StringIO(records)
+	self.modify(domain, domain, None, rrfile,
+		    override_internal, _commit=True)
+
     def new(self, domain, zone, typ, file=None, internal=False):
 	"""Create domain.
 

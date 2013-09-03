@@ -3,7 +3,7 @@
 #
 
 """Usage:
-	access-zone [-ci] [-t type] [-z zone] [-u user] -a action domainname
+	access-zone [-cdi] [-t type] [-z zone] [-u user] -a action domainname
 
 -c: check only, don't update any file (used for request check)
 -a: action, one of:
@@ -26,6 +26,7 @@
 	list:	show list of known zones.
 	newzone:	create a new zone.
 
+-d: in 'modify' and 'show', apply both on the domain and the parent zone.
 -u: username, used to check access permissions with respect to the
     zones-auth config file. Defaults to USER environment variable.
 -t: type of resource record (for 'new' or 'modify'), checked with respect to
@@ -65,13 +66,13 @@ def errexit(msg, args):
     sys.exit(1)
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "a:cit:u:z:")
+    opts, args = getopt.getopt(sys.argv[1:], "a:cdit:u:z:")
 except getopt.GetoptError:
     usage()
     sys.exit(1)
 
 action, type, zone = None, None, None
-nowrite, internal = False, False
+nowrite, internal, deleg = False, False, False
 user = os.getenv('USER', None)
 lang = os.getenv('LANG', '')
 
@@ -91,6 +92,8 @@ for o, a in opts:
 	user = a
     elif o == "-z":
 	zone = a.upper()
+    elif o == "-d":
+	deleg = True
 
 if action == None or user == None:
     usage()
@@ -119,14 +122,22 @@ dd = dnsdb.db(dbh, nowrite)
 
 dd.login(user)
 
+if deleg and '.' in domain:
+  dummy, zone = domain.split('.', 1)
+
 r = 0
 try:
   if action == 'show':
     dd.show(domain, zone)
+    if deleg:
+      dd.show(domain, domain)
   elif action == 'new':
     dd.new(domain, zone, type, file=sys.stdin, internal=internal)
   elif action == 'modify':
-    dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal)
+    if deleg:
+      dd.modifydeleg(domain, file=sys.stdin, override_internal=internal)
+    else:
+      dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal)
   elif action == 'delete':
     dd.delete(domain, zone, override_internal=internal)
   elif action == 'lock':
