@@ -6,15 +6,15 @@
 #	-c to be quiet if nothing has changed (useful in cron jobs)
 
 # Where to find the "access-zone" script
-AZ=/usr/local/dns-manager/bin/access-zone
-# The directory for zone files
-ZONES=/usr/local/dns-manager/zones
+AZ=/usr/local/autoreg/bin/access-zone
 # The directory where "master" zone files are located
-DEST=/etc/namedb
+DEST=/etc/namedb/autoreg
 # Command to reload the nameserver. Used only if option -r is provided.
-NDC=/usr/local/sbin/rndc
-
-cd $ZONES
+NDC=/usr/sbin/rndc
+# DNS Zone signing
+SIGNZONE=/usr/sbin/dnssec-signzone
+#
+NDCKEY=/etc/namedb/rndc-autoreg.key
 
 if [ "$USER" = "root" ]; then USER=DNSADMIN; fi
 
@@ -40,25 +40,30 @@ done
 
 for i in $*
 do
-	if $AZ -u$USER -asoa $i; then
-	    if [ -r $ZONES/$i -a -r $DEST/$i ]; then
+	oldser=`awk <$DEST/$i 'NR>10 {exit 1} $2=="SOA" {print $5; exit 0}'`
+	if [ "$oldser" = "" ]; then
+		echo "Error: cannot get old serial for $i"
+		exit 2
+	fi
+	newser=`$AZ -u$USER -asoa $i`
+	if [ "$newser" = "" ]; then
+		echo "Error: cannot get new serial for $i"
+		exit 2
+	fi
+
+	if [ "$newser" != "$oldser" ]; then
+	    if [ -r $DEST/$i ]; then
 		echo $i updated
 		if (
 		  echo "; AUTOMATICALLY GENERATED -- DON'T EDIT THIS FILE"
-		  echo "; edit $ZONES/$i instead"
 		  echo ";"
-		  # access-zone is used to get a read lock on
-		  # the file during the copy.
+		  # access-zone is used to get a ASCII dump of the zone.
 		  # If it returns false, the copy to stdout failed.
 		  $AZ -u$USER -acat $i) > $DEST/$i.new &&
 		#
 		# Copy apparently ok, check it.
 		#
-		# It can differ from the original if the latter
-		# has been modified just after the copy,
-		# or if the disk is full.
-		#
-		(tail +4 $DEST/$i.new | cmp -s - $ZONES/$i); then
+		(tail -5 $DEST/$i.new | grep -q ^_EU-ORG-END-MARKER); then
 		    # Copy ok, show diffs
 		    diff -U2 $DEST/$i $DEST/$i.new
 		    # replace the older file
@@ -67,19 +72,26 @@ do
 
 		    echo ----
 		    mod=1
+		    # Sign zone, if relevant
+		    if [ -f $DEST/$i.DNSSEC ]; then
+			(
+			cd $DEST
+			$SIGNZONE -l dlv.isc.org -r /dev/random -o $i $i.DNSSEC
+			)
+		    fi
 		else
-		    echo "Error: cannot copy $ZONES/$i to $DEST/$i.new"
+		    echo "Error: cannot dump zone $i to $DEST/$i.new"
 		    rm -f $DEST/$i.new
 		fi
 	   else
-		echo "Error: cannot read $ZONES/$i and/or $DEST/$i"
+		echo "Error: cannot read $DEST/$i"
 	   fi
 	fi
 done
 
 if [ "$mod" = "1" ]; then
 	if [ $optr = 1 ]; then
-		$NDC reload
+		$NDC -k $NDCKEY reload
 	else
 		if [ $optc = 0 ]; then echo "now:" echo "$NDC reload"; fi
 	fi

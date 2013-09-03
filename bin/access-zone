@@ -1,310 +1,190 @@
-#!/usr/bin/perl
-
+#!/usr/local/bin/python
 # $Id$
-
-# local configuration.
-require "/usr/local/dns-manager/conf/config";
-require "$DNSLIB/auth.pl";
-require "$DNSCONF/msg-access";
-
-#
-# Usage:
-#  access-zone [-c] [-t type] -u user
-#		-a{cat|soa|new|modify|delete|show} domainname
-#
-# -c -> check only, don't update any file (used for request check)
-# -a -> action.
-#		cat:	just print out the zone file
-#		new:	create the entry for domainname in the parent zone,
-#			if not already there
-#		modify: modify the entry for domainname in the parent zone,
-#			if already there
-#		delete: delete the entry for domainname in the parent zone,
-#			if already there
-#		soa:	update the SOA for domainname in the zonefile of
-#			the same name, if the file has previously changed
-#			with one of the above actions
-#		show:	display the entry for domainname in the parent zone
-#
-# -u -> username, used to check access permissions with respect to the
-#	zones-auth config file
-# -t -> type of record (for "new" or "modify"), checked with respect to
-#	the ";! type" lines for the types of allowed records in the zone.
-#
-# For actions "new" and "modify", the records to be inserted are provided
-# on stdin.
 #
 
-sub myprint {
-    local ($handle, @list) = @_;
-    if (!print $handle @list) { $err = 1; }
-}
+"""Usage:
+	access-zone [-ci] [-t type] [-z zone] [-u user] -a action domainname
 
-sub myprintf {
-    local ($handle, @list) = @_;
-    if (!printf $handle @list) { $err = 1; }
-}
+-c: check only, don't update any file (used for request check)
+-a: action, one of:
+	new:	create the entry for domainname in the parent zone,
+		if not already there; use resource records on stdin.
+	modify: modify the entry for domainname in the parent zone,
+		if already there; use resource records on stdin.
+	delete: delete the entry for domainname in the parent zone,
+		if already there.
+	cat:	print the zone file on stdout.
+	soa:	update the SOA serial for domainname in the zonefile of
+		the same name, if the file has previously changed
+		due to one of the above actions.
+		Print the serial in any case.
+	show:	display entry for domainname.
+        hold:	put domain on hold.
+        unhold:	unhold domain.
+        lock:	protect domain from 'modify' or 'delete' unless forced with -i.
+        unlock:	unprotect domain.
+	list:	show list of known zones.
+	newzone:	create a new zone.
 
-&zauth_read;    
+-u: username, used to check access permissions with respect to the
+    zones-auth config file. Defaults to USER environment variable.
+-t: type of resource record (for 'new' or 'modify'), checked with respect to
+    allowed record types in the zone.
+-z: specify zone, in case there is an ambiguity with respect to handled zones.
+-i: in 'modify' and 'delete', allow handling of "internal" domains.
+    in 'new', set "internal" flag.
+"""
 
-$LOCK_SH = 1;
-$LOCK_EX = 2;
-$LOCK_NB = 4;
-$LOCK_UN = 8;
+# standard modules
+import getopt
+import logging
+import os
+import psycopg2
+import sys
 
-require "getopts.pl";
-&Getopts("ca:u:t:");
+# local modules
+import autoreg
+import autoreg.conf as conf
+import autoreg.dns
+import autoreg.dns.db as dnsdb
+import autoreg.msg as msg
 
-if ($opt_a) {
-	$action = $opt_a;
-	$action =~ tr/A-Z/a-z/;
+logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
+		    format='%(asctime)s %(levelname)-8s %(message)s',
+		    datefmt="%Y%m%d %H:%M:%S")
 
-	if ($action =~ /^n/) {
-		$action = 'new';
-	} elsif ($action =~ /^m/) {
-		$action = 'modify';
-	} elsif ($action =~ /^d/) {
-		$action = 'delete';
-	}
-	if ($action eq 'soa') {
-		$newsoa = `date +%Y%m%d`; chop $newsoa;
-	}
-}
-if ($opt_t) {
-	$type = $opt_t;
-	$type =~ tr/a-z/A-Z/;
-}
+action_list = ['cat', 'delete', 'lock', 'modify', 'unlock',
+		'hold', 'unhold',
+		'new', 'show', 'soa', 'list', 'newzone']
+def usage():
+    print >> sys.stderr, __doc__
 
-if ($action ne "lock" && $action ne 'unlock'
-	 && $action ne 'show'
-	 && $action ne 'cat'
-	 && $action ne 'soa'
-	 && $action ne 'new' && $action ne 'delete' && $action ne 'modify') {
-  die("Usage: [-c] [-t type] -u user -a{cat|soa|new|modify|delete|show} domainname\n");
-}
+def errexit(msg, args):
+    """Print a formatted error message on stderr and exit(1)."""
+    print >> sys.stderr, amsg.f(msg, args),
+    sys.exit(1)
 
-if ($#ARGV != 0) {
-  die("Usage: [-c] [-t type] -u user -a{cat|soa|new|modify|delete|show} domainname\n");
-}
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "a:cit:u:z:")
+except getopt.GetoptError:
+    usage()
+    sys.exit(1)
 
-if ($action eq 'soa' || $action eq 'cat') {
-  $parent = $ARGV[0];
-  $parent =~ tr/a-z/A-Z/;
-} else {
-  $domain = $ARGV[0];
-  $domain =~ tr/a-z/A-Z/;
-  $parent=substr($domain, index($domain, ".")+1);
-  $subdom=substr($domain, 0, index($domain, "."));
-}
+action, type, zone = None, None, None
+nowrite, internal = False, False
+user = os.getenv('USER', None)
+lang = os.getenv('LANG', '')
 
-$zonefile="$ZONEDIR/$parent";
-$zonelock="$ZONEDIR/$parent.lock";
-$outfile="$zonefile.new";
+amsg = msg.Msg('msg-access', lang)
 
-$date=`date`; chop $date;
+for o, a in opts:
+    if o == "-a":
+	action = a.lower()
+    elif o == "-c":
+	nowrite = True
+	user = 'DNSADMIN'
+    elif o == "-i":
+	internal = True
+    elif o == "-t":
+	type = a.upper()
+    elif o == "-u":
+	user = a
+    elif o == "-z":
+	zone = a.upper()
 
-$oldum = umask 0;
-open(LF, ">$zonelock") || die("Cannot open lockfile $zonelock: $!\n");
-umask $oldum;
+if action == None or user == None:
+    usage()
+    sys.exit(1)
+if action == 'list':
+    if len(args) != 0:
+        usage()
+        sys.exit(1)
+    domain = None
+elif len(args) != 1:
+    usage()
+    sys.exit(1)
+else:
+    domain = args[0].upper()
 
-open(ZF, $zonefile) || die("Cannot open zonefile $zonefile: $!\n");
+if action == 'n': action='new'
+elif action.startswith('m'): action='modify'
+elif action.startswith('d'): action='delete'
 
-$do_out = 0;
-if ($action ne "show" && $action ne "cat" && !$opt_c) {
-	flock(LF, $LOCK_EX) || die "flock lock: $!\n";
-	flock(ZF, $LOCK_EX) || die "flock zone: $!\n";
-	$do_out = 1;
-	open(OF, ">$outfile") || die("Cannot open outfile $outfile: $!\n");
-	flock(OF, $LOCK_EX);
-	&myprint (OF, ";! updated by $opt_u, $date\n")
-		unless $action eq 'soa';
-} else {
-	flock(LF, $LOCK_EX) || die "flock lock: $!\n";
-	flock(ZF, $LOCK_SH) || die "flock zone: $!\n";
-}
+if action not in action_list:
+    usage()
+    sys.exit(1)
 
-if ($action eq "cat") {
-    while (<ZF>) {
-	if (!print $_) {
-	    die "print: $!\n"
-	}
-    }
-    if (!close(STDOUT)) {
-	# Probably disk full
-	die "close: $!\n"
-    }
-    exit 0
-}
+dbh = psycopg2.connect(conf.dbstring)
+dd = dnsdb.db(dbh, nowrite)
 
-$was_updated = 0;
-while (<ZF>) {
-	if (/^;!/) {
-		if (/^;! updated / && $action ne 'show') {
-			$was_updated = 1;
-			next;
-		} elsif (/^;! minlen ([0-9]+)/ && $action eq 'new') {
-			if (length($subdom) < $1) {
-				unlink($outfile) unless $action eq "show";
-				die sprintf($MSG_SHORT, $parent, $1);
-			}
-		} elsif (/^;! maxlen ([0-9]+)/ && $action eq 'new') {
-			if (length($subdom) > $1) {
-				unlink($outfile) unless $action eq "show";
-				die sprintf($MSG_LONG, $parent, $1);
-			}
-		} elsif (/^;! type ([a-zA-Z0-9]+)/) {
-			if ($opt_t eq $1) {
-				$typeok = $1;
-			}
-		}
-	}
-	if ($action eq 'soa'
-	    && $was_updated
-	    && ?^\s+([0-9]+)([0-9][0-9])\s*;\s*[Ss]erial?) {
-	    $oldsoa = $1;
-	    $oldser = $2;
-	    if ($oldsoa ne $newsoa) {
-		&myprint (OF, "\t\t".$newsoa."01\t; Serial number\n")
-			if $do_out;
-	    } else {
-		$oldser++;
-		&myprintf (OF, "\t\t$newsoa%02d\t; Serial number\n",$oldser)
-			if $do_out;
-	    }
-	    next;
-	}
+dd.login(user)
 
-	if ($skip) {
-		$skip = 0;
-		if ($_ eq ";\n") { next }
-	}
-
-	if (/^([A-Za-z0-9-.]+)\s/) {
-	    if (!$indomain) {
-		$curd = $1;
-		if ($curd !~ /\.$/) {
-			$curd .= ".".$parent
-		} else {
-			chop $curd;
-		}
-		$curd =~ tr/a-z/A-Z/;
-		if ($curd eq $domain) {
-		    $indomain = 1;
-		    $found = 1;
-		    if ($action eq "modify") { &modify_zone; }
-		    elsif ($action eq "show") { print; next }
-		    elsif ($action eq "new") {
-			unlink($outfile);
-			die sprintf($MSG_ALLOC, $domain);
-		    } elsif ($action eq "lock") {
-			&myprint (OF, "; lock $subdom\n")
-				if $do_out;
-			next;
-		    }
-		}
-	    } else {
-		$inheaders = 0;
-	    }
-	}
-	if (?^; lock $subdom$?) {
-		$found = 1;
-		if ($action eq "unlock") {
-			&myprint (OF, "; domain $subdom\n")
-				if $do_out;
-			next;
-		}
-		unlink($outfile) unless $action eq "show";
-		die sprintf($MSG_LOCKD, $domain);
-	}
-	if (?^; domain $subdom$?) {
-		$createdline = <ZF>;
-		if (!$createdline) {
-			last;
-		}
-		$svline = $createdline;
-		if ($createdline !~ /^; created: /) {
-			$createdline = "";
-		}
-		$inheaders = 1;
-		$indomain = 1;
-		$found = 1;
-		if ($action eq "modify") { &modify_zone; }
-		elsif ($action eq "new") { last }
-		elsif ($action eq "show") { print; print $svline; next }
-		elsif ($action eq "lock") {
-			&myprint (OF, "; lock $subdom\n")
-				if $do_out;
-			next;
-		}
-	} elsif ($indomain && !$inheaders && /^\s*;/) {
-		$indomain = 0;
-		if ($action eq "delete") { $skip = 1 }
-	} elsif ($indomain && $inheaders && !/^\s*;/) {
-		$inheaders = 0;
-	} elsif ($indomain && $action eq "show") { print }
-
-	next if $indomain;
-	&myprint (OF, $_)
-		if $do_out;
-}
-# Don't close ZF: we would lose our lock.
-
-if ($action eq 'new') {
-	if ($found) {
-		unlink($outfile);
-		die sprintf($MSG_EXIST, $domain);
-	}
-	&create_zone;
-} elsif (!$found && $action ne 'soa') {
-	unlink($outfile) unless $action eq "show";
-	die sprintf($MSG_NODOM, $domain, $action);
-} elsif (!$was_updated && $action eq 'soa') {
-	unlink($outfile);
-	exit 1;
-}
-
-if ($opt_t && !$typeok && ($action eq 'new' || $action eq 'modify')) {
-	unlink($outfile);
-	die sprintf($MSG_NOTYP, $opt_t);
-}
-
-if ($do_out) {
-	if (!&zauth_check($parent, $opt_u)) {
-		unlink($outfile);
-		die sprintf($MSG_NUSER, $opt_u);
-	}
-	if ($err) {
-		unlink($outfile);
-		die "Can't write $zonefile\n"
-	}
-	if (!close(OF)) {
-	    # Probably no space left
-	    unlink($outfile);
-	    die "$outfile: $!\n";
-	}
-	# We don't have a lock on outfile anymore since it's closed.
-	# It doesn't matter since we don't need to read or write it by now.
-	# It's ok since we still have the lock on the old $zonefile.
-	rename($outfile, $zonefile) || die "rename failed: $!\n";
-}
-exit 0;
-
-sub modify_zone {
-    if ($do_out) {
-	&myprint (OF, "; domain $subdom\n");
-	&myprint (OF, $createdline);
-	&myprint (OF, "; updated: by $opt_u, $date\n");
-	while (<STDIN>) {
-		&myprint (OF, $_)
-	}
-    }
-}
-
-sub create_zone {
-    if ($do_out) {
-	&myprint (OF, "; domain $subdom\n; created: by $opt_u, $date\n");
-	while (<STDIN>) {
-		&myprint (OF, $_)
-	}
-    }
-}
+r = 0
+try:
+  if action == 'show':
+    dd.show(domain, zone)
+  elif action == 'new':
+    dd.new(domain, zone, type, file=sys.stdin, internal=internal)
+  elif action == 'modify':
+    dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal)
+  elif action == 'delete':
+    dd.delete(domain, zone, override_internal=internal)
+  elif action == 'lock':
+    dd.set_registry_lock(domain, zone, True)
+  elif action == 'unlock':
+    dd.set_registry_lock(domain, zone, False)
+  elif action == 'hold':
+    dd.set_registry_hold(domain, zone, True)
+  elif action == 'unhold':
+    dd.set_registry_hold(domain, zone, False)
+  elif action == 'cat':
+    dd.cat(domain)
+  elif action == 'soa':
+    (updated, serial) = dd.soa(domain)
+    if not updated:
+	r = 1
+    print serial
+  elif action == 'list':
+    for zone in dd.zonelist():
+        print zone
+  elif action == 'newzone':
+    dd.newzone(domain)
+  else:
+    usage()
+    r = 1
+except dnsdb.AccessError, e:
+  if e.args[0] == dnsdb.AccessError.NOAUTH:
+    errexit('MSG_NUSER', (user))
+  if e.args[0] == dnsdb.AccessError.UNKLOGIN:
+    errexit('MSG_NUSER', (user))
+  if e.args[0] == dnsdb.AccessError.NOTLOGGED:
+    errexit('MSG_NUSER', (user))
+  if e.args[0] == dnsdb.AccessError.DLOCKED:
+    errexit('MSG_LOCKD', (domain))
+  if e.args[0] == dnsdb.AccessError.DINTERNAL:
+    errexit('MSG_LOCKD', (domain))
+  if e.args[0] == dnsdb.AccessError.ILLRR:
+    errexit('MSG_NOTYP', (type))
+  if e.args[0] == dnsdb.AccessError.DLENSHORT:
+    errexit('MSG_SHORT', e.args[1])
+  if e.args[0] == dnsdb.AccessError.DLENLONG:
+    errexit('MSG_LONG', e.args[1])
+  logging.exception("Unexpected exception in access-zone:\n")
+  logging.error("variables:\n%s", str(locals()))
+  raise
+except dnsdb.DomainError, e:
+  if e.args[0] == dnsdb.DomainError.DNOTFOUND:
+    errexit('MSG_NODOM', (domain, action))
+  if e.args[0] == dnsdb.DomainError.ZNOTFOUND:
+    errexit('MSG_NODOM', (domain, action))
+  if e.args[0] == dnsdb.DomainError.DEXISTS:
+    errexit('MSG_ALLOC', (domain))
+  logging.exception("Unexpected exception in access-zone:\n")
+  logging.error("variables:\n%s", str(locals()))
+  raise
+except:
+  logging.exception("Unexpected exception in access-zone:\n")
+  logging.error("variables:\n%s", str(locals()))
+  raise
+else:
+  sys.exit(r)
