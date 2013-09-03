@@ -16,6 +16,7 @@
 # 3)    NS records for domain on all listed server match the provided list.
 #
 
+import getopt
 import re
 import socket
 import sys
@@ -104,14 +105,33 @@ def main():
   warns = 0
   fqdnlist = []
   r = dns.resolver.Resolver()
+  manualip = { }
+
+  try:
+    optlist, args = getopt.getopt(sys.argv[1:], 'o:')
+  except getopt.GetoptError, err:
+    print str(err)
+    sys.exit(2)
+
+  for opt, val in optlist:
+    if opt == '-o':
+      fqdn, ip = val.split('=')
+      try:
+        if ':' in ip:
+          socket.inet_pton(socket.AF_INET6, ip)
+        else:
+          socket.inet_pton(socket.AF_INET, ip)
+      except socket.error:
+        print "Error: Invalid IP address", ip
+        ip = None
+        errs += 1
+      manualip[fqdn.upper()] = ip
 
   print "---- Servers and domain names check"
   print
 
-  manualip = { }
-
-  if len(sys.argv) == 2:
-    domain = sys.argv[1].upper()
+  if len(args) == 1:
+    domain = args[0].upper()
     #
     # Fetch NS list from public DNS
     #
@@ -209,6 +229,7 @@ def main():
 
     if fqdn in manualip:
       print "Accepted IP for %s: %s" % (fqdn, manualip[fqdn])
+      ips.append((fqdn, manualip[fqdn]))
       continue
 
     print "Getting IP for %s..." % fqdn,
@@ -226,7 +247,7 @@ def main():
         continue
       for iprr in aip.rrset.items:
         print iprr.to_text(),
-        ips.append((fqdn, t, iprr.to_text()))
+        ips.append((fqdn, iprr.to_text()))
         n += 1
     if n == 0:
       print "FAILED",
@@ -247,7 +268,7 @@ def main():
   print
 
   for fqdnip in ips:
-    fqdn, t, i = fqdnip
+    fqdn, i = fqdnip
     print "Getting SOA from %s at %s..." % (fqdn, i),
     ok, soa = getsoa(qsoa, i)
     if not ok:
