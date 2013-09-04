@@ -418,7 +418,11 @@ sub doaccept {
 	} elsif ($1 eq "changed") {
 	} elsif ($1 eq "domain") {
           $text .= $line."\n";
+          $text .= "changed: $user_mail\n";
 	  if ($action eq 'D') { $text .= "delete: $user_mail $date\n" }
+	} elsif ($1 eq "person") {
+          $text .= $line."\n";
+          $text .= "changed: $user_mail\n";
 	} else {
           $text .= $line."\n";
 	}
