@@ -180,8 +180,8 @@ class _Domain:
 	assert self._dbc.rowcount == 1
 	self._created_by, self._updated_by = self._dbc.fetchone()
 	return True
-    def add_rr(self, f):
-	"""Add resource records to domain from file.
+    def mod_rr(self, f, delete=False):
+	"""Add/remove resource records to domain from file.
 
 	f: resource records in zone file format
 	domain_name, zone_name and domain_id should be set.
@@ -191,6 +191,7 @@ class _Domain:
 	dp = parser.DnsParser()
 	# convenient default label if none provided on first line of file
 	label = ''
+	rowcount = 0
 	for l in f:
 	    t = dp.parseline(l)
 	    if t is None:
@@ -220,10 +221,20 @@ class _Domain:
 		pass
 	    else:
 		raise DomainError(DomainError.RRUNSUP, typ)
-	    self._dbc.execute('INSERT INTO rrs '
+	    if not delete:
+	      self._dbc.execute('INSERT INTO rrs '
 		'(domain_id,label,ttl,rrtype_id,value) '
 		'VALUES (%s,%s,%s,(SELECT id FROM rrtypes WHERE label=%s),%s)',
 		(did, label, ttl, typ, value))
+	    else:
+	      self._dbc.execute('DELETE FROM rrs '
+		'WHERE domain_id=%s AND label=%s '
+		'AND rrtype_id IN (SELECT id FROM rrtypes WHERE label=%s) '
+		'AND value = %s',
+		(did, label, typ, value))
+	    rowcount += self._dbc.rowcount
+	return rowcount
+
     def set_updated_by(self, login_id):
         """Set updated_by and updated_on."""
         self._dbc.execute('UPDATE domains '
@@ -456,7 +467,7 @@ class db:
 	z.set_updateserial()
 	self._dbh.commit()
     def modify(self, domain, zone, typ, file, override_internal=False,
-	       _commit=True):
+	       replace=True, delete=False, _commit=True):
 	"""Modify domain.
 
 	domain: FQDN of domain name
@@ -474,14 +485,16 @@ class db:
 	if d._internal and not override_internal:
 	    raise AccessError(AccessError.DINTERNAL)
 	if self._nowrite: return
-	d.move_hist(login_id=self._login_id, domains=False)
+	if replace and not delete:
+	  d.move_hist(login_id=self._login_id, domains=False)
 	# add new resource records
-	d.add_rr(file)
+	d.mod_rr(file, delete=delete)
 	d.set_updated_by(self._login_id)
 	z.set_updateserial()
 	if _commit:
 	    self._dbh.commit()
-    def modifydeleg(self, domain, file, override_internal=False):
+    def modifydeleg(self, domain, file, override_internal=False,
+		    replace=True, delete=False):
 	"""Modify a domain delegation in the child and the parent at the
 	same time.
 
@@ -495,10 +508,10 @@ class db:
 	label, parent = domain.split('.', 1)
 	rrfile = cStringIO.StringIO(records)
 	self.modify(domain, parent, None, rrfile,
-		    override_internal, _commit=False)
+		    override_internal, replace, delete, _commit=False)
 	rrfile = cStringIO.StringIO(records)
 	self.modify(domain, domain, None, rrfile,
-		    override_internal, _commit=True)
+		    override_internal, replace, delete, _commit=True)
 
     def new(self, domain, zone, typ, file=None, internal=False):
 	"""Create domain.
@@ -523,7 +536,7 @@ class db:
         d.new(z, self._login_id, internal)
 	# add resource records, if provided
 	if file:
-	    d.add_rr(file)
+	    d.mod_rr(file)
 	z.set_updateserial()
 	self._dbh.commit()
     def set_registry_lock(self, domain, zone, val):
