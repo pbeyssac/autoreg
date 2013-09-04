@@ -516,9 +516,9 @@ class db:
 	z.checktype(typ)
 	z.fetch()
 	if len(d.name) < z.minlen and not internal:
-	    raise AccessError(AccessError.DLENSHORT, (domain, z.minlen))
+	    raise AccessError(AccessError.DLENSHORT, (z.name, z.minlen))
 	if len(d.name) > z.maxlen and not internal:
-	    raise AccessError(AccessError.DLENLONG, (domain, z.maxlen))
+	    raise AccessError(AccessError.DLENLONG, (z.name, z.maxlen))
 	if self._nowrite: return
         d.new(z, self._login_id, internal)
 	# add resource records, if provided
