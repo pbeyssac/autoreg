@@ -50,6 +50,8 @@ def sendquery(q, server):
     return None, "BadResponse"
   except dns.query.UnexpectedSource:
     return None, "UnexpectedSource"
+  except EOFError:
+    return None, "Dropped connection"
   except dns.exception.Timeout:
     return None, "Timeout"
   except socket.error, e:
