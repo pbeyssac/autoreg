@@ -110,7 +110,7 @@ def suffixstrip(h):
   else:
     return h
 
-ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc',
+ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc', 'zone-c': 'zc',
               'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
               'changed': 'ch', 'remark': 'rm', 'nic-hdl': 'nh',
               'notify': 'ny', 'mnt-by': 'mb', 'source': 'so',
