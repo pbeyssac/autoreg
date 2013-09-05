@@ -209,14 +209,17 @@ def rqdom(request, domain):
   return render_to_response('requests/rqdisplay.html',
                             { 'rlist': rlist })
 
-def rqlistdom(request, domain):
+def rqlistdom(request, domain=None):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   if not _is_admin(request.user):
     raise PermissionDenied
-  if domain.upper() != domain:
+  if domain is None:
+    # domain not in URL, provided by "?domain=..." argument (search form)
+    domain = request.GET.get('domain', '').upper()
+  elif domain.upper() != domain:
     return HttpResponseRedirect(reverse('autoreg.arf.requests.views.rqlistdom',
                                         args=[domain.upper()]))
 
