@@ -157,8 +157,13 @@ def rqedit(request, rqid):
     return render_to_response('requests/rqedit.html',
                               { 'r': r })
   elif request.method == 'POST':
-    whoisrecord = request.POST['whois'].strip('\n')
-    r.whoisrecord = whoisrecord
+    whoisrecord = request.POST.get('whois', '').strip('\n')
+    r.tags = request.POST.get('tags', '').strip()
+    if r.tags == '':
+      r.tags = None
+    if r.whoisrecord is not None:
+      # Can only edit whois record when it is already existing
+      r.whoisrecord = whoisrecord
     r.save()
     return HttpResponseRedirect(reverse('autoreg.arf.requests.views.rq',
                                         args=[rqid]))

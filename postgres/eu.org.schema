@@ -393,7 +393,8 @@ CREATE TABLE requests (
 	language CHAR(2),
 	state VARCHAR(10),
 	zonerecord VARCHAR(500),
-	whoisrecord VARCHAR(2000)
+	whoisrecord VARCHAR(2000),
+	tags VARCHAR(50)
 );
 CREATE INDEX requests_fqdn_index ON requests(fqdn);
 
@@ -406,6 +407,7 @@ CREATE TABLE requests_hist (
 	state VARCHAR(10),
 	zonerecord VARCHAR(500),
 	whoisrecord VARCHAR(2000),
+	tags VARCHAR(50),
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -416,10 +418,10 @@ CREATE OR REPLACE FUNCTION trig_del_requests()
     BEGIN
 	INSERT INTO requests_hist (
 		id, email, action, fqdn, language,
-		state, zonerecord, whoisrecord)
+		state, zonerecord, whoisrecord, tags)
 	    VALUES (
 		OLD.id, OLD.email, OLD.action, OLD.fqdn, OLD.language,
-		OLD.state, OLD.zonerecord, OLD.whoisrecord);
+		OLD.state, OLD.zonerecord, OLD.whoisrecord, OLD.tags);
 	RETURN OLD;
     END;
 $trig_del_requests$ LANGUAGE plpgsql;

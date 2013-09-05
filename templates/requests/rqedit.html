@@ -4,9 +4,14 @@
 {% block msg %}
 
 <FORM ACTION="{% url 'autoreg.arf.requests.views.rqedit' r.id %}" METHOD="POST">
+{% if r.whoisrecord != None %}
 <TEXTAREA NAME="whois" COLS=70 ROWS=7>
 {{ r.whoisrecord }}
 </TEXTAREA>
-<INPUT TYPE="submit" VALUE="Save">
+<BR>
+{% endif %}
+Tags: <INPUT TYPE="text" NAME="tags" size="40" VALUE="{% if r.tags != None %}{{ r.tags }}{% endif %}"/>
+<BR>
+<INPUT TYPE="submit" VALUE="Save All">
 </FORM>
 {% endblock %}
