@@ -428,12 +428,13 @@ class Person(_whoisobject):
     self._set_key()
   def fetch_obfuscated(self):
     self.fetch()
-    self._dbc.execute('SELECT email FROM contacts_email WHERE id=%s',
-                      (self.cid,))
-    assert self._dbc.rowcount == 1
-    email, = _fromdb(self._dbc.fetchone())
-    email += '@' + HANDLEMAILHOST
-    self.d['oe'] = [email]
+    if self.d['em'][0] is not None:
+      self._dbc.execute('SELECT email FROM contacts_email WHERE id=%s',
+                        (self.cid,))
+      assert self._dbc.rowcount == 1
+      email, = _fromdb(self._dbc.fetchone())
+      email += '@' + HANDLEMAILHOST
+      self.d['oe'] = [email]
     if self.private:
       self.d['pn'] = ['UNDISCLOSED BY REQUEST']
       self.d['ad'] = ['UNDISCLOSED BY REQUEST']
