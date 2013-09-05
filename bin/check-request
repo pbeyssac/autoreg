@@ -404,8 +404,11 @@ if ($makewhois) {
 }
 
 $vr = &rq_create($REQID, $replyto, $req, $domain, $ENV{'ARLANG'},
-	$rrdata, $whoisdata)
-		|| die ("Cannot open $REQID: $!\n");
+	$rrdata, $whoisdata);
+
+if ($vr ne "") {
+  print $vr."\n";
+}
 
 print $MSG_ENDCK;
 print $MSG_RQOK1;

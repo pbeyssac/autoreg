@@ -193,11 +193,22 @@ sub rq_list_dom {
 sub rq_create {
   local ($rq, $replyto, $action, $domain, $lang, $dns, $dbrecords)
 	= ($_[0], $_[1], $_[2], $_[3], $_[4], $_[5], $_[6]);
+  my $warn = 0;
+
+  if (&rq_list_dom($domain)) {
+    $warn = 1;
+  }
 
   my $dbh = DBI->connect($dbparam, $dbuser, "", {AutoCommit => 1});
   my $sth = $dbh->prepare("INSERT INTO requests (id, email, action, fqdn, language, state, zonerecord, whoisrecord) VALUES (?,?,?,?,?,?,?,?)");
   $sth->execute($rq, $replyto, $action, $domain, $lang, "WaitAck",
 	$dns, $dbrecords);
+
+  if ($warn) {
+    return "Warning: we already have waiting requests for domain $domain.";
+  } else {
+    return "";
+  }
 }
 
 #
