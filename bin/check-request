@@ -111,12 +111,19 @@ while (<STDIN>) {
 		$line = $v;
 		$multi = 1;
 	} elsif (/^dm\./) {
+		# remove dot at the end if present
+		if ($v =~ /^(.*)\.$/) { $v = $1; }
 		$domain = $v;
 	} elsif (/^rr\./) {
 		$rectype = $v;
-	} elsif (/^om\./ || /^[at][hmte]\./ || /^[oat][cspn]\./) {
+	} elsif (/^[at]h\./) {
+		if ($v eq '-FREE') { $v = ""; }
+		$ref{$refid} = $v;
+	} elsif (/^om\./ || /^[at][mte]\./ || /^[oat][cspn]\./) {
 		$ref{$refid} = $v;
 	} elsif (/^f([1-9])\./) {
+		# remove dot at the end if present
+		if ($v =~ /^(.*)\.$/) { $v = $1; }
 		$fqdn[$1] = uc($v);
 		$nums++;
 	} elsif (/^i([1-9])\./) {
