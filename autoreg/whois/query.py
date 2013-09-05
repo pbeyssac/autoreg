@@ -185,13 +185,20 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
   if a[0] == '/' and not remote:
     ld = l.domains_by_handle(a[1:])
     for d in ld:
-      d.fetch()
+      if real_info:
+        d.fetch()
+      else:
+        d.fetch_obfuscated()
       print >>out, d.__str__().encode(encoding, 'xmlcharrefreplace')
     return
 
   d = l.domain_by_name(a)
   if d is not None:
     dc = d.get_contacts()
+    if real_info:
+      d.fetch()
+    else:
+      d.fetch_obfuscated()
     print >>out, d.__str__().encode(encoding, 'xmlcharrefreplace')
     pdone = []
     for k in ['technical', 'administrative', 'zone']:

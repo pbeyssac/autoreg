@@ -589,6 +589,9 @@ class Domain(_whoisobject):
     del d['rc']
     ct.fetch()
     self.ct = ct
+  def fetch_obfuscated(self):
+    self.fetch()
+    self.ct.fetch_obfuscated()
   def _fetch_contacts(self):
     d = self.d
     self._dbc.execute('SELECT contact_id,contact_types.name '
@@ -666,8 +669,7 @@ class Domain(_whoisobject):
     return dc
   def __str__(self):
     s = u"%-12s %s\n" % ('domain:', self.d['dn'][0])
-    reg = Person(self._dbc, self.ct.cid)
-    reg.fetch()
+    reg = self.ct
     s += reg.__str__('address', embed=True)
     for t, l in [('tc','tech-c'),
                  ('ac','admin-c'),
