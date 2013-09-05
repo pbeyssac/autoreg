@@ -7,7 +7,6 @@ import sys
 
 import psycopg2
 
-import autoreg.arf.requests.models
 import autoreg.conf
 import autoreg.dns.db
 import autoreg.whois.query as query
@@ -18,6 +17,9 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
+
+import models
+
 
 URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
 
@@ -33,8 +35,7 @@ _attrval = re.compile('^([a-z0-9A-Z-]+):\s*(.*[^\s]+|)\s*$')
 #
 
 def _rq_list_unordered():
-  return autoreg.arf.requests.models.Requests.objects \
-         .exclude(state='WaitAck')
+  return models.Requests.objects.exclude(state='WaitAck')
 
 def _rq_list():
   return _rq_list_unordered().order_by('id')
@@ -60,19 +61,19 @@ def _rq_nemail(fqdn):
          .order_by('email').distinct('email').count()
 
 def _rq_remove(rqid, state):
-  r = autoreg.arf.requests.models.Requests.objects.get(id=rqid)
+  r = models.Requests.objects.get(id=rqid)
   r.state = state
   r.save()
   r.delete()
 
 def _is_admin(user):
   """Return True if the current user is in the admins table"""
-  return autoreg.arf.requests.models.Admins.objects \
+  return models.Admins.objects \
          .filter(contact__handle=user.username).exists()
 
 def _get_login(user):
   """Get the Unix login of the given user from the admins table"""
-  return autoreg.arf.requests.models.Admins.objects \
+  return models.Admins.objects \
          .filter(contact__handle=user.username)[0].login
 
 def _rq_decorate(r):
@@ -146,7 +147,7 @@ def rqedit(request, rqid):
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   if not _is_admin(request.user):
     raise PermissionDenied
-  r = autoreg.arf.requests.models.Requests.objects.filter(id=rqid)
+  r = models.Requests.objects.filter(id=rqid)
   if r.count() < 1:
     return render_to_response('requests/rqmsg.html',
                               {'msg': 'Request not found'})
@@ -165,8 +166,7 @@ def rqedit(request, rqid):
       # Can only edit whois record when it is already existing
       r.whoisrecord = whoisrecord
     r.save()
-    return HttpResponseRedirect(reverse('autoreg.arf.requests.views.rq',
-                                        args=[rqid]))
+    return HttpResponseRedirect(reverse(rq, args=[rqid]))
   else:
     raise SuspiciousOperation
 
@@ -177,7 +177,7 @@ def rq(request, rqid):
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   if not _is_admin(request.user):
     raise PermissionDenied
-  r = autoreg.arf.requests.models.Requests.objects.filter(id=rqid)
+  r = models.Requests.objects.filter(id=rqid)
   if r.count() < 1:
     return render_to_response('requests/rqmsg.html',
                               {'msg': 'Request not found'})
@@ -197,8 +197,7 @@ def rqdom(request, domain):
   if not _is_admin(request.user):
     raise PermissionDenied
   if domain.upper() != domain:
-    return HttpResponseRedirect(reverse('autoreg.arf.requests.views.rqlistdom',
-                                        args=[domain.upper()]))
+    return HttpResponseRedirect(reverse(rqlistdom, args=[domain.upper()]))
 
   rlist = _rq_list_dom(domain)
   i = 1
@@ -220,8 +219,7 @@ def rqlistdom(request, domain=None):
     # domain not in URL, provided by "?domain=..." argument (search form)
     domain = request.GET.get('domain', '').upper()
   elif domain.upper() != domain:
-    return HttpResponseRedirect(reverse('autoreg.arf.requests.views.rqlistdom',
-                                        args=[domain.upper()]))
+    return HttpResponseRedirect(reverse(rqlistdom, args=[domain.upper()]))
 
   z = autoreg.zauth.ZAuth()
   login =  _get_login(request.user)
@@ -317,10 +315,10 @@ def _rqexec(rq, out, za, login, action, reason):
   elif action == 'accept':
     _doaccept(out, rq, login)
   else:
-    if not autoreg.arf.requests.models.Requests.objects.filter(id=rq).exists():
+    if not models.Requests.objects.filter(id=rq).exists():
       print >>out, "Request not found: %s<P>" % rq
       return
-    r = autoreg.arf.requests.models.Requests.objects.get(id=rq)
+    r = models.Requests.objects.get(id=rq)
     if not za.checkparent(r.fqdn, login):
       print >>out, "Permission denied on %s<P>" % rq
       return

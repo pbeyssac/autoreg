@@ -5,12 +5,12 @@
 {% if prev %}<a href="{{ prev }}">&lt; </a> {% endif %}
 {% for p in pages %}{% if p == cpage %}{{ p }} {% else %}<a href="{{ p }}">{{ p }} </a>{% endif %}{% endfor %}
 {% if next %}<a href="{{ next }}">&gt;</a> {% endif %}
-<form action="{% url 'autoreg.arf.requests.views.rqlistdom' %}" method="GET">
+<form action="{% url 'arf.requests.views.rqlistdom' %}" method="GET">
 Search by domain: <input type="texte" name="domain">
 <INPUT TYPE="submit" VALUE="Search">
 </form>
 <table>
-{% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}><td><a href="{% if r.rclass == 'dup' %}{% url 'autoreg.arf.requests.views.rqdom' r.fqdn %}{% elif r.rclass == 'dup2' %}{% url 'autoreg.arf.requests.views.rqlistdom' r.fqdn %}{% else %}{% url 'autoreg.arf.requests.views.rq' r.id %}{% endif %}">{{ r.id }}</a><td>{{ r.action }}<td>{{ r.fqdn }}<td><a href="{% url 'arf.requests.views.rqlistemail' r.email %}">{{ r.email }}</a><td>{% if r.tags != None %}{{ r.tags }}{% endif %}
+{% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}><td><a href="{% if r.rclass == 'dup' %}{% url 'arf.requests.views.rqdom' r.fqdn %}{% elif r.rclass == 'dup2' %}{% url 'arf.requests.views.rqlistdom' r.fqdn %}{% else %}{% url 'arf.requests.views.rq' r.id %}{% endif %}">{{ r.id }}</a><td>{{ r.action }}<td>{{ r.fqdn }}<td><a href="{% url 'arf.requests.views.rqlistemail' r.email %}">{{ r.email }}</a><td>{% if r.tags != None %}{{ r.tags }}{% endif %}
 {% endfor %}
 </table>
 {% endblock %}
