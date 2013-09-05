@@ -151,8 +151,7 @@ if ($rqid) {
 # No valid request id found in the subject, assume it's a new request
 #
 
-print VF "Sorry, we don't accept mail requests anymore.\n";
-print VF "Please use our web-based forms: http://eu.org/form.html\n";
+print VF "Sorry, no valid request id acknowledgement was found in your message.\n\n";
 print VF $MSG_BYE;
 close(VF);
 die "Error sending mail: $!\n" if $?;
