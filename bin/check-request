@@ -214,6 +214,16 @@ if ($nums < 2 && ($req =~ /^N/ || $req eq 'MZ') && $rectype eq 'NS') {
 
 &stoperrs;
 
+my $azreq;
+$azreq = $req;
+if ($req =~ /^M/) { $azreq = 'M'; };
+if ($req =~ /^N/) { $azreq = 'N'; };
+if ($req =~ /^D/) { $azreq = 'D'; };
+
+if (system("$AZPATH -c -a$azreq -t$rectype $domain 2>&1")) {
+	exit 1;
+}
+
 if ($makerr && $do_checkns) {
   if ($rectype =~ /^N/) {
     open(CHECKNS, "|$CHECKNSPATH") || die "Cannot start check-ns: $!\n";
@@ -374,16 +384,6 @@ if ($req eq 'MZ' || $req eq 'D' || ($req eq 'M' && !$makewhois)) {
 &stoperrs;
 
 select(STDOUT); $| = 1; print ""; $| = 0;
-
-my $azreq;
-$azreq = $req;
-if ($req =~ /^M/) { $azreq = 'M'; };
-if ($req =~ /^N/) { $azreq = 'N'; };
-if ($req =~ /^D/) { $azreq = 'D'; };
-
-if (system("$AZPATH -c -a$azreq -t$rectype $domain 2>&1")) {
-	exit 1;
-}
 
 if ($req eq 'M') {
   if ($makerr && !$makewhois) {
