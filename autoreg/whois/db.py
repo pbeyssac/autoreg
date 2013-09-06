@@ -743,7 +743,6 @@ class Lookup:
 class Main:
   comment_re = re.compile('^\s*(?:#|%)')
   white_re = re.compile('^\s*$')
-  empty_re = re.compile('^$')
   longattr_re = re.compile('^([a-z-]+):\s*(.*\S)\s*$')
   shortattr_re = re.compile('^\*([a-zA-Z][a-zA-Z]):\s*(.*\S)\s*$')
   def _reset(self):
@@ -999,16 +998,14 @@ class Main:
       if self.comment_re.search(l):
         # skip comment
         continue
-      if self.white_re.search(l) and len(o) > 1:
-        # white line or empty line and o is not empty:
-        # end of object, process then cleanup for next object.
-        if not self._order(o, dodel, persons, nohandle, domains, forcechanged):
-          err += 1
-        o = { 'encoding': encoding }
-        dodel = False
-        continue
-      if self.empty_re.search(l):
-        # empty line, no object in progress: skip
+      if self.white_re.search(l):
+        if len(o) > 1:
+          # white line or empty line and o is not empty:
+          # end of object, process then cleanup for next object.
+          if not self._order(o, dodel, persons, nohandle, domains, forcechanged):
+            err += 1
+          o = { 'encoding': encoding }
+          dodel = False
         continue
       # should be an attribute: value line
       m = self.shortattr_re.search(l)
