@@ -19,4 +19,5 @@
 <li>If you remember your domain name, you can <a href="{% url 'arf.whois.views.contactbydomain' %}">find your contact handle</a>.
 <li>If you have no contact record, <a href="{% url 'arf.whois.views.contactcreate' %}">create one here</a>.
 </ul>
+You can import the <a href="https://www.cacert.org/index.php?id=3">CACert Root Certificate</a> (<a href="https://www.cacert.org/certs/root.crt">direct link for PEM format</a>) to avoid security exceptions/warnings in your browser.
 {% endblock %}
