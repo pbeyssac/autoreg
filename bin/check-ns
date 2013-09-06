@@ -188,7 +188,7 @@ def main():
           errs += 1
 
       if ip is not None:
-        if fqdn.endswith('.'+domain):
+        if fqdn.endswith('.'+domain) or fqdn == domain:
           manualip[fqdn] = ip
         else:
           print "Error: don't specify IP %s for %s (not in %s)" % (ip, fqdn, domain)
