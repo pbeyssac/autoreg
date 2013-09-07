@@ -80,8 +80,8 @@ def getsoa(qsoa, server):
   serial = r.answer[0].items[0].serial
   return True, (mastername, serial)
 
-def getnslist(domain, server):
-  qns = dns.message.make_query(domain, 'NS')
+def getnslist(domaindot, server):
+  qns = dns.message.make_query(domaindot, 'NS')
   qns.flags = 0
   ok, r = sendquery(qns, server)
   if not ok:
@@ -134,12 +134,27 @@ def main():
 
   if len(args) == 1:
     domain = args[0].upper()
+  else:
+    # Fetch domain from stdin
+    fqdnip = re.compile('^([a-zA-Z0-9\.-]+)(?:\s+(\S+))?\s*$')
+    domain = sys.stdin.readline()
+    domain = domain[:-1].upper()
+
+  if domain.startswith('.'):
+    domain = domain[1:]
+  domaindot = domain
+  if domain.endswith('.'):
+    domain = domain[:-1]
+  else:
+    domaindot += '.'
+
+  if len(args) == 1:
     #
     # Fetch NS list from public DNS
     #
     print "Querying NS list for %s..." % domain,
     try:
-      ans = r.query(domain, 'NS', tcp=tcp)
+      ans = r.query(domaindot, 'NS', tcp=tcp)
     except dns.resolver.NXDOMAIN:
       print "Error: Domain not found"
       sys.exit(1)
@@ -161,11 +176,8 @@ def main():
       fqdnlist.append(fqdn)
   else:
     #
-    # Fetch domain and NS list from stdin
+    # Fetch NS list from stdin
     #
-    fqdnip = re.compile('^([a-zA-Z0-9\.-]+)(?:\s+(\S+))?\s*$')
-    domain = sys.stdin.readline()
-    domain = domain[:-1].upper()
     for l in sys.stdin:
       l = l[:-1]
       m = fqdnip.match(l)
@@ -213,14 +225,6 @@ def main():
 
   fqdnlist.sort()
 
-  if domain.startswith('.'):
-    domain = domain[1:]
-  domaindot = domain
-  if domain.endswith('.'):
-    domain = domain[:-1]
-  else:
-    domaindot += '.'
-
   #
   # Build IP address list
   #
@@ -260,7 +264,7 @@ def main():
     print errs, "errors(s)",
     sys.exit(1)
 
-  qsoa = dns.message.make_query(domain, 'SOA')
+  qsoa = dns.message.make_query(domaindot, 'SOA')
   qsoa.flags = 0
   mastername = None
   serial = None
@@ -279,7 +283,7 @@ def main():
     else:
       print "serial", soa[1]
     print "Getting NS from %s at %s..." % (fqdn, i),
-    ok, nslist = getnslist(domain, i)
+    ok, nslist = getnslist(domaindot, i)
     if not ok:
       print "Error:", nslist
       errs += 1
