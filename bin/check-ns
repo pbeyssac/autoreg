@@ -76,7 +76,7 @@ def getsoa(qsoa, server):
     return None, "Unexpected number of items"
   if r.answer[0].items[0].rdtype != dns.rdatatype.SOA:
     return None, "Answer type mismatch"
-  mastername = r.answer[0].items[0].mname.__str__().upper()
+  mastername = str(r.answer[0].items[0].mname).upper()
   serial = r.answer[0].items[0].serial
   return True, (mastername, serial)
 
