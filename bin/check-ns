@@ -101,13 +101,142 @@ def getnslist(domaindot, server):
   nslist.sort()
   return True, nslist
 
+def getnslist_public(domaindot, res):
+  tcp = False
+  nslist = []
+  try:
+    ans = res.query(domaindot, 'NS', tcp=tcp)
+  except dns.resolver.NXDOMAIN:
+    return None, "Error: Domain not found"
+  except dns.exception.Timeout:
+    return None, "Error: Timeout"
+  except dns.resolver.NoAnswer:
+    return None, "Error: No answer"
+  except dns.resolver.NoNameservers:
+    return None, "Error: No name servers"
+  for i in ans.rrset.items:
+    fqdn = i.to_text().upper()
+    if fqdn.endswith('.'):
+      fqdn = fqdn[:-1]
+    nslist.append(fqdn)
+  nslist.sort()
+  return True, nslist
+
+def getnslist_file(file):
+  fqdnip = re.compile('^([a-zA-Z0-9\.-]+)(?:\s+(\S+))?\s*$')
+  errlist = []
+  warnlist = []
+  fqdnlist = []
+  for l in file:
+    l = l[:-1]
+    m = fqdnip.match(l)
+    if not m:
+      errlist.append("Error: Invalid line")
+      continue
+    fqdn, ip = m.groups()
+    if ip is not None:
+      ip = ip.upper()
+
+      try:
+        if ':' in ip:
+          socket.inet_pton(socket.AF_INET6, ip)
+        else:
+          socket.inet_pton(socket.AF_INET, ip)
+      except socket.error:
+        errlist.append("Error: Invalid IP address %s" % ip)
+        ip = None
+
+    if ip is not None:
+      if fqdn.endswith('.'+domain) or fqdn == domain:
+        manualip[fqdn] = ip
+      else:
+        warnlist.append("Warning: ignoring IP %s for %s (not in %s)" % (ip, fqdn, domain))
+
+    fqdn = fqdn.upper()
+    fqdnlist.append(fqdn)
+
+  return errlist, warnlist, fqdnlist
+
+def resolve_ips(res, fqdnlist, manualip):
+  tcp = False
+  ips = []
+  errs = 0
+  for fqdn in fqdnlist:
+    if fqdn.endswith('.'):
+      fqdn = fqdn[:-1]
+
+    if fqdn in manualip:
+      print "Accepted IP for %s: %s" % (fqdn, manualip[fqdn])
+      ips.append((fqdn, manualip[fqdn]))
+      continue
+
+    print "Getting IP for %s..." % fqdn,
+    n = 0
+    for t in ['A', 'AAAA']:
+      try:
+        aip = res.query(fqdn, t, tcp=tcp)
+      except dns.resolver.NoAnswer:
+        continue
+      except dns.resolver.NXDOMAIN:
+        continue
+      except dns.exception.Timeout:
+        continue
+      except dns.resolver.NoNameservers:
+        continue
+      for iprr in aip.rrset.items:
+        print iprr.to_text(),
+        ips.append((fqdn, iprr.to_text()))
+        n += 1
+    if n == 0:
+      print "FAILED",
+      errs += 1
+    print
+  return errs, ips
+
+def check_soa(domaindot, ips):
+  errs = 0
+  warns = 0
+  qsoa = dns.message.make_query(domaindot, 'SOA')
+  qsoa.flags = 0
+  for fqdnip in ips:
+    fqdn, i = fqdnip
+    print "Getting SOA from %s at %s..." % (fqdn, i),
+    ok, soa = getsoa(qsoa, i)
+    if not ok:
+      print "Error:", soa
+      errs += 1
+    else:
+      print "serial", soa[1]
+  return errs, warns
+
+def check_ns(domaindot, fqdnlist, mastername, ips):
+  errs = 0
+  warns = 0
+  for fqdnip in ips:
+    fqdn, i = fqdnip
+    print "Getting NS from %s at %s..." % (fqdn, i),
+    ok, nslist = getnslist(domaindot, i)
+    if not ok:
+      print "Error:", nslist
+      errs += 1
+    elif nslist != fqdnlist:
+      if mastername and mastername == fqdn:
+        print "Error: Bad NS list", nslist
+        errs += 1
+      else:
+        print "Warning: Bad NS list", nslist
+        warns += 1
+    else:
+      print "ok"
+  return errs, warns
+
 def main():
-  tcp=False
   errs = 0
   warns = 0
   fqdnlist = []
-  r = dns.resolver.Resolver()
+  res = dns.resolver.Resolver()
   manualip = { }
+  mastername = None
 
   try:
     optlist, args = getopt.getopt(sys.argv[1:], 'o:')
@@ -136,7 +265,6 @@ def main():
     domain = args[0].upper()
   else:
     # Fetch domain from stdin
-    fqdnip = re.compile('^([a-zA-Z0-9\.-]+)(?:\s+(\S+))?\s*$')
     domain = sys.stdin.readline()
     domain = domain[:-1].upper()
 
@@ -153,64 +281,28 @@ def main():
     # Fetch NS list from public DNS
     #
     print "Querying NS list for %s..." % domain,
-    try:
-      ans = r.query(domaindot, 'NS', tcp=tcp)
-    except dns.resolver.NXDOMAIN:
-      print "Error: Domain not found"
+    ok, r = getnslist_public(domaindot, res)
+    if not ok:
+      print r
       sys.exit(1)
-    except dns.exception.Timeout:
-      print "Error: Timeout"
-      sys.exit(1)
-    except dns.resolver.NoAnswer:
-      print "Error: No answer"
-      sys.exit(1)
-    except dns.resolver.NoNameservers:
-      print "Error: No name servers"
-      sys.exit(1)
-    print len(ans.rrset.items), "records"
+    fqdnlist = r
+    print len(fqdnlist), "records"
     print
-    for i in ans.rrset.items:
-      fqdn = i.to_text().upper()
-      if fqdn.endswith('.'):
-        fqdn = fqdn[:-1]
-      fqdnlist.append(fqdn)
+
   else:
     #
     # Fetch NS list from stdin
     #
-    for l in sys.stdin:
-      l = l[:-1]
-      m = fqdnip.match(l)
-      if not m:
-        print "Error: Invalid line"
-        errs += 1
-        continue
-      fqdn, ip = m.groups()
-      if ip is not None:
-        ip = ip.upper()
-
-        try:
-          if ':' in ip:
-            socket.inet_pton(socket.AF_INET6, ip)
-          else:
-            socket.inet_pton(socket.AF_INET, ip)
-        except socket.error:
-          print "Error: Invalid IP address", ip
-          ip = None
-          errs += 1
-
-      if ip is not None:
-        if fqdn.endswith('.'+domain) or fqdn == domain:
-          manualip[fqdn] = ip
-        else:
-          print "Warning: ignoring IP %s for %s (not in %s)" % (ip, fqdn, domain)
-          warns += 1
-
-      fqdn = fqdn.upper()
-      fqdnlist.append(fqdn)
-
+    errlist, warnlist, fqdnlist = getnslist_file(sys.stdin)
     if fqdnlist:
       mastername = fqdnlist[0]
+
+    for e in errlist:
+      print "Error: ", e
+    errs += len(errlist)
+    for e in warnlist:
+      print "Warning: ", e
+    warns += len(warnlist)
 
   if not domain:
     print "Error: no domain specified"
@@ -228,74 +320,23 @@ def main():
   #
   # Build IP address list
   #
-  ips = []
-  for fqdn in fqdnlist:
-    if fqdn.endswith('.'):
-      fqdn = fqdn[:-1]
 
-    if fqdn in manualip:
-      print "Accepted IP for %s: %s" % (fqdn, manualip[fqdn])
-      ips.append((fqdn, manualip[fqdn]))
-      continue
-
-    print "Getting IP for %s..." % fqdn,
-    n = 0
-    for t in ['A', 'AAAA']:
-      try:
-        aip = r.query(fqdn, t, tcp=tcp)
-      except dns.resolver.NXDOMAIN:
-        continue
-      except dns.exception.Timeout:
-        continue
-      except dns.resolver.NoAnswer:
-        continue
-      except dns.resolver.NoNameservers:
-        continue
-      for iprr in aip.rrset.items:
-        print iprr.to_text(),
-        ips.append((fqdn, iprr.to_text()))
-        n += 1
-    if n == 0:
-      print "FAILED",
-      errs += 1
-    print
-
+  errs, ips = resolve_ips(res, fqdnlist, manualip)
   if errs:
     print errs, "errors(s)",
     sys.exit(1)
-
-  qsoa = dns.message.make_query(domaindot, 'SOA')
-  qsoa.flags = 0
-  mastername = None
-  serial = None
 
   print
   print "---- Checking SOA & NS records for", domain
   print
 
-  for fqdnip in ips:
-    fqdn, i = fqdnip
-    print "Getting SOA from %s at %s..." % (fqdn, i),
-    ok, soa = getsoa(qsoa, i)
-    if not ok:
-      print "Error:", soa
-      errs += 1
-    else:
-      print "serial", soa[1]
-    print "Getting NS from %s at %s..." % (fqdn, i),
-    ok, nslist = getnslist(domaindot, i)
-    if not ok:
-      print "Error:", nslist
-      errs += 1
-    elif nslist != fqdnlist:
-      if mastername and mastername == fqdn:
-        print "Error: Bad NS list", nslist
-        errs += 1
-      else:
-        print "Warning: Bad NS list", nslist
-        warns += 1
-    else:
-      print "ok"
+  errs2, warns2 = check_soa(domaindot, ips)
+  errs += errs2
+  warns += warns2
+
+  errs2, warns2 = check_ns(domaindot, fqdnlist, mastername, ips)
+  errs += errs2
+  warns += warns2
 
   if errs or warns:
     print
