@@ -30,6 +30,8 @@ class AccessError(DnsDbError):
     NOTLOGGED = 'Not logged in'
     pass
 
+_dotted_rr = ['CNAME', 'DNAME', 'MX', 'NS', 'PTR']
+
 class _Zone:
     def __init__(self, dbc, name=None, id=None):
 	self._dbc = dbc
@@ -110,7 +112,7 @@ class _Zone:
 	while t:
 	    (label, domain, ttl, typ, value) = t
 	    # "uncompress"
-	    if typ in ['CNAME', 'DNAME', 'MX', 'NS']: value += '.'
+	    if typ in _dotted_rr: value += '.'
 	    # prepare label
 	    if label != '' and domain != '':
 		l = label + '.' + domain
@@ -213,11 +215,12 @@ class _Domain:
 		    label = ''
 	    # More tests which do not belong in the parser.
 	    # Check & "compress" the value field somewhat.
-	    if typ in ['CNAME', 'DNAME', 'MX', 'NS']:
+	    if typ in _dotted_rr:
 		if not value.endswith('.'):
 		    raise DomainError(DomainError.NODOT, value)
 		value = value[:-1]
-	    elif typ in ['A', 'AAAA', 'SRV', 'TXT', 'HINFO', 'SSHFP']:
+	    elif typ in ['A', 'AAAA', 'DLV', 'DNSKEY', 'DS', 'HINFO',
+			 'RRSIG', 'SSHFP', 'SRV', 'TXT']:
 		pass
 	    else:
 		raise DomainError(DomainError.RRUNSUP, typ)
@@ -279,7 +282,7 @@ class _Domain:
 	    label, dom, ttl, typ, val = t
 
 	    # "uncompress"
-	    if typ in ['CNAME', 'DNAME', 'MX', 'NS']: val += '.'
+	    if typ in _dotted_rr: val += '.'
 
 	    # handle label
 	    if label != '' and dom != '':
