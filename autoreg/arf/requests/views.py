@@ -103,13 +103,26 @@ def _rq1(request, r):
   if r.action != 'N':
     wlist.append(r.fqdn)
   if r.action == 'D':
+    err = None
     dbh = psycopg2.connect(autoreg.conf.dbstring)
     dd = autoreg.dns.db.db(dbh, True)
     dd.login('autoreg')
     oldout = sys.stdout
     sys.stdout = StringIO.StringIO()
-    dd.show(r.fqdn, None)
-    r.azout = sys.stdout.getvalue()
+    try:
+      dd.show(r.fqdn, None)
+    except autoreg.dns.db.DomainError, e:
+      if e.args[0] == autoreg.dns.db.DomainError.DNOTFOUND:
+        err = "Domain not found"
+      elif e.args[0] == autoreg.dns.db.DomainError.ZNOTFOUND:
+        err = "Domain not found"
+      else:
+        raise
+
+    if err:
+      r.azout = err
+    else:
+      r.azout = sys.stdout.getvalue()
     sys.stdout = oldout
 
   w = []
