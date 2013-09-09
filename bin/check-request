@@ -225,7 +225,7 @@ my $azreq;
 $azreq = $req;
 if ($req =~ /^M/) { $azreq = 'M'; };
 if ($req =~ /^N/) { $azreq = 'N'; };
-if ($req =~ /^D/) { $azreq = 'D'; };
+if ($req =~ /^D/) { $azreq = 'delete'; };
 
 if (system("$AZPATH -c -a$azreq -t$rectype $domain 2>&1")) {
 	exit 1;

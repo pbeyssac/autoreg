@@ -361,7 +361,9 @@ sub doaccept {
   # Check request with respect to zone file
   #
   print "Checking DNS...<BR>\n";
-  if (!open(AZ, "$AZPATH -c -a$action -u$user $domain 2>&1 |")) {
+  my $azaction = $action;
+  if ($action eq 'D') { $azaction = 'delete'; }
+  if (!open(AZ, "$AZPATH -c -a$azaction -u$user $domain 2>&1 |")) {
       print "<STRONG>Unable to test request in zone.</STRONG><P>\n";
       return "";
   } else {
