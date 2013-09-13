@@ -30,8 +30,10 @@ URILOGIN = URIBASE + 'login/'
 FROMADDR = 'noreply@eu.org'
 RESET_TOKEN_HOURS_TTL = 24
 EMAIL_TOKEN_HOURS_TTL = 72
+VAL_TOKEN_HOURS_TTL = 72
 RESET_TOKEN_TTL = RESET_TOKEN_HOURS_TTL*3600
 EMAIL_TOKEN_TTL = EMAIL_TOKEN_HOURS_TTL*3600
+VAL_TOKEN_TTL = VAL_TOKEN_HOURS_TTL*3600
 
 # will be initialized by the first call to _countries_get()
 countries = []
@@ -408,7 +410,7 @@ def contactcreate(request):
                  validate=False)
       if p.from_ripe(d):
         p.insert()
-        valtoken = _token_set(p.cid, "contactval")
+        valtoken = _token_set(p.cid, "contactval", ttl=VAL_TOKEN_TTL)
         handle = suffixstrip(p.gethandle())
         if not _render_to_mail('whois/contactcreate.mail',
                                {'urlbase': URLBASE,
