@@ -331,4 +331,3 @@ class SOAChecker(object):
     if warns:
       yield True, "%d warning(s)" % warns,
     yield True, ""
-    return
