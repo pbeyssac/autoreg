@@ -799,10 +799,6 @@ class Main:
         # We don't compare registrant information matches.
         # It's good enough for us.
         dom = Domain(self._dbc)
-        r = dom.from_ripe(o)
-        sys.stdout.write(dom.format_msgs().encode(encoding))
-        if not r:
-          return False
         ld = self._lookup.domain_by_name(i)
         if ld is not None:
           ld.fetch()
