@@ -743,7 +743,7 @@ class Lookup:
 class Main:
   comment_re = re.compile('^\s*(?:#|%)')
   white_re = re.compile('^\s*$')
-  longattr_re = re.compile('^([a-z-]+):\s*(.*\S)\s*$')
+  longattr_re = re.compile('^([a-z-]+):\s*(.*\S|)\s*$')
   shortattr_re = re.compile('^\*([a-zA-Z][a-zA-Z]):\s*(.*\S)\s*$')
   def _reset(self):
     self.ndom = 0
