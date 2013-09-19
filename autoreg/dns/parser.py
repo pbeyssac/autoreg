@@ -65,7 +65,7 @@ class DnsParser:
 	    if pri > 255: raise ParseError('Bad priority for MX record', pri)
 	    value = "%d %s" % (pri, fqdn.upper())
         elif typ in ['TXT', 'PTR', 'DNSKEY', 'RRSIG', 'DLV', 'DS',
-                     'HINFO', 'SSHFP']:
+                     'HINFO', 'SSHFP', 'TLSA']:
 	    pass
         elif typ == 'SOA':
             if self._soa_begin_re.search(value.strip()):
