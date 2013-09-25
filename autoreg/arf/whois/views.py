@@ -313,7 +313,7 @@ def makeresettoken(request, handle=None):
                                  'ehandle': suffixadd(handle),
                                  'next': request.path})
     if len(ctl) != 1:
-      return HttpResponse("Internal Error")
+      raise SuspiciousOperation
     ct = ctl[0]
 
     # create new token
@@ -356,7 +356,7 @@ def resetpass2(request, handle):
     token = request.POST.get('resettoken', 'C')
     tkl = _token_find(ct.id, "pwreset")
     if len(tkl) > 1:
-      return HttpResponse("Internal error")
+      raise SuspiciousOperation
     if len(tkl) == 0 or token != tkl[0].token:
       vars['msg'] = "Invalid reset token"
       return render_to_response('whois/resetpass2.html', vars)
@@ -461,7 +461,7 @@ def contactvalidate(request, handle, valtoken):
     tkl[0].delete()
     vars = {'msg': "Your contact handle is now valid."}
     return render_to_response('whois/msgnext.html', vars)
-  return HttpResponse("Internal error")
+  raise SuspiciousOperation
 
 def contact(request, handle):
   """Contact display from handle"""
@@ -518,7 +518,7 @@ def chpass(request):
 
     ctlist = Contacts.objects.filter(handle=handle)
     if len(ctlist) != 1:
-      return HttpResponse("Internal Error")
+      raise SuspiciousOperation
 
     ct = ctlist[0]
     if ct.passwd != crypt.crypt(pass0, ct.passwd):
@@ -556,7 +556,7 @@ def contactchange(request, registrantdomain=None):
     dom = Whoisdomains.objects.get(fqdn=registrantdomain)
     cl = dom.domaincontact_set.filter(contact_type__name='registrant')
     if len(cl) != 1:
-      return HttpResponse("Internal error")
+      raise SuspiciousOperation
     ehandle = cl[0].contact.handle
   else:
     ehandle = handle
@@ -672,11 +672,11 @@ def changemail(request):
 
   ctl = Contacts.objects.filter(handle=handle)
   if len(ctl) != 1:
-    return HttpResponse("Internal error")
+    raise SuspiciousOperation
   ct = ctl[0]
   tkl = _token_find(ct.id, "changemail")
   if len(tkl) > 1:
-    return HttpResponse("Internal error")
+    raise SuspiciousOperation
   if len(tkl) == 0:
       vars['msg'] = "Sorry, didn't find any waiting email address change."
       return render_to_response('whois/changemail.html', vars)
@@ -751,11 +751,11 @@ def domainedit(request, fqdn):
       if len(ctl) == 0:
         msg = "Contact %s not found" % suffixadd(chandle)
       elif len(ctl) != 1:
-        return HttpResponse("Internal error")
+        raise SuspiciousOperation
       else:
         cid = ctl[0].id
         if contact_type[0] not in 'atz':
-          return HttpResponse("Internal error")
+          raise SuspiciousOperation
         code = contact_type[0] + 'c'
         if request.POST['submit'] == 'Delete' \
            or request.POST['submit'] == 'Confirm Delete':
@@ -789,9 +789,9 @@ def domainedit(request, fqdn):
           # Fall through to updated form display
           pass
     else:
-      return HttpResponse("Internal error")
+      raise SuspiciousOperation
   elif request.method != "GET":
-    return HttpResponse("Internal error")
+    raise SuspiciousOperation
 
   # handle GET or end of POST
 
