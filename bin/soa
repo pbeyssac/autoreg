@@ -10,9 +10,9 @@ AZ=/usr/local/autoreg/bin/access-zone
 # The directory where "master" zone files are located
 DEST=/etc/namedb/autoreg
 # Command to reload the nameserver. Used only if option -r is provided.
-NDC=/usr/sbin/rndc
+NDC=/usr/local/sbin/rndc
 # DNS Zone signing
-SIGNZONE=/usr/sbin/dnssec-signzone
+SIGNZONE=/usr/local/sbin/dnssec-signzone
 #
 NDCKEY=/etc/namedb/rndc-autoreg.key
 
@@ -71,13 +71,23 @@ do
 		    mv -f $DEST/$i.new $DEST/$i
 
 		    echo ----
-		    mod=1
 		    # Sign zone, if relevant
 		    if [ -f $DEST/$i.DNSSEC ]; then
 			(
 			cd $DEST
-			$SIGNZONE -l dlv.isc.org -r /dev/random -o $i $i.DNSSEC
-			)
+			rm -f $i.signed.old
+			ln $i.signed $i.signed.old
+			if $SIGNZONE -QR -DS -3 fadaf001 -l dlv.isc.org -O full -j432000 -o $i -f $i.signed $i.DNSSEC; then
+			    grep -v '^;' $i.signed | sort > $i.signed.sorted
+			    mv $i.signed.sorted $i.signed
+			    diff -u $i.signed.old $i.signed
+			    return 0
+			else
+			    return 1
+			fi
+			) && mod=1
+		    else
+			mod=1
 		    fi
 		else
 		    echo "Error: cannot dump zone $i to $DEST/$i.new"
@@ -89,8 +99,9 @@ do
 	fi
 done
 
-if [ "$mod" = "1" ]; then
+if [ "$mod" != "" ]; then
 	if [ $optr = 1 ]; then
+		echo "reloading"
 		$NDC -k $NDCKEY reload
 	else
 		if [ $optc = 0 ]; then echo "now:" echo "$NDC reload"; fi
