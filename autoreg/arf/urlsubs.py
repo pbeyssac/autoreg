@@ -1,6 +1,6 @@
 # $Id$
 
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns, include
 
 urlpatterns = patterns('autoreg.arf.whois.views',
     (r'^$', 'index'),
