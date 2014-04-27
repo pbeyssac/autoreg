@@ -43,12 +43,12 @@ class _Zone:
 	self._updateserial = True
 	self._dbc.execute('UPDATE zones SET updateserial=TRUE WHERE id=%s',
 			  (self.id,))
-    def soa(self):
-	"""Update serial for zone in SOA if flagged as such."""
+    def soa(self, forceincr=False):
+	"""Update serial for zone in SOA if necessary or forceincr is True."""
 	zid = self.id
 	serial = self._soaserial
 	assert zid is not None and serial is not None
-	if not self._updateserial: return (False, serial)
+	if not self._updateserial and not forceincr: return (False, serial)
 	year, month, day, h, m, s, wd, yd, dst = time.localtime()
 	newserial = int("%04d%02d%02d00"%(year,month,day))
 	if serial < newserial:
@@ -557,11 +557,11 @@ class db:
 	d.set_registry_hold(val)
 	z.set_updateserial()
 	self._dbh.commit()
-    def soa(self, zone):
-	"""Update SOA serial for zone if necessary."""
+    def soa(self, zone, forceincr=False):
+	"""Update SOA serial for zone if necessary or forceincr is True."""
 	z = self._zl.zones[zone.upper()]
 	z.fetch()
-	(r, serial) = z.soa()
+	(r, serial) = z.soa(forceincr)
 	self._dbh.commit()
         return r, serial
     def cat(self, zone):

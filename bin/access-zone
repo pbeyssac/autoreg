@@ -15,8 +15,7 @@
 		if already there.
 	cat:	print the zone file on stdout.
 	soa:	update the SOA serial for domainname in the zonefile of
-		the same name, if the file has previously changed
-		due to one of the above actions.
+		the same name, if any update in the zone occurred.
 		Print the serial in any case.
 	show:	display entry for domainname.
         hold:	put domain on hold.
@@ -37,6 +36,7 @@
 -z: specify zone, in case there is an ambiguity with respect to handled zones.
 -i: in 'modify' and 'delete', allow handling of "internal" domains.
     in 'new', set "internal" flag.
+-s: force incrementation of serial in 'soa', regardless of any zone updates.
 """
 
 # standard modules
@@ -69,13 +69,13 @@ def errexit(msg, args):
     sys.exit(1)
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "a:cdit:u:z:")
+    opts, args = getopt.getopt(sys.argv[1:], "a:cdist:u:z:")
 except getopt.GetoptError:
     usage()
     sys.exit(1)
 
 action, type, zone = None, None, None
-nowrite, internal, deleg = False, False, False
+nowrite, internal, deleg, forceincr = False, False, False, False
 user = os.getenv('USER', None)
 lang = os.getenv('LANG', '')
 
@@ -97,6 +97,8 @@ for o, a in opts:
 	zone = a.upper()
     elif o == "-d":
 	deleg = True
+    elif o == "-s":
+	forceincr = True
 
 if action == None or user == None:
     usage()
@@ -167,7 +169,7 @@ try:
   elif action == 'cat':
     dd.cat(domain)
   elif action == 'soa':
-    (updated, serial) = dd.soa(domain)
+    (updated, serial) = dd.soa(domain, forceincr)
     if not updated:
 	r = 1
     print serial
