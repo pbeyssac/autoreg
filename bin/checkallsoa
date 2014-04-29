@@ -1,0 +1,18 @@
+#!/bin/sh
+
+AUTOREGBIN=/usr/local/autoreg/bin
+
+for z in `${AUTOREGBIN}/access-zone -alist`; do
+  input=`(echo $z;
+    ${AUTOREGBIN}/access-zone -ashow -z$z $z |
+    awk '			\
+	/^;/ { next }		\
+	/^\t/ && $1 == "NS" { print substr ($2,1,length($2)-1); }'
+  )`
+  # split in 2 lines to get correct exit status from check-ns
+  out=`echo "$input" | ${AUTOREGBIN}/check-ns`
+  if [ "$?" != 0 ]; then
+    echo '****' $z FAILED '****'
+    echo "$out"
+  fi
+done

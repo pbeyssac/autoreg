@@ -1,0 +1,11 @@
+#!/bin/sh
+
+AUTOREGBIN=/usr/local/autoreg/bin
+
+for z in `${AUTOREGBIN}/access-zone -alist`; do
+  if [ "$z" = "EU.ORG" ]; then
+    ${AUTOREGBIN}/access-zone -i -ashow $z
+  else
+    ${AUTOREGBIN}/access-zone -di -ashow $z
+  fi
+done
