@@ -363,6 +363,7 @@ sub doaccept {
   print "Checking DNS...<BR>\n";
   my $azaction = $action;
   if ($action eq 'D') { $azaction = 'delete'; }
+  if ($action eq 'M' || $action eq 'MZ') { $azaction = 'modnods'; }
   if (!open(AZ, "$AZPATH -c -a$azaction -u$user $domain 2>&1 |")) {
       print "<STRONG>Unable to test request in zone.</STRONG><P>\n";
       return "";
@@ -488,6 +489,7 @@ sub doaccept {
     }
   } elsif ($action eq 'N' || $action eq 'M' || $action eq 'MZ') {
     print SMU $MSG_BDYZI;
+    if ($action eq 'M' || $action eq 'MZ') { $action = 'modnods'; }
     if (!open(AZ, "| $AZPATH -a $action -u$user $domain")) {
       print SMU $MSG_NOINS;
       print "<STRONG>Unable to insert records.</STRONG><P>\n";

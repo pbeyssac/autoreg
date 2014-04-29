@@ -243,14 +243,28 @@ class _Domain:
         self._dbc.execute('UPDATE domains '
                           'SET updated_by=%s, updated_on=NOW() '
                           'WHERE id=%s', (login_id, self.id))
-    def move_hist(self, login_id, domains=False):
+    def move_hist(self, login_id, domains=False, keepds=False, onlyds=False):
 	"""Move resource records to history tables, as a side effect
 	(triggers) of deleting them.
 
-	domains: if set, also move domain and associated contact records.
+        The following flags are exclusive of each other:
+          keepds: if set, move all but DS records.
+          onlyds: if set, only move DS records.
+	  domains: if set, also move domain and associated contact records.
 	"""
 	did = self.id
-	self._dbc.execute('DELETE FROM rrs WHERE domain_id=%s', (did,))
+        if keepds:
+	  self._dbc.execute("DELETE FROM rrs WHERE domain_id=%s"
+            " AND"
+            " rrtype_id<>(SELECT id FROM rrtypes WHERE rrtypes.label='DS')",
+            (did,))
+        elif onlyds:
+	  self._dbc.execute("DELETE FROM rrs WHERE domain_id=%s"
+            " AND"
+            " rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label='DS')",
+            (did,))
+        else:
+	  self._dbc.execute('DELETE FROM rrs WHERE domain_id=%s', (did,))
 	if domains:
 	    self._dbc.execute('DELETE FROM domains WHERE id=%s', (did,))
     def show_head(self):
@@ -470,7 +484,7 @@ class db:
 	z.set_updateserial()
 	self._dbh.commit()
     def modify(self, domain, zone, typ, file, override_internal=False,
-	       replace=True, delete=False, _commit=True):
+	       replace=True, delete=False, keepds=True, _commit=True):
 	"""Modify domain.
 
 	domain: FQDN of domain name
@@ -489,7 +503,7 @@ class db:
 	    raise AccessError(AccessError.DINTERNAL)
 	if self._nowrite: return
 	if replace and not delete:
-	  d.move_hist(login_id=self._login_id, domains=False)
+	  d.move_hist(login_id=self._login_id, domains=False, keepds=keepds)
 	# add new resource records
 	d.mod_rr(file, delete=delete)
 	d.set_updated_by(self._login_id)

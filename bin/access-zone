@@ -11,6 +11,7 @@
 		if not already there; use resource records on stdin.
 	modify: modify the entry for domainname in the parent zone,
 		if already there; use resource records on stdin.
+        modnods: same as 'modify', but keep existing DS records for the zone.
 	delete: delete the entry for domainname in the parent zone,
 		if already there.
 	cat:	print the zone file on stdout.
@@ -75,6 +76,7 @@ except getopt.GetoptError:
     sys.exit(1)
 
 action, type, zone = None, None, None
+keepds = False
 nowrite, internal, deleg, forceincr = False, False, False, False
 user = os.getenv('USER', None)
 lang = os.getenv('LANG', '')
@@ -115,7 +117,11 @@ else:
     domain = args[0].upper()
 
 if action == 'n': action='new'
-elif action.startswith('m'): action='modify'
+elif action == 'modnods':
+  action = 'modify'
+  keepds = True
+elif action.startswith('m'):
+  action='modify'
 
 if action not in action_list:
     usage()
@@ -139,9 +145,11 @@ try:
     dd.new(domain, zone, type, file=sys.stdin, internal=internal)
   elif action == 'modify':
     if deleg:
-      dd.modifydeleg(domain, file=sys.stdin, override_internal=internal)
+      dd.modifydeleg(domain, file=sys.stdin, override_internal=internal,
+                     keepds=keepds)
     else:
-      dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal)
+      dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal,
+                keepds=keepds)
   elif action == 'addrr':
     if deleg:
       dd.modifydeleg(domain, file=sys.stdin, override_internal=internal,
