@@ -35,3 +35,6 @@ urlpatterns += patterns('autoreg.arf.requests.views',
     (r'^re/(?P<email>.+@[a-zA-Z0-9\.-]+)$', 'rqlistemail'),
     (r'^val$', 'rqval'),
 )
+urlpatterns += patterns('autoreg.arf.dns.views',
+    (r'^soa/(?P<domain>[a-z0-9\.A-Z-]+)$', 'checksoa'),
+)
