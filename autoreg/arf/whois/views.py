@@ -815,7 +815,7 @@ def domainedit(request, fqdn):
           'formlist': formlist,
           'whoisdisplay': unicode(dbdom),
           'addform': {'posturi': request.path,
-                      'domcontact_form': domcontact_form().as_table()}}
+                      'domcontact_form': domcontact_form()}}
   return render_to_response('whois/domainedit.html', vars)
 
 def logout(request):

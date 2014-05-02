@@ -22,7 +22,8 @@ Whois data for domain <strong>{{ whoisdomain.fqdn }}</strong><P>
 <hr>
 <strong>Add a new contact</strong><P>
 <FORM ACTION="{{ addform.posturi }}" METHOD="POST">
-{{ addform.domcontact_form }}
+{% for field in addform.domcontact_form %}{{ field }}
+{% endfor %}
 <INPUT TYPE="submit" NAME="submit" VALUE="Add">
 </FORM>
 {% endblock %}
