@@ -54,12 +54,17 @@ allowed_chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 # Helper functions
 #
 
+# parameters for SHA512 hashed passwords
+CRYPT_SALT_LEN=16
+CRYPT_ALGO='$6$'
+
 def _pwcrypt(passwd):
-  """Compute a MD5-based crypt(3) hash suitable for user authentication"""
-  # Make a salt suitable for MD5-based crypt
+  """Compute a crypt(3) hash suitable for user authentication"""
+  # Make a salt
   salt_chars = '0123456789abcdefghijklmnopqstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/.'
-  t = ''.join(random.SystemRandom().choice(salt_chars) for i in range(8))
-  return crypt.crypt(passwd, '$1$' + t + '$')
+  t = ''.join(random.SystemRandom().choice(salt_chars) \
+              for i in range(CRYPT_SALT_LEN))
+  return crypt.crypt(passwd, CRYPT_ALGO + t + '$')
 
 def _render_to_mail(templatename, context, fromaddr, toaddrs):
   """Expand provided templatename and context, send the result
