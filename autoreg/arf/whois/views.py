@@ -527,6 +527,7 @@ def chpass(request):
     ct.passwd = _pwcrypt(pass1)
     ct.save()
     del vars['form']
+    vars['ehandle'] = vars['handle']
     return render_to_response('whois/passchanged.html', vars)
 
 @cache_control(private=True)
