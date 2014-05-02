@@ -46,40 +46,17 @@ def sendquery(q, server):
 def undot_list(fqdnlist):
   return [fqdn.rstrip('.') for fqdn in fqdnlist]
 
-class SOAChecker(object):
+
+class MultiResolver(object):
   def __init__(self, domain, manualip={}, nat={}):
     self.res = dns.resolver.Resolver()
     self.domain = domain
-    qsoa = dns.message.make_query(domain+'.', 'SOA')
-    qsoa.flags = 0
-    self.qsoa = qsoa
-    qns = dns.message.make_query(domain+'.', 'NS')
-    qns.flags = 0
-    self.qns = qns
     self.mastername = None
     self.manualip = manualip
     self.nat = nat
-
-  def getsoa(self, server):
-    """Send SOA query to server and wait for reply.
-       Return master name and serial.
-    """
-    ok, r = sendquery(self.qsoa, server)
-    if not ok:
-      return None, r
-    if (r.flags & dns.flags.AA) == 0:
-      return None, "Answer not authoritative"
-    if len(r.answer) == 0:
-      return None, "Empty answer"
-    if len(r.answer) != 1:
-      return None, "Unexpected answer length"
-    if len(r.answer[0].items) != 1:
-      return None, "Unexpected number of items"
-    if r.answer[0].items[0].rdtype != dns.rdatatype.SOA:
-      return None, "Answer type mismatch"
-    mastername = str(r.answer[0].items[0].mname).upper()
-    serial = r.answer[0].items[0].serial
-    return True, (mastername, serial)
+    qns = dns.message.make_query(domain+'.', 'NS')
+    qns.flags = 0
+    self.qns = qns
 
   def getnslist(self, server):
     """Send NS query to server and wait for reply.
@@ -99,6 +76,12 @@ class SOAChecker(object):
     nslist.sort()
     return True, nslist
 
+  def setnslist_direct(self, nslist):
+    """Set NS list from provided list"""
+    nslist.sort()
+    self.nslist = undot_list(nslist)
+    return True, self.nslist
+
   def setnslist_public(self):
     """Fetch NS list from resolver"""
     tcp = False
@@ -116,8 +99,7 @@ class SOAChecker(object):
     for i in ans.rrset.items:
       fqdn = i.to_text().upper()
       nslist.append(fqdn)
-    nslist.sort()
-    self.nslist = undot_list(nslist)
+    self.setnslist_direct(nslist)
     return True, self.nslist
 
   def setnslist_file(self, file):
@@ -156,8 +138,7 @@ class SOAChecker(object):
       nslist.append(fqdn)
     if nslist:
       self.mastername = nslist[0]
-    self.nslist = undot_list(nslist)
-    self.nslist.sort()
+    self.setnslist_direct(nslist)
     return errlist, warnlist
 
   def gen_ips(self):
@@ -193,13 +174,6 @@ class SOAChecker(object):
       if n == 0:
         yield None, (None, fqdn, [])
 
-  def gen_soa(self):
-    """Get SOA in turn from each IP in self.ips."""
-    for resolved, fqdn, iplist in self.ips:
-      for i in iplist:
-        ok, r = self.getsoa(i)
-        yield ok, fqdn, i, r
-
   def gen_ns(self):
     """Get NS records in turn from each IP in self.ips."""
     for resolved, fqdn, iplist in self.ips:
@@ -207,7 +181,7 @@ class SOAChecker(object):
         ok, r = self.getnslist(i)
         yield ok, fqdn, i, r
 
-  def resolve_ips(self):
+  def gen_resolve_ips(self):
     """Resolve IPs, storing the result in self.ips."""
     ips = []
     for ok, resolved_fqdn_ip in self.gen_ips():
@@ -220,6 +194,47 @@ class SOAChecker(object):
       else:
         yield True, "Accepted IP for %s: %s" % (fqdn, ' '.join(ip))
     self.ips = ips
+
+  def resolve_ips(self):
+    """Resolve IPs, storing the result in self.ips."""
+    for ok, msg in self.gen_resolve_ips():
+      pass
+
+
+class SOAChecker(MultiResolver):
+  def __init__(self, domain, manualip={}, nat={}):
+    super(self.__class__, self).__init__(domain, manualip, nat)
+    qsoa = dns.message.make_query(domain+'.', 'SOA')
+    qsoa.flags = 0
+    self.qsoa = qsoa
+
+  def getsoa(self, server):
+    """Send SOA query to server and wait for reply.
+       Return master name and serial.
+    """
+    ok, r = sendquery(self.qsoa, server)
+    if not ok:
+      return None, r
+    if (r.flags & dns.flags.AA) == 0:
+      return None, "Answer not authoritative"
+    if len(r.answer) == 0:
+      return None, "Empty answer"
+    if len(r.answer) != 1:
+      return None, "Unexpected answer length"
+    if len(r.answer[0].items) != 1:
+      return None, "Unexpected number of items"
+    if r.answer[0].items[0].rdtype != dns.rdatatype.SOA:
+      return None, "Answer type mismatch"
+    mastername = str(r.answer[0].items[0].mname).upper()
+    serial = r.answer[0].items[0].serial
+    return True, (mastername, serial)
+
+  def gen_soa(self):
+    """Get SOA in turn from each IP in self.ips."""
+    for resolved, fqdn, iplist in self.ips:
+      for i in iplist:
+        ok, r = self.getsoa(i)
+        yield ok, fqdn, i, r
 
   def print_checks(self):
     """Run gen_soa() and gen_ns(), displaying messages as we go."""
@@ -297,7 +312,7 @@ class SOAChecker(object):
     # Build IP address list
     #
 
-    for ok, msg in self.resolve_ips():
+    for ok, msg in self.gen_resolve_ips():
       yield True, msg
       if not ok:
         errs += 1
