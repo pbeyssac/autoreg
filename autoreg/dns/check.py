@@ -99,14 +99,6 @@ class SOAChecker(object):
     nslist.sort()
     return True, nslist
 
-  def setnslist(self, server):
-    """Fetch NS list from server"""
-    ok, r = self.getnslist(server)
-    if not ok:
-      return None, r
-    self.nslist = undot_list(nslist)
-    return True, self.nslist
-
   def setnslist_public(self):
     """Fetch NS list from resolver"""
     tcp = False
