@@ -18,7 +18,8 @@ from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
 from django.template.loader import get_template
 from django.template import Context
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, \
+  HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response
 from django import forms
 from django.forms.widgets import PasswordInput
@@ -546,8 +547,7 @@ def contactchange(request, registrantdomain=None):
     # check handle is authorized on domain
     if not check_handle_domain_auth(connection.cursor(),
                                     handle + HANDLESUFFIX, registrantdomain):
-      # XXX
-      return HttpResponse("Unauthorized")
+      return HttpResponseForbidden("Unauthorized")
     dom = Whoisdomains.objects.get(fqdn=registrantdomain)
     cl = dom.domaincontact_set.filter(contact_type__name='registrant')
     if len(cl) != 1:
@@ -730,8 +730,7 @@ def domainedit(request, fqdn):
 
   # check handle is authorized on domain
   if not check_handle_domain_auth(connection.cursor(), handle + HANDLESUFFIX, f):
-    # XXX
-    return HttpResponse("Unauthorized")
+    return HttpResponseForbidden("Unauthorized")
 
   dbdom = Domain(connection.cursor(), did=dom.id)
   dbdom.fetch()
