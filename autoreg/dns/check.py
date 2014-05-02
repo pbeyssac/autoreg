@@ -105,7 +105,6 @@ class SOAChecker(object):
     if not ok:
       return None, r
     self.nslist = undot_list(nslist)
-    nslist.sort()
     return True, self.nslist
 
   def setnslist_public(self):
