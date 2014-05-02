@@ -15,7 +15,7 @@ _tv = re.compile('^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)'
                  '(?:(?:\.(\d+))?(?:\+\d\d:\d\d)?)?$')
 _notv = re.compile('^(\S+)\s*$')
 
-DBENCODING = None
+DBENCODING = 'UTF-8'
 DEFAULTENCODING = 'ISO-8859-1'
 
 def fetch_dbencoding(dbc):
@@ -166,6 +166,20 @@ def mkinitials(name):
     # forbid 1-letter handles
     h += 'Z'
   return h
+
+def check_handle_domain_auth(dbc, handle, domain):
+  handle = suffixstrip(handle).upper()
+  dbc.execute('SELECT COUNT(*) FROM '
+              ' whoisdomains, contacts, domain_contact'
+              ' WHERE contacts.handle=%s'
+              ' AND contacts.validated_on IS NOT NULL'
+              ' AND contacts.id = domain_contact.contact_id'
+              ' AND whoisdomains.fqdn = %s'
+              ' AND whoisdomains.id = domain_contact.whoisdomain_id',
+              _todb((handle, domain.upper())))
+  assert dbc.rowcount == 1
+  n, = dbc.fetchone()
+  return n > 0
 
 class _whoisobject(object):
   re_map = {

@@ -9,7 +9,8 @@ import smtplib
 import socket
 import time
 
-from autoreg.whois.db import HANDLESUFFIX,suffixstrip,suffixadd,Domain
+from autoreg.whois.db import HANDLESUFFIX, \
+  suffixstrip,suffixadd,Domain,check_handle_domain_auth
 from autoreg.arf.settings import URIBASE, URLBASE
 
 import django.contrib.auth
@@ -115,13 +116,6 @@ def _token_set(contact_id, action, args=None, ttl=3600):
               token=token, action=action, args=args)
   tk.save()
   return token
-
-# XXX: this should probably be moved to autoreg.whois.db
-def _check_handle_domain_auth(handle, domain):
-  """check handle is authorized on domain."""
-  dom = Whoisdomains.objects.get(fqdn=domain.upper())
-  cl = dom.domaincontact_set.filter(contact__handle__exact=handle)
-  return len(cl) > 0
 
 # XXX: this should probably be moved to autoreg.whois.db
 def _countries_get():
@@ -550,7 +544,8 @@ def contactchange(request, registrantdomain=None):
   handle = request.user.username
   if registrantdomain:
     # check handle is authorized on domain
-    if not _check_handle_domain_auth(handle, registrantdomain):
+    if not check_handle_domain_auth(connection.cursor(),
+                                    handle + HANDLESUFFIX, registrantdomain):
       # XXX
       return HttpResponse("Unauthorized")
     dom = Whoisdomains.objects.get(fqdn=registrantdomain)
@@ -734,7 +729,7 @@ def domainedit(request, fqdn):
     return render_to_response('whois/domainnotfound.html', vars)
 
   # check handle is authorized on domain
-  if not _check_handle_domain_auth(handle, f):
+  if not check_handle_domain_auth(connection.cursor(), handle + HANDLESUFFIX, f):
     # XXX
     return HttpResponse("Unauthorized")
 
