@@ -181,6 +181,17 @@ def check_handle_domain_auth(dbc, handle, domain):
   n, = dbc.fetchone()
   return n > 0
 
+def admin_login(dbc, handle):
+  handle = suffixstrip(handle)
+  dbc.execute('SELECT login FROM admins, contacts'
+              ' WHERE admins.contact_id=contacts.id AND contacts.handle=%s',
+              _todb((handle,)))
+  assert dbc.rowcount <= 1
+  if dbc.rowcount == 1:
+    login, = dbc.fetchone()
+    return login
+  return None
+
 class _whoisobject(object):
   re_map = {
     'em': [60, re.compile('^[a-zA-Z0-9\-+\.\_\/\=%]+'

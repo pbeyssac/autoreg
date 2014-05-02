@@ -9,12 +9,13 @@ import psycopg2
 
 import autoreg.conf
 import autoreg.dns.db
+from autoreg.whois.db import admin_login
 import autoreg.whois.query as query
 import autoreg.zauth
 
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.db import transaction
+from django.db import connection, transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 
@@ -65,16 +66,6 @@ def _rq_remove(rqid, state):
   r.state = state
   r.save()
   r.delete()
-
-def _is_admin(user):
-  """Return True if the current user is in the admins table"""
-  return models.Admins.objects \
-         .filter(contact__handle=user.username).exists()
-
-def _get_login(user):
-  """Get the Unix login of the given user from the admins table"""
-  return models.Admins.objects \
-         .filter(contact__handle=user.username)[0].login
 
 def _rq_decorate(r):
   """Add attributes rclass, ndom, nemail to request"""
@@ -158,14 +149,15 @@ def _rq1(request, r):
 def rqedit(request, rqid):
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
-  if not _is_admin(request.user):
+  login = admin_login(connection.cursor(), request.user.username)
+  if not login:
     raise PermissionDenied
   r = models.Requests.objects.filter(id=rqid)
   if r.count() < 1:
     return render_to_response('requests/rqmsg.html',
                               {'msg': 'Request not found'})
   r = r[0]
-  if not autoreg.zauth.ZAuth().checkparent(r.fqdn, _get_login(request.user)):
+  if not autoreg.zauth.ZAuth().checkparent(r.fqdn, login):
     raise PermissionDenied
   if request.method == "GET":
     return render_to_response('requests/rqedit.html',
@@ -188,14 +180,15 @@ def rq(request, rqid):
     raise SuspiciousOperation
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
-  if not _is_admin(request.user):
+  login = admin_login(connection.cursor(), request.user.username)
+  if not login:
     raise PermissionDenied
   r = models.Requests.objects.filter(id=rqid)
   if r.count() < 1:
     return render_to_response('requests/rqmsg.html',
                               {'msg': 'Request not found'})
   r = r[0]
-  if not autoreg.zauth.ZAuth().checkparent(r.fqdn, _get_login(request.user)):
+  if not autoreg.zauth.ZAuth().checkparent(r.fqdn, login):
     raise PermissionDenied
   _rq1(request, r)
   r.suffix = 1
@@ -207,7 +200,8 @@ def rqdom(request, domain):
     raise SuspiciousOperation
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
-  if not _is_admin(request.user):
+  login = admin_login(connection.cursor(), request.user.username)
+  if not login:
     raise PermissionDenied
   if domain.upper() != domain:
     return HttpResponseRedirect(reverse(rqlistdom, args=[domain.upper()]))
@@ -226,7 +220,8 @@ def rqlistdom(request, domain=None):
     raise SuspiciousOperation
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
-  if not _is_admin(request.user):
+  login = admin_login(connection.cursor(), request.user.username)
+  if not login:
     raise PermissionDenied
   if domain is None:
     # domain not in URL, provided by "?domain=..." argument (search form)
@@ -235,7 +230,6 @@ def rqlistdom(request, domain=None):
     return HttpResponseRedirect(reverse(rqlistdom, args=[domain.upper()]))
 
   z = autoreg.zauth.ZAuth()
-  login =  _get_login(request.user)
 
   rlist = _rq_list_dom(domain)
   for r in rlist:
@@ -251,11 +245,11 @@ def rqlistemail(request, email):
     raise SuspiciousOperation
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
-  if not _is_admin(request.user):
+  login = admin_login(connection.cursor(), request.user.username)
+  if not login:
     raise PermissionDenied
 
   z = autoreg.zauth.ZAuth()
-  login =  _get_login(request.user)
 
   rlist = _rq_list_email(email)
   for r in rlist:
@@ -271,7 +265,8 @@ def rqlist(request, page='0'):
     raise SuspiciousOperation
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
-  if not _is_admin(request.user):
+  login = admin_login(connection.cursor(), request.user.username)
+  if not login:
     raise PermissionDenied
 
   nbypage = 100
@@ -284,7 +279,6 @@ def rqlist(request, page='0'):
     return HttpResponseRedirect(reverse(rqlist, args=[str(npages)]))
 
   z = autoreg.zauth.ZAuth()
-  login =  _get_login(request.user)
 
   rql = []
   for r in _rq_list()[(page-1)*nbypage:page*nbypage]:
@@ -349,11 +343,11 @@ def rqval(request):
     raise SuspiciousOperation
   if not request.user.is_authenticated():
     raise PermissionDenied
-  if not _is_admin(request.user):
+  login = admin_login(connection.cursor(), request.user.username)
+  if not login:
     raise PermissionDenied
 
   za = autoreg.zauth.ZAuth()
-  login =  _get_login(request.user)
   out = StringIO.StringIO()
 
   # get our current transaction out of the way
