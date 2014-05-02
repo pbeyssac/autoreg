@@ -37,4 +37,5 @@ urlpatterns += patterns('autoreg.arf.requests.views',
 )
 urlpatterns += patterns('autoreg.arf.dns.views',
     (r'^soa/(?P<domain>[a-z0-9\.A-Z-]+)$', 'checksoa'),
+    (r'^ds/(?P<fqdn>[a-z0-9\.A-Z-]+)/$', 'domainds'),
 )

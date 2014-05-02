@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}DNSSEC configuration for {{ domain }}{% endblock %}
+{% block h1title %}DNSSEC configuration for {{ domain }}{% endblock %}
+{% block msg %}
+{% if dscur %}
+<h2>Current DS records</h2>
+<table class="zone dslist">
+{% for ds in dscur %}<tr><td></td><td>DS</td><td>{{ ds.0 }}</td><td>{{ ds.1 }}</td><td>{{ ds.2 }}</td><td>{{ ds.3 }}</td>
+<td>
+<form class="dslistform" action="" method="POST">
+<input type="hidden" name="ds" value="{{ ds.0 }} {{ ds.1 }} {{ ds.2 }} {{ds.3 }}">
+<input type="hidden" name="act" value="del">
+<input type="submit" value="Delete">
+</form>
+</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+{% if dsok %}
+<div>
+{% if not dscur %}
+<p>Great news, your domain can be configured to use DNSSEC!
+{% endif %}
+<p>
+<p><strong>To add new DS records</strong>, please paste a DS, DLV or DNSKEY record in the box below.
+<p>We will check that your server publishes the associated DNSKEY, then we will add a DS record to our zone.
+<p>If it does not work, you can come back here to delete all DS records.
+<p>If you do not understand what all that means, do not use it and don't worry :)
+</div>
+{% if dserrs %}{% for dserr in dserrs %}<div class="error">{{ dserr }}</div>
+{% endfor %}{% endif %}
+<form class="dsform" action="" method="POST">
+<textarea name="rr" rows="4" cols="100" maxlength="4096" wrap="soft">{{ rr }}</textarea>
+<input type="submit" value="Add">
+</form>
+</div>
+{% if verbose and dsserved %}
+<h2>DS list generated from zone DNSKEYs</h2>
+<table class="zone dslist">
+{% for ds in dscur %}<tr><td></td><td>DS</td><td>{{ ds.0 }}</td><td>{{ ds.1 }}</td><td>{{ ds.2 }}</td><td>{{ ds.3 }}</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+{% else %}
+<div>Not eligible to DNSSEC:
+<div class="error">{{ elerr }}</div></div>
+{% endif %}
+{% endblock %}

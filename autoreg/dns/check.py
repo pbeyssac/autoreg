@@ -48,7 +48,7 @@ def undot_list(fqdnlist):
 
 
 class MultiResolver(object):
-  def __init__(self, domain, manualip={}, nat={}):
+  def __init__(self, domain, nslist=[], manualip={}, nat={}):
     self.res = dns.resolver.Resolver()
     self.domain = domain
     self.mastername = None
@@ -57,6 +57,9 @@ class MultiResolver(object):
     qns = dns.message.make_query(domain+'.', 'NS')
     qns.flags = 0
     self.qns = qns
+    if nslist:
+      self.setnslist_direct(nslist)
+      self.resolve_ips()
 
   def getnslist(self, server):
     """Send NS query to server and wait for reply.
@@ -202,8 +205,8 @@ class MultiResolver(object):
 
 
 class SOAChecker(MultiResolver):
-  def __init__(self, domain, manualip={}, nat={}):
-    super(self.__class__, self).__init__(domain, manualip, nat)
+  def __init__(self, domain, nslist=[], manualip={}, nat={}):
+    super(self.__class__, self).__init__(domain, nslist, manualip, nat)
     qsoa = dns.message.make_query(domain+'.', 'SOA')
     qsoa.flags = 0
     self.qsoa = qsoa
@@ -337,3 +340,39 @@ class SOAChecker(MultiResolver):
     if warns:
       yield True, "%d warning(s)" % warns,
     yield True, ""
+
+
+class DNSKEYChecker(MultiResolver):
+  def __init__(self, domain, nslist=[], manualip={}, nat={}):
+    super(self.__class__, self).__init__(domain, nslist, manualip, nat)
+    qdnskey = dns.message.make_query(domain+'.', 'DNSKEY')
+
+    # CD: accept replies even if domain is broken, so we can obtain
+    # the records anyway
+    qdnskey.flags = dns.flags.CD|dns.flags.RD
+    qdnskey.use_edns(0, 0, 1500)
+    self.qdnskey = qdnskey
+
+  def getdnskey(self, server):
+    """Send DNSKEY query to server and wait for reply.
+       Return answer.
+    """
+    ok, r = sendquery(self.qdnskey, server)
+    if not ok:
+      return []
+    if (r.flags & dns.flags.AA) == 0:
+      return []
+    if len(r.answer) == 0:
+      return []
+    if len(r.answer) != 1:
+      return []
+    return r.answer[0]
+
+  def getalldnskey(self):
+    dnskey = []
+    for resolved, fqdn, iplist in self.ips:
+      for i in iplist:
+        for newkey in self.getdnskey(i):
+          if newkey not in dnskey:
+            dnskey.append(newkey)
+    return dnskey
