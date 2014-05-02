@@ -764,7 +764,7 @@ class Lookup:
                         ' AND whoisdomains.id = domain_contact.whoisdomain_id',
                         _todb((suffixstrip(handle.upper()),)))
     return self._makedlist()
-  
+
 class Main:
   comment_re = re.compile('^\s*(?:#|%)')
   white_re = re.compile('^\s*$')
