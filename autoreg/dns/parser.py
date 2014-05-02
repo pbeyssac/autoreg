@@ -20,6 +20,8 @@ class DnsParser:
 	'^(\S+)?\s+(?:(\d+)\s+)?(?:[Ii][Nn]\s+)?(\S+)\s+(\S|\S.*\S)\s*$')
     # right-hand side for a MX record
     _mx_re = re.compile('^(\d+)\s+(\S+)$')
+    # right-hand side for a DS/DLV record
+    _dsdlv_re = re.compile('^(\d+)\s+(\d+)\s+(\d+)\s+([0-9a-fA-F \t]+)$')
     # lines such as $TTL ...
     _dollar_re = re.compile('^\$(\S+)\s+(\d+)\s*$')
     # SOA lines
@@ -64,7 +66,20 @@ class DnsParser:
 	    pri = int(pri)
 	    if pri > 255: raise ParseError('Bad priority for MX record', pri)
 	    value = "%d %s" % (pri, fqdn.upper())
-        elif typ in ['TXT', 'PTR', 'DNSKEY', 'RRSIG', 'DLV', 'DS',
+	elif typ in ['DS', 'DLV']:
+	    m = self._dsdlv_re.search(value)
+	    if not m: raise ParseError('Bad value for DS/DLV record', value)
+            keytag, algo, dtype, hexhash = m.groups()
+            keytag, algo, dtype = int(keytag), int(algo), int(dtype)
+            if keytag > 65535:
+                raise ParseError('Bad keytag for DS/DLV record', keytag)
+            if algo > 255:
+                raise ParseError('Bad algorithm for DS/DLV record', algo)
+            if dtype > 255:
+                raise ParseError('Bad digest type for DS/DLV record', dtype)
+            hexhash = hexhash.replace(' ', '').replace('\t', '').lower()
+            value = "%d %d %d %s" % (keytag, algo, dtype, hexhash)
+        elif typ in ['TXT', 'PTR', 'DNSKEY', 'RRSIG', 'DLV',
                      'HINFO', 'SSHFP', 'TLSA']:
 	    pass
         elif typ == 'SOA':
