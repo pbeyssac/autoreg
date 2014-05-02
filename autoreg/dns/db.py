@@ -32,6 +32,16 @@ class AccessError(DnsDbError):
 
 _dotted_rr = ['CNAME', 'DNAME', 'MX', 'NS', 'PTR']
 
+def undot_value(rrtype, value):
+    if rrtype in _dotted_rr:
+        value = value.rstrip('.')
+    return value
+
+def redot_value(rrtype, value):
+    if rrtype in _dotted_rr:
+        return value + '.'
+    return value
+
 class _Zone:
     def __init__(self, dbc, name=None, id=None):
 	self._dbc = dbc
@@ -112,7 +122,7 @@ class _Zone:
 	while t:
 	    (label, domain, ttl, typ, value) = t
 	    # "uncompress"
-	    if typ in _dotted_rr: value += '.'
+	    value = redot_value(typ, value)
 	    # prepare label
 	    if label != '' and domain != '':
 		l = label + '.' + domain
@@ -293,10 +303,10 @@ class _Domain:
 	lastlabel = ''
 	t = self._dbc.fetchone()
 	while t:
-	    label, dom, ttl, typ, val = t
+	    label, dom, ttl, typ, value = t
 
 	    # "uncompress"
-	    if typ in _dotted_rr: val += '.'
+	    value = redot_value(typ, value)
 
 	    # handle label
 	    if label != '' and dom != '':
@@ -313,7 +323,7 @@ class _Domain:
 	    if ttl is None: ttl = ''
 	    else: ttl = str(ttl)
 
-	    print "\t".join((l, ttl, typ, val))
+	    print "\t".join((l, ttl, typ, value))
 	    t = self._dbc.fetchone()
 	if self._dbc.rowcount == 0:
 	    print '; (NO RECORD)'
