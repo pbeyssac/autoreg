@@ -248,6 +248,43 @@ class _Domain:
 	    rowcount += self._dbc.rowcount
 	return rowcount
 
+    def queryrr(self, label, rrtype):
+        """Query records of a given label and type"""
+        rrtype = rrtype.upper()
+        self._dbc.execute("SELECT ttl, value FROM rrs"
+            " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
+            " AND domain_id=%s AND label=%s", (rrtype, self.id, label));
+        return [ (rr[0], redot_value(rrtype, rr[1]))
+                 for rr in self._dbc.fetchall() ]
+
+    def countrr(self, label, rrtype):
+        """Count records of a given label and type"""
+        rrtype = rrtype.upper()
+        self._dbc.execute("SELECT COUNT(*) FROM rrs"
+            " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
+            " AND domain_id=%s AND label=%s", (rrtype, self.id, label));
+        assert self._dbc.rowcount == 1
+        n, = self._dbc.fetchone()
+        return n
+
+    def addrr(self, label, ttl, rrtype, value):
+        """Add records of a given label, TTL, type and value"""
+        rrtype = rrtype.upper()
+        self._dbc.execute("INSERT INTO rrs"
+            " (domain_id, label, ttl, rrtype_id, value) "
+            " VALUES (%s, %s, %s, (SELECT id FROM rrtypes WHERE label=%s), %s)",
+             (self.id, label, ttl, rrtype, undot_value(rrtype, value)));
+        assert self._dbc.rowcount == 1
+
+    def delrr(self, label, rrtype, value):
+        """Delete records of a given label, type and value"""
+        rrtype = rrtype.upper()
+        self._dbc.execute("DELETE FROM rrs"
+            " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
+            " AND domain_id=%s AND label=%s AND value=%s",
+             (rrtype, self.id, label, undot_value(rrtype, value)));
+        return self._dbc.rowcount
+
     def set_updated_by(self, login_id):
         """Set updated_by and updated_on."""
         self._dbc.execute('UPDATE domains '
@@ -539,7 +576,55 @@ class db:
 	rrfile = cStringIO.StringIO(records)
 	self.modify(domain, domain, None, rrfile,
 		    override_internal, replace, delete, _commit=True)
-
+    def queryrr(self, domain, zone, label, rrtype):
+	"""Query within domain for records with rrtype and that label.
+	domain: FQDN of domain name
+        zone: zone to look into. Mostly relevant for NS and glue.
+        label: record label
+        rrtype: resource record type ('MX', etc, uppercase text)
+	"""
+	d, z = self._zl.find(domain, zone)
+	self._check_login_perm(z.name)
+	d.fetch()
+        return d.queryrr(label, rrtype)
+    def addrr(self, domain, zone, label, ttl, rrtype, value, _commit=True):
+        """Add records of a given label, TTL, type and value"""
+	d, z = self._zl.find(domain, zone)
+	self._check_login_perm(z.name)
+	d.fetch()
+        d.addrr(label, ttl, rrtype, value)
+	z.set_updateserial()
+	if _commit:
+	    self._dbh.commit()
+    def delrr(self, domain, zone, label, rrtype, value, _commit=True):
+        """Delete records of a given label, type and value"""
+	d, z = self._zl.find(domain, zone)
+	self._check_login_perm(z.name)
+	d.fetch()
+        n = d.delrr(label, rrtype, value)
+        if n:
+	    z.set_updateserial()
+	if _commit:
+	    self._dbh.commit()
+        return n
+    def checkds(self, domain, zone):
+        """Check whether domain is eligible for DS records
+        domain: FQDN of domain name
+        """
+        d, z = self._zl.find(domain, zone)
+        self._check_login_perm(z.name)
+        try:
+            z.checktype('DS')
+        except AccessError, e:
+            return False, e[0]
+        d.fetch()
+        nns = d.countrr('', 'NS')
+        if nns:
+            return True, None
+        return False, "No NS records for domain"
+    def commit(self):
+        """Commit pending transaction."""
+	self._dbh.commit()
     def new(self, domain, zone, typ, file=None, internal=False):
 	"""Create domain.
 
