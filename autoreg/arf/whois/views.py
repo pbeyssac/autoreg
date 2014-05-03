@@ -463,12 +463,6 @@ def contactvalidate(request, handle, valtoken):
     return render_to_response('whois/msgnext.html', vars)
   raise SuspiciousOperation
 
-def contact(request, handle):
-  """Contact display from handle"""
-  c = Contacts.objects.get(handle=handle)
-  vars = {'contact': c, 'address_list': c.addr.split('\n')[:-1]}
-  return render_to_response('whois/contact.html', vars)
-
 def domain(request, fqdn):
   """Whois from domain FQDN"""
   f = fqdn.upper()
