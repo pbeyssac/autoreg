@@ -257,12 +257,12 @@ class _Domain:
         return [ (rr[0], redot_value(rrtype, rr[1]))
                  for rr in self._dbc.fetchall() ]
 
-    def countrr(self, label, rrtype):
+    def existsrr(self, label, rrtype):
         """Count records of a given label and type"""
         rrtype = rrtype.upper()
-        self._dbc.execute("SELECT COUNT(*) FROM rrs"
+        self._dbc.execute("SELECT EXISTS (SELECT 1 FROM rrs"
             " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
-            " AND domain_id=%s AND label=%s", (rrtype, self.id, label));
+            " AND domain_id=%s AND label=%s)", (rrtype, self.id, label));
         assert self._dbc.rowcount == 1
         n, = self._dbc.fetchone()
         return n
@@ -618,7 +618,7 @@ class db:
         except AccessError, e:
             return False, e[0]
         d.fetch()
-        nns = d.countrr('', 'NS')
+        nns = d.existsrr('', 'NS')
         if nns:
             return True, None
         return False, "No NS records for domain"

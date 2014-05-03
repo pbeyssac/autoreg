@@ -169,17 +169,17 @@ def mkinitials(name):
 
 def check_handle_domain_auth(dbc, handle, domain):
   handle = suffixstrip(handle).upper()
-  dbc.execute('SELECT COUNT(*) FROM '
+  dbc.execute('SELECT EXISTS (SELECT 1 FROM '
               ' whoisdomains, contacts, domain_contact'
               ' WHERE contacts.handle=%s'
               ' AND contacts.validated_on IS NOT NULL'
               ' AND contacts.id = domain_contact.contact_id'
               ' AND whoisdomains.fqdn = %s'
-              ' AND whoisdomains.id = domain_contact.whoisdomain_id',
+              ' AND whoisdomains.id = domain_contact.whoisdomain_id)',
               _todb((handle, domain.upper())))
   assert dbc.rowcount == 1
   n, = dbc.fetchone()
-  return n > 0
+  return n
 
 def admin_login(dbc, handle):
   handle = suffixstrip(handle)
