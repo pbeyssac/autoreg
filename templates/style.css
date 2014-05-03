@@ -1,0 +1,22 @@
+body, tr, a {font-size:12pt;}
+.del {background-color:#aaa;}
+.dup {background-color:#fdd;}
+.dup2 {background-color:#fbb;}
+.zone {background-color:#eee;}
+.l3 {background-color:#cfc;}
+.edwhois {clear:both;}
+.formwhois {clear:both;}
+ul.errorlist {margin: 3px 0 0 0; padding: 0;}
+.fieldWrappererror {
+  margin: 4px 0 3px 0;
+  padding: 4px 0 3px 0;
+}
+.error,.fieldWrappererror {background-color: #f88;}
+div.error {margin-top: .2em; margin-bottom: .2em;}
+.dslist {font-family: monospace;}
+.dslist td + td {padding-left: 1em; margin-right: 1em;}
+.dslist td:nth-child(3) {text-align: right;}
+.dslist td:nth-child(4) {text-align: right;}
+.dslist td:nth-child(5) {text-align: right;}
+.domainlist td:first-child {font-family: monospace;}
+.domainlist td {padding-left: .2em; padding-right: .2em;}
