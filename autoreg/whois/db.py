@@ -192,6 +192,29 @@ def admin_login(dbc, handle):
     return login
   return None
 
+def handle_domains_dnssec(dbc, handle):
+  """Return a list of domains for handle, and their DNSSEC eligibility."""
+  handle = suffixstrip(handle)
+  dbc.execute("SELECT tmp.fqdn,"
+              " EXISTS(SELECT 1 FROM rrs"
+                " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label='NS')"
+                  " AND domain_id=domains.id AND label='')"
+              " AND EXISTS(SELECT 1 FROM allowed_rr"
+                 " WHERE zone_id=zones.id"
+                   " AND rrtype_id=(SELECT id FROM rrtypes WHERE label='DS'))"
+                  " FROM"
+           " (SELECT DISTINCT"
+              " SUBSTRING(fqdn FROM '[A-Z0-9+-]+') AS domain,"
+              " SUBSTRING(fqdn FROM '[A-Z0-9+-]+\.([A-Z0-9+\.-]+)') AS zone,"
+              " fqdn FROM whoisdomains, domain_contact, contacts"
+              " WHERE whoisdomain_id=whoisdomains.id"
+                " AND contact_id=contacts.id AND contacts.handle=%s)"
+           " AS tmp, domains, zones"
+         " WHERE domains.name=tmp.domain"
+           " AND domains.zone_id=zones.id"
+           " AND zones.name=tmp.zone", (handle,))
+  return dbc.fetchall()
+
 class _whoisobject(object):
   re_map = {
     'em': [60, re.compile('^[a-zA-Z0-9\-+\.\_\/\=%]+'

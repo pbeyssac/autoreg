@@ -23,14 +23,17 @@
 <p>Great news, your domain can be configured to use DNSSEC!
 {% endif %}
 <p>
+<strong>Warning: this feature is in beta test. Use only if you know what you are doing! Comments welcome to <a href="mailto:hostmaster@eu.org">hostmaster@eu.org</a></strong>
+<p>
 <p><strong>To add new DS records</strong>, please paste a DS, DLV or DNSKEY record in the box below.
-<p>We will check that your server publishes the associated DNSKEY, then we will add a DS record to our zone.
+<p>We will check that your server publishes the associated <strong>DNSKEY</strong>, then we will generate and add a <strong>DS</strong> record to our zone.
 <p>If it does not work, you can come back here to delete all DS records.
 <p>If you do not understand what all that means, do not use it and don't worry :)
 </div>
 {% if dserrs %}{% for dserr in dserrs %}<div class="error">{{ dserr }}</div>
 {% endfor %}{% endif %}
 <form class="dsform" action="" method="POST">
+<h2>DS, DLV or DNSKEY record:</h2>
 <textarea name="rr" rows="4" cols="100" maxlength="4096" wrap="soft">{{ rr }}</textarea>
 <input type="submit" value="Add">
 </form>

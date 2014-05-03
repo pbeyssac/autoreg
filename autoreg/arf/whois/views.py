@@ -10,7 +10,7 @@ import socket
 import time
 
 from autoreg.whois.db import HANDLESUFFIX, \
-  suffixstrip,suffixadd,Domain,check_handle_domain_auth
+  suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec
 from autoreg.arf.settings import URIBASE, URLBASE
 
 import django.contrib.auth
@@ -536,9 +536,10 @@ def domainlist(request):
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   handle = request.user.username
-  c = Contacts.objects.get(handle=handle)
-  dc = Whoisdomains.objects.filter(domaincontact__contact__exact=c.id).distinct().order_by('fqdn')
-  vars = {'posturi': request.path, 'handle': suffixadd(handle), 'doms': dc}
+
+  domds = handle_domains_dnssec(connection.cursor(), handle)
+
+  vars = {'posturi': request.path, 'handle': suffixadd(handle), 'domds': domds}
   return render_to_response('whois/domainlist.html', vars)
 
 @cache_control(private=True)
