@@ -2,7 +2,7 @@
 {% block title %}Request List{% endblock %}
 {% block h1title %}Request List{% endblock %}
 {% block msg %}
-<table>
+<table class="rqlist">
 {% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}><td><a href="{% url 'arf.requests.views.rq' r.id %}">{{ r.id }}</a><td>{{ r.action }}<td>{{ r.fqdn }}<td>{{ r.email }}<td>{% if r.tags != None %}{{ r.tags }}{% endif %}
 {% endfor %}
 </table>

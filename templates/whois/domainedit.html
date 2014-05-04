@@ -5,9 +5,8 @@
 {% endif %}{% endblock %}
 {% block form %}
 Whois data for domain <strong>{{ whoisdomain.fqdn }}</strong><P>
-<pre>
-{{ whoisdisplay }}
-</pre>
+<pre class="whoisdisplay">
+{{ whoisdisplay }}</pre>
 <A HREF="{% url 'arf.whois.views.contactchange' whoisdomain.fqdn %}">Edit registrant data</A>
 <hr>
 <strong>Remove an existing contact</strong><P>

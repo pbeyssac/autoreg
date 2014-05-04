@@ -6,7 +6,7 @@
 {% for p in pages %}{% if p == cpage %}{{ p }} {% else %}<a href="{{ p }}">{{ p }} </a>{% endif %}{% endfor %}
 {% if next %}<a href="{{ next }}">&gt;</a> {% endif %}
 <a href="{% url 'arf.requests.views.rqdom' fqdn %}">Show/Edit on one page</a>
-<table>
+<table class="rqlist">
 {% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}><td><a href="{% url 'arf.requests.views.rqdom' r.fqdn %}">{{ r.id }}</a><td>{{ r.action }}<td>{{ r.fqdn }}<td><a href="{% url 'arf.requests.views.rqlistemail' r.email %}">{{ r.email }}</a><td>{% if r.tags != None %}{{ r.tags }}{% endif %}
 {% endfor %}
 </table>

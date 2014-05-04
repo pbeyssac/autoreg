@@ -20,3 +20,6 @@ div.error {margin-top: .2em; margin-bottom: .2em;}
 .dslist td:nth-child(5) {text-align: right;}
 .domainlist td:first-child {font-family: monospace;}
 .domainlist td {padding-left: .2em; padding-right: .2em;}
+.whoisdisplay {background-color:#eef;}
+.rqlist {border-spacing: 0 2px;}
+.rqlist td:nth-child(3) {font-family: monospace;}

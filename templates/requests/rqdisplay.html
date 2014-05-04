@@ -22,9 +22,8 @@
 
 {% if r.whoisrecord %}
 <h3>Records to be inserted in WHOIS base</h3>
-<pre>
-{{ r.whoisfiltered }}
-</pre>
+<pre class="whoisdisplay">
+{{ r.whoisfiltered.strip }}</pre>
 {% endif %}
 
 Tags: {% if r.tags != None %}{{ r.tags }}{% endif %}<br>
@@ -33,7 +32,7 @@ Tags: {% if r.tags != None %}{{ r.tags }}{% endif %}<br>
 <br>
 {% for w in r.wlistout %}
 <h3>Current whois record for {{ w.0 }}</h3>
-<pre>{{ w.1 }}</pre>
+<pre class="whoisdisplay">{{ w.1.strip }}</pre>
 {% endfor %}
 
 Requester: <a href="mailto:{{ r.email }}">{{ r.email }}</a>
