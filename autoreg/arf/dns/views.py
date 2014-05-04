@@ -53,7 +53,7 @@ def domainds(request, fqdn):
   except autoreg.dns.db.DomainError:
     return HttpResponseNotFound("Domain not found")
 
-  nslist = [ rr[1] for rr in dd.queryrr(fqdn, None, '', 'NS') ]
+  nslist = [ rr[3] for rr in dd.queryrr(fqdn, None, '', 'NS') ]
 
   if dsok:
     # get current DNSKEYs from domain servers
@@ -66,7 +66,7 @@ def domainds(request, fqdn):
 
     # get current DS list in our database
     dscur = dd.queryrr(fqdn, None, '', 'DS')
-    dscur = [ rr[1].split(' ', 3) for rr in dscur ]
+    dscur = [ rr[3].split(' ', 3) for rr in dscur ]
     dscur = [ (int(rr[0]), int(rr[1]), int(rr[2]), rr[3]) for rr in dscur ]
     dscur.sort()
   else:

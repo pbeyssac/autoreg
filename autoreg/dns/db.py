@@ -253,13 +253,17 @@ class _Domain:
         label can be None for *
         rrtype can be None for ANY
         """
-        rrtype = rrtype.upper()
-        self._dbc.execute("SELECT ttl, value FROM rrs"
+        if rrtype is not None:
+          rrtype = rrtype.upper()
+        self._dbc.execute("SELECT rrs.label, ttl, rrtypes.label, value"
+            " FROM rrs, rrtypes"
             " WHERE (rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
                   " OR %s IS NULL)"
-            " AND domain_id=%s AND (label=%s OR %s is NULL)",
+            " AND rrtypes.id = rrs.rrtype_id"
+            " AND domain_id=%s AND (rrs.label=%s OR %s is NULL)"
+            " ORDER BY (rrs.label, rrtypes.label, value, ttl)",
             (rrtype, rrtype, self.id, label, label));
-        return [ (rr[0], redot_value(rrtype, rr[1]))
+        return [ (rr[0], rr[1], rr[2], redot_value(rr[2], rr[3]))
                  for rr in self._dbc.fetchall() ]
 
     def existsrr(self, label, rrtype):
