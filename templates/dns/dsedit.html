@@ -4,8 +4,8 @@
 {% block msg %}
 {% if dscur %}
 <h2>Current DS records</h2>
-<table class="zone dslist">
-{% for ds in dscur %}<tr><td></td><td>DS</td><td>{{ ds.0 }}</td><td>{{ ds.1 }}</td><td>{{ ds.2 }}</td><td>{{ ds.3 }}</td>
+<table class="zone rrlist dslist">
+{% for ds in dscur %}<tr><td></td><td></td><td>DS</td><td>{{ ds.0 }}</td><td>{{ ds.1 }}</td><td>{{ ds.2 }}</td><td>{{ ds.3 }}</td>
 <td>
 <form class="dslistform" action="" method="POST">
 <input type="hidden" name="ds" value="{{ ds.0 }} {{ ds.1 }} {{ ds.2 }} {{ds.3 }}">
@@ -40,8 +40,8 @@
 </div>
 {% if verbose and dsserved %}
 <h2>DS list generated from zone DNSKEYs</h2>
-<table class="zone dslist">
-{% for ds in dscur %}<tr><td></td><td>DS</td><td>{{ ds.0 }}</td><td>{{ ds.1 }}</td><td>{{ ds.2 }}</td><td>{{ ds.3 }}</td></tr>
+<table class="zone rrlist dslist">
+{% for ds in dscur %}<tr><td></td><td></td><td>DS</td><td>{{ ds.0 }}</td><td>{{ ds.1 }}</td><td>{{ ds.2 }}</td><td>{{ ds.3 }}</td></tr>
 {% endfor %}
 </table>
 {% endif %}

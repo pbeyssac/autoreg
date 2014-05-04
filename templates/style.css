@@ -13,11 +13,14 @@ ul.errorlist {margin: 3px 0 0 0; padding: 0;}
 }
 .error,.fieldWrappererror {background-color: #f88;}
 div.error {margin-top: .2em; margin-bottom: .2em;}
-.dslist {font-family: monospace;}
-.dslist td + td {padding-left: 1em; margin-right: 1em;}
+.rrlist td:first-child {min-width: 5em;}
+.rrlist {font-family: monospace;}
+.rrlist td + td {padding-left: 1.5em; margin-right: 1.5em;}
+.rrlist td:nth-child(2) {text-align: right;}
 .dslist td:nth-child(3) {text-align: right;}
 .dslist td:nth-child(4) {text-align: right;}
 .dslist td:nth-child(5) {text-align: right;}
+.dslist td:nth-child(6) {text-align: right;}
 .domainlist td:first-child {font-family: monospace;}
 .domainlist td {padding-left: .2em; padding-right: .2em;}
 .whoisdisplay {background-color:#eef;}
