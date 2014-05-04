@@ -249,11 +249,16 @@ class _Domain:
 	return rowcount
 
     def queryrr(self, label, rrtype):
-        """Query records of a given label and type"""
+        """Query records of a given label and type.
+        label can be None for *
+        rrtype can be None for ANY
+        """
         rrtype = rrtype.upper()
         self._dbc.execute("SELECT ttl, value FROM rrs"
-            " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
-            " AND domain_id=%s AND label=%s", (rrtype, self.id, label));
+            " WHERE (rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
+                  " OR %s IS NULL)"
+            " AND domain_id=%s AND (label=%s OR %s is NULL)",
+            (rrtype, rrtype, self.id, label, label));
         return [ (rr[0], redot_value(rrtype, rr[1]))
                  for rr in self._dbc.fetchall() ]
 
