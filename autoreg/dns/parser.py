@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 # $Id$
 
+import base64
 import re
 import socket
 
@@ -17,11 +18,13 @@ class DnsParser:
     # simplified expression for a regular line
     # (does not handle trailing comments, difficult because of string quoting)
     _label_re = re.compile(
-	'^(\S+)?\s+(?:(\d+)\s+)?(?:[Ii][Nn]\s+)?(\S+)\s+(\S|\S.*\S)\s*$')
+	'^(\S+)?\s+(?:(\d+)\s+)?(?:[Ii][Nn]\s+)?([A-Za-z]\S*)\s+(\S|\S.*\S)\s*$')
     # right-hand side for a MX record
     _mx_re = re.compile('^(\d+)\s+(\S+)$')
     # right-hand side for a DS/DLV record
     _dsdlv_re = re.compile('^(\d+)\s+(\d+)\s+(\d+)\s+([0-9a-fA-F \t]+)$')
+    # right-hand side for a DNSKEY record, with Base64 string
+    _dnskey_re = re.compile('^(\d+)\s+(\d+)\s+(\d+)\s+(\S+.*\S+)$')
     # lines such as $TTL ...
     _dollar_re = re.compile('^\$(\S+)\s+(\d+)\s*$')
     # SOA lines
@@ -30,13 +33,15 @@ class DnsParser:
 
     def __init__(self):
         self.insoa = False
-    def normalizeline(self, label, ttl, typ, value):
+    def normalizeline(self, label, ttl, typ, value, rrfilter=None):
 	if label is None:
 	    label = ''
 	else:
 	    label = label.upper()
 	typ = typ.upper()
 	# Do some quick & dirty checking and canonicalization
+        if rrfilter is not None and typ not in rrfilter:
+            raise ParseError('Not an allowed resource record type', typ)
         if typ == 'AAAA':
 	    value = value.upper()
             try:
@@ -60,18 +65,42 @@ class DnsParser:
 	elif typ in ['DS', 'DLV']:
 	    m = self._dsdlv_re.search(value)
 	    if not m: raise ParseError('Bad value for DS/DLV record', value)
-            keytag, algo, dtype, hexhash = m.groups()
-            keytag, algo, dtype = int(keytag), int(algo), int(dtype)
+            keytag, algo, digesttype, hexhash = m.groups()
+            keytag, algo, digesttype = int(keytag), int(algo), int(digesttype)
             if keytag > 65535:
                 raise ParseError('Bad keytag for DS/DLV record', keytag)
             if algo > 255:
                 raise ParseError('Bad algorithm for DS/DLV record', algo)
-            if dtype > 255:
-                raise ParseError('Bad digest type for DS/DLV record', dtype)
+            if digesttype > 255:
+                raise ParseError('Bad digest type for DS/DLV record',
+                                 digesttype)
             hexhash = hexhash.replace(' ', '').replace('\t', '').lower()
-            value = "%d %d %d %s" % (keytag, algo, dtype, hexhash)
-        elif typ in ['TXT', 'PTR', 'DNSKEY', 'RRSIG', 'DLV',
-                     'HINFO', 'SSHFP', 'TLSA']:
+            if digesttype == 1 and len(hexhash) != 40:
+                raise ParseError('Wrong hash length in DS/DLV record', hexhash)
+            if digesttype == 2 and len(hexhash) != 64:
+                raise ParseError('Wrong hash length in DS/DLV record', hexhash)
+            if digesttype != 1 and digesttype != 2 and len(hexhash) % 1:
+                raise ParseError('Wrong hash length in DS/DLV record', hexhash)
+            value = "%d %d %d %s" % (keytag, algo, digesttype, hexhash)
+	elif typ == 'DNSKEY':
+	    m = self._dnskey_re.search(value)
+	    if not m: raise ParseError('Bad value for DNSKEY record', value)
+            flags, protocol, algo, key = m.groups()
+            flags, protocol, algo = int(flags), int(protocol), int(algo)
+            if flags > 65535:
+                raise ParseError('Bad flags for DNSKEY record: %d' % flags)
+            if protocol > 255:
+                raise ParseError('Bad protocol for DNSKEY record: %d'
+                                 % protocol)
+            if algo > 255:
+                raise ParseError('Bad algorithm for DNSKEY record: %d' % algo)
+            try:
+                base64.b64decode(key)
+            except TypeError, e:
+                raise ParseError('Bad key in DNSKEY record:' + e, key)
+            key = key.replace(' ', '').replace('\t', '')
+            value = "%d %d %d %s" % (flags, protocol, algo, key)
+        elif typ in ['TXT', 'PTR', 'RRSIG', 'HINFO', 'SSHFP', 'TLSA']:
 	    pass
 	else:
 	    raise ParseError('Illegal record type', typ)
@@ -94,6 +123,6 @@ class DnsParser:
                 self.insoa = True
             return None
 	return self.normalizeline(label, ttl, typ, value)
-    def parse1line(self, l):
+    def parse1line(self, l, rrfilter=None):
 	label, ttl, typ, value = self.splitline(l)
-	return self.normalizeline(label, ttl, typ, value)
+	return self.normalizeline(label, ttl, typ, value, rrfilter)

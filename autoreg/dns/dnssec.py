@@ -4,13 +4,7 @@ import re
 import struct
 
 import check
-
-hdnskey = re.compile('^(?:(\S*)\s+)?(?:\d+\s+)?(?:IN\s+)?'
-                     'DNSKEY\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S.+\S)\s*$',
-                     re.IGNORECASE)
-hds = re.compile('^(?:(\S*)\s+)?(?:\d+\s+)?(?:IN\s+)?'
-                 '(?:DS|DLV)\s+(\d+)\s+(\d+)\s+(\d+)\s+([0-9a-fA-F \t]+)\s*$',
-                 re.IGNORECASE)
+import parser
 
 def compute_keytag_wirekey(flags, protocol, algorithm, key):
   """Compute key tag and wire key."""
@@ -56,32 +50,31 @@ def make_ds(rr, domain):
   """
   if domain and domain[-1] != '.': domain += '.'
   domain = domain.lower()
-  m = hdnskey.match(rr)
-  if m:
-    rrdomain, flags, protocol, algorithm, b64 = m.groups()
-    if rrdomain and rrdomain.lower() != domain:
+  p = parser.DnsParser()
+  try:
+    label, ttl, rrtype, value = p.parse1line(rr, ['DS', 'DLV', 'DNSKEY'])
+  except parser.ParseError, e:
+    return False, ' '.join(e)
+
+  if rrtype == 'DNSKEY':
+    if label and label.lower() != domain:
       return False, "Domain doesn't match record"
+    flags, protocol, algorithm, b64key = value.split(' ', 3)
     flags, protocol, algorithm = int(flags), int(protocol), int(algorithm)
     if flags & 257 != 257:
       return False, \
         "Flags field should be 257 (key-signing key, security entry point)"
     if protocol != 3:
       return False, "Protocol field should be 3"
-    key = base64.b64decode(b64)
+    key = base64.b64decode(b64key)
     return True, compute_ds(domain, flags, protocol, algorithm, key, [ 2 ])
-
-  m = hds.match(rr)
-  if m:
-    rrdomain, keytag, algorithm, digesttype, hexhash = m.groups()
-    if rrdomain and rrdomain.lower() != domain:
+  elif rrtype in ['DS', 'DLV']:
+    keytag, algorithm, digesttype, hexhash = value.split(' ', 3)
+    if label and label.lower() != domain:
       return False, "Domain doesn't match record"
     hexhash = hexhash.replace(' ', '').replace('\t', '').lower()
     keytag, algorithm, digesttype = int(keytag), int(algorithm), int(digesttype)
     dslist = [(keytag, algorithm, digesttype, hexhash)]
-    if digesttype == 1 and len(hexhash) != 40:
-      return False, "Wrong hash length"
-    if digesttype == 2 and len(hexhash) != 64:
-      return False, "Wrong hash length"
     return True, dslist
 
   return False, "Can't analyze record"
