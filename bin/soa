@@ -63,7 +63,7 @@ do
 		#
 		# Copy apparently ok, check it.
 		#
-		(tail -5 $DEST/$i.new | grep -q ^_EU-ORG-END-MARKER); then
+		(tail -5 $DEST/$i.new | grep -q ^_END-MARK); then
 		    # Copy ok, show diffs
 		    diff -U2 $DEST/$i $DEST/$i.new
 		    # replace the older file

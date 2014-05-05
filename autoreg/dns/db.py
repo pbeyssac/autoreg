@@ -142,7 +142,6 @@ class _Zone:
 		lastlabel = l
 	    print "%s\t%s%s\t%s" % (l, ttl, typ, value)
 	    t = self._dbc.fetchone()
-	print "_EU-ORG-END-MARKER\tTXT\t\"%s\"" % self._soaserial
     def lock(self):
 	"""Lock zone row for update."""
 	assert self.id is not None

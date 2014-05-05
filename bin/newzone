@@ -19,6 +19,11 @@ $AZ -uautoreg -i -anew -z "$PARENT" "$DOM" << EOF
 	NS NS.EU.ORG.
 EOF
 
+# Create end marker
+$AZ -uautoreg -i -anew _END-MARK."$DOM"  << EOF
+	TXT	"end mark"
+EOF
+
 # create NS records in zone
 $AZ -uautoreg -i -anew -z "$DOM" "$DOM" << EOF
 	NS NS.EU.ORG.
