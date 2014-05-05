@@ -25,7 +25,7 @@ def compute_keytag(flags, protocol, algorithm, key):
   """Compute key tag."""
   return compute_keytag_wirekey(flags, protocol, algorithm, key)[0]
 
-def compute_ds(domain, flags, protocol, algorithm, key, digesttypelist=[1, 2]):
+def compute_ds(domain, flags, protocol, algorithm, key, digesttypelist=[1, 2, 4]):
   """Compute DS/DLV records from DNSKEY data"""
   domain = str(domain.lower())
   if domain[-1] != '.':
@@ -40,8 +40,10 @@ def compute_ds(domain, flags, protocol, algorithm, key, digesttypelist=[1, 2]):
   for digesttype in digesttypelist:
     if digesttype == 1:
       dslist.append((tag, algorithm, 1, hashlib.sha1(wire).hexdigest()))
-    else:
+    elif digesttype == 2:
       dslist.append((tag, algorithm, 2, hashlib.sha256(wire).hexdigest()))
+    else:
+      dslist.append((tag, algorithm, 4, hashlib.sha384(wire).hexdigest()))
   return dslist
 
 def make_ds(rr, domain):
@@ -67,7 +69,7 @@ def make_ds(rr, domain):
     if protocol != 3:
       return False, "Protocol field should be 3"
     key = base64.b64decode(b64key)
-    return True, compute_ds(domain, flags, protocol, algorithm, key, [ 2 ])
+    return True, compute_ds(domain, flags, protocol, algorithm, key, [2, 4])
   elif rrtype in ['DS', 'DLV']:
     keytag, algorithm, digesttype, hexhash = value.split(' ', 3)
     if label and label.lower() != domain:

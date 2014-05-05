@@ -79,7 +79,9 @@ class DnsParser:
                 raise ParseError('Wrong hash length in DS/DLV record', hexhash)
             if digesttype == 2 and len(hexhash) != 64:
                 raise ParseError('Wrong hash length in DS/DLV record', hexhash)
-            if digesttype != 1 and digesttype != 2 and len(hexhash) % 1:
+            if digesttype == 4 and len(hexhash) != 96:
+                raise ParseError('Wrong hash length in DS/DLV record', hexhash)
+            if digesttype not in [1, 2, 4] and len(hexhash) % 1:
                 raise ParseError('Wrong hash length in DS/DLV record', hexhash)
             value = "%d %d %d %s" % (keytag, algo, digesttype, hexhash)
 	elif typ == 'DNSKEY':
