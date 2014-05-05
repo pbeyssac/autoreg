@@ -30,16 +30,7 @@ class DnsParser:
 
     def __init__(self):
         self.insoa = False
-    def parseline(self, l):
-	if self._comment_re.search(l): return None
-	if self._dollar_re.search(l): return None
-        if self.insoa:
-            if self._soa_end_re.search(l):
-                self.insoa = False
-            return None
-	m = self._label_re.search(l)
-	if not m: raise ParseError('Unable to parse line', l)
-	label, ttl, typ, value = m.groups()
+    def normalizeline(self, label, ttl, typ, value):
 	if label is None:
 	    label = ''
 	else:
@@ -82,9 +73,27 @@ class DnsParser:
         elif typ in ['TXT', 'PTR', 'DNSKEY', 'RRSIG', 'DLV',
                      'HINFO', 'SSHFP', 'TLSA']:
 	    pass
-        elif typ == 'SOA':
-            if self._soa_begin_re.search(value.strip()):
-                self.insoa = True
 	else:
 	    raise ParseError('Illegal record type', typ)
-	return (label, ttl, typ, value)
+	return label, ttl, typ, value
+    def splitline(self, l):
+	m = self._label_re.search(l)
+	if not m:
+            raise ParseError('Unable to parse line', l)
+	return m.groups()
+    def parseline(self, l):
+	if self._comment_re.search(l): return None
+	if self._dollar_re.search(l): return None
+        if self.insoa:
+            if self._soa_end_re.search(l):
+                self.insoa = False
+            return None
+	label, ttl, typ, value = self.splitline(l)
+        if typ.upper() == 'SOA':
+            if self._soa_begin_re.search(value.strip()):
+                self.insoa = True
+            return None
+	return self.normalizeline(label, ttl, typ, value)
+    def parse1line(self, l):
+	label, ttl, typ, value = self.splitline(l)
+	return self.normalizeline(label, ttl, typ, value)
