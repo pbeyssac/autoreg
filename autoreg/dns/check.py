@@ -241,11 +241,30 @@ class SOAChecker(MultiResolver):
 
   def print_checks(self):
     """Run gen_soa() and gen_ns(), displaying messages as we go."""
+    serials = {}
     for ok, fqdn, i, r in self.gen_soa():
       if not ok:
         yield None, "SOA from %s at %s: Error: %s" % (fqdn, i, r)
       else:
+        if r[1] in serials:
+          serials[r[1]].append(i)
+        else:
+          serials[r[1]] = [i]
         yield True, "SOA from %s at %s: serial %s" % (fqdn, i, r[1])
+    if serials and len(serials) > 1:
+      serialsk = serials.keys()
+      serialsk.sort()
+      if serialsk[-1] - serialsk[0] < (1<<31):
+        del serials[serialsk[-1]]
+        values = []
+        for f in serials.values():
+          values.extend(f)
+        yield None, "Servers not up to date: " + ' '.join(values)
+      else:
+        yield None, "Some servers are not up to date!"
+
+    yield True, ""
+
     for ok, fqdn, i, r in self.gen_ns():
       if not ok:
         yield None, "NS from %s at %s: Error: %s" % (fqdn, i, r)
