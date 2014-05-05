@@ -277,7 +277,8 @@ class _Domain:
 
     def addrr(self, label, ttl, rrtype, value):
         """Add records of a given label, TTL, type and value"""
-        rrtype = rrtype.upper()
+        dp = parser.DnsParser()
+        label, ttl, rrtype, value = dp.normalizeline(label, ttl, rrtype, value)
         self._dbc.execute("INSERT INTO rrs"
             " (domain_id, label, ttl, rrtype_id, value) "
             " VALUES (%s, %s, %s, (SELECT id FROM rrtypes WHERE label=%s), %s)",
