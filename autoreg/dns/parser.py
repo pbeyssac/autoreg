@@ -25,6 +25,11 @@ class DnsParser:
     _dsdlv_re = re.compile('^(\d+)\s+(\d+)\s+(\d+)\s+([0-9a-fA-F \t]+)$')
     # right-hand side for a DNSKEY record, with Base64 string
     _dnskey_re = re.compile('^(\d+)\s+(\d+)\s+(\d+)\s+(\S+.*\S+)$')
+    # right-hand side for a SRV record
+    _mx_srv = re.compile('^(\d+)\s+(\d+)\s+(\d+)\s+(\S+)$')
+    # host FQDN (no underscore)
+    _hfqdn_re = re.compile('^(?:[A-Z0-9-]+\.)+[A-Z][A-Z0-9]+\.$',
+                           re.IGNORECASE)
     # lines such as $TTL ...
     _dollar_re = re.compile('^\$(\S+)\s+(\d+)\s*$')
     # SOA lines
@@ -53,14 +58,32 @@ class DnsParser:
                 dummy = socket.inet_pton(socket.AF_INET, value)
             except socket.error:
                 raise ParseError('Bad IPv4 address', value)
-        elif typ in ['CNAME', 'DNAME', 'NS', 'SRV']:
+        elif typ in ['CNAME', 'DNAME', 'NS', 'PTR']:
+	    m = self._hfqdn_re.search(value)
+	    if not m: raise ParseError('Bad value for %s record' % typ, value)
 	    value = value.upper()
+	elif typ == 'SRV':
+	    m = self._mx_srv.search(value)
+	    if not m: raise ParseError('Bad value for SRV record', value)
+            pri, weight, port, fqdn = m.groups()
+	    m = self._hfqdn_re.search(fqdn)
+	    if not m: raise ParseError('Bad host for SRV record', fqdn)
+            pri, weight, port = int(pri), int(weight), int(port)
+	    if pri > 65535:
+              raise ParseError('Bad priority for SRV record', pri)
+	    if weight > 65535:
+              raise ParseError('Bad weight for SRV record', weight)
+	    if port > 65535:
+              raise ParseError('Bad port for SRV record', port)
+	    value = "%d %d %d %s" % (pri, weight, port, fqdn.upper())
 	elif typ == 'MX':
 	    m = self._mx_re.search(value)
 	    if not m: raise ParseError('Bad value for MX record', value)
 	    pri, fqdn = m.groups()
+	    m = self._hfqdn_re.search(fqdn)
+	    if not m: raise ParseError('Bad host name for MX record', fqdn)
 	    pri = int(pri)
-	    if pri > 255: raise ParseError('Bad priority for MX record', pri)
+	    if pri > 65535: raise ParseError('Bad priority for MX record', pri)
 	    value = "%d %s" % (pri, fqdn.upper())
 	elif typ in ['DS', 'DLV']:
 	    m = self._dsdlv_re.search(value)
@@ -102,7 +125,7 @@ class DnsParser:
                 raise ParseError('Bad key in DNSKEY record:' + e, key)
             key = key.replace(' ', '').replace('\t', '')
             value = "%d %d %d %s" % (flags, protocol, algo, key)
-        elif typ in ['TXT', 'PTR', 'RRSIG', 'HINFO', 'SSHFP', 'TLSA']:
+        elif typ in ['TXT', 'RRSIG', 'HINFO', 'SSHFP', 'TLSA']:
 	    pass
 	else:
 	    raise ParseError('Illegal record type', typ)
