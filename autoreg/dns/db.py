@@ -285,11 +285,13 @@ class _Domain:
         assert self._dbc.rowcount == 1
 
     def delrr(self, label, rrtype, value):
-        """Delete records of a given label, type and value"""
+        """Delete at most 1 record of a given label, type and value."""
         rrtype = rrtype.upper()
-        self._dbc.execute("DELETE FROM rrs"
+        # This is like a (non-existing) DELETE ... LIMIT 1,
+        # using hidden-field ctid.
+        self._dbc.execute("DELETE FROM rrs WHERE ctid = (SELECT ctid FROM rrs"
             " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
-            " AND domain_id=%s AND label=%s AND value=%s",
+            " AND domain_id=%s AND label=%s AND value=%s LIMIT 1)",
              (rrtype, self.id, label, undot_value(rrtype, value)));
         return self._dbc.rowcount
 
