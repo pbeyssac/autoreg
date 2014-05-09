@@ -410,6 +410,7 @@ class DNSKEYChecker(MultiResolver):
     for resolved, fqdn, iplist in self.ips:
       for i in iplist:
         for newkey in self.getdnskey(i):
-          if newkey not in dnskey:
+          # filter out CNAMEs & others
+          if newkey.rdtype == dns.rdatatype.DNSKEY and newkey not in dnskey:
             dnskey.append(newkey)
     return dnskey
