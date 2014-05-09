@@ -7,7 +7,8 @@ for z in `${AUTOREGBIN}/access-zone -alist`; do
     ${AUTOREGBIN}/access-zone -ashow -z$z $z |
     awk '			\
 	/^;/ { next }		\
-	/^\t/ && $1 == "NS" { print substr ($2,1,length($2)-1); }'
+	/^\t+NS\t+/ { print substr ($2,1,length($2)-1); }	\
+	/^\t+\d+\t+NS\t+/ { print substr ($3,1,length($3)-1); }'
   )`
   # split in 2 lines to get correct exit status from check-ns
   out=`echo "$input" | ${AUTOREGBIN}/check-ns -g`
