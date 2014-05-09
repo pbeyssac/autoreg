@@ -295,8 +295,8 @@ class SOAChecker(MultiResolver):
     2)    primary and secondaries are authoritative for the domain
     3)    NS records for domain on all listed server match the provided list.
     """
-    errs = 0
-    warns = 0
+    self.errs = 0
+    self.warns = 0
 
     yield True, "---- Servers and domain names check"
     yield True, ""
@@ -318,6 +318,7 @@ class SOAChecker(MultiResolver):
       if not ok:
         yield None, "Querying NS list for %s... %s" % (self.domain, r)
         yield None, r
+        self.errs += 1
         return
       yield True, "Querying NS list for %s... %d records" \
             % (self.domain, len(self.nslist))
@@ -334,17 +335,17 @@ class SOAChecker(MultiResolver):
 
       for e in errlist:
         yield None, "Error: %s" % e
-      errs += len(errlist)
+      self.errs += len(errlist)
       for e in warnlist:
         yield True, "Warning: %s" % e
-      warns += len(warnlist)
+      self.warns += len(warnlist)
 
     if not self.nslist:
       yield True, "Error: empty name server list"
-      errs += 1
+      self.errs += 1
 
-    if errs:
-      yield None, "%s errors(s)" % errs
+    if self.errs:
+      yield None, "%s errors(s)" % self.errs
       return
 
     #
@@ -354,10 +355,10 @@ class SOAChecker(MultiResolver):
     for ok, msg in self.gen_resolve_ips():
       yield True, msg
       if not ok:
-        errs += 1
+        self.errs += 1
 
-    if errs:
-      yield None, "%d errors(s)" % errs
+    if self.errs:
+      yield None, "%d errors(s)" % self.errs
       return
 
     yield True, ""
@@ -367,14 +368,14 @@ class SOAChecker(MultiResolver):
     for ok, msg in self.print_checks():
       yield True, msg
       if not ok:
-        errs += 1
+        self.errs += 1
 
-    if errs or warns:
+    if self.errs or self.warns:
       yield True, ""
-    if errs:
-      yield None, "%d errors(s)" % errs
-    if warns:
-      yield True, "%d warning(s)" % warns,
+    if self.errs:
+      yield None, "%d errors(s)" % self.errs
+    if self.warns:
+      yield True, "%d warning(s)" % self.warns,
     yield True, ""
 
 

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Configuration for {{ domain }}{% endblock %}
+{% block h1title %}Configuration for {{ domain }}{% endblock %}
+{% block msg %}
+{% if rrlist %}
+<h2>Current DNS records</h2>
+<table class="zone rrlist">
+{% for rr in rrlist %}<tr><td>{{ rr.0 }}</td><td>{{ rr.1 }}</td><td>{{ rr.2 }}</td><td>{{ rr.3 }}</td>
+</tr>
+{% endfor %}
+</table>
+{% else %}
+<h2>No current DNS records</h2>
+{% endif %}
+
+<h2>Modification form</h2>
+
+<strong>Warning: this will replace any current DNS records, except DS records</strong>
+<p>
+Fill <em>Name1...NameX</em> and <em>IP1...IPX</em> respectively with the fully qualified domain names and (if necessary, i.e. "glue" records) the IPv4 or IPv6 addresses for your domain servers.
+<P>
+
+<form action="" method="POST">
+<div>
+<table>
+{% for ns, ip in nslist %}
+<tr><td><label for="id_f{{ forloop.counter }}">Name{{ forloop.counter }}: </label></td>
+<td><input id="id_f{{ forloop.counter }}" type="text" name="f{{ forloop.counter }}" size="32" value="{{ ns }}"></td>
+<td><label for="id_i{{ forloop.counter }}">IP{{ forloop.counter }}: </label></td>
+<td><input id="id_i{{ forloop.counter }}" type="text" name="i{{ forloop.counter }}" size="32" value="{{ ip }}"></td>
+</tr>
+{% endfor %}
+</table>
+<input type="submit" value="Submit">
+</div>
+</form>
+
+{% endblock %}
