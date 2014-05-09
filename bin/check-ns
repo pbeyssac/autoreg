@@ -26,9 +26,10 @@ def main():
   fqdnlist = []
   manualip = { }
   nat = { }
+  checkglue = True
 
   try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'o:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'go:')
   except getopt.GetoptError, err:
     print str(err)
     return 2
@@ -48,6 +49,8 @@ def main():
           ip = None
       if ip is not None:
         nat[oldip] = newip
+    if opt == '-g':
+        checkglue = False
 
   if len(args) == 1:
     domain = args[0]
@@ -58,7 +61,7 @@ def main():
 
   soac = autoreg.dns.check.SOAChecker(domain, manualip, nat)
 
-  for ok, out in soac.main(file=sys.stdin):
+  for ok, out in soac.main(file=sys.stdin, checkglue=checkglue):
     print out
     if not ok:
       errs += 1

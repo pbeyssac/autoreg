@@ -10,7 +10,7 @@ for z in `${AUTOREGBIN}/access-zone -alist`; do
 	/^\t/ && $1 == "NS" { print substr ($2,1,length($2)-1); }'
   )`
   # split in 2 lines to get correct exit status from check-ns
-  out=`echo "$input" | ${AUTOREGBIN}/check-ns`
+  out=`echo "$input" | ${AUTOREGBIN}/check-ns -g`
   if [ "$?" != 0 ]; then
     echo '****' $z FAILED '****'
     echo "$out"

@@ -105,12 +105,10 @@ class MultiResolver(object):
     self.setnslist_direct(nslist)
     return True, self.nslist
 
-  def setnslist_file(self, file):
+  def setnslist_file(self, file, checkglue):
     """Fetch NS list from file"""
+    nsiplist = []
     fqdnip = re.compile('^([a-zA-Z0-9\.-]+)(?:\s+(\S+))?\s*$')
-    errlist = []
-    warnlist = []
-    nslist = []
     for l in file:
       l = l[:-1]
       m = fqdnip.match(l)
@@ -118,7 +116,17 @@ class MultiResolver(object):
         errlist.append("Error: Invalid line")
         continue
       fqdn, ip = m.groups()
-      if ip is not None:
+      nsiplist.append((fqdn, ip))
+    return self.setnslist_nsiplist(nsiplist, checkglue)
+
+  def setnslist_nsiplist(self, nsiplist, checkglue):
+    """Fetch NS list from (fqdn, ip) list"""
+    errlist = []
+    warnlist = []
+    nslist = []
+    for fqdn, ip in nsiplist:
+      fqdn = fqdn.upper()
+      if ip:
         ip = ip.upper()
 
         try:
@@ -130,15 +138,20 @@ class MultiResolver(object):
           errlist.append("Error: Invalid IP address %s" % ip)
           ip = None
 
-      if ip is not None:
-        if fqdn.endswith('.'+self.domain) or fqdn == self.domain:
-          self.manualip[fqdn] = ip
-        else:
-          warnlist.append("ignoring IP %s"
-                          " for %s (not in %s)" % (ip, fqdn, self.domain))
+      if fqdn.endswith('.'+self.domain.upper()) \
+         or fqdn == self.domain.upper():
+        if ip:
+          if fqdn not in self.manualip:
+            self.manualip[fqdn] = []
+          self.manualip[fqdn].append(ip)
+        elif checkglue:
+          errlist.append("Missing glue IP for %s" % fqdn)
+      elif ip:
+        warnlist.append("ignoring IP %s"
+                        " for %s (not in %s)" % (ip, fqdn, self.domain))
 
-      fqdn = fqdn.upper()
-      nslist.append(fqdn)
+      if fqdn not in nslist:
+        nslist.append(fqdn)
     if nslist:
       self.mastername = nslist[0]
     self.setnslist_direct(nslist)
@@ -150,8 +163,9 @@ class MultiResolver(object):
     """
     tcp = False
     for fqdn in self.nslist:
+      fqdn = fqdn.upper()
       if fqdn in self.manualip:
-        yield True, (False, fqdn, [self.manualip[fqdn]])
+        yield True, (False, fqdn, self.manualip[fqdn])
         continue
       n = 0
       for t in ['A', 'AAAA']:
@@ -274,7 +288,7 @@ class SOAChecker(MultiResolver):
       else:
         yield True, "NS from %s at %s: ok" % (fqdn, i)
 
-  def main(self, file=None):
+  def main(self, file=None, nsiplist=None, checkglue=True):
     """Main processing to check a list of servers for a given zone.
     Checks:
     1)    IP addresses of servers not in domain
@@ -296,7 +310,7 @@ class SOAChecker(MultiResolver):
     if self.domain.endswith('.'):
       self.domain = self.domain[:-1]
 
-    if not file:
+    if not file and not nsiplist:
       #
       # Fetch NS list from public DNS
       #
@@ -311,9 +325,12 @@ class SOAChecker(MultiResolver):
 
     else:
       #
-      # Fetch NS list from file
+      # Fetch NS list from file or list
       #
-      errlist, warnlist = self.setnslist_file(file)
+      if nsiplist:
+        errlist, warnlist = self.setnslist_nsiplist(nsiplist, checkglue)
+      else:
+        errlist, warnlist = self.setnslist_file(file, checkglue)
 
       for e in errlist:
         yield None, "Error: %s" % e
