@@ -603,6 +603,8 @@ class db:
 	d, z = self._zl.find(domain, zone)
 	self._check_login_perm(z.name)
 	d.fetch()
+	if self._nowrite:
+	    return
         d.addrr(label, ttl, rrtype, value)
 	z.set_updateserial()
 	if _commit:
@@ -612,6 +614,8 @@ class db:
 	d, z = self._zl.find(domain, zone)
 	self._check_login_perm(z.name)
 	d.fetch()
+	if self._nowrite:
+	    return 0
         n = d.delrr(label, rrtype, value)
         if n:
 	    z.set_updateserial()
