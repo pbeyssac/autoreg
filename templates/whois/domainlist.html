@@ -3,7 +3,8 @@
 {% block h1title %}Domain List for {{ handle }}{% endblock %}
 {% block msg %}
 <table class="domainlist">
-{% for dds in domds %}<tr><td>{{ dds.0 }}</td><td><A HREF="{% url 'arf.whois.views.domainedit' dds.0 %}">Contacts</A></td><td><A HREF="{% url 'arf.dns.views.domainns' dds.0 %}">Nameservers</a></td><td>{% if dds.1 and dds.2 %}<A HREF="{% url 'arf.dns.views.domainds' dds.0.lower %}">DNSSEC (beta)</A>{% endif %}</td></tr>
+<tr><th>Domain</th><th>Created</th><th>Updated</th></tr>
+{% for dds in domds %}<tr><td>{{ dds.0 }}</td><td>{{ dds.3|date:"o-m-d H:i" }}</td><td>{{ dds.4|date:"o-m-d H:i" }}</td><td><A HREF="{% url 'arf.whois.views.domainedit' dds.0 %}">Contacts</A></td><td><A HREF="{% url 'arf.dns.views.domainns' dds.0 %}">Nameservers</a></td><td>{% if dds.1 and dds.2 %}<A HREF="{% url 'arf.dns.views.domainds' dds.0.lower %}">DNSSEC (beta)</A>{% endif %}</td></tr>
 {% endfor %}</table>
 {% if next %}<a href="{{ next }}">Continue</a>{% endif %}
 {% endblock %}
