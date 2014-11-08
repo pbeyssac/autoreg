@@ -6,7 +6,8 @@ for z in `${AUTOREGBIN}/access-zone -alist`; do
   if [ "$z" != "EU.ORG" ]; then
     p=`echo $z | cut -d. -f2-`
     ${AUTOREGBIN}/access-zone -z$z -ashow $z | sed '/^;/d' > /tmp/stubz.$$
-    ${AUTOREGBIN}/access-zone -z$p -ashow $z | sed '/^;/d' |
+    ${AUTOREGBIN}/access-zone -z$p -ashow $z |
+	sed -e'/^;/d' -e'/	DS	/d' |
 	sed -E '1s/^[^ 	]+//' > /tmp/stubp.$$
     if ! cmp -s /tmp/stubz.$$ /tmp/stubp.$$; then
       echo $z $p differ:
