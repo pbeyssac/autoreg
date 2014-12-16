@@ -2,6 +2,8 @@
 # $Id$
 #
 
+from __future__ import print_function
+
 import getopt
 import re
 import socket
@@ -30,8 +32,8 @@ def main():
 
   try:
     optlist, args = getopt.getopt(sys.argv[1:], 'go:')
-  except getopt.GetoptError, err:
-    print str(err)
+  except getopt.GetoptError as err:
+    print(str(err))
     return 2
 
   for opt, val in optlist:
@@ -44,7 +46,7 @@ def main():
           else:
             socket.inet_pton(socket.AF_INET, ip)
         except socket.error:
-          print "Error: Invalid IP address", ip
+          print("Error: Invalid IP address", ip)
           errs += 1
           ip = None
       if ip is not None:
@@ -62,7 +64,7 @@ def main():
   soac = autoreg.dns.check.SOAChecker(domain, manualip, nat)
 
   for ok, out in soac.main(file=sys.stdin, checkglue=checkglue):
-    print out
+    print(out)
     if not ok:
       errs += 1
 

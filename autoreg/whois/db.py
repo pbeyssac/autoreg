@@ -1,6 +1,8 @@
 #!/usr/local/bin/python
 # $Id$
 
+from __future__ import print_function
+
 import re
 import sys
 
@@ -75,7 +77,7 @@ def parse_changed(changed):
       y = int(y)
       email = None
     else:
-      print "ERROR: Cannot parse_changed:", changed
+      print("ERROR: Cannot parse_changed:", changed)
       return None, None
   m = int(m)
   d = int(d)
@@ -392,7 +394,7 @@ class Person(_whoisobject):
       h, = _fromdb(self._dbc.fetchone())
       self.key = suffixadd(h)
       self.d['nh'] = [ h ]
-      #print "Allocated handle", self.key, "for", self.d['pn'][0]
+      #print("Allocated handle", self.key, "for", self.d['pn'][0])
   def gethandle(self):
     return suffixadd(self.d['nh'][0])
   def insert(self):
@@ -468,7 +470,7 @@ class Person(_whoisobject):
      addr, d['co'],
      d['ph'], d['fx'], d['cr'], chb, cho, private,
      d['cn']) = _fromdb(self._dbc.fetchone())
-    for k in d.keys():
+    for k in d.iterkeys():
       d[k] = [ d[k] ]
     d['ad'] = addrsplit(addr)
     d['ch'] = [ (chb, cho) ]
@@ -852,12 +854,12 @@ class Main:
         if ld is not None:
           ld.fetch()
           ld.delete()
-          print "Object deleted:"
-          print ld.__str__().encode(encoding)
+          print("Object deleted:")
+          print(ld.__str__().encode(encoding))
           self.ndom += 1
           return True
         else:
-          print "ERROR: Cannot delete: not found"
+          print("ERROR: Cannot delete: not found")
           return False
       self.ndom += 1
       ld = self._lookup.domain_by_name(i)
@@ -876,17 +878,17 @@ class Main:
         # compare with new object
         if ld != newdom or ld.ct.d['ad'] != newdom.ct.d['ad']:
           # they differ, update database
-          print "Object updated from:"
-          print ld.__str__().encode(encoding)
+          print("Object updated from:")
+          print(ld.__str__().encode(encoding))
           newdom.ct.cid = ld.ct.cid
           newdom.update()
-          print "Object updated to:"
-          print newdom.__str__().encode(encoding)
+          print("Object updated to:")
+          print(newdom.__str__().encode(encoding))
           self.ambig += ambig
           self.inval += inval
         else:
-          print "Object already exists:"
-          print ld.__str__().encode(encoding)
+          print("Object already exists:")
+          print(ld.__str__().encode(encoding))
       else:
         # make domain object
         ld = Domain(self._dbc)
@@ -900,8 +902,8 @@ class Main:
           return False
         # store to database
         ld.insert()
-        print "Object created:"
-        print ld.__str__().encode(encoding)
+        print("Object created:")
+        print(ld.__str__().encode(encoding))
         self.ambig += ambig
         self.inval += inval
     elif 'pn' in o:
@@ -927,35 +929,35 @@ class Main:
           # found, compare
           c.fetch()
           if dodel:
-            print "Object deleted:"
-            print c.__str__().encode(encoding)
+            print("Object deleted:")
+            print(c.__str__().encode(encoding))
             c.delete()
           else:
             if ct != c:
-              print "Object updated from:"
-              print c.__str__().encode(encoding)
-              print "Object updated to:"
+              print("Object updated from:")
+              print(c.__str__().encode(encoding))
+              print("Object updated to:")
               ct.cid = c.cid
               ct.update()
             else:
               ct = c
-              print "Object already exists:"
+              print("Object already exists:")
         else:
           # not found
           if dodel:
-            print "ERROR: Cannot delete: not found"
+            print("ERROR: Cannot delete: not found")
             return False
           else:
             ct.insert()
-            print "Object created:"
+            print("Object created:")
         if not dodel:
-          print ct.__str__().encode(encoding)
+          print(ct.__str__().encode(encoding))
           # keep for contact assignment
           persons.setdefault(handle, []).append(ct)
           persons.setdefault(name, []).append(ct)
           persons.setdefault(ehandle, []).append(ct)
       elif dodel:
-        print "ERROR: Cannot delete: no handle provided"
+        print("ERROR: Cannot delete: no handle provided")
         return False
       else:
         # no handle, try to find by name
@@ -968,15 +970,15 @@ class Main:
             if ct == c:
               # found, stop
               ct = c
-              print "Object already exists:"
+              print("Object already exists:")
               break
             # clear copied handle
             o['nh'] = [ None ];
         else:
             # not found, insert
             ct.insert()
-            print "Object created:"
-        print ct.__str__().encode(encoding)
+            print("Object created:")
+        print(ct.__str__().encode(encoding))
         # keep for contact assignment
         persons.setdefault(name, []).append(ct)
         persons.setdefault(ehandle, []).append(ct)
@@ -987,8 +989,8 @@ class Main:
       # deleted object, ignore
       pass
     else:
-      print "ERROR: Unknown object type"
-      print str(o)
+      print("ERROR: Unknown object type")
+      print(str(o))
       return False
     return True
 
@@ -1059,12 +1061,12 @@ class Main:
       else:
         m = self.longattr_re.search(l)
         if not m:
-          print "ERROR: Unrecognized line:", l
+          print("ERROR: Unrecognized line:", l)
           err += 1
           continue
         a, v = m.groups()
         if a not in ripe_ltos:
-          print "ERROR: Unrecognized attribute \"%s\"" % a
+          print("ERROR: Unrecognized attribute \"%s\"" % a)
           err += 1
           continue
         a = ripe_ltos[a]
@@ -1095,13 +1097,13 @@ class Main:
     else:
         self._dbh.rollback()
 
-    print "Domains:", self.ndom
-    print "Persons:", self.nperson
+    print("Domains:", self.ndom)
+    print("Persons:", self.nperson)
     if self.ambig:
-      print "Ambiguous contacts:", self.ambig
+      print("Ambiguous contacts:", self.ambig)
     if self.inval:
-      print "Invalid contacts:", self.inval
+      print("Invalid contacts:", self.inval)
     self._reset()
     if err:
-      print err, "error(s), aborting"
+      print(err, "error(s), aborting")
     return err == 0

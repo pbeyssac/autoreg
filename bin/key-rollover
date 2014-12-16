@@ -1,5 +1,7 @@
 #!/usr/local/bin/python
 
+from __future__ import print_function
+
 import getopt
 import os
 import re
@@ -103,7 +105,7 @@ for f in os.listdir('.'):
     continue
   if 'Activate' not in keytimes:
     if not ksk:
-      print "No active date set for", dom, algo, keyid
+      print("No active date set for", dom, algo, keyid)
       keytimes['Activate'] = now
       cmd  = "dnssec-settime -A%s %s" % (keytimes['Activate'], keyname)
       if not dryrun:
@@ -124,7 +126,7 @@ for f in os.listdir('.'):
       olddel = oldina + postpub_duration
       oldina = time_to_ymd(oldina)
       olddel = time_to_ymd(olddel)
-      print keyname, "has no successor at %s, creating one" % oldina
+      print(keyname, "has no successor at %s, creating one" % oldina)
       cmd = "dnssec-settime -I%s -D%s %s" % (oldina, olddel, keyname)
       if not dryrun:
         os.system(cmd)
@@ -139,7 +141,7 @@ for f in os.listdir('.'):
       publish.append((dom, algo, keyid))
   domains[dom][algo, keyid] = keytimes
 
-print "Active:", active
-print "Publish:", publish
+print("Active:", active)
+print("Publish:", publish)
 
 sys.exit(0)

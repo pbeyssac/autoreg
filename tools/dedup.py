@@ -1,6 +1,8 @@
 #!/usr/local/bin/python
 # $Id$
 
+from __future__ import print_function
+
 import getopt
 import sys
 
@@ -12,7 +14,7 @@ import autoreg.conf
 dbstring = autoreg.conf.dbstring
 
 def usage(argv):
-  print "Usage: %s" % argv[0]
+  print("Usage: %s" % argv[0])
 
 def main():
   dbh = psycopg2.connect(dbstring)
@@ -20,8 +22,8 @@ def main():
 
   try:
     optlist, args = getopt.getopt(sys.argv[1:], 'Une:')
-  except getopt.GetoptError, err:
-    print str(err)
+  except getopt.GetoptError as err:
+    print(str(err))
     usage(sys.argv)
     sys.exit(2)
 
@@ -38,7 +40,7 @@ def main():
   for fqdn, count in dom:
     doms.append(fqdn)
     sum += count
-  print "Sum:", sum
+  print("Sum:", sum)
 
   dup = 0
   dels = 0
@@ -53,27 +55,27 @@ def main():
       ntuple = (email, action, state, zonerecord, whoisrecord)
       for oid, otuple in rqtuples:
         if otuple == ntuple:
-          print oid, '==', id, fqdn
+          print(oid, '==', id, fqdn)
           rqdel.append(id)
           break
         if otuple[:3] == ntuple[:3] and otuple[-1] == ntuple[-1]:
-          print oid, 'DNS diff', id, fqdn
-          print otuple[3]
-          print ntuple[3]
+          print(oid, 'DNS diff', id, fqdn)
+          print(otuple[3])
+          print(ntuple[3])
           if oid not in rqdel:
             rqdel.append(oid)
           break
       else:
         rqtuples.append((id, ntuple))
     if rqdel:
-      print "DEL", fqdn, rqdel
+      print("DEL", fqdn, rqdel)
       for id in rqdel:
-        print "Deleting", id
+        print("Deleting", id)
         #dbc.execute("UPDATE requests SET state='Rej' WHERE id=%s", (id,))
         #dbc.execute("DELETE FROM requests WHERE id=%s", (id,))
         #dbh.commit()
         dels += 1
-  print "Dels", dels, "Dups", dup
+  print("Dels", dels, "Dups", dup)
 
 if __name__ == "__main__":
   main()

@@ -1,7 +1,9 @@
 # $Id$
 
+from __future__ import print_function
+
+import io
 import re
-import StringIO
 import subprocess
 import sys
 
@@ -99,10 +101,10 @@ def _rq1(request, r):
     dd = autoreg.dns.db.db(dbh, True)
     dd.login('autoreg')
     oldout = sys.stdout
-    sys.stdout = StringIO.StringIO()
+    sys.stdout = io.StringIO()
     try:
       dd.show(r.fqdn, None)
-    except autoreg.dns.db.DomainError, e:
+    except autoreg.dns.db.DomainError as e:
       if e.args[0] == autoreg.dns.db.DomainError.DNOTFOUND:
         err = "Domain not found"
       elif e.args[0] == autoreg.dns.db.DomainError.ZNOTFOUND:
@@ -134,10 +136,10 @@ def _rq1(request, r):
 
   wlistout = []
   for k in wlist:
-    wout = StringIO.StringIO('')
+    wout = io.StringIO()
     query.query('-R ' + k, autoreg.conf.dbstring,
-                wout, encoding='UTF-8', remote=False)
-    wlistout.append((k, wout.getvalue()))
+                wout, encoding=None, remote=False)
+    wlistout.append((k, wout.getvalue().encode('UTF-8', 'xmlcharrefreplace')))
   r.whoisfiltered = w
   r.wlistout = wlistout
   return r
@@ -323,19 +325,20 @@ def _rqexec(rq, out, za, login, action, reason):
     _doaccept(out, rq, login)
   else:
     if not models.Requests.objects.filter(id=rq).exists():
-      print >>out, "Request not found: %s<P>" % rq
+      print("Request not found: %s<P>" % rq, file=out)
       return
     r = models.Requests.objects.get(id=rq)
     if not za.checkparent(r.fqdn, login):
-      print >>out, "Permission denied on %s<P>" % rq
+      print("Permission denied on %s<P>" % rq, file=out)
       return
     if action == 'delete':
       _rq_remove(rq, 'DelQuiet');
-      print >>out, "Deleted %s<P>" % rq
+      print("Deleted %s<P>" % rq, file=out)
     elif action == 'none':
-      print >>out, "Nothing done on %s<P>" % rq
+      print("Nothing done on %s<P>" % rq, file=out)
     else:
-      print >>out, "What? On rq=%s action=%s reason=%s<P>" % (rq, action, reason)
+      print("What? On rq=%s action=%s reason=%s<P>" % (rq, action, reason),
+            file=out)
 
 @transaction.commit_manually
 def rqval(request):
@@ -348,7 +351,7 @@ def rqval(request):
     raise PermissionDenied
 
   za = autoreg.zauth.ZAuth()
-  out = StringIO.StringIO()
+  out = io.StringIO()
 
   # get our current transaction out of the way
   # (has a lock on the user's row in the "contacts" table due to the above)
@@ -360,7 +363,7 @@ def rqval(request):
     action = request.POST['action' + str(i)]
     rq = request.POST['rq' + str(i)]
     reason = request.POST['reason' + str(i)]
-    print >>out, "Processing %s...<P>" % rq
+    print("Processing %s...<P>" % rq, file=out)
     _rqexec(rq, out, za, login, action, reason)
     i += 1
 

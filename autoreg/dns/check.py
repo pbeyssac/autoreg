@@ -22,7 +22,7 @@ def sendquery(q, server):
     return None, "UnexpectedSource"
   except dns.exception.Timeout:
     trytcp = True
-  except socket.error, e:
+  except socket.error as e:
     return None, e
 
   if not trytcp:
@@ -38,7 +38,7 @@ def sendquery(q, server):
     return None, "Dropped connection"
   except dns.exception.Timeout:
     return None, "Timeout"
-  except socket.error, e:
+  except socket.error as e:
     return None, e
 
   return True, r

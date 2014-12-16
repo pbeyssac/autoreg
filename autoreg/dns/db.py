@@ -1,7 +1,9 @@
 #!/usr/local/bin/python
 # $Id$
 
-import cStringIO
+from __future__ import print_function
+
+import io
 import time
 
 # local modules
@@ -101,9 +103,9 @@ class _Zone:
 	raise AccessError(AccessError.ILLRR, rrtype, zid)
     def cat(self):
 	"""Output zone file to stdout."""
-	print "; zone name=%s id=%d" % (self.name, self.id)
-	if self._ttl is not None: print '$TTL', self._ttl
-	print ("@\tSOA\t%s %s %d %d %d %d %d" %
+	print("; zone name=%s id=%d" % (self.name, self.id))
+	if self._ttl is not None: print('$TTL', self._ttl)
+	print("@\tSOA\t%s %s %d %d %d %d %d" %
 	    (self._soaprimary, self._soaemail, self._soaserial,
 	     self._soarefresh, self._soaretry,
 	     self._soaexpires, self._soaminimum))
@@ -140,7 +142,7 @@ class _Zone:
 		l = ''
 	    else:
 		lastlabel = l
-	    print "%s\t%s%s\t%s" % (l, ttl, typ, value)
+	    print("%s\t%s%s\t%s" % (l, ttl, typ, value))
 	    t = self._dbc.fetchone()
     def lock(self):
 	"""Lock zone row for update."""
@@ -327,18 +329,18 @@ class _Domain:
 	    self._dbc.execute('DELETE FROM domains WHERE id=%s', (did,))
     def show_head(self):
 	"""Show administrative data for domain."""
-	print "; zone", self._zone_name
+	print(u"; zone", self._zone_name)
 	if self.name == '':
-	    print "; domain", self._zone_name
+	    print(u"; domain", self._zone_name)
 	else:
-	    print "; domain", '.'.join((self.name,self._zone_name))
+	    print(u"; domain", '.'.join((self.name,self._zone_name)))
 	if self._created_on:
-	    print "; created: by %s, %s" % (self._created_by, self._created_on)
+	    print(u"; created: by %s, %s" % (self._created_by, self._created_on))
 	if self._updated_on:
-	    print "; updated: by %s, %s" % (self._updated_by, self._updated_on)
-	if self._registry_lock: print "; registry_lock"
-	if self._registry_hold: print "; registry_hold"
-	if self._internal: print "; internal"
+	    print(u"; updated: by %s, %s" % (self._updated_by, self._updated_on))
+	if self._registry_lock: print(u"; registry_lock")
+	if self._registry_hold: print(u"; registry_hold")
+	if self._internal: print(u"; internal")
     def show_rrs(self):
 	"""List all resource records for domain."""
 	self._dbc.execute(
@@ -371,10 +373,10 @@ class _Domain:
 	    if ttl is None: ttl = ''
 	    else: ttl = str(ttl)
 
-	    print "\t".join((l, ttl, typ, value))
+	    print("\t".join((l, ttl, typ, value)))
 	    t = self._dbc.fetchone()
 	if self._dbc.rowcount == 0:
-	    print '; (NO RECORD)'
+	    print('; (NO RECORD)')
     def show(self):
 	"""Shorthand to call show_head() then show_rrs()."""
 	self.show_head()
@@ -581,10 +583,10 @@ class db:
         if '.' not in domain:
 	    raise DomainError(DomainError.DNOTFOUND)
 	label, parent = domain.split('.', 1)
-	rrfile = cStringIO.StringIO(records)
+	rrfile = io.StringIO(records)
 	self.modify(domain, parent, None, rrfile,
 		    override_internal, replace, delete, _commit=False)
-	rrfile = cStringIO.StringIO(records)
+	rrfile = io.StringIO(records)
 	self.modify(domain, domain, None, rrfile,
 		    override_internal, replace, delete, _commit=True)
     def queryrr(self, domain, zone, label, rrtype):
@@ -630,7 +632,7 @@ class db:
         self._check_login_perm(z.name)
         try:
             z.checktype('DS')
-        except AccessError, e:
+        except AccessError as e:
             return False, e[0]
         d.fetch()
         nns = d.existsrr('', 'NS')

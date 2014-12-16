@@ -6,5 +6,5 @@ setup(name='autoreg',
       url='http://eu.org/',
       packages=['autoreg', 'autoreg.dns', 'autoreg.whois',
                 'autoreg.arf', 'autoreg.arf.dns', 'autoreg.arf.requests',
-                'autoreg.arf.whois']
+                'autoreg.arf.whois'],
       )

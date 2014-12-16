@@ -1,6 +1,8 @@
 #!/usr/local/bin/python
 # $Id$
 
+from __future__ import print_function
+
 import getopt
 import sys
 
@@ -10,7 +12,7 @@ import autoreg.conf
 import autoreg.whois.db as whoisdb
 
 def usage(argv):
-  print "Usage: %s [-e encoding] [-U] [-n]" % argv[0]
+  print("Usage: %s [-e encoding] [-U] [-n]" % argv[0])
 
 def main():
   encoding = 'ISO-8859-1'
@@ -20,8 +22,8 @@ def main():
 
   try:
     optlist, args = getopt.getopt(sys.argv[1:], 'Une:')
-  except getopt.GetoptError, err:
-    print str(err)
+  except getopt.GetoptError as err:
+    print(str(err))
     usage(sys.argv)
     sys.exit(2)
 
@@ -39,9 +41,9 @@ def main():
   lines = sys.stdin.readlines()
 
   if w.parsefile(lines, encoding, commit):
-    print "STATUS OK"
+    print("STATUS OK")
   else:
-    print "STATUS ERR"
+    print("STATUS ERR")
 
 if __name__ == "__main__":
   main()

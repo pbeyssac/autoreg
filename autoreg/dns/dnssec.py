@@ -55,7 +55,7 @@ def make_ds(rr, domain):
   p = parser.DnsParser()
   try:
     label, ttl, rrtype, value = p.parse1line(rr, ['DS', 'DLV', 'DNSKEY'])
-  except parser.ParseError, e:
+  except parser.ParseError as e:
     return False, ' '.join(e)
 
   if rrtype == 'DNSKEY':

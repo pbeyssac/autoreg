@@ -9,6 +9,8 @@ Server mode:
 whoisdb [-D database-string] [-l request log] [-e stderr log] [-u user] [-d]
 """
 
+from __future__ import print_function
+
 import errno
 import getopt
 import os
@@ -90,7 +92,7 @@ class server:
           try:
             self.log("WARNING: killing hung process %d (%s)" % (pid, ip))
             os.kill(pid, signal.SIGTERM)
-          except OSError, e:
+          except OSError as e:
             if e.errno != errno.ESRCH:
               raise e
 
@@ -103,7 +105,7 @@ class server:
           continue
         try:
           f = os.fork()
-        except OSError, e:
+        except OSError as e:
           self.log("ERROR: cannot fork, %s" % e)
           f = -1
         if f == 0:
@@ -112,7 +114,7 @@ class server:
           bkpipe = False
           try:
             self.handleclient(c, a)
-          except socket.error, se:
+          except socket.error as se:
             if len(se) != 2 or se.args[0] != errno.EPIPE:
               raise
             bkpipe = True
@@ -155,8 +157,8 @@ class server:
     c.close()
   def log(self, msg):
     (year, month, day, hh, mm, ss, d1, d2, d3) = time.localtime(time.time())
-    print >>self.logf, "%04d%02d%02d %02d%02d%02d %s" % \
-		       (year, month, day, hh, mm, ss, msg)
+    print("%04d%02d%02d %02d%02d%02d %s"
+	  % (year, month, day, hh, mm, ss, msg), file=self.logf)
     self.logf.flush()
 
 def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
@@ -189,7 +191,10 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
         d.fetch()
       else:
         d.fetch_obfuscated()
-      print >>out, d.__str__().encode(encoding, 'xmlcharrefreplace')
+      if encoding is not None:
+        print(d.__str__().encode(encoding, 'xmlcharrefreplace'), file=out)
+      else:
+        print(d.__str__(), file=out)
     return
 
   d = l.domain_by_name(a)
@@ -199,7 +204,10 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
       d.fetch()
     else:
       d.fetch_obfuscated()
-    print >>out, d.__str__().encode(encoding, 'xmlcharrefreplace')
+    if encoding is not None:
+      print(d.__str__().encode(encoding, 'xmlcharrefreplace'), file=out)
+    else:
+      print(d.__str__(), file=out)
     pdone = []
     for k in ['technical', 'administrative', 'zone']:
       if k not in dc:
@@ -210,7 +218,10 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
         else:
           p.fetch_obfuscated()
         if p.key not in pdone:
-          print >>out, p.__str__().encode(encoding, 'xmlcharrefreplace')
+          if encoding is not None:
+            print(p.__str__().encode(encoding, 'xmlcharrefreplace'), file=out)
+          else:
+            print(p.__str__(), file=out)
           pdone.append(p.key)
     return
 
@@ -220,17 +231,20 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
   if not lp and not remote and a.find('@') >= 0:
     lp = l.persons_by_email(a)
   if not lp:
-    print >>out, "Key not found"
+    print(u"Key not found", file=out)
     return
   for p in lp:
     if real_info:
       p.fetch()
     else:
       p.fetch_obfuscated()
-    print >>out, p.__str__().encode(encoding, 'xmlcharrefreplace')
+    if encoding is not None:
+      print(p.__str__().encode(encoding, 'xmlcharrefreplace'), file=out)
+    else:
+      print(p.__str__(), file=out)
 
 def usage():
-  print >>sys.stderr, __doc__
+  print(__doc__, file=sys.stderr)
 
 def command(argv):
   whoiserrlog, whoisrqlog, runas, port = ERRLOG, RQLOG, USERID, PORT
@@ -268,10 +282,10 @@ def command(argv):
     if r == 0:
       server(dbstring, whoisrqlog, whoiserrlog, port, runas)
     elif r == -1:
-      print >>sys.stderr, "Daemon start failed"
+      print("Daemon start failed", file=sys.stderr)
       return 1
     else:
-      print >>sys.stderr, "Daemon started"
+      print("Daemon started", file=sys.stderr)
   else:
     query(args[0], dbstring, sys.stdout, remote=False)
   return 0

@@ -78,7 +78,7 @@ def _render_to_mail(templatename, context, fromaddr, toaddrs):
   try:
     server = smtplib.SMTP()
     server.connect()
-  except socket.error, msg:
+  except socket.error as msg:
     if msg[0] != errno.ECONNREFUSED:
       raise
     failed = True
@@ -87,7 +87,7 @@ def _render_to_mail(templatename, context, fromaddr, toaddrs):
 
   try:
     recdict = server.sendmail(fromaddr, toaddrs + [ MAILBCC ], msg)
-  except smtplib.SMTPRecipientsRefused, recdict:
+  except smtplib.SMTPRecipientsRefused as recdict:
     failed = True
   if failed:
     return False

@@ -1,4 +1,4 @@
-import cStringIO
+import io
 
 import psycopg2
 
@@ -49,13 +49,13 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None):
           rec.append("%s\tA\t%s" % (ns, ip))
     rec = '\n'.join(rec)
     rec += '\n'
-    rrfile = cStringIO.StringIO(rec)
+    rrfile = io.StringIO(rec)
     err = None
     try:
       dnsdb.modify(domain, None, 'NS', rrfile)
-    except autoreg.dns.db.DomainError, e:
+    except autoreg.dns.db.DomainError as e:
       err = e.args[0]
-    except autoreg.dns.db.AccessError, e:
+    except autoreg.dns.db.AccessError as e:
       err = e.args[0]
     if err:
       yield err + '\n'

@@ -40,6 +40,8 @@
 -s: force incrementation of serial in 'soa', regardless of any zone updates.
 """
 
+from __future__ import print_function
+
 # standard modules
 import getopt
 import logging
@@ -62,11 +64,11 @@ action_list = ['addrr', 'cat', 'delete', 'delrr', 'lock', 'modify', 'unlock',
 		'hold', 'unhold',
 		'new', 'show', 'soa', 'list', 'newzone']
 def usage():
-    print >> sys.stderr, __doc__
+    print(__doc__, file=sys.stderr)
 
 def errexit(msg, args):
     """Print a formatted error message on stderr and exit(1)."""
-    print >> sys.stderr, amsg.f(msg, args),
+    print(amsg.f(msg, args), file=sys.stderr)
     sys.exit(1)
 
 try:
@@ -180,16 +182,16 @@ try:
     (updated, serial) = dd.soa(domain, forceincr)
     if not updated:
 	r = 1
-    print serial
+    print(serial)
   elif action == 'list':
     for zone in dd.zonelist():
-        print zone
+        print(zone)
   elif action == 'newzone':
     dd.newzone(domain)
   else:
     usage()
     r = 1
-except dnsdb.AccessError, e:
+except dnsdb.AccessError as e:
   if e.args[0] == dnsdb.AccessError.NOAUTH:
     errexit('MSG_NUSER', (user))
   if e.args[0] == dnsdb.AccessError.UNKLOGIN:
@@ -209,7 +211,7 @@ except dnsdb.AccessError, e:
   logging.exception("Unexpected exception in access-zone:\n")
   logging.error("variables:\n%s", str(locals()))
   raise
-except dnsdb.DomainError, e:
+except dnsdb.DomainError as e:
   if e.args[0] == dnsdb.DomainError.DNOTFOUND:
     errexit('MSG_NODOM', (domain, action))
   if e.args[0] == dnsdb.DomainError.ZNOTFOUND:

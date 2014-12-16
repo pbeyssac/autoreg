@@ -121,7 +121,7 @@ class DnsParser:
                 raise ParseError('Bad algorithm for DNSKEY record: %d' % algo)
             try:
                 base64.b64decode(key)
-            except TypeError, e:
+            except TypeError as e:
                 raise ParseError('Bad key in DNSKEY record:' + e, key)
             key = key.replace(' ', '').replace('\t', '')
             value = "%d %d %d %s" % (flags, protocol, algo, key)
