@@ -8,6 +8,9 @@ import re
 import sys
 import time
 
+DNSSEC_SETTIME="/usr/local/sbin/dnssec-settime"
+DNSSEC_KEYGEN="/usr/local/sbin/dnssec-keygen"
+
 max_zone_ttl = 86400
 dnskey_ttl = 86400		# -d
 reload_margin = 86400		# -r
@@ -107,7 +110,7 @@ for f in os.listdir('.'):
     if not ksk:
       print("No active date set for", dom, algo, keyid)
       keytimes['Activate'] = now
-      cmd  = "dnssec-settime -A%s %s" % (keytimes['Activate'], keyname)
+      cmd  = DNSSEC_SETTIME + " -A%s %s" % (keytimes['Activate'], keyname)
       if not dryrun:
         os.system(cmd)
   if 'Inactive' not in keytimes:
@@ -127,10 +130,10 @@ for f in os.listdir('.'):
       oldina = time_to_ymd(oldina)
       olddel = time_to_ymd(olddel)
       print(keyname, "has no successor at %s, creating one" % oldina)
-      cmd = "dnssec-settime -I%s -D%s %s" % (oldina, olddel, keyname)
+      cmd = DNSSEC_SETTIME + " -I%s -D%s %s" % (oldina, olddel, keyname)
       if not dryrun:
         os.system(cmd)
-      cmd = "dnssec-keygen -i%d -S %s" % (prepub_duration, keyname)
+      cmd = DNSSEC_KEYGEN + " -i%d -S %s" % (prepub_duration, keyname)
       if not dryrun:
         os.system(cmd)
   elif keytimes['Inactive'] > now:
