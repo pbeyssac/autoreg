@@ -1,5 +1,8 @@
 # $Id$
 
+import random
+import time
+
 from django.db import models
 from autoreg.arf.whois.models import Contacts
 
@@ -31,3 +34,8 @@ class Admins(models.Model):
         return self.login
     class Admin:
         pass
+
+
+def rq_make_id(origin='arf'):
+  return ''.join([time.strftime('%Y%m%d%H%M%S'), '-', origin, '-',
+                 str(random.getrandbits(16))])
