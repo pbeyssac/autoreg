@@ -16,6 +16,7 @@ class Requests(models.Model):
     zonerecord = models.CharField(max_length=500)
     whoisrecord = models.CharField(max_length=2000)
     tags = models.CharField(max_length=50)
+    private = models.BooleanField(default=False)
     class Meta:
         db_table = 'requests'
         ordering = ['id']
