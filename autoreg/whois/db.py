@@ -112,6 +112,28 @@ def suffixstrip(h):
   else:
     return h
 
+# will be initialized by the first call to countries_get()
+_countries = []
+
+def countries_get(dbc):
+  """Return a list of tuples containing ISO 3166 2-letter codes and names
+     for countries."""
+  if not _countries:
+    _countries.append(('', 'Select one'))
+    dbc.execute('SELECT iso_id, name FROM iso3166_countries ORDER BY name')
+    for cn in dbc.fetchall():
+      _countries.append(cn)
+  return _countries
+
+def country_from_name(name):
+  """Lookup country code from name"""
+  nl = name.lower()
+  for cn in _countries:
+    c, n = cn
+    if n.lower() == nl:
+      return c
+  return None
+
 ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc', 'zone-c': 'zc',
               'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
               'changed': 'ch', 'remark': 'rm', 'nic-hdl': 'nh',

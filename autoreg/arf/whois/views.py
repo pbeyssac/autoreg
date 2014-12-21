@@ -10,7 +10,8 @@ import socket
 import time
 
 from autoreg.whois.db import HANDLESUFFIX, \
-  suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec
+  suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
+  countries_get, country_from_name
 from autoreg.arf.settings import URIBASE, URLBASE
 
 import django.contrib.auth
@@ -36,9 +37,6 @@ VAL_TOKEN_HOURS_TTL = 72
 RESET_TOKEN_TTL = RESET_TOKEN_HOURS_TTL*3600
 EMAIL_TOKEN_TTL = EMAIL_TOKEN_HOURS_TTL*3600
 VAL_TOKEN_TTL = VAL_TOKEN_HOURS_TTL*3600
-
-# will be initialized by the first call to _countries_get()
-countries = []
 
 domcontact_choices = [('technical', 'technical'),
                       ('administrative', 'administrative'),
@@ -123,28 +121,6 @@ def _token_set(contact_id, action, args=None, ttl=3600):
   tk.save()
   return token
 
-# XXX: this should probably be moved to autoreg.whois.db
-def _countries_get():
-  """Return a list of tuples containing ISO 3166 2-letter codes and names
-     for countries."""
-  if not countries:
-    countries.append(('', 'Select one'))
-    dbc = connection.cursor()
-    dbc.execute('SELECT iso_id, name FROM iso3166_countries ORDER BY name')
-    for cn in dbc.fetchall():
-      countries.append(cn)
-  return countries
-
-# XXX: this should probably be moved to autoreg.whois.db
-def _country_from_name(name):
-  """Lookup country code from name"""
-  nl = name.lower()
-  for cn in countries:
-    c, n = cn
-    if n.lower() == nl:
-      return c
-  return None
-
 #
 # Forms
 #
@@ -167,7 +143,7 @@ class contactchange_form(forms.Form):
   ad4 = forms.CharField(max_length=80, label="Address (line 3)", required=False)
   ad5 = forms.CharField(max_length=80, label="Address (line 4)", required=False)
   ad6 = forms.ChoiceField(initial='', label="Country (required)",
-                          choices=_countries_get())
+                          choices=countries_get(connection.cursor()))
   ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   private = forms.BooleanField(label="Hide address/phone/fax in public whois", required=False)
@@ -188,7 +164,7 @@ class registrant_form(forms.Form):
   ad4 = forms.CharField(max_length=80, label="Address (line 3)", required=False)
   ad5 = forms.CharField(max_length=80, label="Address (line 4)", required=False)
   ad6 = forms.ChoiceField(initial='', label="Country (required)",
-                          choices=_countries_get())
+                          choices=countries_get(connection.cursor()))
   ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   private = forms.BooleanField(label="Hide address/phone/fax in public whois", required=False)
@@ -575,7 +551,7 @@ def contactchange(request, registrantdomain=None):
     if c.country is not None:
       initial['ad6'] = c.country
     elif lastk and lastk != 'ad6':
-      co = _country_from_name(initial[lastk])
+      co = country_from_name(initial[lastk])
       if co:
         # For "legacy" contact records, if the last address line
         # looks like a country, convert it to an ISO country code
