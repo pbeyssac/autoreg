@@ -11,6 +11,32 @@ import dns.query
 import dns.rdatatype
 import dns.resolver
 
+def checkip(ip):
+  """Check IPv4/IPv6 address for validity"""
+  try:
+    if ':' in ip:
+      socket.inet_pton(socket.AF_INET6, ip)
+    else:
+      socket.inet_pton(socket.AF_INET, ip)
+  except socket.error:
+    return False
+  return True
+
+#
+# Regexp for a valid FQDN:
+#  - only letters, digits, '-'
+#  - no '-' at the beginning or end of a label
+#  - at least one '.'
+#  - no '.' at the beginning or end
+#
+_valid_fqdn = re.compile('^(?:[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?\.)+'
+                             '[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?$',
+                         re.IGNORECASE)
+
+def checkfqdn(fqdn):
+  """Check fully-qualified domain name for validity"""
+  return _valid_fqdn.match(fqdn)
+
 def sendquery(q, server):
   """Send DNS query q, in UDP then TCP, to server"""
   trytcp = False
@@ -129,12 +155,7 @@ class MultiResolver(object):
       if ip:
         ip = ip.upper()
 
-        try:
-          if ':' in ip:
-            socket.inet_pton(socket.AF_INET6, ip)
-          else:
-            socket.inet_pton(socket.AF_INET, ip)
-        except socket.error:
+        if not checkip(ip):
           errlist.append("Error: Invalid IP address %s" % ip)
           ip = None
 

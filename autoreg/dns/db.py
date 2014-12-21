@@ -7,6 +7,7 @@ import io
 import time
 
 # local modules
+import check
 import parser
 import autoreg.zauth as zauth
 
@@ -20,6 +21,7 @@ class DomainError(DnsDbError):
     NOTINDOM = 'Label value not in domain'
     NODOT = 'Resource-record value not dot-terminated'
     RRUNSUP = 'Unsupported resource-record type'
+    DINVALID = 'Invalid domain name'
     pass
 class AccessError(DnsDbError):
     DLENSHORT = 'Domain length too short'
@@ -651,6 +653,8 @@ class db:
 	internal: if set, protect domain from user requests and bypass
 		length checks.
 	"""
+        if not check.checkfqdn(domain):
+	  raise DomainError(DomainError.DINVALID, domain)
 	d, z = self._zl.find(domain, zone, wlock=True, raise_nf=False)
 	self._check_login_perm(z.name)
 	if d.id is not None:

@@ -40,12 +40,7 @@ def main():
     if opt == '-o':
       oldip, newip = val.split('=')
       for ip in oldip, newip:
-        try:
-          if ':' in ip:
-            socket.inet_pton(socket.AF_INET6, ip)
-          else:
-            socket.inet_pton(socket.AF_INET, ip)
-        except socket.error:
+        if not autoreg.dns.check.checkip(ip):
           print("Error: Invalid IP address", ip)
           errs += 1
           ip = None
