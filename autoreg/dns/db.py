@@ -16,6 +16,7 @@ class DnsDbError(Exception):
 class DomainError(DnsDbError):
     DNOTFOUND = 'Domain not found'
     ZNOTFOUND = 'Zone not found'
+    ZNOTHERE = 'Zone not found or not managed here'
     ZEXISTS = 'Zone already exists'
     DEXISTS = 'Domain already exists'
     NOTINDOM = 'Label value not in domain'
@@ -467,7 +468,11 @@ class _ZoneList:
 	"""
 	dname, z = self.split(domain, zone)
 	if z is None:
-	    raise DomainError(DomainError.ZNOTFOUND, domain)
+            if '.' in domain:
+              z = domain.split('.', 1)[1]
+            else:
+              z = domain
+	    raise DomainError(DomainError.ZNOTFOUND, z)
 	if wlock:
 	    fu = ' FOR UPDATE'
 	    z.lock()
@@ -659,6 +664,8 @@ class db:
 	self._check_login_perm(z.name)
 	if d.id is not None:
 	    raise DomainError(DomainError.DEXISTS, domain)
+        if '.' in d.name:
+	    raise DomainError(DomainError.ZNOTHERE, domain.split('.', 1)[1])
 	z.checktype(typ)
 	z.fetch()
 	if len(d.name) < z.minlen and not internal:
