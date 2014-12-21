@@ -5,6 +5,7 @@ import psycopg2
 from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import connection
+import django.forms as forms
 from django.http import HttpResponseRedirect, HttpResponseNotFound, \
   HttpResponseForbidden, StreamingHttpResponse
 from django.shortcuts import render_to_response
@@ -13,14 +14,24 @@ import autoreg.conf
 import autoreg.dns.check
 import autoreg.dns.db
 import autoreg.dns.dnssec
-from autoreg.whois.db import admin_login, check_handle_domain_auth
+from autoreg.whois.db import admin_login, check_handle_domain_auth, \
+  suffixadd, suffixstrip, HANDLESUFFIX
 
+from autoreg.arf.requests.models import Requests, rq_make_id
 from autoreg.arf.whois.models import Contacts
+from autoreg.arf.whois.views import registrant_form
 from models import Domains, Rrs
 
 URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
 
-def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None):
+
+class newdomain_form(registrant_form):
+  th = forms.CharField(max_length=10, initial=HANDLESUFFIX,
+                       help_text='Technical Contact', required=True)
+
+
+def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
+                  contact=None, newdomain=False, form=None):
   """Generator returning SOA checks output, line by line."""
   if soac is None:
     soac = autoreg.dns.check.SOAChecker(domain, {}, {})
@@ -32,7 +43,10 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None):
     yield out + '\n'
 
   if not errs and doit:
-    yield "No error, applying changes...\n"
+    if newdomain:
+      yield "No error, storing for validation...\n"
+    else:
+      yield "No error, applying changes...\n"
     rec = []
     for ns in soac.nslist:
       rec.append("\tNS\t%s." % ns)
@@ -51,30 +65,53 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None):
     rec += '\n'
     rrfile = io.StringIO(rec)
     err = None
-    try:
-      dnsdb.modify(domain, None, 'NS', rrfile)
-    except autoreg.dns.db.DomainError as e:
-      err = e.args[0]
-    except autoreg.dns.db.AccessError as e:
-      err = e.args[0]
+    if newdomain:
+      rqid = rq_make_id()
+      ad = []
+      for i in ['ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'ad6']:
+        a = form.cleaned_data.get(i, None)
+        if a is not None and a != '':
+          ad.append('address: ' + a)
+      private = form.cleaned_data['private']
+
+      whoisrecord = '\n'.join(["domain:  %s" % domain.upper(),
+                               '\n'.join(ad),
+                               "admin-c: " + suffixadd(contact.handle),
+                               "tech-c:  " + form.cleaned_data['th']])
+      zonerecord = rec
+      req = Requests(id=rqid, action='N', language='en',
+                     email=contact.email, fqdn=domain.upper(), state='Open',
+                     zonerecord=zonerecord,
+                     whoisrecord=whoisrecord, private=private)
+      req.save()
+      yield "Saved as request " + rqid + "\n"
+    else:
+      try:
+        dnsdb.modify(domain, None, 'NS', rrfile)
+      except autoreg.dns.db.DomainError as e:
+        err = e.args[0]
+      except autoreg.dns.db.AccessError as e:
+        err = e.args[0]
     if err:
       yield err + '\n'
     else:
       yield "\nDone\n"
 
-def _gen_checksoa_log(domain, handle, nsiplist=None, doit=False, dnsdb=None):
+def _gen_checksoa_log(domain, handle, nsiplist=None, doit=False,
+                      newdomain=False, form=None, dnsdb=None):
   """Same as _gen_checksoa(), and keep a log of the output."""
   soac = autoreg.dns.check.SOAChecker(domain, {}, {})
   rec = []
   dbc = connection.cursor()
-  contact_id = Contacts.objects.get(handle=handle.upper()).id
-  for line in _gen_checksoa(domain, nsiplist, doit, dnsdb, soac):
+  contact = Contacts.objects.get(handle=handle.upper())
+  for line in _gen_checksoa(domain, nsiplist, doit, dnsdb, soac, contact,
+                            newdomain, form):
     rec.append(line)
     yield line
   dbc.execute("INSERT INTO requests_log"
               " (fqdn, contact_id, output, errors, warnings)"
               " VALUES (%s, %s, %s, %s, %s)",
-              (domain, contact_id, ''.join(rec), soac.errs, soac.warns))
+              (domain, contact.id, ''.join(rec), soac.errs, soac.warns))
   assert dbc.rowcount == 1
 
 def checksoa(request, domain):
@@ -175,44 +212,16 @@ def domainds(request, fqdn):
      { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
        'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr })
 
-def domainns(request, fqdn):
-  """Show/edit record(s) for domain"""
-  if fqdn != fqdn.lower():
-    return HttpResponseRedirect(reverse(domainns, args=[fqdn.lower()]))
-  if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
-  if not check_handle_domain_auth(connection.cursor(),
-                                  request.user.username, fqdn) \
-      and not admin_login(connection.cursor(), request.user.username):
-    return HttpResponseForbidden("Unauthorized")
-
-  dbh = psycopg2.connect(autoreg.conf.dbstring)
-  dd = autoreg.dns.db.db(dbh)
-  dd.login('autoreg')
-
-  rrerrs = []
-
-  if request.method == 'POST':
-    nsiplist = []
-    for n in range(1, 9):
-      f = 'f%d' % n
-      i = 'i%d' % n
-      if f not in request.POST or i not in request.POST:
-        break
-      fp = request.POST.get(f).strip()
-      if not fp:
-        continue
-      nsiplist.append((fp, request.POST.get(i).strip()))
-    return StreamingHttpResponse(_gen_checksoa_log(fqdn, request.user.username,
-                                   nsiplist, doit=True, dnsdb=dd),
-                                 content_type="text/plain")
-  elif request.method != "GET":
-    raise SuspiciousOperation
-
-  nsdict = {}
+def _get_rr_nsip(dd, fqdn):
   rrlist = dd.queryrr(fqdn, None, None, None)
   rrlist = [(r[0], '' if r[1] is None else r[1], r[2], r[3])
             for r in rrlist]
+  #          if r[2] in ['NS', 'AAAA', 'A']]
+  form = None
+
+  nsdict = {}
+  nsiplist = []
+
   for label, ttl, rrtype, value in rrlist:
     if rrtype == 'NS':
       ns = value.rstrip('.').lower()
@@ -224,20 +233,138 @@ def domainns(request, fqdn):
       if hfqdn in nsdict:
         nsdict[hfqdn].append(value.lower())
 
-  nslist = []
   for ns, iplist in nsdict.iteritems():
     if iplist:
       for ip in iplist:
-        nslist.append((ns, ip))
+        nsiplist.append((ns, ip))
     else:
-      nslist.append((ns, ''))
+      nsiplist.append((ns, ''))
+  nsiplist.sort(key=lambda x: x[0])
+  return rrlist, nsiplist
 
-  nslist.sort(key=lambda x: x[0])
-  nslist.append(('', ''))
+def domainns(request, fqdn=None):
+  """Show/edit record(s) for domain"""
+  if fqdn and fqdn != fqdn.lower():
+    return HttpResponseRedirect(reverse(domainns, args=[fqdn.lower()]))
+  if not request.user.is_authenticated():
+    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+  handle = request.user.username.upper()
+  if fqdn and not check_handle_domain_auth(connection.cursor(),
+                                  handle, fqdn) \
+      and not admin_login(connection.cursor(), handle):
+    return HttpResponseForbidden("Unauthorized")
 
-  while len(nslist) < 10:
-    nslist.append(('', ''))
+  newdomain = (fqdn is None)
+
+  dbh = psycopg2.connect(autoreg.conf.dbstring)
+  dd = autoreg.dns.db.db(dbh)
+  dd.login('autoreg')
+
+  errors = {}
+
+  if request.method == 'POST':
+    nsiplist = []
+    for n in range(1, 10):
+      f = 'f%d' % n
+      i = 'i%d' % n
+      if f not in request.POST or i not in request.POST:
+        break
+      fp = request.POST.get(f).strip()
+      ip = request.POST.get(i).strip()
+      e = []
+      if fp and not autoreg.dns.check.checkfqdn(fp):
+        e.append('Invalid name')
+      if ip and not autoreg.dns.check.checkip(ip):
+        e.append('Invalid IP address')
+      if e:
+        errors['nsip%d' % n] = e
+      nsiplist.append((fp, ip))
+
+    if newdomain:
+      form = newdomain_form(request.POST)
+      fqdn = request.POST.get('fqdn').strip().lower()
+      # help the user (somewhat)
+      # remove leading http:// or https://
+      if fqdn.startswith('http://'):
+        fqdn = fqdn[7:]
+      elif fqdn.startswith('https://'):
+        fqdn = fqdn[8:]
+      # remove trailing '.'
+      if fqdn.endswith('.'):
+        fqdn = fqdn[:-1]
+      th = request.POST.get('th').strip().upper()
+
+      ah = suffixadd(handle)
+      if th == '':
+        th = ah
+      therrors = []
+      tcl = Contacts.objects.filter(handle=suffixstrip(th))
+      if tcl.count() != 1:
+        errors['th'] = ['Contact does not exist']
+      if not nsiplist:
+        errors['nsip1'] = ['NS list is empty']
+      dbh2 = psycopg2.connect(autoreg.conf.dbstring)
+      ddro = autoreg.dns.db.db(dbh2, nowrite=True)
+      ddro.login('autoreg')
+      try:
+        # don't really create (read-only session)
+        ddro.new(fqdn, None, 'NS', file=io.StringIO())
+      except autoreg.dns.db.DomainError as e:
+        errors['fqdn'] = [unicode(e)]
+      except autoreg.dns.db.AccessError as e:
+        errors['fqdn'] = [unicode(e)]
+
+      # XXX: for some unknown reason, this is necessary to release
+      # the write lock on the zone record when redisplaying the form on error
+      del ddro
+      del dbh2
+      rrlist = []
+    else:
+      th, ah, form = None, None, None
+      rrlist, dummy = _get_rr_nsip(dd, fqdn)
+
+    if not errors and (not form or form.is_valid()):
+      # Everything seems ok in the form, proceed to DNS checks
+      #
+      # Cleanup possible empty lines
+      # Can't be cleaned in case of error as it breaks error messages
+      # in the form.
+      nsiplist = [ (f, i) for f, i in nsiplist if f ]
+
+      return StreamingHttpResponse(_gen_checksoa_log(fqdn, handle,
+                                     nsiplist, doit=True,
+                                     newdomain=newdomain, form=form, dnsdb=dd),
+                                   content_type="text/plain")
+
+    # Fall through to GET handling
+
+  elif request.method != "GET":
+    raise SuspiciousOperation
+
+
+  if newdomain:
+    rrlist = []
+    if request.method == "GET":
+      nsiplist = []
+      contact = Contacts.objects.get(handle=handle)
+      # be nice: default country is set to current contact
+      form = newdomain_form(initial={'ad6': contact.country})
+      ah = suffixadd(handle)
+      th = ah
+  else:
+    rrlist, newnsiplist = _get_rr_nsip(dd, fqdn)
+    if request.method == "GET":
+      nsiplist = newnsiplist
+    ah, th, form = None, None, None
+
+
+  while len(nsiplist) < 9:
+    nsiplist.append(('', ''))
 
   return render_to_response('dns/nsedit.html',
-     { 'domain': fqdn, 'rrlist': rrlist, 'errs': rrerrs, 'nsdict': nsdict,
-       'nslist': nslist })
+     { 'newdomain': newdomain,
+       'fqdn': fqdn or '', 'rrlist': rrlist,
+       'th': th, 'ah': ah,
+       'errors': errors,
+       'form': form,
+       'nsiplist': nsiplist })
