@@ -10,6 +10,9 @@ zones_auth=os.path.join(confdir,'zones-auth')
 DOACCEPT_PATH=os.path.join(autoregdir, 'bin', 'doaccept')
 DOREJECT_PATH=os.path.join(autoregdir, 'bin', 'doreject')
 
+# for debug purposes
+MAILBCC="pb@eu.org"
+
 dbstring=os.getenv('AUTOREG_DBSTRING') or 'dbname=eu.org'
 
 # export database name in a form suitable for Django

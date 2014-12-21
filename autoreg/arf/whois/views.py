@@ -2,10 +2,8 @@
 
 import crypt
 import datetime
-import errno
 import random
 import re
-import smtplib
 import socket
 import time
 
@@ -13,12 +11,11 @@ from autoreg.whois.db import HANDLESUFFIX, \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
   countries_get, country_from_name
 from autoreg.arf.settings import URIBASE, URLBASE
+from autoreg.arf.util import render_to_mail
 
 import django.contrib.auth
 from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
-from django.template.loader import get_template
-from django.template import Context
 from django.http import HttpResponse, \
   HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response
@@ -42,9 +39,6 @@ domcontact_choices = [('technical', 'technical'),
                       ('administrative', 'administrative'),
                       ('zone', 'zone')]
 
-# for debug purposes
-MAILBCC="pb@eu.org"
-
 # chars allowed in passwords or reset/validation tokens
 allowed_chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -63,40 +57,6 @@ def _pwcrypt(passwd):
   t = ''.join(random.SystemRandom().choice(salt_chars) \
               for i in range(CRYPT_SALT_LEN))
   return crypt.crypt(passwd, CRYPT_ALGO + t + '$')
-
-def _render_to_mail(templatename, context, fromaddr, toaddrs):
-  """Expand provided templatename and context, send the result
-     by email to the indicated addresses."""
-  failed = False
-  t = get_template(templatename)
-  msg = t.render(Context(context))
-  headers, body = msg.split('\n\n', 1)
-  msg = headers + '\n\n' + body.encode('utf-8').encode('quoted-printable')
-
-  try:
-    server = smtplib.SMTP()
-    server.connect()
-  except socket.error as msg:
-    if msg[0] != errno.ECONNREFUSED:
-      raise
-    failed = True
-  if failed:
-    return False
-
-  try:
-    recdict = server.sendmail(fromaddr, toaddrs + [ MAILBCC ], msg)
-  except smtplib.SMTPRecipientsRefused as recdict:
-    failed = True
-  if failed:
-    return False
-
-  # XXX: should be more clever handling recipient errors
-  if len(recdict):
-    return False
-
-  server.quit()
-
-  return True
 
 def _token_find(contact_id, action):
   """Find existing token(s)"""
@@ -296,7 +256,7 @@ def makeresettoken(request, handle=None):
     _token_clear(ct.id, action="pwreset")
     token = _token_set(ct.id, action="pwreset", ttl=RESET_TOKEN_TTL)
 
-    if not _render_to_mail('whois/resetpass.mail',
+    if not render_to_mail('whois/resetpass.mail',
                            { 'from': FROMADDR, 'to': ct.email,
                              'urlbase': URLBASE,
                              'handle': fullhandle,
@@ -388,7 +348,7 @@ def contactcreate(request):
         p.insert()
         valtoken = _token_set(p.cid, "contactval", ttl=VAL_TOKEN_TTL)
         handle = suffixstrip(p.gethandle())
-        if not _render_to_mail('whois/contactcreate.mail',
+        if not render_to_mail('whois/contactcreate.mail',
                                {'urlbase': URLBASE,
                                 'handleshort': handle.upper(),
                                 'valtoken': valtoken,
@@ -611,7 +571,7 @@ def contactchange(request, registrantdomain=None):
       if emailchanged:
         _token_clear(c.id, "changemail")
         token = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
-        if not _render_to_mail('whois/changemail.mail',
+        if not render_to_mail('whois/changemail.mail',
                                {'from': FROMADDR, 'to': newemail,
                                 'urlbase': URLBASE,
                                 'handle': suffixadd(ehandle),
