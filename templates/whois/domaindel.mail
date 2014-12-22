@@ -1,0 +1,12 @@
+{% extends "base-varheaders.mail" %}
+{% block subject %}request [{{ rqid }}] (deletion of domain {{ domain }}) accepted{% endblock %}
+{% block content %}Hello,
+
+Your request [{{ rqid }}] for deletion of domain {{ domain }}
+has been accepted.
+
+Best Regards,
+The EU.org team
+
+-------------------------------------------------------------------
+{% endblock %}

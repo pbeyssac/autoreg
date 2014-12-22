@@ -1,0 +1,20 @@
+{% extends "base-varheaders.mail" %}
+{% block subject %}request [{{ rqid }}] (domain {{ domain }}) accepted{% endblock %}
+{% block content %}Hello,
+
+Your request [{{ rqid }}] for creation of domain {{ domain }}
+has been accepted.
+
+The following records will be inserted in the zone file:
+{{ zonerecord }}
+
+The following records will be inserted in the WHOIS base:
+{{ whoisrecord }}
+
+Please allow about half a day for propagation.
+
+Best Regards,
+The EU.org team
+
+-------------------------------------------------------------------
+{% endblock %}

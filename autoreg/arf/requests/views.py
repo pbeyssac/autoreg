@@ -299,17 +299,20 @@ def rqlist(request, page='0'):
 
   return render_to_response('requests/rqlist.html', v)
 
-def _doaccept(out, rqid, login):
-  output = subprocess.check_output([autoreg.conf.DOACCEPT_PATH, rqid, login])
-  out.write(output.decode('UTF-8'))
-
 def _doreject(out, rqid, login, creason, csubmit):
   output = subprocess.check_output([autoreg.conf.DOREJECT_PATH, rqid, login,
                                    creason.encode('UTF-8'),
                                    csubmit.encode('UTF-8')])
   out.write(output.decode('UTF-8'))
 
-def _rqexec(rq, out, za, login, action, reason):
+def _rqexec(rq, out, za, login, email, action, reason):
+  if not models.Requests.objects.filter(id=rq).exists():
+    print("Request not found: %s" % rq, file=out)
+    return
+  r = models.Requests.objects.get(id=rq)
+  if not za.checkparent(r.fqdn, login):
+    print("Permission denied on %s" % rq, file=out)
+    return
 
   if action == 'rejectcust':
     _doreject(out, rq, login, reason, reason)
@@ -322,22 +325,20 @@ def _rqexec(rq, out, za, login, action, reason):
   elif action == 'rejectnok':
     _doreject(out, rq, login, reason, 'Sorry, this domain is already allocated')
   elif action == 'accept':
-    _doaccept(out, rq, login)
+    if models.rq_accept(out, rq, login, email):
+      transaction.commit()
+      print(u"Status: committed", file=out)
+    else:
+      transaction.rollback()
+      print(u"Status: cancelled", file=out)
   else:
-    if not models.Requests.objects.filter(id=rq).exists():
-      print("Request not found: %s<P>" % rq, file=out)
-      return
-    r = models.Requests.objects.get(id=rq)
-    if not za.checkparent(r.fqdn, login):
-      print("Permission denied on %s<P>" % rq, file=out)
-      return
     if action == 'delete':
       _rq_remove(rq, 'DelQuiet');
-      print("Deleted %s<P>" % rq, file=out)
+      print("Deleted %s" % rq, file=out)
     elif action == 'none':
-      print("Nothing done on %s<P>" % rq, file=out)
+      print("Nothing done on %s" % rq, file=out)
     else:
-      print("What? On rq=%s action=%s reason=%s<P>" % (rq, action, reason),
+      print("What? On rq=%s action=%s reason=%s" % (rq, action, reason),
             file=out)
 
 @transaction.commit_manually
@@ -346,7 +347,8 @@ def rqval(request):
     raise SuspiciousOperation
   if not request.user.is_authenticated():
     raise PermissionDenied
-  login = admin_login(connection.cursor(), request.user.username)
+  login, email = admin_login(connection.cursor(), request.user.username,
+                             get_email=True)
   if not login:
     raise PermissionDenied
 
@@ -363,8 +365,8 @@ def rqval(request):
     action = request.POST['action' + str(i)]
     rq = request.POST['rq' + str(i)]
     reason = request.POST['reason' + str(i)]
-    print("Processing %s...<P>" % rq, file=out)
-    _rqexec(rq, out, za, login, action, reason)
+    print("Processing %s..." % rq, file=out)
+    _rqexec(rq, out, za, login, email, action, reason)
     i += 1
 
   page = render_to_response('requests/rqval.html', { 'out': out.getvalue() })

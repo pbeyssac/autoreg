@@ -7,7 +7,6 @@ autoregdir='/usr/local/autoreg'
 confdir=os.path.join(autoregdir, 'conf')
 msgdir=confdir
 zones_auth=os.path.join(confdir,'zones-auth')
-DOACCEPT_PATH=os.path.join(autoregdir, 'bin', 'doaccept')
 DOREJECT_PATH=os.path.join(autoregdir, 'bin', 'doreject')
 
 FROMADDR='noreply@eu.org'
