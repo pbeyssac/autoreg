@@ -112,3 +112,34 @@ def rq_accept(out, rqid, login, email):
   r.save()
   r.delete()
   return True
+
+def rq_reject(out, rqid, login, reason, reasonfield):
+  rl = Requests.objects.filter(id=rqid)
+  if rl.count() == 0:
+    print(u"Request %s not found" % rqid, file=out)
+    return False
+  r = rl[0]
+
+  mailto = [r.email]
+
+  if r.action == 'N':
+    action = "creation"
+  elif r.action == 'D':
+    action = "deletion"
+  else:
+    action = "???"
+
+  vars = {'rqid': rqid, 'domain': r.fqdn.upper(), 'to': r.email,
+          'action': action, 'reason': reason, 'reasonfield': reasonfield}
+
+  if not autoreg.arf.util.render_to_mail("whois/domainrej.mail", vars,
+                                         autoreg.conf.FROMADDR, mailto):
+    print(u"Mail to %s failed" % ' '.join(mailto), file=out)
+    return False
+
+  print(u"Mail to %s done" % ' '.join(mailto), file=out)
+
+  r.state = 'Rej'
+  r.save()
+  r.delete()
+  return True

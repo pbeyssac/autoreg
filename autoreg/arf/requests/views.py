@@ -299,13 +299,7 @@ def rqlist(request, page='0'):
 
   return render_to_response('requests/rqlist.html', v)
 
-def _doreject(out, rqid, login, creason, csubmit):
-  output = subprocess.check_output([autoreg.conf.DOREJECT_PATH, rqid, login,
-                                   creason.encode('UTF-8'),
-                                   csubmit.encode('UTF-8')])
-  out.write(output.decode('UTF-8'))
-
-def _rqexec(rq, out, za, login, email, action, reason):
+def _rqexec(rq, out, za, login, email, action, reasonfield):
   if not models.Requests.objects.filter(id=rq).exists():
     print("Request not found: %s" % rq, file=out)
     return
@@ -314,23 +308,23 @@ def _rqexec(rq, out, za, login, email, action, reason):
     print("Permission denied on %s" % rq, file=out)
     return
 
+  has_transaction = True
   if action == 'rejectcust':
-    _doreject(out, rq, login, reason, reason)
+    ok = models.rq_reject(out, rq, login, '', reasonfield)
   elif action == 'rejectdup':
-    _doreject(out, rq, login, reason, 'Duplicate request')
+    ok = models.rq_reject(out, rq, login, 'Duplicate request', reasonfield)
   elif action == 'rejectbog':
-    _doreject(out, rq, login, reason, 'Bogus address information')
+    ok = models.rq_reject(out, rq, login,
+                          'Bogus address information', reasonfield)
   elif action == 'rejectful':
-    _doreject(out, rq, login, reason, 'Please provide a full name')
+    ok = models.rq_reject(out, rq, login,
+                          'Please provide a full name', reasonfield)
   elif action == 'rejectnok':
-    _doreject(out, rq, login, reason, 'Sorry, this domain is already allocated')
+    ok = models.rq_reject(out, rq, login,
+                          'Sorry, this domain is already allocated',
+                          reasonfield)
   elif action == 'accept':
-    if models.rq_accept(out, rq, login, email):
-      transaction.commit()
-      print(u"Status: committed", file=out)
-    else:
-      transaction.rollback()
-      print(u"Status: cancelled", file=out)
+    ok = models.rq_accept(out, rq, login, email)
   else:
     if action == 'delete':
       _rq_remove(rq, 'DelQuiet');
@@ -340,6 +334,15 @@ def _rqexec(rq, out, za, login, email, action, reason):
     else:
       print("What? On rq=%s action=%s reason=%s" % (rq, action, reason),
             file=out)
+    has_transaction = False
+
+  if has_transaction:
+    if ok:
+      transaction.commit()
+      print(u"Status: committed", file=out)
+    else:
+      transaction.rollback()
+      print(u"Status: cancelled", file=out)
 
 @transaction.commit_manually
 def rqval(request):

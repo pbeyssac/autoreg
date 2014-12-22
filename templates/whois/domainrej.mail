@@ -1,0 +1,20 @@
+{% extends "base-varheaders.mail" %}
+{% block subject %}request [{{ rqid }}] ({{ action }} of domain {{ domain }}) rejected{% endblock %}
+{% block content %}Hello,
+
+Sorry, your request [{{ rqid }}] for {{ action }}
+of domain {{ domain }} has been rejected
+for the following reason:
+
+{{ reason }}
+{{ reasonfield }}
+
+
+        Virtually yours,
+        EU.org management.
+
+Best Regards,
+The EU.org team
+
+-------------------------------------------------------------------
+{% endblock %}
