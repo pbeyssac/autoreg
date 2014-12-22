@@ -49,7 +49,7 @@ def _fromdb(atuple):
     newlist.append(i)
   return tuple(newlist)
 
-def parse_changed(changed):
+def parse_changed(changed, outfile=sys.stdout):
   """Parse a RIPE-style changed: line."""
 
   # syntax extension: accept a changed line without a date
@@ -77,7 +77,7 @@ def parse_changed(changed):
       y = int(y)
       email = None
     else:
-      print("ERROR: Cannot parse_changed:", changed)
+      print(u"ERROR: Cannot parse_changed:", changed, file=outfile)
       return None, None
   m = int(m)
   d = int(d)
@@ -281,7 +281,10 @@ class _whoisobject(object):
       r = []
       for s in o[k]:
         if type(s) == str:
-          s = unicode(s, encoding)
+          if encoding is not None:
+            s = unicode(s, encoding)
+          else:
+            s = unicode(s)
         r.append(s)
       o[k] = r
     # move foreign NIC handle out of the way
@@ -341,7 +344,7 @@ class _whoisobject(object):
     return self.d.get('err', []), self.d.get('warn', [])
   def format_msgs(self):
     o = self.d
-    text = ''
+    text = u''
     for i in ('err', 'warn'):
       if i in o:
         for j in o[i]:
@@ -844,7 +847,8 @@ class Main:
     fetch_dbencoding(self._dbc)
     self._lookup = Lookup(self._dbc)
     self._reset()
-  def process(self, o, dodel, persons=None, forcechanged=None):
+  def process(self, o, dodel, persons=None, forcechanged=None,
+              outfile=sys.stdout):
     """Handle object creation/updating/deletion.
        Return True if ok, False otherwise.
     """
@@ -858,7 +862,7 @@ class Main:
       o['ch'] = [ forcechanged ]
     elif 'ch' in o:
       for i in range(len(o['ch'])):
-        email, t = parse_changed(o['ch'][i])
+        email, t = parse_changed(o['ch'][i], outfile=outfile)
         if (email, t) == (None, None):
           return False
         if t is None:
@@ -876,12 +880,15 @@ class Main:
         if ld is not None:
           ld.fetch()
           ld.delete()
-          print("Object deleted:")
-          print(ld.__str__().encode(encoding))
+          print(u"Object deleted:", file=outfile)
+          if encoding is not None:
+            print(ld.__str__().encode(encoding), file=outfile)
+          else:
+            print(ld.__str__(), file=outfile)
           self.ndom += 1
           return True
         else:
-          print("ERROR: Cannot delete: not found")
+          print(u"ERROR: Cannot delete: not found", file=outfile)
           return False
       self.ndom += 1
       ld = self._lookup.domain_by_name(i)
@@ -890,7 +897,10 @@ class Main:
         ld.fetch()
         newdom = Domain(self._dbc, ld.did)
         r = newdom.from_ripe(o, persons)
-        sys.stdout.write(newdom.format_msgs().encode(encoding))
+        if encoding is not None:
+          print(newdom.format_msgs().encode(encoding), file=outfile, end=u'')
+        else:
+          print(newdom.format_msgs(), file=outfile, end=u'')
         if r is None:
           # something incorrect in provided attributes
           return False
@@ -900,22 +910,34 @@ class Main:
         # compare with new object
         if ld != newdom or ld.ct.d['ad'] != newdom.ct.d['ad']:
           # they differ, update database
-          print("Object updated from:")
-          print(ld.__str__().encode(encoding))
+          print(u"Object updated from:", file=outfile)
+          if encoding is not None:
+            print(ld.__str__().encode(encoding), file=outfile)
+          else:
+            print(ld.__str__(), file=outfile)
           newdom.ct.cid = ld.ct.cid
           newdom.update()
-          print("Object updated to:")
-          print(newdom.__str__().encode(encoding))
+          print(u"Object updated to:", file=outfile)
+          if encoding is not None:
+            print(newdom.__str__().encode(encoding), file=outfile)
+          else:
+            print(newdom.__str__(), file=outfile)
           self.ambig += ambig
           self.inval += inval
         else:
-          print("Object already exists:")
-          print(ld.__str__().encode(encoding))
+          print(u"Object already exists:", file=outfile)
+          if encoding is not None:
+            print(ld.__str__().encode(encoding), file=outfile)
+          else:
+            print(ld.__str__(), file=outfile)
       else:
         # make domain object
         ld = Domain(self._dbc)
         r = ld.from_ripe(o, persons)
-        sys.stdout.write(ld.format_msgs().encode(encoding))
+        if encoding is not None:
+          print(ld.format_msgs().encode(encoding), file=outfile, end=u'')
+        else:
+          print(ld.format_msgs(), file=outfile, end=u'')
         if r is None:
           # something incorrect in provided attributes
           return False
@@ -924,8 +946,11 @@ class Main:
           return False
         # store to database
         ld.insert()
-        print("Object created:")
-        print(ld.__str__().encode(encoding))
+        print(u"Object created:", file=outfile)
+        if encoding is not None:
+          print(ld.__str__().encode(encoding), file=outfile)
+        else:
+          print(ld.__str__(), file=outfile)
         self.ambig += ambig
         self.inval += inval
     elif 'pn' in o:
@@ -933,7 +958,10 @@ class Main:
       self.nperson += 1
       ct = Person(self._dbc)
       r = ct.from_ripe(o)
-      sys.stdout.write(ct.format_msgs().encode(encoding))
+      if encoding is not None:
+        print(ct.format_msgs().encode(encoding), file=outfile, end=u'')
+      else:
+        print(ct.format_msgs(), file=outfile, end=u'')
       if not r:
         return False
       name = o['pn'][0].lower()
@@ -951,35 +979,44 @@ class Main:
           # found, compare
           c.fetch()
           if dodel:
-            print("Object deleted:")
-            print(c.__str__().encode(encoding))
+            print(u"Object deleted:", file=outfile)
+            if encoding is not None:
+              print(c.__str__().encode(encoding), file=outfile)
+            else:
+              print(c.__str__(), file=outfile)
             c.delete()
           else:
             if ct != c:
-              print("Object updated from:")
-              print(c.__str__().encode(encoding))
-              print("Object updated to:")
+              print(u"Object updated from:", file=outfile)
+              if encoding is not None:
+                print(c.__str__().encode(encoding), file=outfile)
+              else:
+                print(c.__str__(), file=outfile)
+              print(u"Object updated to:", file=outfile)
               ct.cid = c.cid
               ct.update()
             else:
               ct = c
-              print("Object already exists:")
+              print(u"Object already exists:", file=outfile)
         else:
           # not found
           if dodel:
-            print("ERROR: Cannot delete: not found")
+            print(u"ERROR: Cannot delete: not found", file=outfile)
             return False
           else:
             ct.insert()
-            print("Object created:")
+            print(u"Object created:", file=outfile)
         if not dodel:
-          print(ct.__str__().encode(encoding))
+          if encoding is not None:
+            print(ct.__str__().encode(encoding), file=outfile)
+          else:
+            print(ct.__str__(), file=outfile)
           # keep for contact assignment
           persons.setdefault(handle, []).append(ct)
           persons.setdefault(name, []).append(ct)
           persons.setdefault(ehandle, []).append(ct)
       elif dodel:
-        print("ERROR: Cannot delete: no handle provided")
+        print(u"ERROR: Cannot delete: no handle provided", file=outfile)
         return False
       else:
         # no handle, try to find by name
@@ -992,15 +1029,18 @@ class Main:
             if ct == c:
               # found, stop
               ct = c
-              print("Object already exists:")
+              print(u"Object already exists:", file=outfile)
               break
             # clear copied handle
             o['nh'] = [ None ];
         else:
             # not found, insert
             ct.insert()
-            print("Object created:")
-        print(ct.__str__().encode(encoding))
+            print(u"Object created:", file=outfile)
+        if encoding is not None:
+          print(ct.__str__().encode(encoding), file=outfile)
+        else:
+          print(ct.__str__(), file=outfile)
         # keep for contact assignment
         persons.setdefault(name, []).append(ct)
         persons.setdefault(ehandle, []).append(ct)
@@ -1011,12 +1051,13 @@ class Main:
       # deleted object, ignore
       pass
     else:
-      print("ERROR: Unknown object type")
-      print(str(o))
+      print(u"ERROR: Unknown object type", file=outfile)
+      print(unicode(o), file=outfile)
       return False
     return True
 
-  def _order(self, o, dodel, persons, nohandle, domains, forcechanged):
+  def _order(self, o, dodel, persons, nohandle, domains, forcechanged,
+             outfile):
     """Handle reordering."""
     if not dodel and 'pn' in o \
         and ('nh' not in o or not o['nh'][0].endswith(HANDLESUFFIX)):
@@ -1028,7 +1069,7 @@ class Main:
       domains[o['dn'][0].upper()] = o
     else:
       # process everything else as we go
-      return self.process(o, dodel, persons, forcechanged)
+      return self.process(o, dodel, persons, forcechanged, outfile=outfile)
     return True
 
   def parsefile(self, file, encoding=DEFAULTENCODING, commit=True,
@@ -1071,7 +1112,8 @@ class Main:
         if len(o) > 1:
           # white line or empty line and o is not empty:
           # end of object, process then cleanup for next object.
-          if not self._order(o, dodel, persons, nohandle, domains, forcechanged):
+          if not self._order(o, dodel, persons, nohandle, domains,
+                             forcechanged, outfile):
             err += 1
           o = { 'encoding': encoding }
           dodel = False
@@ -1101,17 +1143,19 @@ class Main:
     # end of file
     if len(o) > 1:
       # end of file: process last object
-      if not self._order(o, dodel, persons, nohandle, domains, forcechanged):
+      if not self._order(o, dodel, persons, nohandle, domains, forcechanged,
+                         outfile):
         err += 1
 
     for p in nohandle:
-      if not self.process(p, False, persons, forcechanged):
+      if not self.process(p, False, persons, forcechanged, outfile=outfile):
         err += 1
 
     # now that contacts are ready to be used, insert domain_contact records
     # from the domain list we gathered.
     for i in sorted(domains.keys()):
-      if not self.process(domains[i], False, persons, forcechanged):
+      if not self.process(domains[i], False, persons, forcechanged,
+                          outfile=outfile):
         err += 1
 
     if commit and err == 0:
