@@ -12,6 +12,7 @@ from autoreg.whois.db import HANDLESUFFIX, \
   countries_get, country_from_name
 from autoreg.arf.settings import URIBASE, URLBASE
 from autoreg.arf.util import render_to_mail
+from autoreg.conf import FROMADDR
 
 import django.contrib.auth
 from django.core.exceptions import SuspiciousOperation
@@ -27,7 +28,6 @@ from django.db import connection, transaction
 from models import Whoisdomains,Contacts,Tokens,DomainContact
 
 URILOGIN = URIBASE + 'login/'
-FROMADDR = 'noreply@eu.org'
 RESET_TOKEN_HOURS_TTL = 24
 EMAIL_TOKEN_HOURS_TTL = 72
 VAL_TOKEN_HOURS_TTL = 72
