@@ -533,7 +533,7 @@ class db:
 	self._check_login_perm(z.name)
 	d.fetch()
 	d.show()
-    def delete(self, domain, zone, override_internal=False):
+    def delete(self, domain, zone, override_internal=False, commit=True):
 	"""Delete domain.
 
 	domain: FQDN of domain name
@@ -549,7 +549,8 @@ class db:
 	if self._nowrite: return
 	d.move_hist(login_id=self._login_id, domains=True)
 	z.set_updateserial()
-	self._dbh.commit()
+        if commit:
+	    self._dbh.commit()
     def modify(self, domain, zone, typ, file, override_internal=False,
 	       replace=True, delete=False, keepds=True, _commit=True):
 	"""Modify domain.
@@ -649,7 +650,7 @@ class db:
     def commit(self):
         """Commit pending transaction."""
 	self._dbh.commit()
-    def new(self, domain, zone, typ, file=None, internal=False):
+    def new(self, domain, zone, typ, file=None, internal=False, commit=True):
 	"""Create domain.
 
 	domain: full domain name
@@ -678,7 +679,8 @@ class db:
 	if file:
 	    d.mod_rr(file)
 	z.set_updateserial()
-	self._dbh.commit()
+        if commit:
+	    self._dbh.commit()
     def set_registry_lock(self, domain, zone, val):
 	"""Set registry_lock flag for domain."""
 	d, z = self._zl.find(domain, zone, wlock=True)

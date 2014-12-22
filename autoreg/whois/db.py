@@ -1032,7 +1032,7 @@ class Main:
     return True
 
   def parsefile(self, file, encoding=DEFAULTENCODING, commit=True,
-                forcechangedemail=None):
+                forcechangedemail=None, outfile=sys.stdout):
     """Parse file and reorder objects before calling process()."""
     o = { 'encoding': encoding }
     persons = {}
@@ -1083,12 +1083,12 @@ class Main:
       else:
         m = self.longattr_re.search(l)
         if not m:
-          print("ERROR: Unrecognized line:", l)
+          print(u"ERROR: Unrecognized line:", unicode(l), file=outfile)
           err += 1
           continue
         a, v = m.groups()
         if a not in ripe_ltos:
-          print("ERROR: Unrecognized attribute \"%s\"" % a)
+          print(u"ERROR: Unrecognized attribute \"%s\"" % a, file=outfile)
           err += 1
           continue
         a = ripe_ltos[a]
@@ -1119,13 +1119,13 @@ class Main:
     else:
         self._dbh.rollback()
 
-    print("Domains:", self.ndom)
-    print("Persons:", self.nperson)
+    print(u"Domains: %d" % self.ndom, file=outfile)
+    print(u"Persons: %d" % self.nperson, file=outfile)
     if self.ambig:
-      print("Ambiguous contacts:", self.ambig)
+      print(u"Ambiguous contacts: %d" % self.ambig, file=outfile)
     if self.inval:
-      print("Invalid contacts:", self.inval)
+      print(u"Invalid contacts: %d" % self.inval, file=outfile)
     self._reset()
     if err:
-      print(err, "error(s), aborting")
+      print(u"%d error(s), aborting" % err, file=outfile)
     return err == 0
