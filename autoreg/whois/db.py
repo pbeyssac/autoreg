@@ -205,15 +205,19 @@ def check_handle_domain_auth(dbc, handle, domain):
   n, = dbc.fetchone()
   return n
 
-def admin_login(dbc, handle):
+def admin_login(dbc, handle, get_email=False):
   handle = suffixstrip(handle)
-  dbc.execute('SELECT login FROM admins, contacts'
+  dbc.execute('SELECT login, email FROM admins, contacts'
               ' WHERE admins.contact_id=contacts.id AND contacts.handle=%s',
               _todb((handle,)))
   assert dbc.rowcount <= 1
   if dbc.rowcount == 1:
-    login, = dbc.fetchone()
+    login, email = dbc.fetchone()
+    if get_email:
+      return login, email
     return login
+  if get_email:
+    return None, None
   return None
 
 def handle_domains_dnssec(dbc, handle):
