@@ -230,7 +230,7 @@ def handle_domains_dnssec(dbc, handle):
               " EXISTS(SELECT 1 FROM allowed_rr"
                 " WHERE zone_id=zones.id"
                   " AND rrtype_id=(SELECT id FROM rrtypes WHERE label='DS')),"
-              " created_on, updated_on"
+              " created_on, updated_on, registry_hold, end_grace_period"
               " FROM"
            " (SELECT DISTINCT"
               " SUBSTRING(fqdn FROM '[A-Z0-9+-]+') AS domain,"

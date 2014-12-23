@@ -56,6 +56,7 @@ CREATE TABLE domains (
 	created_on TIMESTAMP(2) WITH TIME ZONE,
 	updated_by INTEGER REFERENCES admins(id) DEFAULT 0,
 	updated_on TIMESTAMP(2) WITH TIME ZONE,
+	end_grace_period TIMESTAMP(2) WITH TIME ZONE,
 	UNIQUE (name, zone_id)
 );
 CREATE INDEX domains_name_index ON domains(name,zone_id);
@@ -89,12 +90,16 @@ CREATE INDEX rrs_domain_id_index ON rrs(domain_id);
 CREATE TABLE domains_hist (
 	id INTEGER PRIMARY KEY,
 	name VARCHAR(64),
+	registry_hold BOOLEAN DEFAULT FALSE,
+	registry_lock BOOLEAN DEFAULT FALSE,
+	internal BOOLEAN DEFAULT FALSE,
 	zone_id INTEGER REFERENCES zones(id),
 	registrar_id INTEGER,
 	created_by INTEGER REFERENCES admins(id),
 	created_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_by INTEGER REFERENCES admins(id),
-	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	end_grace_period TIMESTAMP(2) WITH TIME ZONE
 );
 
 -- deleted RRs
@@ -142,11 +147,15 @@ CREATE OR REPLACE FUNCTION trig_domains()
     BEGIN
 	IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
 	    INSERT INTO domains_hist (
-		id, name,zone_id, registrar_id,
-		created_by, created_on, deleted_on)
+		id, name, zone_id,
+		registry_hold, registry_lock, internal,
+		registrar_id,
+		created_by, created_on, end_grace_period, deleted_on)
 	      VALUES (
-		OLD.id, OLD.name, OLD.zone_id, OLD.registrar_id,
-		OLD.created_by, OLD.created_on, NOW());
+		OLD.id, OLD.name, OLD.zone_id,
+		OLD.registry_hold, OLD.registry_lock, OLD.internal,
+		OLD.registrar_id,
+		OLD.created_by, OLD.created_on, OLD.end_grace_period, NOW());
 	END IF;
 	IF TG_OP = 'DELETE' THEN
 	    RETURN OLD;
@@ -156,8 +165,7 @@ CREATE OR REPLACE FUNCTION trig_domains()
     END;
 $trig_domains$ LANGUAGE plpgsql;
 
--- only useful on DELETE
-CREATE TRIGGER trig_domains BEFORE DELETE ON domains
+CREATE TRIGGER trig_domains BEFORE UPDATE OR DELETE ON domains
 	FOR EACH ROW EXECUTE PROCEDURE trig_domains();
 
 CREATE OR REPLACE FUNCTION trig_rrs()

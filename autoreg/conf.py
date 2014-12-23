@@ -9,6 +9,8 @@ msgdir=confdir
 zones_auth=os.path.join(confdir,'zones-auth')
 
 FROMADDR='noreply@eu.org'
+# number of grace days for domain restoration
+DEFAULT_GRACE_DAYS=30
 # for debug purposes
 MAILBCC="pb@eu.org"
 

@@ -3,10 +3,13 @@
 
 from __future__ import print_function
 
+import datetime
 import io
 import time
 
 # local modules
+from autoreg.conf import DEFAULT_GRACE_DAYS
+
 import check
 import parser
 import autoreg.zauth as zauth
@@ -28,6 +31,8 @@ class AccessError(DnsDbError):
     DLENSHORT = 'Domain length too short'
     DLENLONG = 'Domain length too long'
     DLOCKED = 'Domain is locked'
+    DHELD = 'Domain is held'
+    DNOTDELETED = 'Domain has not been deleted'
     DINTERNAL = 'Domain is internal'
     NOAUTH = 'Not authorized for zone'
     ILLRR = 'Illegal record type in zone'
@@ -178,7 +183,8 @@ class _Domain:
 	else: fud=''
 	self._dbc.execute('SELECT domains.name, zones.name, registry_hold, '
 			  'registry_lock, internal, zone_id, registrar_id, '
-			  'created_by, created_on, updated_by, updated_on '
+			  'created_by, created_on, updated_by, updated_on, '
+			  'end_grace_period '
 			  'FROM domains, zones '
 			  'WHERE domains.id=%s AND zones.id=domains.zone_id'
 			  +fud, (did,))
@@ -187,7 +193,8 @@ class _Domain:
 	assert self._dbc.rowcount == 1
 	(self.name, self._zone_name, self._registry_hold, self._registry_lock,
 	 self._internal, self._zone_id, self._registrar_id,
-	 idcr, self._created_on, idup, self._updated_on) = self._dbc.fetchone()
+	 idcr, self._created_on, idup, self._updated_on,
+         self._end_grace_period) = self._dbc.fetchone()
 	# "GRANT SELECT" perms do not allow "SELECT ... FOR UPDATE",
 	# hence the request below is done separately from the request above.
 	self._dbc.execute('SELECT ad1.login, ad2.login '
@@ -344,6 +351,8 @@ class _Domain:
 	if self._registry_lock: print(u"; registry_lock")
 	if self._registry_hold: print(u"; registry_hold")
 	if self._internal: print(u"; internal")
+	if self._end_grace_period:
+	    print(u"; end_grace_period: %s" % self._end_grace_period)
     def show_rrs(self):
 	"""List all resource records for domain."""
 	self._dbc.execute(
@@ -394,6 +403,21 @@ class _Domain:
 	self._registry_hold = val
 	self._dbc.execute('UPDATE domains SET registry_hold=%s WHERE id=%s',
 			  (val, self.id))
+    def set_end_grace_period(self, val):
+	"""Set value of the end time of the grace period and registry_hold,
+        or remove if val is None."""
+        if val is None:
+          d = None
+          hold = False
+        else:
+          d = datetime.datetime.fromtimestamp(val)
+          hold = True
+	self._end_grace_period = d
+        # do it in one update to avoid generating two lines in domains_hist
+	self._dbc.execute('UPDATE domains'
+                          ' SET registry_hold=%s, end_grace_period=%s'
+                          ' WHERE id=%s',
+			  (hold, d, self.id))
 
 class _ZoneList:
     """Cache zone list from database."""
@@ -533,7 +557,9 @@ class db:
 	self._check_login_perm(z.name)
 	d.fetch()
 	d.show()
-    def delete(self, domain, zone, override_internal=False, commit=True):
+    def delete(self, domain, zone, override_internal=False,
+               grace_days=DEFAULT_GRACE_DAYS,
+               commit=True):
 	"""Delete domain.
 
 	domain: FQDN of domain name
@@ -546,8 +572,33 @@ class db:
 	    raise AccessError(AccessError.DLOCKED)
 	if d._internal and not override_internal:
 	    raise AccessError(AccessError.DINTERNAL)
+	if d._registry_hold:
+	    raise AccessError(AccessError.DHELD)
 	if self._nowrite: return
-	d.move_hist(login_id=self._login_id, domains=True)
+        if grace_days != 0:
+	    d.set_end_grace_period(time.time()+grace_days*86400)
+        else:
+	    d.move_hist(login_id=self._login_id, domains=True)
+	z.set_updateserial()
+        if commit:
+	    self._dbh.commit()
+    def undelete(self, domain, zone, override_internal=False, commit=True):
+	"""Undelete domain.
+
+	domain: FQDN of domain name
+	override_internal: if set, allow modifications to internal domains
+	"""
+	d, z = self._zl.find(domain, zone, wlock=True)
+	self._check_login_perm(z.name)
+	d.fetch(wlock=True)
+	if d._registry_lock:
+	    raise AccessError(AccessError.DLOCKED)
+	if d._internal and not override_internal:
+	    raise AccessError(AccessError.DINTERNAL)
+	if not d._registry_hold or not d._end_grace_period:
+	    raise AccessError(AccessError.DNOTDELETED)
+	if self._nowrite: return
+	d.set_end_grace_period(None)
 	z.set_updateserial()
         if commit:
 	    self._dbh.commit()
