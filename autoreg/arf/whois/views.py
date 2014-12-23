@@ -2,20 +2,25 @@
 
 import crypt
 import datetime
+import io
 import random
 import re
 import socket
 import time
+
+import psycopg2
 
 from autoreg.whois.db import HANDLESUFFIX, \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
   countries_get, country_from_name
 from autoreg.arf.settings import URIBASE, URLBASE
 from autoreg.arf.util import render_to_mail
+from autoreg.common import domain_delete
 from autoreg.conf import FROMADDR
+import autoreg.dns.db
 
 import django.contrib.auth
-from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, \
   HttpResponseRedirect, HttpResponseForbidden
@@ -748,6 +753,50 @@ def domainedit(request, fqdn):
           'addform': {'posturi': request.path,
                       'domcontact_form': domcontact_form()}}
   return render_to_response('whois/domainedit.html', vars)
+
+@cache_control(private=True)
+def domaindelete(request, fqdn):
+  if request.method != "POST":
+    raise SuspiciousOperation
+  if not request.user.is_authenticated():
+    raise PermissionDenied
+  if fqdn != fqdn.lower():
+    raise PermissionDenied
+  if not check_handle_domain_auth(connection.cursor(),
+                                  request.user.username, fqdn):
+    return HttpResponseForbidden("Unauthorized")
+
+  dbh = psycopg2.connect(autoreg.conf.dbstring)
+  dd = autoreg.dns.db.db(dbh)
+  dd.login('autoreg')
+
+  out = io.StringIO()
+
+  if not domain_delete(dd, fqdn, out, None):
+    msg = 'Sorry, domain deletion failed, please try again later.'
+    return render_to_response('whois/msgnext.html', {'msg': msg})
+
+  return HttpResponseRedirect(reverse(domainlist))
+
+@cache_control(private=True)
+def domainundelete(request, fqdn):
+  if request.method != "POST":
+    raise SuspiciousOperation
+  if not request.user.is_authenticated():
+    raise PermissionDenied
+  if fqdn != fqdn.lower():
+    raise PermissionDenied
+  if not check_handle_domain_auth(connection.cursor(),
+                                  request.user.username, fqdn):
+    return HttpResponseForbidden("Unauthorized")
+
+  dbh = psycopg2.connect(autoreg.conf.dbstring)
+  dd = autoreg.dns.db.db(dbh)
+  dd.login('autoreg')
+
+  dd.undelete(fqdn, None)
+
+  return HttpResponseRedirect(reverse(domainlist))
 
 def logout(request):
   """Logout page"""

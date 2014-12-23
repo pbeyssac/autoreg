@@ -12,6 +12,7 @@ from django.db import models
 
 import autoreg.arf.util
 from autoreg.arf.whois.models import Contacts
+import autoreg.common
 import autoreg.conf
 import autoreg.dns.db
 import autoreg.whois.db
@@ -92,16 +93,9 @@ def rq_accept(out, rqid, login, email):
       # we have to continue anyway, since the request has been executed
 
   elif r.action == 'D':
-    dd.delete(r.fqdn, None, commit=False)
-    print(u"Zone delete done\n", file=out)
-
-    inwhois = ['domain: '+r.fqdn.upper(), 'delete: '+login]
-
-    if not w.parsefile(inwhois, None, commit=True, outfile=outwhois):
-      print(outwhois.getvalue(), file=out)
+    if not autoreg.common.domain_delete(dd, r.fqdn, w, out):
       return False
 
-    print(outwhois.getvalue(), file=out)
     vars = {'rqid': rqid, 'domain': r.fqdn.upper(), 'to': r.email}
     if not autoreg.arf.util.render_to_mail("whois/domaindel.mail", vars,
                                            autoreg.conf.FROMADDR, mailto):

@@ -4,7 +4,16 @@
 {% block msg %}
 <table class="domainlist">
 <tr><th>Domain</th><th>Created</th><th>Updated</th></tr>
-{% for dds in domds %}<tr><td>{{ dds.0 }}</td><td>{{ dds.3|date:"o-m-d H:i" }}</td><td>{{ dds.4|date:"o-m-d H:i" }}</td><td><A HREF="{% url 'arf.whois.views.domainedit' dds.0 %}">Contacts</A></td><td><A HREF="{% url 'arf.dns.views.domainns' dds.0 %}">Nameservers</a></td><td>{% if dds.1 and dds.2 %}<A HREF="{% url 'arf.dns.views.domainds' dds.0.lower %}">DNSSEC (beta)</A>{% endif %}</td></tr>
+{% for dds in domds %}<tr><td>{{ dds.0 }}</td><td>{{ dds.3|date:"o-m-d H:i" }}</td><td>{{ dds.4|date:"o-m-d H:i" }}</td><td><A HREF="{% url 'arf.whois.views.domainedit' dds.0 %}">Contacts</A></td><td><A HREF="{% url 'arf.dns.views.domainns' dds.0 %}">Nameservers</a></td><td>{% if dds.1 and dds.2 %}<A HREF="{% url 'arf.dns.views.domainds' dds.0.lower %}">DNSSEC (beta)</A>{% endif %}</td><td>
+{% if dds.5 and dds.6 %}
+<form action="{% url 'arf.whois.views.domainundelete' dds.0.lower %}" method="POST">
+<INPUT TYPE="submit" NAME="undel" VALUE="Undelete (before {{ dds.6|date:"o-m-d" }})">
+{% else %}
+<form action="{% url 'arf.whois.views.domaindelete' dds.0.lower %}" method="POST">
+<INPUT TYPE="submit" NAME="del" VALUE="Delete">
+{% endif %}
+</form>
+</td></tr>
 {% endfor %}</table>
 {% if next %}<a href="{{ next }}">Continue</a>{% endif %}
 {% endblock %}

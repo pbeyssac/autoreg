@@ -12,6 +12,8 @@ urlpatterns = patterns('autoreg.arf.whois.views',
     (r'^contact/domains/$', 'domainlist'),
     (r'^domain/edit/(?P<fqdn>[A-Z0-9\.-]+)/$', 'domainedit'),
     (r'^domain/edit/confirm/(?P<fqdn>[A-Z0-9\.-]+)/$', 'domaineditconfirm'),
+    (r'^domain/del/(?P<fqdn>[a-z0-9\.-]+)/$', 'domaindelete'),
+    (r'^domain/undel/(?P<fqdn>[a-z0-9\.-]+)/$', 'domainundelete'),
     (r'^registrant/edit/(?P<registrantdomain>[A-Z0-9\.-]+)/$', 'contactchange'),
     # The following are special for lost password handling;
     # putting these under /contact/... is not quite correct as they are
