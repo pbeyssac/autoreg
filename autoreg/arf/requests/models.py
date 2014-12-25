@@ -93,7 +93,16 @@ def rq_accept(out, rqid, login, email):
       # we have to continue anyway, since the request has been executed
 
   elif r.action == 'D':
-    if not autoreg.common.domain_delete(dd, r.fqdn, w, out):
+    err, ok = None, False
+    try:
+      ok = autoreg.common.domain_delete(dd, r.fqdn, w, out, None)
+    except autoreg.dns.db.AccessError as e:
+      err = unicode(e)
+    except autoreg.dns.db.DomainError as e:
+      err = unicode(e)
+    if not ok:
+      if err:
+        print(unicode(err), file=out)
       return False
 
     vars = {'rqid': rqid, 'domain': r.fqdn.upper(), 'to': r.email}

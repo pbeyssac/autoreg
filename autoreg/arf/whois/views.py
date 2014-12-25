@@ -772,8 +772,22 @@ def domaindelete(request, fqdn):
 
   out = io.StringIO()
 
-  if not domain_delete(dd, fqdn, out, None):
-    msg = 'Sorry, domain deletion failed, please try again later.'
+  err, ok = None, False
+  try:
+    ok = domain_delete(dd, fqdn, out, None)
+  except autoreg.dns.db.AccessError as e:
+    err = unicode(e)
+  except autoreg.dns.db.DomainError as e:
+    err = unicode(e)
+
+  # release the write lock on the zone record.
+  dbh.commit()
+
+  if not ok or err:
+    if err:
+      msg = err;
+    else:
+      msg = 'Sorry, domain deletion failed, please try again later.'
     return render_to_response('whois/msgnext.html', {'msg': msg})
 
   return HttpResponseRedirect(reverse(domainlist))

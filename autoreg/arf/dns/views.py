@@ -314,10 +314,8 @@ def domainns(request, fqdn=None):
       except autoreg.dns.db.AccessError as e:
         errors['fqdn'] = [unicode(e)]
 
-      # XXX: for some unknown reason, this is necessary to release
-      # the write lock on the zone record when redisplaying the form on error
-      del ddro
-      del dbh2
+      # release the write lock on the zone record
+      dbh2.rollback()
       rrlist = []
     else:
       th, ah, form = None, None, None

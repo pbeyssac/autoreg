@@ -17,7 +17,7 @@ import autoreg.zauth
 
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.db import connection, transaction
+from django.db import connection, transaction, IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 
@@ -338,13 +338,13 @@ def _rqexec(rq, out, za, login, email, action, reasonfield):
 
   if has_transaction:
     if ok:
-      transaction.commit()
       print(u"Status: committed", file=out)
     else:
-      transaction.rollback()
       print(u"Status: cancelled", file=out)
+      # raise to force a transaction rollback by Django
+      raise IntegrityError("")
 
-@transaction.commit_manually
+@transaction.non_atomic_requests
 def rqval(request):
   if request.method != "POST":
     raise SuspiciousOperation
@@ -358,22 +358,20 @@ def rqval(request):
   za = autoreg.zauth.ZAuth()
   out = io.StringIO()
 
-  # get our current transaction out of the way
-  # (has a lock on the user's row in the "contacts" table due to the above)
-  # to avoid deadlocking subprocesses
-  transaction.commit()
-
   i = 1
   while 'action' + str(i) in request.POST:
     action = request.POST['action' + str(i)]
     rq = request.POST['rq' + str(i)]
     reason = request.POST['reason' + str(i)]
     print("Processing %s..." % rq, file=out)
-    _rqexec(rq, out, za, login, email, action, reason)
+
+    with transaction.atomic():
+      try:
+        _rqexec(rq, out, za, login, email, action, reason)
+      except IntegrityError as e:
+        print(unicode(e), file=out)
+
     i += 1
 
   page = render_to_response('requests/rqval.html', { 'out': out.getvalue() })
-  # the above may yield a SELECT to the ISO countries table, so
-  # we need to put the last commit right there below.
-  transaction.commit()
   return page
