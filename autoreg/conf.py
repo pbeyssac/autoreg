@@ -3,10 +3,6 @@
 
 import os
 
-autoregdir='/usr/local/autoreg'
-confdir=os.path.join(autoregdir, 'conf')
-msgdir=confdir
-
 FROMADDR='noreply@eu.org'
 # number of grace days for domain restoration
 DEFAULT_GRACE_DAYS=30
