@@ -6,7 +6,6 @@ import os
 autoregdir='/usr/local/autoreg'
 confdir=os.path.join(autoregdir, 'conf')
 msgdir=confdir
-zones_auth=os.path.join(confdir,'zones-auth')
 
 FROMADDR='noreply@eu.org'
 # number of grace days for domain restoration

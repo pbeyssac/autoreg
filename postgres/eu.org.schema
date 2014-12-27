@@ -62,7 +62,6 @@ CREATE TABLE domains (
 CREATE INDEX domains_name_index ON domains(name,zone_id);
 
 -- lists allowed administrators for each zone
--- not currently used
 CREATE TABLE admin_zone (
 	id SERIAL PRIMARY KEY,
 	admin_id INTEGER REFERENCES admins(id),
@@ -532,6 +531,7 @@ GRANT INSERT,SELECT ON TABLE domains_hist,rrs_hist TO root, www, nobody, autoreg
 -- read-only
 GRANT SELECT ON TABLE admins,allowed_rr,rrtypes TO root, www, nobody, autoreg;
 GRANT SELECT ON TABLE contact_types TO whois;
+GRANT SELECT ON TABLE admin_zone TO www;
 
 -- Permissions on Whois database
 -- read-write

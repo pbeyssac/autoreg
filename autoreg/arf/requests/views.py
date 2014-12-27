@@ -159,7 +159,7 @@ def rqedit(request, rqid):
     return render_to_response('requests/rqmsg.html',
                               {'msg': 'Request not found'})
   r = r[0]
-  if not autoreg.zauth.ZAuth().checkparent(r.fqdn, login):
+  if not autoreg.zauth.ZAuth(connection.cursor()).checkparent(r.fqdn, login):
     raise PermissionDenied
   if request.method == "GET":
     return render_to_response('requests/rqedit.html',
@@ -190,7 +190,7 @@ def rq(request, rqid):
     return render_to_response('requests/rqmsg.html',
                               {'msg': 'Request not found'})
   r = r[0]
-  if not autoreg.zauth.ZAuth().checkparent(r.fqdn, login):
+  if not autoreg.zauth.ZAuth(connection.cursor()).checkparent(r.fqdn, login):
     raise PermissionDenied
   _rq1(request, r)
   r.suffix = 1
@@ -231,7 +231,7 @@ def rqlistdom(request, domain=None):
   elif domain.upper() != domain:
     return HttpResponseRedirect(reverse(rqlistdom, args=[domain.upper()]))
 
-  z = autoreg.zauth.ZAuth()
+  z = autoreg.zauth.ZAuth(connection.cursor())
 
   rlist = _rq_list_dom(domain)
   for r in rlist:
@@ -251,7 +251,7 @@ def rqlistemail(request, email):
   if not login:
     raise PermissionDenied
 
-  z = autoreg.zauth.ZAuth()
+  z = autoreg.zauth.ZAuth(connection.cursor())
 
   rlist = _rq_list_email(email)
   for r in rlist:
@@ -280,7 +280,7 @@ def rqlist(request, page='0'):
   if page > npages or page <= 0:
     return HttpResponseRedirect(reverse(rqlist, args=[str(npages)]))
 
-  z = autoreg.zauth.ZAuth()
+  z = autoreg.zauth.ZAuth(connection.cursor())
 
   rql = []
   for r in _rq_list()[(page-1)*nbypage:page*nbypage]:
@@ -355,7 +355,7 @@ def rqval(request):
   if not login:
     raise PermissionDenied
 
-  za = autoreg.zauth.ZAuth()
+  za = autoreg.zauth.ZAuth(connection.cursor())
   out = io.StringIO()
 
   i = 1

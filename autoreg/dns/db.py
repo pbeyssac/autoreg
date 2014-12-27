@@ -519,9 +519,9 @@ class db:
         # At once, set transaction isolation level to READ COMMITTED.
         # (see autoreg.whois.db for details)
         dbhandle.set_isolation_level(1)
-	self._za = zauth.ZAuth()
 	self._dbh = dbhandle
 	self._dbc = dbhandle.cursor()
+	self._za = zauth.ZAuth(self._dbc)
 	self._nowrite = nowrite
 	self._login_id = None
         self._zl = _ZoneList(self._dbc)
