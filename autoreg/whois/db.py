@@ -134,6 +134,16 @@ def country_from_name(name):
       return c
   return None
 
+def country_from_iso(iso_id, dbc=None):
+  """Lookup country name from ISO code"""
+  if dbc:
+    countries_get(dbc)
+  for cn in _countries:
+    c, n = cn
+    if c == iso_id:
+      return n
+  return None
+
 ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc', 'zone-c': 'zc',
               'admin-c': 'ac', 'phone': 'ph', 'fax': 'fx', 'e-mail': 'em',
               'changed': 'ch', 'remark': 'rm', 'nic-hdl': 'nh',

@@ -11,7 +11,7 @@ import psycopg2
 
 import autoreg.conf
 import autoreg.dns.db
-from autoreg.whois.db import admin_login
+from autoreg.whois.db import admin_login, country_from_iso
 import autoreg.whois.query as query
 import autoreg.zauth
 
@@ -119,6 +119,7 @@ def _rq1(request, r):
     sys.stdout = oldout
 
   w = []
+  lastaddr = None
   if r.whoisrecord:
     for line in r.whoisrecord.split('\n'):
       m = _attrval.match(line)
@@ -130,8 +131,15 @@ def _rq1(request, r):
         w.append(line)
       elif m.group(1) in ['changed', 'mnt-by', 'source']:
         continue
+      elif m.group(1) == 'address' and len(m.group(2)) == 2:
+        lastaddr = len(w)
+        countryaddr = m.group(2)
+        w.append(line)
       else:
         w.append(line)
+    if lastaddr is not None:
+      w[lastaddr] = 'address: ' + country_from_iso(countryaddr,
+                                                   connection.cursor())
   w = '\n'.join(w)
 
   wlistout = []
