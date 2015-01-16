@@ -764,7 +764,7 @@ class db:
         """Return zone list."""
         return self._zl.get()
     def newzone(self, zone):
-	"Create a new zone for which we are master."""
+	"""Create a new zone for which we are master."""
 	z = self._zl.newzone(zone.upper())
 	self._dbh.commit()
     def expired(self, now=False):
