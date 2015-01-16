@@ -572,7 +572,8 @@ class db:
 	    raise AccessError(AccessError.DLOCKED)
 	if d._internal and not override_internal:
 	    raise AccessError(AccessError.DINTERNAL)
-	if d._registry_hold:
+	if d._registry_hold \
+          and (d._end_grace_period is None or grace_days != 0):
 	    raise AccessError(AccessError.DHELD)
 	if self._nowrite: return
         if grace_days != 0:
@@ -766,3 +767,18 @@ class db:
 	"Create a new zone for which we are master."""
 	z = self._zl.newzone(zone.upper())
 	self._dbh.commit()
+    def expired(self, now=False):
+        """List domains in grace period."""
+        if not now:
+          self._dbc.execute('SELECT domains.name, zones.name, end_grace_period'
+                            ' FROM domains, zones'
+                            ' WHERE domains.zone_id=zones.id'
+                            ' AND end_grace_period IS NOT NULL'
+                            ' ORDER BY end_grace_period')
+        else:
+          self._dbc.execute('SELECT domains.name, zones.name, end_grace_period'
+                            ' FROM domains, zones'
+                            ' WHERE domains.zone_id=zones.id'
+                            ' AND end_grace_period < NOW()'
+                            ' ORDER BY end_grace_period')
+        return self._dbc.fetchall()

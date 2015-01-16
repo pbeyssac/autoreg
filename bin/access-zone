@@ -27,6 +27,7 @@
 	newzone:	create a new zone.
 	addrr:	add resource records
 	delrr:	delete resource records
+	expire:	list expired domains
 
 -d: in 'modify', 'addrr', 'delrr', 'show': apply both on the domain
     and the parent zone.
@@ -61,7 +62,8 @@ logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
 
 action_list = ['addrr', 'cat', 'delete', 'delrr', 'lock', 'modify', 'unlock',
 		'hold', 'unhold',
-		'new', 'show', 'soa', 'list', 'newzone']
+		'new', 'show', 'soa', 'list', 'newzone',
+		'expire']
 
 MSG_ALLOC="Error: domain %s is already allocated."
 MSG_SHORT="Error: minimal length for subdomains in %s is %d."
@@ -114,7 +116,7 @@ for o, a in opts:
 if action == None or user == None:
     usage()
     sys.exit(1)
-if action == 'list':
+if action == 'list' or action == 'expire':
     if len(args) != 0:
         usage()
         sys.exit(1)
@@ -195,6 +197,9 @@ try:
         print(zone)
   elif action == 'newzone':
     dd.newzone(domain)
+  elif action == 'expire':
+    for dom, zone, dateexp in dd.expired():
+      print('%s %s.%s' % (dateexp, dom, zone))
   else:
     usage()
     r = 1
