@@ -70,8 +70,19 @@ def rq_accept(out, rqid, login, email):
   outwhois = io.StringIO()
 
   if r.action == 'N':
+    err = None
     rrfile = io.StringIO(r.zonerecord)
-    dd.new(r.fqdn, None, 'NS', file=rrfile, commit=False)
+    try:
+      dd.new(r.fqdn, None, 'NS', file=rrfile, commit=False)
+    except autoreg.dns.db.AccessError as e:
+      err = unicode(e)
+    except autoreg.dns.db.DomainError as e:
+      err = unicode(e)
+
+    if err:
+      print(u"Error:", err, file=out)
+      return False
+
     print(u"Zone insert done\n", file=out)
 
     inwhois = [line for line in r.whoisrecord.split('\n')
