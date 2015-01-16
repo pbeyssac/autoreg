@@ -157,6 +157,7 @@ domainattrs = {'dn': (1, 1), 'ad': (0,7),
                'tc': (0,3), 'ac': (1,3), 'zc': (0,3), 'ch': (1,1) }
 
 registrantattrs = {'pn': (0,1), 'ad': (0,6),
+                   'co': (0,1), 'cn': (0, 1),
                    'ph': (0,1), 'fx': (0,1),
                    'em': (0,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
 
@@ -337,6 +338,16 @@ class _whoisobject(object):
           warn.append([k, "Found %d times instead of %d to %d time(s)" \
                       % (len(o[k]), minl, maxl)])
           o[k] = o[k][:maxl]
+    # try to find a country code
+    # cleanup 'None' lines in 'ad'
+    o['ad'] = [v for v in o['ad'] if v is not None]
+    if len(o['ad']) and ('co' not in o or o['co'][0] is None):
+      iso_code = o['ad'][-1].upper()
+      country_name = country_from_iso(iso_code)
+      if country_name:
+        o['co'] = [iso_code]
+        o['cn'] = [country_name]
+        o['ad'] = o['ad'][:-1]
     # convert address
     if len(o['ad']) < 6:
       o['ad'].extend([ None ] * (6-len(o['ad'])))
@@ -405,6 +416,7 @@ class Person(_whoisobject):
       self.key = self.d['pn'][0]
   def _from_ripe(self, o, attrs):
     """Fill from RIPE-style attributes."""
+    countries_get(self._dbc)
     if not self.check(o, attrs):
       return False
     self._set_key()
@@ -578,6 +590,7 @@ class Domain(_whoisobject):
     self.did = did
   def from_ripe(self, o, prefs=None):
     """Fill from RIPE-style attributes."""
+    countries_get(self._dbc)
     if not self.check(o, domainattrs):
       return None
     o['dn'][0] = o['dn'][0].upper()
@@ -589,6 +602,8 @@ class Domain(_whoisobject):
         c['ad'] = o['ad'][1:]
         del o['ad']
     c['ch'] = o['ch']
+    c['co'] = o['co']
+    c['cn'] = o['cn']
     self.ct = Person(self._dbc)
     if not self.ct.registrant_from_ripe(c):
       o['err'] = c.get('err', [])
