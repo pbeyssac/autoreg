@@ -79,8 +79,15 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
                                "admin-c: " + suffixadd(contact.handle),
                                "tech-c:  " + form.cleaned_data['th']])
       zonerecord = rec
+      rql = Requests.objects.filter(action='N', contact_id=contact.id,
+                                    fqdn=domain.upper(), state='Open')
+      if rql.count() > 0:
+        yield "IGNORED: you already have a pending request " \
+              + rql[0].id + " for that domain.\n"
+        return
       req = Requests(id=rqid, action='N', language='en',
                      email=contact.email, fqdn=domain.upper(), state='Open',
+                     contact=contact,
                      zonerecord=zonerecord,
                      whoisrecord=whoisrecord, private=private)
       req.save()
