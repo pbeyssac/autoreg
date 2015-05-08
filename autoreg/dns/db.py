@@ -643,10 +643,10 @@ class db:
         if '.' not in domain:
 	    raise DomainError(DomainError.DNOTFOUND)
 	label, parent = domain.split('.', 1)
-	rrfile = io.StringIO(records)
+	rrfile = io.StringIO(unicode(records))
 	self.modify(domain, parent, None, rrfile,
 		    override_internal, replace, delete, _commit=False)
-	rrfile = io.StringIO(records)
+	rrfile = io.StringIO(unicode(records))
 	self.modify(domain, domain, None, rrfile,
 		    override_internal, replace, delete, _commit=True)
     def queryrr(self, domain, zone, label, rrtype):
