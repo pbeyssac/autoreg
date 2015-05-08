@@ -29,7 +29,7 @@ from django.shortcuts import render_to_response
 from django import forms
 from django.forms.widgets import PasswordInput
 from django.views.decorators.cache import cache_control
-from django.db import connection, transaction
+from django.db import connection
 
 from models import Whoisdomains,Contacts,Tokens,DomainContact
 
@@ -652,7 +652,6 @@ def domaineditconfirm(request, fqdn):
   else:
     return HttpResponseRedirect(nexturi)
 
-@transaction.commit_on_success
 @cache_control(private=True)
 def domainedit(request, fqdn):
   """Edit domain contacts"""
@@ -708,8 +707,6 @@ def domainedit(request, fqdn):
             else:
               dbdom.d[code].remove(cid)
               dbdom.update()
-              # this shouldn't be necessary due to @transaction.commit_on_success
-              transaction.set_dirty()
               msg = "%s removed from %s contacts" % (chandle, contact_type)
           else:
             msg = "%s is not a contact" % suffixadd(chandle)
@@ -718,8 +715,6 @@ def domainedit(request, fqdn):
           if cid not in dbdom.d[code]:
             dbdom.d[code].append(cid)
             dbdom.update()
-            # this shouldn't be necessary due to @transaction.commit_on_success
-            transaction.set_dirty()
             msg = "%s added to %s contacts" % (chandle, contact_type)
           else:
             msg = "%s is already a %s contact" % (chandle, contact_type)
