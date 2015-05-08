@@ -12,7 +12,8 @@ import psycopg2
 
 from autoreg.whois.db import HANDLESUFFIX, \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
-  countries_get, country_from_name
+  countries_get, country_from_name, \
+  admin_login
 from autoreg.arf.settings import URIBASE, URLBASE
 from autoreg.arf.util import render_to_mail
 from autoreg.common import domain_delete
@@ -488,7 +489,8 @@ def contactchange(request, registrantdomain=None):
   if registrantdomain:
     # check handle is authorized on domain
     if not check_handle_domain_auth(connection.cursor(),
-                                    handle + HANDLESUFFIX, registrantdomain):
+                                    handle + HANDLESUFFIX, registrantdomain) \
+     and not admin_login(connection.cursor(), request.user.username):
       return HttpResponseForbidden("Unauthorized")
     dom = Whoisdomains.objects.get(fqdn=registrantdomain)
     cl = dom.domaincontact_set.filter(contact_type__name='registrant')
@@ -671,7 +673,8 @@ def domainedit(request, fqdn):
     return render_to_response('whois/domainnotfound.html', vars)
 
   # check handle is authorized on domain
-  if not check_handle_domain_auth(connection.cursor(), handle + HANDLESUFFIX, f):
+  if not check_handle_domain_auth(connection.cursor(), handle + HANDLESUFFIX, f) \
+     and not admin_login(connection.cursor(), request.user.username):
     return HttpResponseForbidden("Unauthorized")
 
   dbdom = Domain(connection.cursor(), did=dom.id)
