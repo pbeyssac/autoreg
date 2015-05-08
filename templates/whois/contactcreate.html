@@ -3,6 +3,7 @@
 {% block h1title %}Contact Creation{% endblock %}
 {% block form %}
 <FORM ACTION="{{ posturi }}" METHOD="POST">
+{% csrf_token %}
 <div class="fieldWrapper{% if form.pn1.errors %}error{% endif %}">
     {{ form.pn1 }}
     <label for="id_pn1"> Name</label>

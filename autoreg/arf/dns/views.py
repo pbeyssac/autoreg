@@ -9,6 +9,7 @@ import django.forms as forms
 from django.http import HttpResponseRedirect, HttpResponseNotFound, \
   HttpResponseForbidden, StreamingHttpResponse
 from django.shortcuts import render_to_response
+from django.template import RequestContext
 
 import autoreg.conf
 import autoreg.dns.check
@@ -215,9 +216,10 @@ def domainds(request, fqdn):
   elif request.method != "GET":
     raise SuspiciousOperation
 
-  return render_to_response('dns/dsedit.html',
+  vars = RequestContext(request,
      { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
        'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr })
+  return render_to_response('dns/dsedit.html', vars)
 
 def _get_rr_nsip(dd, fqdn):
   rrlist = dd.queryrr(fqdn, None, None, None)
@@ -366,10 +368,11 @@ def domainns(request, fqdn=None):
   while len(nsiplist) < 9:
     nsiplist.append(('', ''))
 
-  return render_to_response('dns/nsedit.html',
+  vars = RequestContext(request,
      { 'newdomain': newdomain,
        'fqdn': fqdn or '', 'rrlist': rrlist,
        'th': th, 'ah': ah,
        'errors': errors,
        'form': form,
        'nsiplist': nsiplist })
+  return render_to_response('dns/nsedit.html', vars)

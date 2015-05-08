@@ -12,6 +12,7 @@ Whois data for domain <strong>{{ whoisdomain.fqdn }}</strong><P>
 <strong>Remove an existing contact</strong><P>
 {% for f in formlist %}
 <FORM ACTION="{{ f.posturi }}" METHOD="POST">
+{% csrf_token %}
 {{ f.contact_type }} contact: {{ f.handle }}
 <INPUT TYPE="hidden" NAME="contact_type" VALUE="{{ f.contact_type }}">
 <INPUT TYPE="hidden" NAME="handle" VALUE="{{ f.handle }}">
@@ -21,6 +22,7 @@ Whois data for domain <strong>{{ whoisdomain.fqdn }}</strong><P>
 <hr>
 <strong>Add a new contact</strong><P>
 <FORM ACTION="{{ addform.posturi }}" METHOD="POST">
+{% csrf_token %}
 {% for field in addform.domcontact_form %}{{ field }}
 {% endfor %}
 <INPUT TYPE="submit" NAME="submit" VALUE="Add">

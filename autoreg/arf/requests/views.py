@@ -20,6 +20,7 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import connection, transaction, IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
+from django.template import RequestContext
 
 import models
 
@@ -164,14 +165,14 @@ def rqedit(request, rqid):
     raise PermissionDenied
   r = models.Requests.objects.filter(id=rqid)
   if r.count() < 1:
-    return render_to_response('requests/rqmsg.html',
-                              {'msg': 'Request not found'})
+    vars = RequestContext(request, {'msg': 'Request not found'})
+    return render_to_response('requests/rqmsg.html', vars)
   r = r[0]
   if not autoreg.zauth.ZAuth(connection.cursor()).checkparent(r.fqdn, login):
     raise PermissionDenied
   if request.method == "GET":
-    return render_to_response('requests/rqedit.html',
-                              { 'r': r })
+    vars = RequestContext(request, {'r': r})
+    return render_to_response('requests/rqedit.html', vars)
   elif request.method == 'POST':
     whoisrecord = request.POST.get('whois', '').strip('\n')
     r.tags = request.POST.get('tags', '').strip()
@@ -195,15 +196,15 @@ def rq(request, rqid):
     raise PermissionDenied
   r = models.Requests.objects.filter(id=rqid)
   if r.count() < 1:
-    return render_to_response('requests/rqmsg.html',
-                              {'msg': 'Request not found'})
+    vars = RequestContext(request, {'msg': 'Request not found'})
+    return render_to_response('requests/rqmsg.html', vars)
   r = r[0]
   if not autoreg.zauth.ZAuth(connection.cursor()).checkparent(r.fqdn, login):
     raise PermissionDenied
   _rq1(request, r)
   r.suffix = 1
-  return render_to_response('requests/rqdisplay.html',
-                            { 'rlist': [r] })
+  vars = RequestContext(request, {'rlist': [r]})
+  return render_to_response('requests/rqdisplay.html', vars)
   
 def rqdom(request, domain):
   if request.method != "GET":
@@ -222,8 +223,8 @@ def rqdom(request, domain):
     _rq1(request, r)
     r.suffix = i
     i += 1
-  return render_to_response('requests/rqdisplay.html',
-                            { 'rlist': rlist })
+  vars = RequestContext(request, {'rlist': rlist})
+  return render_to_response('requests/rqdisplay.html', vars)
 
 def rqlistdom(request, domain=None):
   if request.method != "GET":
@@ -247,8 +248,8 @@ def rqlistdom(request, domain=None):
       continue
     _rq_decorate(r)
 
-  return render_to_response('requests/rqlistdom.html',
-                            { 'rlist': rlist, 'fqdn': domain })
+  vars = RequestContext(request, {'rlist': rlist, 'fqdn': domain})
+  return render_to_response('requests/rqlistdom.html', vars)
 
 def rqlistemail(request, email):
   if request.method != "GET":
@@ -267,8 +268,8 @@ def rqlistemail(request, email):
       continue
     _rq_decorate(r)
 
-  return render_to_response('requests/rqlistemail.html',
-                            { 'rlist': rlist, 'email': email })
+  vars = RequestContext(request, {'rlist': rlist, 'email': email})
+  return render_to_response('requests/rqlistemail.html', vars)
 
 def rqlist(request, page='0'):
   if request.method != "GET":
@@ -305,6 +306,7 @@ def rqlist(request, page='0'):
   if page < npages:
     v['next'] = page+1
 
+  v = RequestContext(request, v)
   return render_to_response('requests/rqlist.html', v)
 
 def _rqexec(rq, out, za, login, email, action, reasonfield):
@@ -381,5 +383,6 @@ def rqval(request):
 
     i += 1
 
-  page = render_to_response('requests/rqval.html', { 'out': out.getvalue() })
+  vars = RequestContext(request, {'out': out.getvalue()})
+  page = render_to_response('requests/rqval.html', vars)
   return page

@@ -5,6 +5,7 @@
 Please look for email sent to <strong>{{ newemail }}</strong> and
 enter below the validation token you received from EU.org:<br>
 <FORM ACTION="{{ posturi }}" METHOD="POST">
+{% csrf_token %}
 <TABLE>
 {{ form }}
 </TABLE>

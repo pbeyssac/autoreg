@@ -16,6 +16,7 @@ Configuration for {{ fqdn }}
 {% block msg %}
 
 <form action="" method="POST">
+{% csrf_token %}
 
 {% if newdomain %}
 <h2>New domain request</h2>

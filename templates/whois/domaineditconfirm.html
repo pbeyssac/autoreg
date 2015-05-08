@@ -9,6 +9,7 @@ of your privileges on this domain.
 Please confirm or cancel this operation.
 <P>
 <FORM ACTION="{{ posturi }}" METHOD="POST">
+{% csrf_token %}
 <INPUT TYPE="hidden" NAME="contact_type" VALUE="{{ contact_type }}">
 <INPUT TYPE="hidden" NAME="handle" VALUE="{{ handle }}">
 <INPUT TYPE="submit" NAME="submit" VALUE="Confirm Delete">

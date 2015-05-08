@@ -4,6 +4,7 @@
 {% block msg %}
 
 <FORM ACTION="{% url 'arf.requests.views.rqedit' r.id %}" METHOD="POST">
+{% csrf_token %}
 {% if r.whoisrecord != None %}
 <TEXTAREA NAME="whois" COLS=70 ROWS=7>
 {{ r.whoisrecord }}

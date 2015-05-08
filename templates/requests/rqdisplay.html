@@ -4,7 +4,7 @@
 {% block msg %}
 
 <FORM ACTION="{% url 'arf.requests.views.rqval' %}" METHOD="POST">
-
+{% csrf_token %}
 {% for r in rlist %}
 <h2>Request {{ r.id }}</h2>
 

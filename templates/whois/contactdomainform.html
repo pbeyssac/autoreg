@@ -3,6 +3,7 @@
 {% block h1title %}Password Reset{% endblock %}
 {% block form %}
 <FORM ACTION="{{ posturi }}" METHOD="POST">
+{% csrf_token %}
 <TABLE>
 {{ form }}
 </TABLE>
