@@ -14,7 +14,7 @@ from autoreg.whois.db import HANDLESUFFIX, \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
   countries_get, country_from_name, \
   admin_login
-from autoreg.arf.settings import URIBASE, URLBASE
+from autoreg.arf.arf.settings import URIBASE, URLBASE
 from autoreg.arf.util import render_to_mail
 from autoreg.common import domain_delete
 from autoreg.conf import FROMADDR

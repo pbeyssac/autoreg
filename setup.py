@@ -5,6 +5,7 @@ setup(name='autoreg',
       author='Pierre Beyssac', author_email='autoreg-devel@eu.org',
       url='http://eu.org/',
       packages=['autoreg', 'autoreg.dns', 'autoreg.whois',
-                'autoreg.arf', 'autoreg.arf.dns', 'autoreg.arf.requests',
+                'autoreg.arf', 'autoreg.arf.arf',
+                'autoreg.arf.dns', 'autoreg.arf.requests',
                 'autoreg.arf.whois'],
       )

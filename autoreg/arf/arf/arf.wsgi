@@ -4,13 +4,10 @@
 # WSGI stub for invocation from Apache
 
 import os
-import sys
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'autoreg.arf.debugsettings'
-os.environ['ARF_BASE'] = '/darf/'
-os.environ['AUTOREG_DBSTRING'] = 'dbname=eudevel'
-
-sys.path = [ '/home/freenix/pb/autoreg' ] + sys.path
+os.environ['DJANGO_SETTINGS_MODULE'] = 'autoreg.arf.arf.settings'
+os.environ['ARF_BASE'] = '/arf/'
+os.environ['AUTOREG_DBSTRING'] = 'dbname=eu.org'
 
 # This application object is used by the development server
 # as well as any WSGI server configured to use this file.
