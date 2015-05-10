@@ -1,49 +1,46 @@
 # Django settings for arf project.
 # $Id$
 
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Make this unique, and don't share it with anybody.
+# This is used to generate hashes for session identifiers.
+SECRET_KEY = open('/usr/local/autoreg/arf/SECRET_KEY').read()[:-1]
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
+ALLOWED_HOSTS = [
+  'eu.org', 'www.eu.org'
+]
+
+# Application definition
+
+INSTALLED_APPS = (
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'autoreg.arf.dns',
+    'autoreg.arf.man',
+    'autoreg.arf.requests',
+    'autoreg.arf.whois'
 )
 
-MANAGERS = ADMINS
 
-# Local time zone for this installation. Choices can be found here:
-# http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
-# although not all variations may be possible on all operating systems.
-# If running in a Windows environment this must be set to the same as your
-# system time zone.
 TIME_ZONE = 'Europe/Paris'
-
-# Language code for this installation. All choices can be found here:
-# http://www.w3.org/TR/REC-html40/struct/dirlang.html#langcodes
-# http://blogs.law.harvard.edu/tech/stories/storyReader$15
 LANGUAGE_CODE = 'en-us'
-
-SITE_ID = 1
-
-# If you set this to False, Django will make some optimizations so as not
-# to load the internationalization machinery.
 USE_I18N = True
-
-# Absolute path to the directory that holds media.
-# Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = ''
-
-# URL that handles the media served from MEDIA_ROOT.
-# Example: "http://media.lawrence.com"
-MEDIA_URL = ''
+USE_L10N = True
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/media/'
 
-# Make this unique, and don't share it with anybody.
-# This is used to generate hashes for session identifiers.
-SECRET_KEY = open('/usr/local/autoreg/arf/SECRET_KEY').read()[:-1]
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -63,27 +60,38 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'autoreg.arf.arf.urls'
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    "/usr/local/autoreg/arf/templates-devel",
-    "/home/beyssac/autoreg/postgres/python/templates",
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            "/usr/local/autoreg/arf/templates-devel",
+            "/home/freenix/pb/autoreg/templates"
+          ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
-INSTALLED_APPS = (
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'autoreg.arf.dns',
-    'autoreg.arf.requests',
-    'autoreg.arf.whois'
-)
+WSGI_APPLICATION = 'autoreg.arf.wsgi.application'
 
 # Authentication backend using passwords from the whois contact database.
 AUTHENTICATION_BACKENDS = ( 'autoreg.arf.whois.contactauth.AuthBackend', )
+
+# Internationalization
+# https://docs.djangoproject.com/en/1.8/topics/i18n/
+
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'Europe/Paris'
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
 
 #
 # Application-specific settings
@@ -99,12 +107,12 @@ DATABASES = {
   }
 }
 
-import os
-
 URIBASE = os.environ.get('ARF_BASE', '/darf/')
 URLBASE = 'https://eu.org'
 SESSION_COOKIE_NAME = 'dsession_id'
 
-ALLOWED_HOSTS = [
-  'eu.org', 'www.eu.org'
-]
+ADMINS = (
+    # ('Your Name', 'your_email@domain.com'),
+)
+
+MANAGERS = ADMINS
