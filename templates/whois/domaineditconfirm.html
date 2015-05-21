@@ -2,17 +2,15 @@
 {% block title %}Domain contact deletion{% endblock %}
 {% block h1title %}Domain contact deletion{% endblock %}
 {% block form %}
-<strong>WARNING</strong>: by removing yourself ({{ handle }}) from
-contacts for <strong>{{ fqdn }}</strong>, you may lose some or all
+<strong>WARNING</strong>: by removing yourself (<span class="handle">{{ handle }}</span>) from
+contacts for <span class="domain">{{ fqdn }}</span>, you may lose some or all
 of your privileges on this domain.
-<P>
-Please confirm or cancel this operation.
 <P>
 <FORM ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
 <INPUT TYPE="hidden" NAME="contact_type" VALUE="{{ contact_type }}">
 <INPUT TYPE="hidden" NAME="handle" VALUE="{{ handle }}">
-<INPUT TYPE="submit" NAME="submit" VALUE="Confirm Delete">
-<INPUT TYPE="submit" NAME="submit" VALUE="Cancel">
+<INPUT class="action" TYPE="submit" NAME="submitd" VALUE="Confirm Remove">
+<INPUT class="action" TYPE="submit" NAME="submit" VALUE="Cancel">
 </FORM>
 {% endblock %}

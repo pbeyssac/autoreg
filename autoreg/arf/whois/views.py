@@ -137,8 +137,8 @@ class registrant_form(forms.Form):
   private = forms.BooleanField(label="Hide address/phone/fax in public whois", required=False)
 
 class domcontact_form(forms.Form):
-  handle = forms.CharField(max_length=10, initial=HANDLESUFFIX)
   contact_type = forms.ChoiceField(choices=domcontact_choices, label="type")
+  handle = forms.CharField(max_length=10, initial=HANDLESUFFIX)
 
 class contactlogin_form(forms.Form):
   handle = forms.CharField(max_length=15, initial=HANDLESUFFIX, help_text='Your handle')
@@ -445,15 +445,6 @@ def domain(request, fqdn):
 # private pages
 
 @cache_control(private=True)
-def index(request):
-  """Startup page after login"""
-  if not request.user.is_authenticated():
-    return HttpResponseRedirect(reverse(login))
-  handle = suffixadd(request.user.username)
-  vars = RequestContext(request, {'handle': handle})
-  return render_to_response('whois/index.html', vars)
-
-@cache_control(private=True)
 def chpass(request):
   """Contact password change"""
   if not request.user.is_authenticated():
@@ -556,6 +547,7 @@ def contactchange(request, registrantdomain=None):
         initial['ad6'] = co
         del initial[lastk]
     if registrantdomain:
+      vars['domain'] = registrantdomain.upper()
       vars['form'] = registrant_form(initial=initial)
     else:
       vars['ehandle'] = suffixadd(ehandle)
@@ -710,6 +702,12 @@ def domainedit(request, fqdn):
     vars = RequestContext(request, {'fqdn': fqdn})
     return render_to_response('whois/domainnotfound.html', vars)
 
+  domds = handle_domains_dnssec(connection.cursor(), handle, fqdn)
+  if len(domds) != 1:
+    raise SuspiciousOperation
+  has_ns, has_ds, can_ds = domds[0][1], domds[0][7], domds[0][2]
+  registry_hold, end_grace_period = domds[0][5], domds[0][6]
+
   # check handle is authorized on domain
   if not check_handle_domain_auth(connection.cursor(), handle + HANDLESUFFIX, f) \
      and not admin_login(connection.cursor(), request.user.username):
@@ -721,7 +719,9 @@ def domainedit(request, fqdn):
   msg = None
 
   if request.method == "POST":
-    if 'submit' in request.POST:
+    if 'submit' in request.POST \
+        or 'submitd' in request.POST \
+        or 'submita' in request.POST:
       contact_type = request.POST['contact_type']
       chandle = suffixstrip(request.POST['handle'])
       ctl = Contacts.objects.filter(handle=chandle)
@@ -734,8 +734,10 @@ def domainedit(request, fqdn):
         if contact_type[0] not in 'atz':
           raise SuspiciousOperation
         code = contact_type[0] + 'c'
-        if request.POST['submit'] == 'Delete' \
-           or request.POST['submit'] == 'Confirm Delete':
+        if 'submit' in request.POST \
+           and (request.POST['submit'] == 'Delete' \
+            or request.POST['submit'] == 'Confirm Delete') \
+           or 'submitd' in request.POST:
           if cid in dbdom.d[code]:
             numcontacts = 0
             for i in 'atz':
@@ -746,19 +748,18 @@ def domainedit(request, fqdn):
             else:
               dbdom.d[code].remove(cid)
               dbdom.update()
-              msg = "%s removed from %s contacts" % (chandle, contact_type)
           else:
             msg = "%s is not a contact" % suffixadd(chandle)
           # Fall through to updated form display
-        elif request.POST['submit'] == 'Add':
+        elif 'submit' in request.POST and request.POST['submit'] == 'Add' \
+            or 'submita' in request.POST:
           if cid not in dbdom.d[code]:
             dbdom.d[code].append(cid)
             dbdom.update()
-            msg = "%s added to %s contacts" % (chandle, contact_type)
           else:
             msg = "%s is already a %s contact" % (chandle, contact_type)
           # Fall through to updated form display
-        elif request.POST['submit'] == 'Cancel':
+        elif 'submit' in request.POST and request.POST['submit'] == 'Cancel':
           # Fall through to updated form display
           pass
     else:
@@ -788,6 +789,8 @@ def domainedit(request, fqdn):
           'formlist': formlist,
           'handle': suffixadd(handle),
           'whoisdisplay': unicode(dbdom),
+          'has_ns': has_ns, 'has_ds': has_ds, 'can_ds': can_ds,
+          'registry_hold': registry_hold, 'end_grace_period': end_grace_period,
           'addform': {'posturi': request.path,
                       'domcontact_form': domcontact_form()}}
   vars = RequestContext(request, vars)

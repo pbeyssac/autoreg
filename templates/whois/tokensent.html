@@ -2,6 +2,6 @@
 {% block title %}{{ title }}{% endblock %}
 {% block h1title %}{{ h1title }}{% endblock %}
 {% block msg %}
-Password reset instructions have been emailed to <strong><tt>{{ ehandle }}</tt></strong>.
+Password reset instructions have been emailed to <span class="handle">{{ ehandle }}</span>.
 {% if next %}<br><a href="{{ next }}">Continue</a>{% endif %}
 {% endblock %}

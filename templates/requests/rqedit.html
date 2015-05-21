@@ -3,7 +3,7 @@
 {% block h1title %}Whois edit{% endblock %}
 {% block msg %}
 
-<FORM ACTION="{% url 'arf.requests.views.rqedit' r.id %}" METHOD="POST">
+<FORM class="form" ACTION="{% url 'arf.requests.views.rqedit' r.id %}" METHOD="POST">
 {% csrf_token %}
 {% if r.whoisrecord != None %}
 <TEXTAREA NAME="whois" COLS=70 ROWS=7>
@@ -13,6 +13,6 @@
 {% endif %}
 Tags: <INPUT TYPE="text" NAME="tags" size="40" VALUE="{% if r.tags != None %}{{ r.tags }}{% endif %}"/>
 <BR>
-<INPUT TYPE="submit" VALUE="Save All">
+<INPUT class="action" TYPE="submit" VALUE="Save All">
 </FORM>
 {% endblock %}

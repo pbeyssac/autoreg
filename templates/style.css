@@ -21,8 +21,98 @@ div.error {margin-top: .2em; margin-bottom: .2em;}
 .dslist td:nth-child(4) {text-align: right;}
 .dslist td:nth-child(5) {text-align: right;}
 .dslist td:nth-child(6) {text-align: right;}
+.domainlist {margin-bottom: 1em; margin-top: 1em;}
 .domainlist td:first-child {font-family: monospace;}
 .domainlist td {padding-left: .2em; padding-right: .2em;}
+.domainlist tr:nth-child(2n) {background-color:#eef;}
 .whoisdisplay {background-color:#eef;}
 .rqlist {border-spacing: 0 2px;}
 .rqlist td:nth-child(3) {font-family: monospace;}
+
+span.handle {
+  font-weight: bold;
+  font-family: monospace;
+  background-color:#ddf;
+  padding-left: .4em;
+  padding-right: .4em;
+}
+
+span.domain {font-weight: bold; font-family: monospace; background-color:#eef;}
+span.email {font-weight: bold; font-family: monospace; background-color:#eef;}
+.rrtype {font-weight: bold; font-family: monospace; background-color:#eee;}
+
+.contactedits, .domainedits {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  border: dotted 1px;
+}
+.deldom { color: #f66 }
+
+// table alignment for .contactarray forms
+.contactarray {border-collapse: collapse;}
+.contactarray form {display: table-row}
+.contactarray span.descr, .contactarray input[type="submit"] {display: table-cell; margin: .2em;}
+.contactarray span.descr {padding-right: .3em;}
+
+.action, .miniaction {
+  text-decoration: none;
+  color: #6bd;
+  background-color: #fff;
+  font-weight: bold;
+  font-family: sans-serif;
+  border-radius: .5em;
+  border-color: #6bd;
+  border-style: solid;
+  border-spacing: .5em;
+  display: inline;
+}
+.action {
+  padding: .2em;
+  font-size: 120%;
+  border-width: 5px;
+}
+.miniaction {
+  padding: .15em;
+  font-size: 80%;
+  border-width: 3px;
+}
+input.action {padding: 3px}
+
+.action:hover,
+.miniaction:hover {
+    background-color: #6bd;
+    color: #fff
+}
+
+.form label {padding-right: 1em;}
+.form label[for="id_policy"] {font-weight: bold}
+.form span.helptext {display: none}
+.form fieldset {margin-top: 1em; margin-bottom: 1em}
+.form input.action, a.action { margin-top: .2em; margin-bottom: 1em;}
+.addendum {margin-top: 1em;}
+
+div.loginhelp {margin-top: 2em}
+
+@media (min-width: 500px) {
+  // table alignment for fields in .form
+  .form fieldset {border-collapse: collapse;}
+  .form div {display: table-row}
+  .form.input, .form label, .form select, .form area,
+  .form div span.domaincell {display: table-cell}
+
+  .nslist input:firstchild {margin-right: 2em}
+  .nslist input + label {padding-left: 2em;}
+  .form div.addendum {display: block}
+  .addendum input, .addendum label {display: inline}
+}
+@media (max-width: 500px) {
+  .form input, .form label, .form select, .form area {display: block;}
+  div.fieldWrapper {margin-bottom: .3em}
+  .form label:after {content:"\A"; white-space:pre-line}
+  .fqdnip {border: dotted 1px; margin: .1em; padding: .1em}
+  .fqdnip label, .fqdnip input {padding: .1em}
+  .domainlist td:nth-child(2) {display: none}
+  .domainlist td:nth-child(3) {display: none}
+  .domainlist th:nth-child(2) {display: none}
+  .domainlist th:nth-child(3) {display: none}
+}

@@ -1,24 +1,25 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-	"http://www.w3.org/TR/html4/loose.dtd">
-{% block inlinecss %}{% endblock %}
+<!DOCTYPE html>
 <HTML>
 <HEAD>
 <link rel="stylesheet" type="text/css" href="/style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <TITLE>{% block title %}eu.org{% endblock %}</TITLE>
 </HEAD>
 
 <BODY>
 <H1>{% block h1title %}{% endblock %}</H1>
+{% if handle %}
+<A HREF="{% url 'arf.whois.views.domainlist' %}">Domains</A>
+<span class="handle">{{ handle }}</span>:
+<A HREF="{% url 'arf.whois.views.chpass' %}">Password</A>
+<A HREF="{% url 'arf.whois.views.contactchange' %}">Information</A>
+<A HREF="{% url 'arf.whois.views.logout' %}">Logout</A>
+{% else %}
+<A HREF="{% url 'arf.whois.views.domainlist' %}">Login</A>
+{% endif %}
+<HR>
 {% block msg %}{% endblock %}
 {% block form %}{% endblock %}
 {% block content %}{% endblock %}
-<HR>
-{% if handle %}Logged-in as <strong>{{ handle }}</strong><br>{% endif %}
-<A HREF="{% url 'arf.whois.views.index' %}">Home</A>
-<A HREF="{% url 'arf.whois.views.chpass' %}">Change password</A>
-<A HREF="{% url 'arf.whois.views.contactchange' %}">Change information</A>
-<A HREF="{% url 'arf.whois.views.domainlist' %}">Domains</A>
-<A HREF="{% url 'arf.dns.views.domainns' %}">New Domain</A>
-<A HREF="{% url 'arf.whois.views.logout' %}">Logout</A>
 </BODY>
 </HTML>

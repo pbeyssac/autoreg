@@ -4,12 +4,11 @@
 {% block msg %}{% if msg %}{{ msg }}
 {% endif %}{% endblock %}
 {% block form %}
-Contact handle: <strong>{{ handle }}</strong><br>
-<FORM ACTION="{{ posturi }}" METHOD="POST">
+<FORM class="form" ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
 <TABLE>
 {{ form }}
 </TABLE>
-<INPUT TYPE="submit" NAME="change" VALUE="Change Password">
+<INPUT class="action" TYPE="submit" NAME="change" VALUE="Change Password">
 </FORM>
 {% endblock %}

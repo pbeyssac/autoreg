@@ -4,13 +4,13 @@
 {% block msg %}
 Please check that the following is correct, then press the <strong>Validate</strong> button.
 <hr>
-Contact handle: <strong>{{ handle }}</strong><br>
-Contact email: <strong>{{ email }}</strong><br>
+Contact handle: <span class="handle">{{ handle }}</span><br>
+Contact email: <span class="email">{{ email }}</span><br>
 {% endblock %}
 {% block form %}
 <FORM ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
 <INPUT TYPE="hidden" NAME="valtoken" VALUE="{{ valtoken }}">
-<INPUT TYPE="submit" NAME="submit" VALUE="Validate">
+<INPUT class="action" TYPE="submit" NAME="submit" VALUE="Validate">
 </FORM>
 {% endblock %}

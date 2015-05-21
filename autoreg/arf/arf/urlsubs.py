@@ -3,13 +3,12 @@
 from django.conf.urls import patterns, include
 
 urlpatterns = patterns('autoreg.arf.whois.views',
-    (r'^$', 'index'),
+    (r'^$', 'domainlist'),
     (r'^login/$', 'login'),
     (r'^logout/$', 'logout'),
     (r'^contact/change/$', 'contactchange'),
     (r'^contact/changemail/$', 'changemail'),
     (r'^contact/chpass/$', 'chpass'),
-    (r'^contact/domains/$', 'domainlist'),
     (r'^domain/edit/(?P<fqdn>[A-Z0-9\.-]+)/$', 'domainedit'),
     (r'^domain/edit/confirm/(?P<fqdn>[A-Z0-9\.-]+)/$', 'domaineditconfirm'),
     (r'^domain/del/(?P<fqdn>[a-z0-9\.-]+)/$', 'domaindelete'),

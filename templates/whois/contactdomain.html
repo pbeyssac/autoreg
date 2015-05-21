@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 {% block h1title %}{{ h1title }}{% endblock %}
-{% block msg %}
+{% block form %}
 {% for h in handles %}
 <a href="{% url 'arf.whois.views.makeresettoken' h %}">My handle is {{ h }}{{ suffix }}</a>.<BR>
 {% endfor %}

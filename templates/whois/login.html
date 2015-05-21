@@ -1,24 +1,30 @@
 {% extends "base.html" %}
-{% block title %}Contact Login{% endblock %}
-{% block h1title %}Contact Login{% endblock %}
+{% block title %}EU.org{% endblock %}
+{% block h1title %}EU.org{% endblock %}
 {% block msg %}{% if msg %}{{ msg }}
 {% endif %}{% endblock %}
 {% block form %}
-<FORM ACTION="{{ posturi }}" METHOD="POST">
+<FORM class="form" id="id_loginform" ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
-<TABLE>
-{{ form }}
-</TABLE>
+<div>
+<label for="id_handle">Handle</label>
+<input id="id_handle" maxlength="15" name="handle" type="text" value="-FREE" />
+<span class="helptext">Your handle</span>
+</div>
+<div>
+<label for="id_password">Password</label><input id="id_password" maxlength="30" name="password" type="password" />
+<span class="helptext">Your password</span>
+</div>
 {% if next %}<INPUT TYPE="hidden" NAME="next" VALUE="{{ next }}">
 {% endif %}
-<INPUT TYPE="submit" NAME="login" VALUE="Login">
+<INPUT class="action" TYPE="submit" NAME="login" VALUE="Login">
 </FORM>
-<br>
+<a class="action" href="{% url 'arf.whois.views.contactcreate' %}"><span>Register</span></a>
+<div class="loginhelp">
 <strong>You can't remember the contact handle or password?</strong>
 <ul>
 <li>If you forgot your password or never had one, <a href="{% url 'arf.whois.views.makeresettoken' %}">set a new password here</a>.
 <li>If you remember your domain name, you can <a href="{% url 'arf.whois.views.contactbydomain' %}">find your contact handle</a>.
-<li>If you have no contact record, <a href="{% url 'arf.whois.views.contactcreate' %}">create one here</a>.
 </ul>
-You can import the <a href="https://www.cacert.org/index.php?id=3">CACert Root Certificate</a>, with which the EU.org site certificate is signed, (<a href="https://www.cacert.org/certs/root.crt">direct link for PEM format</a>) to avoid security exceptions/warnings in your browser.
+</div>
 {% endblock %}
