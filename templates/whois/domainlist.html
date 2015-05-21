@@ -7,7 +7,7 @@
 <tr><th>Domain</th><th>Created</th><th>Updated</th><th>DNSSEC</th><th>Flags</th></tr>
 {% for dds in domds %}
 {% if dds.5 and dds.6 %}<tr class="deldom">{% else %}<tr>{% endif %}
-<td><a href="{% url 'arf.whois.views.domainedit' dds.0 %}">{{ dds.0 }}</a>
+<td><a href="{% url 'arf.whois.views.domainedit' dds.0.lower %}">{{ dds.0 }}</a>
 <td>{{ dds.3|date:"o-m-d H:i" }}
 <td>{{ dds.4|date:"o-m-d H:i" }}
 <td>
@@ -18,7 +18,7 @@
  Unavailable
 {% endif %}
 <td>{% if dds.5 and dds.6 %}deleted{% endif %}
-<td><A class="miniaction" HREF="{% url 'arf.whois.views.domainedit' dds.0 %}">►</A>
+<td><A class="miniaction" HREF="{% url 'arf.whois.views.domainedit' dds.0.lower %}">►</A>
 {% endfor %}</table>
 {% if next %}<a href="{{ next }}">Continue</a>{% endif %}
 {% endblock %}

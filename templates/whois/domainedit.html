@@ -14,8 +14,8 @@ Created on: {{ whoisdomain.created_on|date:"o-m-d H:i" }}
 <strong>Edit</strong>
 <table>
 <tr>
-<td><A class="miniaction" HREF="{% url 'arf.whois.views.contactchange' whoisdomain.fqdn %}">Registrant</A>
-<td><A class="miniaction" HREF="{% url 'arf.dns.views.domainns' whoisdomain %}">Nameservers</a>
+<td><A class="miniaction" HREF="{% url 'arf.whois.views.contactchange' whoisdomain.fqdn.lower %}">Registrant</A>
+<td><A class="miniaction" HREF="{% url 'arf.dns.views.domainns' whoisdomain.fqdn.lower %}">Nameservers</a>
 <td>{% if has_ns and can_ds %}<A class="miniaction" HREF="{% url 'arf.dns.views.domainds' whoisdomain.fqdn.lower %}">DNSSEC</A>{% endif %}
 <td>{% if registry_hold and end_grace_period %}
 <form action="{% url 'arf.whois.views.domainundelete' whoisdomain.fqdn.lower %}" method="POST">

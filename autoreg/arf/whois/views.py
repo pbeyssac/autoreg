@@ -506,6 +506,9 @@ def contactchange(request, registrantdomain=None):
   """
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+  if registrantdomain and registrantdomain != registrantdomain.lower():
+    return HttpResponseRedirect(reverse(contactchange,
+                                        args=[registrantdomain.lower()]))
   handle = request.user.username
   if registrantdomain:
     # check handle is authorized on domain
@@ -513,7 +516,7 @@ def contactchange(request, registrantdomain=None):
                                     handle + HANDLESUFFIX, registrantdomain) \
      and not admin_login(connection.cursor(), request.user.username):
       return HttpResponseForbidden("Unauthorized")
-    dom = Whoisdomains.objects.get(fqdn=registrantdomain)
+    dom = Whoisdomains.objects.get(fqdn=registrantdomain.upper())
     cl = dom.domaincontact_set.filter(contact_type__name='registrant')
     if len(cl) != 1:
       raise SuspiciousOperation
@@ -671,6 +674,8 @@ def domaineditconfirm(request, fqdn):
   """Request confirmation for self-deletion of a contact"""
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+  if fqdn != fqdn.lower():
+    return HttpResponseRedirect(reverse(domaineditconfirm, args=[fqdn.lower()]))
   nexturi = reverse(domainedit, args=[fqdn])
   vars = {'fqdn': fqdn, 'handle': suffixadd(request.user.username),
           'posturi': nexturi}
@@ -692,6 +697,9 @@ def domainedit(request, fqdn):
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   handle = request.user.username
+
+  if fqdn != fqdn.lower():
+    return HttpResponseRedirect(reverse(domainedit, args=[fqdn.lower()]))
 
   f = fqdn.upper()
   try:
@@ -777,7 +785,7 @@ def domainedit(request, fqdn):
     if ct in typelist:
       cthandle = c.contact.handle
       if cthandle == handle:
-        posturi = reverse(domaineditconfirm, args=[f])
+        posturi = reverse(domaineditconfirm, args=[f.lower()])
       else:
         posturi = request.path
       formlist.append({'contact_type': ct,
@@ -803,7 +811,7 @@ def domaindelete(request, fqdn):
   if not request.user.is_authenticated():
     raise PermissionDenied
   if fqdn != fqdn.lower():
-    raise PermissionDenied
+    return HttpResponseRedirect(reverse(domaindelete, args=[fqdn.lower()]))
   if not check_handle_domain_auth(connection.cursor(),
                                   request.user.username, fqdn):
     return HttpResponseForbidden("Unauthorized")
@@ -833,7 +841,7 @@ def domaindelete(request, fqdn):
     vars = RequestContext(request, {'msg': msg})
     return render_to_response('whois/msgnext.html', vars)
 
-  return HttpResponseRedirect(reverse(domainlist))
+  return HttpResponseRedirect(reverse(domainedit, args=[fqdn.lower()]))
 
 @cache_control(private=True)
 def domainundelete(request, fqdn):
@@ -853,7 +861,7 @@ def domainundelete(request, fqdn):
 
   dd.undelete(fqdn, None)
 
-  return HttpResponseRedirect(reverse(domainlist))
+  return HttpResponseRedirect(reverse(domainedit, args=[fqdn.upper()]))
 
 def logout(request):
   """Logout page"""
