@@ -786,6 +786,7 @@ def domainedit(request, fqdn):
   vars = {'whoisdomain': dom, 'domaincontact_list': cl,
           'msg': msg,
           'formlist': formlist,
+          'handle': suffixadd(handle),
           'whoisdisplay': unicode(dbdom),
           'addform': {'posturi': request.path,
                       'domcontact_form': domcontact_form()}}

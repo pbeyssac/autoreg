@@ -140,6 +140,7 @@ def domainds(request, fqdn):
                                   request.user.username, fqdn) \
       and not admin_login(connection.cursor(), request.user.username):
     return HttpResponseForbidden("Unauthorized")
+  handle = request.user.username.upper()
   verbose = False
 
   dbh = psycopg2.connect(autoreg.conf.dbstring)
@@ -222,6 +223,7 @@ def domainds(request, fqdn):
 
   vars = RequestContext(request,
      { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
+       'handle': suffixadd(handle),
        'verbose': verbose,
        'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr })
   return render_to_response('dns/dsedit.html', vars)
@@ -378,6 +380,7 @@ def domainns(request, fqdn=None):
        'fqdn': fqdn or '', 'rrlist': rrlist,
        'th': th, 'ah': ah,
        'errors': errors,
+       'handle': suffixadd(handle),
        'form': form,
        'nsiplist': nsiplist })
   return render_to_response('dns/nsedit.html', vars)
