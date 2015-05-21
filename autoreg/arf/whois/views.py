@@ -323,6 +323,10 @@ def resetpass2(request, handle):
 
 def contactcreate(request):
   """Contact creation page"""
+  if request.user.is_authenticated():
+    handle = request.user.username
+  else:
+    handle = None
   p_errors = []
   if request.method == "GET":
     form = contact_form()
@@ -365,24 +369,25 @@ def contactcreate(request):
       if p.from_ripe(d):
         p.insert()
         valtoken = _token_set(p.cid, "contactval", ttl=VAL_TOKEN_TTL)
-        handle = suffixstrip(p.gethandle())
+        ehandle = suffixstrip(p.gethandle())
         if not render_to_mail('whois/contactcreate.mail',
                                {'urlbase': URLBASE,
-                                'handleshort': handle.upper(),
+                                'handleshort': ehandle.upper(),
                                 'valtoken': valtoken,
                                 'whoisdata': p.__str__(),
                                 'from': FROMADDR, 'to': d['em'][0],
-                                'handle': suffixadd(handle)},
+                                'handle': suffixadd(ehandle)},
                                FROMADDR, [d['em'][0]]):
           vars = RequestContext(request,
            {'msg': "Sorry, error while sending mail. Please try again later."})
           return render_to_response('whois/msgnext.html', vars)
         vars = RequestContext(request,
-               {'msg': "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(handle), d['em'][0])})
+               {'msg': "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(ehandle), d['em'][0])})
         return render_to_response('whois/msgnext.html', vars)
       # else: fall through
   vars = RequestContext(request,
                         {'form': form, 'posturi': request.path,
+                         'handle': suffixadd(handle) if handle else None,
                          'p_errors': p_errors})
   return render_to_response('whois/contactcreate.html', vars)
 
