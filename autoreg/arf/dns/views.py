@@ -140,6 +140,7 @@ def domainds(request, fqdn):
                                   request.user.username, fqdn) \
       and not admin_login(connection.cursor(), request.user.username):
     return HttpResponseForbidden("Unauthorized")
+  verbose = False
 
   dbh = psycopg2.connect(autoreg.conf.dbstring)
   dd = autoreg.dns.db.db(dbh)
@@ -155,13 +156,16 @@ def domainds(request, fqdn):
   nslist = [ rr[3] for rr in dd.queryrr(fqdn, None, '', 'NS') ]
 
   if dsok:
-    # get current DNSKEYs from domain servers
-    # calculate corresponding DS records
-    dsdnskeys = autoreg.dns.dnssec.make_ds_dnskeys_ns(fqdn, nslist)
-    dsserved = []
-    for dslist, dnskey in dsdnskeys:
-      dsserved.extend(dslist)
-    dsserved.sort()
+    if request.method == 'POST' or verbose:
+      # get current DNSKEYs from domain servers
+      # calculate corresponding DS records
+      dsdnskeys = autoreg.dns.dnssec.make_ds_dnskeys_ns(fqdn, nslist)
+      dsserved = []
+      for dslist, dnskey in dsdnskeys:
+        dsserved.extend(dslist)
+      dsserved.sort()
+    else:
+      dsserved = []
 
     # get current DS list in our database
     dscur = dd.queryrr(fqdn, None, '', 'DS')
@@ -218,6 +222,7 @@ def domainds(request, fqdn):
 
   vars = RequestContext(request,
      { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
+       'verbose': verbose,
        'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr })
   return render_to_response('dns/dsedit.html', vars)
 
