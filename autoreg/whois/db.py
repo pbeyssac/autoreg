@@ -231,9 +231,21 @@ def admin_login(dbc, handle, get_email=False):
     return None, None
   return None
 
-def handle_domains_dnssec(dbc, handle):
+def handle_domains_dnssec(dbc, handle, domain=None):
   """Return a list of domains for handle, and their DNSSEC eligibility."""
+  """Each tuple:
+     [0] fqdn
+     [1] has NS records
+     [2] is in a zone allowing DS records
+     [3] created_on
+     [4] updated_on
+     [5] registry_hold
+     [6] end_grace_period
+     [7] has DS records
+  """
   handle = suffixstrip(handle)
+  if domain is not None:
+    domain = domain.upper()
   dbc.execute("SELECT tmp.fqdn, "
               " EXISTS(SELECT 1 FROM rrs"
                 " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label='NS')"
@@ -241,7 +253,10 @@ def handle_domains_dnssec(dbc, handle):
               " EXISTS(SELECT 1 FROM allowed_rr"
                 " WHERE zone_id=zones.id"
                   " AND rrtype_id=(SELECT id FROM rrtypes WHERE label='DS')),"
-              " created_on, updated_on, registry_hold, end_grace_period"
+              " created_on, updated_on, registry_hold, end_grace_period,"
+              " EXISTS(SELECT 1 FROM rrs"
+                " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label='DS')"
+                  " AND domain_id=domains.id AND label='')"
               " FROM"
            " (SELECT DISTINCT"
               " SUBSTRING(fqdn FROM '[A-Z0-9+-]+') AS domain,"
@@ -252,7 +267,8 @@ def handle_domains_dnssec(dbc, handle):
            " AS tmp, domains, zones"
          " WHERE domains.name=tmp.domain"
            " AND domains.zone_id=zones.id"
-           " AND zones.name=tmp.zone", (handle,))
+           " AND (%s is NULL OR %s = fqdn)"
+           " AND zones.name=tmp.zone", (handle, domain, domain))
   return dbc.fetchall()
 
 class _whoisobject(object):
