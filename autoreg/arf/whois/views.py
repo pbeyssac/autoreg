@@ -232,7 +232,7 @@ def contactbydomain(request):
     handles = DomainContact.objects \
                .filter(whoisdomain_id__fqdn=fqdn.upper(),
                        contact_id__email__isnull=False) \
-               .values_list('contact_id__handle', flat=True)
+               .distinct().values_list('contact_id__handle', flat=True)
     vars = RequestContext(request, {'handles': handles,
                                     'suffix': HANDLESUFFIX })
     return render_to_response('whois/contactdomain.html', vars)
