@@ -334,7 +334,7 @@ def _rqexec(rq, out, za, login, email, action, reasonfield):
                           'Sorry, this domain is already allocated',
                           reasonfield)
   elif action == 'accept':
-    ok = models.rq_accept(out, rq, login, email)
+    ok = models.rq_accept(out, rq, login, email, reasonfield)
   else:
     if action == 'delete':
       _rq_remove(rq, 'DelQuiet');

@@ -10,7 +10,10 @@ The following records will be inserted in the zone file:
 
 The following records will be inserted in the WHOIS base:
 {{ whoisrecord }}
+{% if reasonfield %}Additional comment:
 
+{{ reasonfield }}
+{% endif %}
 Please allow about half a day for propagation.
 
 Best Regards,

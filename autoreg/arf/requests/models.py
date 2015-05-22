@@ -53,7 +53,7 @@ def rq_make_id(origin='arf'):
   return ''.join([time.strftime('%Y%m%d%H%M%S'), '-', origin, '-',
                  str(random.getrandbits(16))])
 
-def rq_accept(out, rqid, login, email):
+def rq_accept(out, rqid, login, email, reasonfield=None):
   rl = Requests.objects.filter(id=rqid)
   if rl.count() == 0:
     print(u"Request %s not found" % rqid, file=out)
@@ -98,6 +98,7 @@ def rq_accept(out, rqid, login, email):
 
     print(outwhois.getvalue(), file=out)
     vars = {'rqid': rqid, 'domain': r.fqdn.upper(), 'to': r.email,
+            'reasonfield': reasonfield,
             'whoisrecord': outwhois.getvalue(), 'zonerecord': r.zonerecord}
     if not autoreg.arf.util.render_to_mail("whois/domainnew.mail", vars,
                                            autoreg.conf.FROMADDR, mailto):
