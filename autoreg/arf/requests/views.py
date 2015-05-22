@@ -372,7 +372,7 @@ def rqval(request):
   while 'action' + str(i) in request.POST:
     action = request.POST['action' + str(i)]
     rq = request.POST['rq' + str(i)]
-    reason = request.POST['reason' + str(i)]
+    reason = request.POST['reason' + str(i)].strip()
     print("Processing %s..." % rq, file=out)
 
     with transaction.atomic():
