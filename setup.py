@@ -1,3 +1,5 @@
+#!/usr/local/bin/python
+
 from distutils.core import setup
 
 setup(name='autoreg',
