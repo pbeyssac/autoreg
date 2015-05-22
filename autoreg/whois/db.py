@@ -243,7 +243,8 @@ def handle_domains_dnssec(dbc, handle, domain=None):
      [6] end_grace_period
      [7] has DS records
   """
-  handle = suffixstrip(handle)
+  if handle is not None:
+    handle = suffixstrip(handle)
   if domain is not None:
     domain = domain.upper()
   dbc.execute("SELECT tmp.fqdn, "
@@ -263,12 +264,13 @@ def handle_domains_dnssec(dbc, handle, domain=None):
               " SUBSTRING(fqdn FROM '[A-Z0-9+-]+\.([A-Z0-9+\.-]+)') AS zone,"
               " fqdn FROM whoisdomains, domain_contact, contacts"
               " WHERE whoisdomain_id=whoisdomains.id"
-                " AND contact_id=contacts.id AND contacts.handle=%s)"
+               " AND (%s IS NULL"
+                " OR (contact_id=contacts.id AND contacts.handle=%s)))"
            " AS tmp, domains, zones"
          " WHERE domains.name=tmp.domain"
            " AND domains.zone_id=zones.id"
            " AND (%s is NULL OR %s = fqdn)"
-           " AND zones.name=tmp.zone", (handle, domain, domain))
+           " AND zones.name=tmp.zone", (handle, handle, domain, domain))
   return dbc.fetchall()
 
 class _whoisobject(object):
