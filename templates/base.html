@@ -8,15 +8,24 @@
 
 <BODY>
 <H1>{% block h1title %}{% endblock %}</H1>
+<nav class="main">
 {% if user.is_authenticated %}
 <A HREF="{% url 'arf.whois.views.domainlist' %}">Domains</A>
-<span class="handle">{{ user.username }}-FREE</span>:
-<A HREF="{% url 'arf.whois.views.chpass' %}">Password</A>
-<A HREF="{% url 'arf.whois.views.contactchange' %}">Information</A>
-<A HREF="{% url 'arf.whois.views.logout' %}">Logout</A>
-{% else %}
-<A HREF="{% url 'arf.whois.views.domainlist' %}">Login</A>
+</nav>
+<nav class="profile">
+ <span class="handle">{{ user.username }}-FREE</span>:
+ <A HREF="{% url 'arf.whois.views.chpass' %}">Password</A>
+ <A HREF="{% url 'arf.whois.views.contactchange' %}">Information</A>
+ <A HREF="{% url 'arf.whois.views.logout' %}">Logout</A>
+{% if is_admin %}
+</nav>
+<nav class="admin">
+ <a href="{% url 'arf.requests.views.rqlist' %}">Requests</A>
 {% endif %}
+{% else %}
+ <A HREF="{% url 'arf.whois.views.domainlist' %}">Login</A>
+{% endif %}
+</nav>
 <HR>
 {% block msg %}{% endblock %}
 {% block form %}{% endblock %}

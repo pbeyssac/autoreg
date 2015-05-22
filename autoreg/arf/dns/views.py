@@ -15,11 +15,11 @@ import autoreg.conf
 import autoreg.dns.check
 import autoreg.dns.db
 import autoreg.dns.dnssec
-from autoreg.whois.db import admin_login, check_handle_domain_auth, \
+from autoreg.whois.db import check_handle_domain_auth, \
   suffixadd, suffixstrip, HANDLESUFFIX
 
 from autoreg.arf.requests.models import Requests, rq_make_id
-from autoreg.arf.whois.models import Contacts
+from autoreg.arf.whois.models import Contacts, check_is_admin
 from autoreg.arf.whois.views import registrant_form
 from models import Domains, Rrs
 
@@ -136,9 +136,10 @@ def domainds(request, fqdn):
     return HttpResponseRedirect(reverse(domainds, args=[fqdn.lower()]))
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+  is_admin = check_is_admin(request.user.username)
   if not check_handle_domain_auth(connection.cursor(),
                                   request.user.username, fqdn) \
-      and not admin_login(connection.cursor(), request.user.username):
+      and not is_admin:
     return HttpResponseForbidden("Unauthorized")
   handle = request.user.username.upper()
   verbose = False
@@ -223,7 +224,7 @@ def domainds(request, fqdn):
 
   vars = RequestContext(request,
      { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
-       'verbose': verbose,
+       'verbose': verbose, 'is_admin': is_admin,
        'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr })
   return render_to_response('dns/dsedit.html', vars)
 
@@ -264,9 +265,10 @@ def domainns(request, fqdn=None):
   if not request.user.is_authenticated():
     return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
   handle = request.user.username.upper()
+  is_admin = check_is_admin(request.user.username)
   if fqdn and not check_handle_domain_auth(connection.cursor(),
                                   handle, fqdn) \
-      and not admin_login(connection.cursor(), handle):
+      and not is_admin:
     return HttpResponseForbidden("Unauthorized")
 
   newdomain = (fqdn is None)
@@ -376,6 +378,7 @@ def domainns(request, fqdn=None):
 
   vars = RequestContext(request,
      { 'newdomain': newdomain,
+       'is_admin': is_admin,
        'fqdn': fqdn or '', 'rrlist': rrlist,
        'th': th, 'ah': ah,
        'errors': errors,

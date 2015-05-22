@@ -115,3 +115,16 @@ class Tokens(models.Model):
     args = models.CharField(max_length=200, null=True)
     class Meta:
         db_table = 'arf_tokens'
+
+class Admins(models.Model):
+    id = models.AutoField(primary_key=True)
+    login = models.CharField(max_length=16, unique=True)
+    contact = models.ForeignKey(Contacts)
+    class Meta:
+        db_table = 'admins'
+
+
+def check_is_admin(handle):
+  if not handle:
+    return False
+  return Admins.objects.filter(contact__handle=handle.upper()).exists()

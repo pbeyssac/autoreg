@@ -9,6 +9,7 @@ import sys
 
 import psycopg2
 
+from autoreg.arf.whois.models import check_is_admin
 import autoreg.conf
 import autoreg.dns.db
 from autoreg.whois.db import admin_login, country_from_iso
@@ -171,7 +172,9 @@ def rqedit(request, rqid):
   if not autoreg.zauth.ZAuth(connection.cursor()).checkparent(r.fqdn, login):
     raise PermissionDenied
   if request.method == "GET":
-    vars = RequestContext(request, {'r': r})
+    vars = RequestContext(request,
+                          {'r': r,
+                           'is_admin': check_is_admin(request.user.username)})
     return render_to_response('requests/rqedit.html', vars)
   elif request.method == 'POST':
     whoisrecord = request.POST.get('whois', '').strip('\n')
@@ -203,7 +206,9 @@ def rq(request, rqid):
     raise PermissionDenied
   _rq1(request, r)
   r.suffix = 1
-  vars = RequestContext(request, {'rlist': [r]})
+  vars = RequestContext(request,
+                        {'rlist': [r],
+                         'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqdisplay.html', vars)
   
 def rqdom(request, domain):
@@ -223,7 +228,9 @@ def rqdom(request, domain):
     _rq1(request, r)
     r.suffix = i
     i += 1
-  vars = RequestContext(request, {'rlist': rlist})
+  vars = RequestContext(request,
+                {'rlist': rlist,
+                 'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqdisplay.html', vars)
 
 def rqlistdom(request, domain=None):
@@ -268,7 +275,9 @@ def rqlistemail(request, email):
       continue
     _rq_decorate(r)
 
-  vars = RequestContext(request, {'rlist': rlist, 'email': email})
+  vars = RequestContext(request,
+                {'rlist': rlist, 'email': email,
+                 'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqlistemail.html', vars)
 
 def rqlist(request, page='0'):
@@ -300,7 +309,8 @@ def rqlist(request, page='0'):
 
   v = { 'cpage': page,
         'pages': range(1, npages+1),
-        'rlist': rql }
+        'rlist': rql,
+        'is_admin': check_is_admin(request.user.username)}
   if page != 1:
     v['prev'] = page-1
   if page < npages:
@@ -383,6 +393,8 @@ def rqval(request):
 
     i += 1
 
-  vars = RequestContext(request, {'out': out.getvalue()})
+  vars = RequestContext(request,
+                {'out': out.getvalue(),
+                 'is_admin': check_is_admin(request.user.username)})
   page = render_to_response('requests/rqval.html', vars)
   return page

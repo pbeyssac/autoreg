@@ -12,8 +12,7 @@ import psycopg2
 
 from autoreg.whois.db import HANDLESUFFIX, \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
-  countries_get, country_from_name, \
-  admin_login
+  countries_get, country_from_name
 from autoreg.arf.arf.settings import URIBASE, URLBASE
 from autoreg.arf.util import render_to_mail
 from autoreg.common import domain_delete
@@ -32,7 +31,7 @@ from django.views.decorators.cache import cache_control
 from django.db import connection
 from django.template import RequestContext
 
-from models import Whoisdomains,Contacts,Tokens,DomainContact
+from models import Whoisdomains,Contacts,Tokens,DomainContact,check_is_admin
 
 URILOGIN = URIBASE + 'login/'
 RESET_TOKEN_HOURS_TTL = 24
@@ -222,10 +221,11 @@ def login(request):
     raise SuspiciousOperation
 
 def contactbydomain(request):
+  is_admin = check_is_admin(request.user.username)
   if request.method == "GET":
     f = contactbydomain_form()
     form = f.as_table()
-    vars = RequestContext(request, {'form': form})
+    vars = RequestContext(request, {'form': form, 'is_admin': is_admin})
     return render_to_response('whois/contactdomainform.html', vars)
   elif request.method == "POST":
     fqdn = request.POST.get('domain', '')
@@ -233,7 +233,7 @@ def contactbydomain(request):
                .filter(whoisdomain_id__fqdn=fqdn.upper(),
                        contact_id__email__isnull=False) \
                .distinct().values_list('contact_id__handle', flat=True)
-    vars = RequestContext(request, {'handles': handles,
+    vars = RequestContext(request, {'handles': handles, 'is_admin': is_admin,
                                     'suffix': HANDLESUFFIX })
     return render_to_response('whois/contactdomain.html', vars)
   else:
@@ -327,6 +327,7 @@ def contactcreate(request):
     handle = request.user.username
   else:
     handle = None
+  vars = {'is_admin': check_is_admin(request.user.username)}
   p_errors = []
   if request.method == "GET":
     form = contact_form()
@@ -378,16 +379,16 @@ def contactcreate(request):
                                 'from': FROMADDR, 'to': d['em'][0],
                                 'handle': suffixadd(ehandle)},
                                FROMADDR, [d['em'][0]]):
-          vars = RequestContext(request,
-           {'msg': "Sorry, error while sending mail. Please try again later."})
+          vars['msg'] = "Sorry, error while sending mail. Please try again later."
+          vars = RequestContext(request, vars)
           return render_to_response('whois/msgnext.html', vars)
-        vars = RequestContext(request,
-               {'msg': "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(ehandle), d['em'][0])})
+        vars['msg'] = "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(ehandle), d['em'][0])
+        vars = RequestContext(request, vars)
         return render_to_response('whois/msgnext.html', vars)
       # else: fall through
-  vars = RequestContext(request,
-                        {'form': form, 'posturi': request.path,
-                         'p_errors': p_errors})
+  vars.update({'form': form, 'posturi': request.path,
+               'p_errors': p_errors})
+  vars = RequestContext(request, vars)
   return render_to_response('whois/contactcreate.html', vars)
 
 def contactvalidate(request, handle, valtoken):
@@ -451,7 +452,8 @@ def chpass(request):
   handle = request.user.username
   f = chpass_form()
   form = f.as_table()
-  vars = {'form': form, 'posturi': request.path}
+  vars = {'form': form, 'posturi': request.path,
+          'is_admin': check_is_admin(request.user.username)}
   if request.method == "GET":
     vars = RequestContext(request, vars)
     return render_to_response('whois/chpass.html', vars)
@@ -494,7 +496,8 @@ def domainlist(request):
   domds = handle_domains_dnssec(connection.cursor(), handle)
 
   vars = RequestContext(request,
-           {'posturi': request.path, 'domds': domds})
+           {'posturi': request.path, 'domds': domds,
+            'is_admin': check_is_admin(request.user.username)})
   return render_to_response('whois/domainlist.html', vars)
 
 @cache_control(private=True)
@@ -508,11 +511,13 @@ def contactchange(request, registrantdomain=None):
     return HttpResponseRedirect(reverse(contactchange,
                                         args=[registrantdomain.lower()]))
   handle = request.user.username
+  is_admin = check_is_admin(handle)
+
   if registrantdomain:
     # check handle is authorized on domain
     if not check_handle_domain_auth(connection.cursor(),
                                     handle + HANDLESUFFIX, registrantdomain) \
-     and not admin_login(connection.cursor(), request.user.username):
+     and not is_admin:
       return HttpResponseForbidden("Unauthorized")
     dom = Whoisdomains.objects.get(fqdn=registrantdomain.upper())
     cl = dom.domaincontact_set.filter(contact_type__name='registrant')
@@ -522,7 +527,7 @@ def contactchange(request, registrantdomain=None):
   else:
     ehandle = handle
 
-  vars = {'posturi': request.path}
+  vars = {'posturi': request.path, 'is_admin': is_admin}
   if request.method == "GET":
     c = Contacts.objects.get(handle=ehandle)
     adlist = c.addr.rstrip().split('\n')
@@ -634,7 +639,8 @@ def changemail(request):
   handle = request.user.username
   f = changemail_form()
   form = f.as_table()
-  vars = {'form': form, 'posturi': request.path}
+  vars = {'form': form, 'posturi': request.path,
+          'is_admin': check_is_admin(request.user.username)}
 
   ctl = Contacts.objects.filter(handle=handle)
   if len(ctl) != 1:
@@ -675,7 +681,8 @@ def domaineditconfirm(request, fqdn):
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaineditconfirm, args=[fqdn.lower()]))
   nexturi = reverse(domainedit, args=[fqdn])
-  vars = {'fqdn': fqdn.upper(), 'posturi': nexturi}
+  vars = {'fqdn': fqdn.upper(), 'posturi': nexturi,
+          'is_admin': check_is_admin(request.user.username)}
   contact_type = request.POST.get('contact_type', None)
   handle = request.POST.get('handle', None)
   if request.method == "POST" and contact_type and handle:
@@ -713,9 +720,11 @@ def domainedit(request, fqdn):
   has_ns, has_ds, can_ds = domds[0][1], domds[0][7], domds[0][2]
   registry_hold, end_grace_period = domds[0][5], domds[0][6]
 
+  is_admin = check_is_admin(handle)
+
   # check handle is authorized on domain
   if not check_handle_domain_auth(connection.cursor(), handle + HANDLESUFFIX, f) \
-     and not admin_login(connection.cursor(), request.user.username):
+     and not is_admin:
     return HttpResponseForbidden("Unauthorized")
 
   dbdom = Domain(connection.cursor(), did=dom.id)
@@ -790,6 +799,7 @@ def domainedit(request, fqdn):
                        'posturi': posturi })
 
   vars = {'whoisdomain': dom, 'domaincontact_list': cl,
+          'is_admin': is_admin,
           'msg': msg,
           'formlist': formlist,
           'whoisdisplay': unicode(dbdom),
@@ -834,7 +844,9 @@ def domaindelete(request, fqdn):
       msg = err;
     else:
       msg = 'Sorry, domain deletion failed, please try again later.'
-    vars = RequestContext(request, {'msg': msg})
+    vars = RequestContext(request,
+             {'msg': msg,
+              'is_admin': check_is_admin(request.user.username)})
     return render_to_response('whois/msgnext.html', vars)
 
   return HttpResponseRedirect(reverse(domainedit, args=[fqdn.lower()]))
