@@ -707,7 +707,7 @@ def domainedit(request, fqdn):
     vars = RequestContext(request, {'fqdn': fqdn})
     return render_to_response('whois/domainnotfound.html', vars)
 
-  domds = handle_domains_dnssec(connection.cursor(), handle, fqdn)
+  domds = handle_domains_dnssec(connection.cursor(), None, fqdn)
   if len(domds) != 1:
     raise SuspiciousOperation
   has_ns, has_ds, can_ds = domds[0][1], domds[0][7], domds[0][2]
