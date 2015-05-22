@@ -26,6 +26,9 @@ div.error {margin-top: .2em; margin-bottom: .2em;}
 .domainlist td {padding-left: .2em; padding-right: .2em;}
 .domainlist tr:nth-child(2n) {background-color:#eef;}
 .whoisdisplay {background-color:#eef;}
+.rqaction, .rqcomment {margin-top: 1em;}
+.rqrejectform {margin-top: .5em;}
+.rqaction label {display: block;}
 .rqlist {border-spacing: 0 2px;}
 .rqlist td:nth-child(3) {font-family: monospace;}
 
@@ -119,4 +122,5 @@ div.loginhelp {margin-top: 2em}
   .domainlist td:nth-child(3) {display: none}
   .domainlist th:nth-child(2) {display: none}
   .domainlist th:nth-child(3) {display: none}
+  .rqaction label {font-size: 140%}
 }

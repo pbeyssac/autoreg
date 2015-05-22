@@ -38,25 +38,40 @@ Tags: {% if r.tags != None %}{{ r.tags }}{% endif %}<br>
 Requester: <a href="mailto:{{ r.email }}">{{ r.email }}</a>
 
 <INPUT NAME="rq{{ r.suffix }}" TYPE="hidden" VALUE="{{ r.id }}">
-<div>
-Action: <select name="action{{ r.suffix }}">
 
-<option value="none">None</option>
-<option value="accept">Accept</option>
-
-<option value="rejectdup">Duplicate request</option>
-<option value="rejectbog">Reject: Bogus address</option>
-<option value="rejectful">Reject: no full name</option>
-<option value="rejectnok">Reject: already allocated</option>
-
-<option value="rejectcust">Reject (write reason below)</option>
-<option value="delete">Delete quietly</option>
-
-</select>
+<div class="rqaction">
+<h3>Action</h3>
+  <label for="id_action{{ r.suffix }}_1">
+  <input id="id_action{{ r.suffix }}_1" name="action{{ r.suffix }}" type="radio" value="none">None
+  </label>
+  <label for="id_action{{ r.suffix }}_2">
+  <input id="id_action{{ r.suffix }}_2" name="action{{ r.suffix }}" type="radio" value="accept">Accept
+  </label>
+  <label for="id_action{{ r.suffix }}_3">
+  <input id="id_action{{ r.suffix }}_3" name="action{{ r.suffix }}" type="radio" value="delete">Delete quietly
+  </label>
+  <div class="rqrejectform">Reject:
+   <label for="id_action{{ r.suffix }}_4">
+   <input id="id_action{{ r.suffix }}_4" name="action{{ r.suffix }}" type="radio" value="rejectbog">Bogus address
+   </label>
+   <label for="id_action{{ r.suffix }}_5">
+   <input id="id_action{{ r.suffix }}_5" name="action{{ r.suffix }}" type="radio" value="rejectful">No full name
+   </label>
+   <label for="id_action{{ r.suffix }}_6">
+   <input id="id_action{{ r.suffix }}_6" name="action{{ r.suffix }}" type="radio" value="rejectnok">Already allocated
+   </label>
+   <label for="id_action{{ r.suffix }}_7">
+   <input id="id_action{{ r.suffix }}_7" name="action{{ r.suffix }}" type="radio" value="rejectcust">Other
+   </label>
+  </div>
+ <div class="rqcomment">
+  Optional comment mailed to requester (except for actions None or Delete)
+  <div><TEXTAREA NAME="reason{{ r.suffix }}" ROWS=3 COLS=77></TEXTAREA></div>
+ </div>
 </div>
-Reason:<div><TEXTAREA NAME="reason{{ r.suffix }}" ROWS=3 COLS=77></TEXTAREA></div>
+
 <HR>
 {% endfor %}
-<INPUT TYPE="submit" VALUE="Submit all">
+<INPUT class="action" TYPE="submit" VALUE="Submit all">
 </FORM>
 {% endblock %}
