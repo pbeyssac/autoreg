@@ -4,6 +4,7 @@
 # options:
 #	-r to reload named, if a zone has changed
 #	-c to be quiet if nothing has changed (useful in cron jobs)
+#	-A ignore arguments, update all zones
 
 # Where to find the "access-zone" script
 AZ=/usr/local/autoreg/bin/access-zone
@@ -23,22 +24,30 @@ if [ "$USER" = "" ]; then
 	exit 2
 fi
 
-if [ "$*" = "" ]; then
-	echo "usage: $0 [-c] [-r] zonelist"
-	exit 2
-fi
-
 optr=0
 optc=0
+optA=0
 
-while [ X$1 = X-r -o X$1 = X-c ]; do
+while [ X$1 = X-r -o X$1 = X-c -o X$1 = X-A ]; do
   case "$1" in
   -r) optr=1; shift ;;
   -c) optc=1; shift ;;
+  -A) optA=1; shift ;;
   esac
 done
 
-for i in $*
+if [ "$*" = "" -a ! $optA = 1 ]; then
+	echo "usage: $0 [-c] [-r] [-A | zonelist]"
+	exit 2
+fi
+
+if [ $optA = 1 ]; then
+	ZONELIST=`$AZ -alist`
+else
+	ZONELIST=$*
+fi
+
+for i in `echo $ZONELIST`
 do
 	oldser=`awk <$DEST/$i 'NR>10 {exit 1} $2=="SOA" {print $5; exit 0}'`
 	if [ "$oldser" = "" ]; then
