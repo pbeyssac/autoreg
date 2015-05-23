@@ -590,7 +590,7 @@ class Person(_whoisobject):
         vlist = d[i]
       for j in vlist:
         if i == 'ch':
-          j = str(j[1])
+          j = j[1].strftime("%Y-%m-%d %H:%M:%S")
         elif i == 'nh':
           j = suffixadd(j)
         if j is not None:
