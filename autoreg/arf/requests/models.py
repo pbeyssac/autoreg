@@ -38,18 +38,6 @@ class Requests(models.Model):
         pass
 
 
-class Admins(models.Model):
-    id = models.AutoField(primary_key=True)
-    login = models.CharField(unique=True, max_length=16)
-    contact = models.ForeignKey(Contacts)
-    class Meta:
-        db_table = 'admins'
-    def __str__(self):
-        return self.login
-    class Admin:
-        pass
-
-
 def rq_make_id(origin='arf'):
   return ''.join([time.strftime('%Y%m%d%H%M%S'), '-', origin, '-',
                  str(random.getrandbits(16))])

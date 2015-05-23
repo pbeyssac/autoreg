@@ -116,13 +116,18 @@ class Tokens(models.Model):
     class Meta:
         db_table = 'arf_tokens'
 
+
 class Admins(models.Model):
     id = models.AutoField(primary_key=True)
     login = models.CharField(max_length=16, unique=True)
     contact = models.ForeignKey(Contacts)
     class Meta:
         db_table = 'admins'
-
+        ordering = ['login']
+    class Admin:
+        pass
+    def __str__(self):
+        return self.login
 
 def check_is_admin(handle):
   if not handle:

@@ -2,16 +2,8 @@
 
 from django.db import models
 
-class Admins(models.Model):
-    id = models.IntegerField(primary_key=True)
-    login = models.CharField(unique=True, max_length=16)
-    class Meta:
-        db_table = 'admins'
-        ordering = ['login']
-    class Admin:
-        pass
-    def __str__(self):
-        return self.login
+from autoreg.arf.whois.models import Admins
+
 
 class Zones(models.Model):
     id = models.IntegerField(primary_key=True)
