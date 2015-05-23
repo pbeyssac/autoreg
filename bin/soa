@@ -2,7 +2,7 @@
 # $Id$
 
 # options:
-#	-r to kill -1 named, if a zone has changed
+#	-r to reload named, if a zone has changed
 #	-c to be quiet if nothing has changed (useful in cron jobs)
 
 # Where to find the "access-zone" script
