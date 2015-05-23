@@ -6,7 +6,7 @@ body, tr, a {font-size:12pt;}
 .l3 {background-color:#cfc;}
 .edwhois {clear:both;}
 .formwhois {clear:both;}
-ul.errorlist {margin: 3px 0 0 0; padding: 0;}
+ul.errorlist {margin: 3px 0 0 0; padding: 0; list-style: none;}
 .fieldWrappererror {
   margin: 4px 0 3px 0;
   padding: 4px 0 3px 0;
