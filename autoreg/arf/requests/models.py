@@ -37,6 +37,7 @@ class Requests(models.Model):
     class Admin:
         pass
 
+
 class Admins(models.Model):
     id = models.AutoField(primary_key=True)
     login = models.CharField(unique=True, max_length=16)
