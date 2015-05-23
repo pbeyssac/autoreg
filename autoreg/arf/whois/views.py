@@ -677,7 +677,7 @@ def domaineditconfirm(request, fqdn):
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaineditconfirm, args=[fqdn.lower()]))
   nexturi = reverse(domainedit, args=[fqdn])
-  vars = {'fqdn': fqdn, 'handle': suffixadd(request.user.username),
+  vars = {'fqdn': fqdn.upper(), 'handle': suffixadd(request.user.username),
           'posturi': nexturi}
   contact_type = request.POST.get('contact_type', None)
   handle = request.POST.get('handle', None)
