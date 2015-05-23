@@ -737,7 +737,7 @@ def domainedit(request, fqdn):
         or 'submitd' in request.POST \
         or 'submita' in request.POST:
       contact_type = request.POST['contact_type']
-      chandle = suffixstrip(request.POST['handle'])
+      chandle = suffixstrip(request.POST['handle'].upper())
       ctl = Contacts.objects.filter(handle=chandle)
       if len(ctl) == 0:
         msg = "Contact %s not found" % suffixadd(chandle)
