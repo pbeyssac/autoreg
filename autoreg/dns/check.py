@@ -238,6 +238,9 @@ class MultiResolver(object):
     for ok, msg in self.gen_resolve_ips():
       pass
 
+LEVEL_IP = 1
+LEVEL_SOA = 2
+LEVEL_NS = 3
 
 class SOAChecker(MultiResolver):
   def __init__(self, domain, nslist=[], manualip={}, nat={}):
@@ -245,6 +248,14 @@ class SOAChecker(MultiResolver):
     qsoa = dns.message.make_query(domain+'.', 'SOA')
     qsoa.flags = 0
     self.qsoa = qsoa
+    self.level = LEVEL_NS
+
+  def set_level(self, level):
+    """LEVEL_IP: check FQDNs/IP only
+       LEVEL_SOA: + check SOA
+       LEVAL_NS: + check NS
+    """
+    self.level = level
 
   def getsoa(self, server):
     """Send SOA query to server and wait for reply.
@@ -277,6 +288,15 @@ class SOAChecker(MultiResolver):
   def print_checks(self):
     """Run gen_soa() and gen_ns(), displaying messages as we go."""
     serials = {}
+
+    yield True, ""
+
+    if self.level < LEVEL_SOA:
+      return
+
+    yield True, "---- Checking SOA records for %s" % self.domain
+    yield True, ""
+
     for ok, fqdn, i, r in self.gen_soa():
       if not ok:
         yield None, "SOA from %s at %s: Error: %s" % (fqdn, i, r)
@@ -300,6 +320,12 @@ class SOAChecker(MultiResolver):
 
     yield True, ""
 
+    if self.level < LEVEL_NS:
+      return
+
+    yield True, "---- Checking NS records for %s" % self.domain
+    yield True, ""
+
     for ok, fqdn, i, r in self.gen_ns():
       if not ok:
         yield None, "NS from %s at %s: Error: %s" % (fqdn, i, r)
@@ -308,6 +334,7 @@ class SOAChecker(MultiResolver):
                     ' '.join(r))
       else:
         yield True, "NS from %s at %s: ok" % (fqdn, i)
+    yield True, ""
 
   def main(self, file=None, nsiplist=None, checkglue=True):
     """Main processing to check a list of servers for a given zone.
@@ -381,10 +408,6 @@ class SOAChecker(MultiResolver):
     if self.errs:
       yield None, "%d errors(s)" % self.errs
       return
-
-    yield True, ""
-    yield True, "---- Checking SOA & NS records for %s" % self.domain
-    yield True, ""
 
     for ok, msg in self.print_checks():
       yield True, msg

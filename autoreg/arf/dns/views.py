@@ -106,9 +106,11 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
       yield "\nDone\n"
 
 def _gen_checksoa_log(domain, handle, nsiplist=None, doit=False,
-                      newdomain=False, form=None, dnsdb=None):
+                      newdomain=False, form=None, dnsdb=None,
+                      level=autoreg.dns.check.LEVEL_NS):
   """Same as _gen_checksoa(), and keep a log of the output."""
   soac = autoreg.dns.check.SOAChecker(domain, {}, {})
+  soac.set_level(level)
   rec = []
   dbc = connection.cursor()
   contact = Contacts.objects.get(handle=handle.upper())
@@ -297,6 +299,11 @@ def domainns(request, fqdn=None):
         errors['nsip%d' % n] = e
       nsiplist.append((fp, ip))
 
+    level = request.POST.get('level', '3')
+    if len(level) != 1 or level < '1' or level > '3':
+      raise SuspiciousOperation
+    level = int(level)
+
     if newdomain:
       form = newdomain_form(request.POST)
       fqdn = request.POST.get('fqdn').strip().lower()
@@ -348,7 +355,8 @@ def domainns(request, fqdn=None):
 
       return StreamingHttpResponse(_gen_checksoa_log(fqdn, handle,
                                      nsiplist, doit=True,
-                                     newdomain=newdomain, form=form, dnsdb=dd),
+                                     newdomain=newdomain, form=form, dnsdb=dd,
+                                     level=level),
                                    content_type="text/plain")
 
     # Fall through to GET handling

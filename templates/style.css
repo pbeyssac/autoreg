@@ -32,6 +32,9 @@ div.error {margin-top: .2em; margin-bottom: .2em;}
 .rqlist {border-spacing: 0 2px;}
 .rqlist td:nth-child(3) {font-family: monospace;}
 
+.nschecks {margin-top: 1em; background-color:#fed;}
+.nschecks label {display: block;}
+
 nav.profile, nav.main {display: inline-block}
 nav.profile {background-color: #ddf}
 nav.admin {background-color: #fdd}
@@ -103,7 +106,7 @@ div.loginhelp {margin-top: 2em}
 @media (min-width: 500px) {
   // table alignment for fields in .form
   .form fieldset {border-collapse: collapse;}
-  .form div {display: table-row}
+  .form div.fieldWrapper {display: table-row}
   .form.input, .form label, .form select, .form area,
   .form div span.domaincell {display: table-cell}
 

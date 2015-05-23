@@ -110,6 +110,7 @@ You can change this later in the domain contact interface.<p>
 </div>
 </fieldset>
 <fieldset class="nslist">
+<legend>Name servers</legend>
 
 {%else %}
 {% if rrlist %}
@@ -123,9 +124,21 @@ You can change this later in the domain contact interface.<p>
 <h2>No current DNS records</h2>
 {% endif %}
 <fieldset class="nslist">
+<legend>Name servers</legend>
 <strong>Warning: this will replace any current DNS records, except <span class="rrtype">DS</span> records</strong>
 {% endif %}
-<legend>Name servers</legend>
+<div class="nschecks">
+Check for correctness of:
+  <label for="id_l1">
+  <input id="id_l1" name="level" type="radio" value="1">server names
+  </label>
+  <label for="id_l2">
+  <input id="id_l2" name="level" type="radio" value="2">server names + replies on SOA
+  </label>
+  <label for="id_l3">
+  <input id="id_l3" name="level" type="radio" value="3" checked="checked">server names + replies on SOA + replies on NS (recommended)
+  </label>
+</div>
 
 <p>Fill <em>Name1...NameX</em> with the fully qualified domain names.
 <p>If necessary (i.e. "glue" records) fill <em>IP1...IPX</em> with the IPv4 or IPv6 addresses.
