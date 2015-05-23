@@ -9,7 +9,7 @@ import sys
 
 import psycopg2
 
-from autoreg.arf.whois.models import check_is_admin
+from autoreg.arf.whois.models import check_is_admin, Whoisdomains
 import autoreg.conf
 import autoreg.dns.db
 from autoreg.whois.db import admin_login, country_from_iso
@@ -298,6 +298,8 @@ def rqlist(request, page='0'):
   if page > npages or page <= 0:
     return HttpResponseRedirect(reverse(rqlist, args=[str(npages)]))
 
+  numdom = Whoisdomains.objects.all().count()
+
   z = autoreg.zauth.ZAuth(connection.cursor())
 
   rql = []
@@ -310,6 +312,7 @@ def rqlist(request, page='0'):
   v = { 'cpage': page,
         'pages': range(1, npages+1),
         'rlist': rql,
+        'numdom': numdom,
         'is_admin': check_is_admin(request.user.username)}
   if page != 1:
     v['prev'] = page-1
