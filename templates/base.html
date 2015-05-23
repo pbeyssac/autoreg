@@ -8,9 +8,9 @@
 
 <BODY>
 <H1>{% block h1title %}{% endblock %}</H1>
-{% if handle %}
+{% if user.is_authenticated %}
 <A HREF="{% url 'arf.whois.views.domainlist' %}">Domains</A>
-<span class="handle">{{ handle }}</span>:
+<span class="handle">{{ user.username }}-FREE</span>:
 <A HREF="{% url 'arf.whois.views.chpass' %}">Password</A>
 <A HREF="{% url 'arf.whois.views.contactchange' %}">Information</A>
 <A HREF="{% url 'arf.whois.views.logout' %}">Logout</A>

@@ -223,7 +223,6 @@ def domainds(request, fqdn):
 
   vars = RequestContext(request,
      { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
-       'handle': suffixadd(handle),
        'verbose': verbose,
        'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr })
   return render_to_response('dns/dsedit.html', vars)
@@ -380,7 +379,6 @@ def domainns(request, fqdn=None):
        'fqdn': fqdn or '', 'rrlist': rrlist,
        'th': th, 'ah': ah,
        'errors': errors,
-       'handle': suffixadd(handle),
        'form': form,
        'nsiplist': nsiplist })
   return render_to_response('dns/nsedit.html', vars)

@@ -387,7 +387,6 @@ def contactcreate(request):
       # else: fall through
   vars = RequestContext(request,
                         {'form': form, 'posturi': request.path,
-                         'handle': suffixadd(handle) if handle else None,
                          'p_errors': p_errors})
   return render_to_response('whois/contactcreate.html', vars)
 
@@ -452,7 +451,7 @@ def chpass(request):
   handle = request.user.username
   f = chpass_form()
   form = f.as_table()
-  vars = {'form': form, 'posturi': request.path, 'handle': suffixadd(handle)}
+  vars = {'form': form, 'posturi': request.path}
   if request.method == "GET":
     vars = RequestContext(request, vars)
     return render_to_response('whois/chpass.html', vars)
@@ -481,7 +480,7 @@ def chpass(request):
     ct.passwd = _pwcrypt(pass1)
     ct.save()
     del vars['form']
-    vars['ehandle'] = vars['handle']
+    vars['ehandle'] = suffixadd(handle)
     vars = RequestContext(request, vars)
     return render_to_response('whois/passchanged.html', vars)
 
@@ -495,8 +494,7 @@ def domainlist(request):
   domds = handle_domains_dnssec(connection.cursor(), handle)
 
   vars = RequestContext(request,
-           {'posturi': request.path, 'handle': suffixadd(handle),
-            'domds': domds})
+           {'posturi': request.path, 'domds': domds})
   return render_to_response('whois/domainlist.html', vars)
 
 @cache_control(private=True)
@@ -524,7 +522,7 @@ def contactchange(request, registrantdomain=None):
   else:
     ehandle = handle
 
-  vars = {'posturi': request.path, 'handle': suffixadd(handle)}
+  vars = {'posturi': request.path}
   if request.method == "GET":
     c = Contacts.objects.get(handle=ehandle)
     adlist = c.addr.rstrip().split('\n')
@@ -636,7 +634,7 @@ def changemail(request):
   handle = request.user.username
   f = changemail_form()
   form = f.as_table()
-  vars = {'form': form, 'posturi': request.path, 'handle': suffixadd(handle)}
+  vars = {'form': form, 'posturi': request.path}
 
   ctl = Contacts.objects.filter(handle=handle)
   if len(ctl) != 1:
@@ -677,12 +675,11 @@ def domaineditconfirm(request, fqdn):
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaineditconfirm, args=[fqdn.lower()]))
   nexturi = reverse(domainedit, args=[fqdn])
-  vars = {'fqdn': fqdn.upper(), 'handle': suffixadd(request.user.username),
-          'posturi': nexturi}
+  vars = {'fqdn': fqdn.upper(), 'posturi': nexturi}
   contact_type = request.POST.get('contact_type', None)
   handle = request.POST.get('handle', None)
   if request.method == "POST" and contact_type and handle:
-    vars.update({'contact_type': contact_type, 'handle': handle})
+    vars.update({'contact_type': contact_type})
     vars = RequestContext(request, vars)
     return render_to_response('whois/domaineditconfirm.html', vars)
   else:
@@ -795,7 +792,6 @@ def domainedit(request, fqdn):
   vars = {'whoisdomain': dom, 'domaincontact_list': cl,
           'msg': msg,
           'formlist': formlist,
-          'handle': suffixadd(handle),
           'whoisdisplay': unicode(dbdom),
           'has_ns': has_ns, 'has_ds': has_ds, 'can_ds': can_ds,
           'registry_hold': registry_hold, 'end_grace_period': end_grace_period,
