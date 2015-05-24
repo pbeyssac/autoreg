@@ -1,0 +1,58 @@
+#!/bin/sh
+
+ZONE="$1"
+NSEC3SEED=fadaf001
+PARENTZONE=`echo $ZONE | cut -d. -f2-`
+
+# Where to find the "access-zone" script
+AZ=/usr/local/autoreg/bin/access-zone
+# "soa" script
+SOA=/usr/local/autoreg/bin/soa
+# The directory where "master" zone files are located
+DEST=/etc/namedb/autoreg
+# The local file where zones are configured
+NSCONF=/etc/namedb/zones-autoreg.conf
+# server reload/reconfig command
+RNDC=/usr/local/sbin/rndc
+RNDCKEY=/etc/namedb/rndc-autoreg.key
+# DNS Zone signing
+SIGNZONE=/usr/local/sbin/dnssec-signzone
+KEYGEN=/usr/local/sbin/dnssec-keygen
+
+if ! grep "file.*${ZONE}.DNSSEC" $NSCONF; then
+  echo "Please edit $NSCONF to use ${ZONE}.DNSSEC"
+  echo "Don't reload the configuration!"
+  exit 1
+fi
+
+if [ `whoami` != 'autoreg' ]; then
+  echo "This must be run as user 'autoreg'".
+  exit 1
+fi
+
+cd ${DEST}
+touch ${ZONE}.signed
+
+cat >> ${ZONE}.DNSSEC << EOF
+\$INCLUDE ${DEST}/${ZONE}
+\$INCLUDE ${DEST}/${ZONE}.signed
+EOF
+
+${KEYGEN} -3 -n ZONE -b 2048 -a RSASHA256 ${ZONE}
+${KEYGEN} -3 -n ZONE -f KSK -b 4096 -a RSASHA256 ${ZONE}
+${SIGNZONE} -DS -3 ${NSEC3SEED} -o ${ZONE} -f ${ZONE}.signed ${ZONE}.DNSSEC
+${AZ} -asoa -uautoreg -s ${ZONE}
+
+if ! ${SOA} ${ZONE}; then
+  echo ${SOA} exited with non-zero status. Aborting.
+  exit 1
+fi
+
+${RNDC} -k ${RNDCKEY} reconfig
+
+echo "INSERT INTO allowed_rr VALUES ((SELECT id FROM zones WHERE name='${ZONE}'),(SELECT id FROM rrtypes WHERE label='DS'));" | psql eu.org
+
+echo "After all servers are up to date, run this:"
+echo "${AZ} -uautoreg -aaddrr -i -z ${PARENTZONE} ${ZONE} << EOF"
+cat /etc/namedb/autoreg/dsset-`echo ${ZONE} | tr A-Z a-z`. | grep ' DS .* 8 2 ' | sed 's/	IN DS /	600 IN DS /'
+echo EOF

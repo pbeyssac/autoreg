@@ -115,7 +115,7 @@ if [ "$mod" != "" ]; then
 	else
 		if [ $optc = 0 ]; then echo "now:" echo "$NDC reload"; fi
 	fi
-	exit 1
+	exit 0
 else
 	if [ $optc = 0 ]; then echo no change.; fi
 	exit 0
