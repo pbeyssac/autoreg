@@ -4,6 +4,9 @@ import datetime
 
 from django.db import models
 
+from autoreg.whois.db import country_from_name
+
+
 class Whoisdomains(models.Model):
     id = models.AutoField(primary_key=True)
     fqdn = models.CharField(max_length=255, unique=True)
@@ -48,6 +51,32 @@ class Contacts(models.Model):
         ordering = ['handle']
     def __str__(self):
         return self.name or ''
+    def initial_form(self):
+        """Return dictionary for initial fields of contact forms"""
+        adlist = self.addr.rstrip().split('\n')
+        initial = { 'pn1': self.name,
+                    'em1': self.email,
+                    'ph1': self.phone,
+                    'fx1': self.fax,
+                    'private': self.private }
+        n = 1
+        lastk = None
+        for i in adlist:
+          lastk = 'ad%d' % n
+          initial[lastk] = i
+          n += 1
+        if self.country is not None:
+          initial['ad6'] = self.country
+        elif lastk and lastk != 'ad6':
+          co = country_from_name(initial[lastk])
+          if co:
+            # For "legacy" contact records, if the last address line
+            # looks like a country, convert it to an ISO country code
+            # and move it to the 'ad6' field in the form.
+            initial['ad6'] = co
+            del initial[lastk]
+        return initial
+
     class Admin:
         search_fields = ['handle']
         list_display = ('handle', 'name')

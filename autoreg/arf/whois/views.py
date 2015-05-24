@@ -12,7 +12,7 @@ import psycopg2
 
 from autoreg.whois.db import HANDLESUFFIX, \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
-  countries_get, country_from_name
+  countries_get
 from autoreg.arf.arf.settings import URIBASE, URLBASE
 from autoreg.arf.util import render_to_mail
 from autoreg.common import domain_delete
@@ -530,28 +530,7 @@ def contactchange(request, registrantdomain=None):
   vars = {'posturi': request.path, 'is_admin': is_admin}
   if request.method == "GET":
     c = Contacts.objects.get(handle=ehandle)
-    adlist = c.addr.rstrip().split('\n')
-    initial = { 'pn1': c.name,
-                'em1': c.email,
-                'ph1': c.phone,
-                'fx1': c.fax,
-                'private': c.private }
-    n = 1
-    lastk = None
-    for i in adlist:
-      lastk = 'ad%d' % n
-      initial[lastk] = i
-      n += 1
-    if c.country is not None:
-      initial['ad6'] = c.country
-    elif lastk and lastk != 'ad6':
-      co = country_from_name(initial[lastk])
-      if co:
-        # For "legacy" contact records, if the last address line
-        # looks like a country, convert it to an ISO country code
-        # and move it to the 'ad6' field in the form.
-        initial['ad6'] = co
-        del initial[lastk]
+    initial = c.initial_form()
     if registrantdomain:
       vars['domain'] = registrantdomain.upper()
       vars['form'] = registrant_form(initial=initial)

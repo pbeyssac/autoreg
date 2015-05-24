@@ -371,8 +371,8 @@ def domainns(request, fqdn=None):
     if request.method == "GET":
       nsiplist = []
       contact = Contacts.objects.get(handle=handle)
-      # be nice: default country is set to current contact
-      form = newdomain_form(initial={'ad6': contact.country})
+      # be nice: pre-fill registrant with current contact details
+      form = newdomain_form(initial=contact.initial_form())
       ah = suffixadd(handle)
       th = ah
   else:
