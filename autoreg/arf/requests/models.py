@@ -38,6 +38,18 @@ class Requests(models.Model):
         pass
 
 
+class RequestsLog(models.Model):
+    id = models.AutoField(primary_key=True)
+    fqdn = models.CharField(max_length=255)
+    contact = models.ForeignKey(Contacts)
+    date = models.DateTimeField()
+    output = models.CharField(max_length=20000)
+    errors = models.IntegerField()
+    warnings = models.IntegerField()
+    class Meta:
+        db_table = 'requests_log'
+
+
 def rq_make_id(origin='arf'):
   return ''.join([time.strftime('%Y%m%d%H%M%S'), '-', origin, '-',
                  str(random.getrandbits(16))])

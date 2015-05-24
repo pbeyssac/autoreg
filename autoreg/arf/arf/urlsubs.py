@@ -34,6 +34,8 @@ urlpatterns += patterns('autoreg.arf.requests.views',
     (r'^rd$', 'rqlistdom'),
     (r'^rd/(?P<domain>[a-z0-9\.A-Z-]+)$', 'rqlistdom'),
     (r'^re/(?P<email>.+@[a-zA-Z0-9\.-]+)$', 'rqlistemail'),
+    (r'^rl$', 'rqloglist'),
+    (r'^rl/(?P<id>[0-9]+)$', 'rqlogdisplay'),
     (r'^val$', 'rqval'),
 )
 urlpatterns += patterns('autoreg.arf.dns.views',

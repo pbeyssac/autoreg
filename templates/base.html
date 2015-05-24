@@ -21,6 +21,7 @@
 </nav>
 <nav class="admin">
  <a href="{% url 'arf.requests.views.rqlist' %}">Requests</A>
+ <a href="{% url 'arf.requests.views.rqloglist' %}">Log</A>
 {%if numdom %}{{ numdom }} domains{% endif %}
 {% endif %}
 {% else %}

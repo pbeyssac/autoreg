@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{% endblock %}
+{% block h1title %}{% endblock %}
+{% block form %}
+<div class="rqlog">
+Date: {{ rql.date|date:"o-m-d H:i" }} FQDN: {{ rql.fqdn }} Errors: {{ rql.errors }} Warnings: {{ rql.warnings }}
+<pre>
+{{ rql.output }}
+</pre>
+</div>
+{% endblock %}

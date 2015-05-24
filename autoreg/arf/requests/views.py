@@ -401,3 +401,27 @@ def rqval(request):
                  'is_admin': check_is_admin(request.user.username)})
   page = render_to_response('requests/rqval.html', vars)
   return page
+
+def rqloglist(request):
+  if request.method != "GET":
+    raise SuspiciousOperation
+  if not request.user.is_authenticated():
+    raise PermissionDenied
+  is_admin = check_is_admin(request.user.username)
+  if not is_admin:
+    raise PermissionDenied
+  rqlog = models.RequestsLog.objects.all().order_by('-date')[:50]
+  vars = RequestContext(request, {'is_admin': is_admin, 'rqlog': rqlog})
+  return render_to_response('requests/rqloglist.html', vars)
+
+def rqlogdisplay(request, id):
+  if request.method != "GET":
+    raise SuspiciousOperation
+  if not request.user.is_authenticated():
+    raise PermissionDenied
+  is_admin = check_is_admin(request.user.username)
+  if not is_admin:
+    raise PermissionDenied
+  rql = models.RequestsLog.objects.get(id=id)
+  vars = RequestContext(request, {'is_admin': is_admin, 'rql': rql})
+  return render_to_response('requests/rqlogdisplay.html', vars)
