@@ -73,12 +73,13 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
         a = form.cleaned_data.get(i, None)
         if a is not None and a != '':
           ad.append('address: ' + a)
-      private = form.cleaned_data['private']
 
       whoisrecord = '\n'.join(["domain:  %s" % domain.upper(),
                                '\n'.join(ad),
                                "admin-c: " + suffixadd(contact.handle),
                                "tech-c:  " + form.cleaned_data['th']])
+      if form.cleaned_data['private']:
+        whoisrecord += "\nprivate: true"
       zonerecord = rec
       rql = Requests.objects.filter(action='N', contact_id=contact.id,
                                     fqdn=domain.upper(), state='Open')
@@ -90,7 +91,7 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
                      email=contact.email, fqdn=domain.upper(), state='Open',
                      contact=contact,
                      zonerecord=zonerecord,
-                     whoisrecord=whoisrecord, private=private)
+                     whoisrecord=whoisrecord)
       req.save()
       yield "Saved as request " + rqid + "\n"
     else:

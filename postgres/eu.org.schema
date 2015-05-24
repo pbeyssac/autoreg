@@ -403,7 +403,6 @@ CREATE TABLE requests (
 	whoisrecord VARCHAR(2000),
 	tags VARCHAR(50),
 	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL,
-	private BOOLEAN DEFAULT FALSE	-- for registrant, not yet implemented
 );
 CREATE INDEX requests_fqdn_index ON requests(fqdn);
 
@@ -419,7 +418,6 @@ CREATE TABLE requests_hist (
 	tags VARCHAR(50),
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
 	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL,
-	private BOOLEAN DEFAULT FALSE	-- for registrant, not yet implemented
 );
 
 CREATE TABLE requests_log (
@@ -440,11 +438,11 @@ CREATE OR REPLACE FUNCTION trig_del_requests()
 	INSERT INTO requests_hist (
 		id, email, action, fqdn, language,
 		state, zonerecord, whoisrecord, tags,
-		contact_id, private)
+		contact_id)
 	    VALUES (
 		OLD.id, OLD.email, OLD.action, OLD.fqdn, OLD.language,
 		OLD.state, OLD.zonerecord, OLD.whoisrecord, OLD.tags,
-		OLD.contact_id, OLD.private);
+		OLD.contact_id);
 	RETURN OLD;
     END;
 $trig_del_requests$ LANGUAGE plpgsql;

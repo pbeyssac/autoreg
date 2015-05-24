@@ -150,13 +150,13 @@ ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc', 'zone-c': 'zc',
               'notify': 'ny', 'mnt-by': 'mb', 'source': 'so',
               'upd-to': 'dt', 'auth': 'at', 'mntner': 'mt',
               'domain': 'dn', 'ext-hdl': 'eh',
-              'delete': 'delete' }
+              'delete': 'delete', 'private': 'pr' }
 ripe_stol = dict((v, k) for k, v in ripe_ltos.iteritems())
 
-domainattrs = {'dn': (1, 1), 'ad': (0,7),
+domainattrs = {'dn': (1, 1), 'ad': (0,7), 'pr': (0,1),
                'tc': (0,3), 'ac': (1,3), 'zc': (0,3), 'ch': (1,1) }
 
-registrantattrs = {'pn': (0,1), 'ad': (0,6),
+registrantattrs = {'pn': (0,1), 'ad': (0,6), 'pr': (0,1),
                    'co': (0,1), 'cn': (0, 1),
                    'ph': (0,1), 'fx': (0,1),
                    'em': (0,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
@@ -168,7 +168,8 @@ personattrs = {'pn': (1,1), 'ad': (0,6),
                # the ISO 3166 country names.
                'co': (0,1), 'cn': (0,1),
                'ph': (0,1), 'fx': (0,1),
-               'em': (1,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1)}
+               'em': (1,1), 'ch': (1,1), 'nh': (0,1), 'eh': (0, 1),
+               'pr': (0,1)}
 
 contact_map = { 'technical': 'tc', 'administrative': 'ac', 'zone': 'zc',
                 'registrant': 'rc' }
@@ -288,7 +289,8 @@ class _whoisobject(object):
     'dn': [255, re.compile('^[A-Z0-9][A-Z0-9-]*(?:\.[A-Z0-9][A-Z0-9-]*)*'
                            '\.[A-Z]+$',
                            re.IGNORECASE|re.MULTILINE)],
-    'ad': [80, re.compile('^[^\x00-\x1f]*$')]
+    'ad': [80, re.compile('^[^\x00-\x1f]*$')],
+    'pr': [10, re.compile('^(?:true|yes)$', re.IGNORECASE)]
     }
   
   def check(self, o, attrlist):
@@ -338,11 +340,18 @@ class _whoisobject(object):
         for l in o[k]:
           if l is None:
             continue
+          if not isinstance(l, unicode):
+            continue
           if len(l) > maxlen:
             err.append([k + str(i), "value too long"])
           elif not regex.match(l):
             err.append([k + str(i), "Invalid syntax: %s" % l])
           i += 1
+    if 'pr' in o:
+      if not isinstance(o['pr'][0], bool):
+        o['pr'] = [True]
+    else:
+      o['pr'] = [False]
     if 'ad' in o and len(addrmake(o['ad'])) > 400:
       err.append(['ad', "Address too long"])
     #if 'ad' in o and len(addrmake(o['ad'])) < 20:
@@ -420,7 +429,7 @@ class _whoisobject(object):
     return d1.__cmp__(d2)
 
 class Person(_whoisobject):
-  def __init__(self, dbc, cid=None, key=None, passwd=None, private=True,
+  def __init__(self, dbc, cid=None, key=None, passwd=None,
                validate=True):
     fetch_dbencoding(dbc)
     self._dbc = dbc
@@ -429,7 +438,6 @@ class Person(_whoisobject):
     self.d = {}
     self.passwd = passwd
     self.validate = validate
-    self.private = private
   def _set_key(self):
     if self.d['nh'][0] is not None:
       self.key = suffixadd(self.d['nh'][0])
@@ -490,7 +498,7 @@ class Person(_whoisobject):
                        o['co'][0],
                        self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]),
-                       self.private)))
+                       o['pr'][0])))
     else:
       self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
                       'country,'
@@ -502,7 +510,7 @@ class Person(_whoisobject):
                        o['co'][0],
                        self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
                        str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]),
-                       self.private)))
+                       o['pr'][0])))
     assert self._dbc.rowcount == 1
     self._dbc.execute("SELECT currval('contacts_id_seq')")
     self.cid, = self._dbc.fetchone()
@@ -520,7 +528,7 @@ class Person(_whoisobject):
                       (o['nh'][0], o['eh'][0], o['pn'][0], o['em'][0],
                        o['co'][0],
                        addrmake(o['ad']), o['ph'][0], o['fx'][0],
-                       o['ch'][0][0], self.private, self.cid)))
+                       o['ch'][0][0], o['pr'][0], self.cid)))
     assert self._dbc.rowcount == 1
   def delete(self):
     """Delete from database, keeping history."""
@@ -540,14 +548,13 @@ class Person(_whoisobject):
     d = {}
     (d['nh'], d['eh'], d['pn'], d['em'],
      addr, d['co'],
-     d['ph'], d['fx'], d['cr'], chb, cho, private,
+     d['ph'], d['fx'], d['cr'], chb, cho, d['pr'],
      d['cn']) = _fromdb(self._dbc.fetchone())
     for k in d.iterkeys():
       d[k] = [ d[k] ]
     d['ad'] = addrsplit(addr)
     d['ch'] = [ (chb, cho) ]
     self.d = d
-    self.private = private
     self._set_key()
   def fetch_obfuscated(self):
     self.fetch()
@@ -558,7 +565,7 @@ class Person(_whoisobject):
       email, = _fromdb(self._dbc.fetchone())
       email += '@' + HANDLEMAILHOST
       self.d['oe'] = [email]
-    if self.private:
+    if self.d['pr'][0]:
       self.d['pn'] = ['UNDISCLOSED BY REQUEST']
       self.d['ad'] = ['UNDISCLOSED BY REQUEST']
       self.d['cn'] = []
@@ -622,6 +629,7 @@ class Domain(_whoisobject):
         c['pn'] = o['ad'][:1]
         c['ad'] = o['ad'][1:]
         del o['ad']
+    c['pr'] = o['pr']
     c['ch'] = o['ch']
     c['co'] = o['co']
     c['cn'] = o['cn']

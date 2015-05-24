@@ -28,7 +28,6 @@ class Requests(models.Model):
     whoisrecord = models.CharField(max_length=2000)
     tags = models.CharField(max_length=50)
     contact = models.ForeignKey(Contacts)
-    private = models.BooleanField(default=False)
     class Meta:
         db_table = 'requests'
         ordering = ['id']

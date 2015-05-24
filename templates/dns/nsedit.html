@@ -86,6 +86,11 @@ Requesting an eu.org domain implies that you agree with the <a href="/policy.htm
     {{ form.fx1 }}
     {% if form.fx1.errors %}{% for error in form.fx1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
+<div class="addendum fieldWrapper{% if form.private.errors %}error{% endif %}">
+    <label for="id_private">Private (not shown in the public Whois)</label>
+    {{ form.private }}
+    {% if form.private.errors %}{% for error in form.private.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
+</div>
 </fieldset>
 
 <fieldset>
