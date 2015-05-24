@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import datetime
 import io
+import sys
 import time
 
 # local modules
@@ -337,23 +338,27 @@ class _Domain:
 	  self._dbc.execute('DELETE FROM rrs WHERE domain_id=%s', (did,))
 	if domains:
 	    self._dbc.execute('DELETE FROM domains WHERE id=%s', (did,))
-    def show_head(self):
+    def show_head(self, outfile=sys.stdout):
 	"""Show administrative data for domain."""
-	print(u"; zone", self._zone_name)
+	print(u"; zone", self._zone_name, file=outfile)
 	if self.name == '':
-	    print(u"; domain", self._zone_name)
+	    print(u"; domain", self._zone_name, file=outfile)
 	else:
-	    print(u"; domain", '.'.join((self.name,self._zone_name)))
+	    print(u"; domain", '.'.join((self.name,self._zone_name)),
+                  file=outfile)
 	if self._created_on:
-	    print(u"; created: by %s, %s" % (self._created_by, self._created_on))
+	    print(u"; created: by %s, %s"
+                   % (self._created_by, self._created_on), file=outfile)
 	if self._updated_on:
-	    print(u"; updated: by %s, %s" % (self._updated_by, self._updated_on))
-	if self._registry_lock: print(u"; registry_lock")
-	if self._registry_hold: print(u"; registry_hold")
-	if self._internal: print(u"; internal")
+	    print(u"; updated: by %s, %s"
+                   % (self._updated_by, self._updated_on), file=outfile)
+	if self._registry_lock: print(u"; registry_lock", file=outfile)
+	if self._registry_hold: print(u"; registry_hold", file=outfile)
+	if self._internal: print(u"; internal", file=outfile)
 	if self._end_grace_period:
-	    print(u"; end_grace_period: %s" % self._end_grace_period)
-    def show_rrs(self):
+	    print(u"; end_grace_period: %s"
+                   % self._end_grace_period, file=outfile)
+    def show_rrs(self, outfile=sys.stdout):
 	"""List all resource records for domain."""
 	self._dbc.execute(
 	    'SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value '
@@ -385,14 +390,14 @@ class _Domain:
 	    if ttl is None: ttl = ''
 	    else: ttl = str(ttl)
 
-	    print("\t".join((l, ttl, typ, value)))
+	    print(u"\t".join((l, ttl, typ, value)), file=outfile)
 	    t = self._dbc.fetchone()
 	if self._dbc.rowcount == 0:
-	    print('; (NO RECORD)')
-    def show(self):
+	    print(u'; (NO RECORD)', file=outfile)
+    def show(self, outfile=sys.stdout):
 	"""Shorthand to call show_head() then show_rrs()."""
-	self.show_head()
-	self.show_rrs()
+	self.show_head(outfile)
+	self.show_rrs(outfile)
     def set_registry_lock(self, val):
 	"""Set value of boolean registry_lock."""
 	self._registry_lock = val
@@ -551,12 +556,12 @@ class db:
 	"""Logout current user."""
 	self._check_login_perm()
 	self._login_id = None
-    def show(self, domain, zone):
+    def show(self, domain, zone, outfile=sys.stdout):
 	"""Show a pretty-printed zone excerpt for domain."""
 	d, z = self._zl.find(domain, zone)
 	self._check_login_perm(z.name)
 	d.fetch()
-	d.show()
+	d.show(outfile=outfile)
     def delete(self, domain, zone, override_internal=False,
                grace_days=DEFAULT_GRACE_DAYS,
                commit=True):
