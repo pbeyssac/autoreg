@@ -19,7 +19,7 @@ from autoreg.whois.db import check_handle_domain_auth, \
   suffixadd, suffixstrip, HANDLESUFFIX
 
 from autoreg.arf.requests.models import Requests, rq_make_id
-from autoreg.arf.whois.models import Contacts, check_is_admin
+from autoreg.arf.whois.models import Contacts, Whoisdomains, check_is_admin
 from autoreg.arf.whois.views import registrant_form
 from models import Domains, Rrs
 
@@ -29,6 +29,23 @@ URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
 class newdomain_form(registrant_form):
   th = forms.CharField(max_length=10, initial=HANDLESUFFIX,
                        help_text='Technical Contact', required=True)
+  orphan = forms.BooleanField(required=False)
+
+
+def _whoisrecord_from_form(domain, form, handle):
+  """Make whois record from domain name, form and handle."""
+  whoisrecord = ["domain:  %s" % domain.upper()]
+  for i in ['pn1', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'ad6']:
+    a = form.cleaned_data.get(i, None)
+    if a is not None and a != '':
+      whoisrecord.append('address: ' + a)
+
+  whoisrecord.extend(["admin-c: " + suffixadd(handle),
+                      "tech-c:  " + suffixadd(form.cleaned_data['th'])])
+
+  if form.cleaned_data['private']:
+    whoisrecord.append(u"private: true")
+  return whoisrecord
 
 
 def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
@@ -68,18 +85,8 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
     err = None
     if newdomain:
       rqid = rq_make_id()
-      ad = []
-      for i in ['pn1', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'ad6']:
-        a = form.cleaned_data.get(i, None)
-        if a is not None and a != '':
-          ad.append('address: ' + a)
-
-      whoisrecord = '\n'.join(["domain:  %s" % domain.upper(),
-                               '\n'.join(ad),
-                               "admin-c: " + suffixadd(contact.handle),
-                               "tech-c:  " + form.cleaned_data['th']])
-      if form.cleaned_data['private']:
-        whoisrecord += "\nprivate: true"
+      whoisrecord = _whoisrecord_from_form(domain, form, contact.handle)
+      whoisrecord = '\n'.join(whoisrecord)
       zonerecord = rec
       rql = Requests.objects.filter(action='N', contact_id=contact.id,
                                     fqdn=domain.upper(), state='Open')
@@ -261,6 +268,43 @@ def _get_rr_nsip(dd, fqdn):
   nsiplist.sort(key=lambda x: x[0])
   return rrlist, nsiplist
 
+def _is_orphan(fqdn, ddro):
+  """check domain is an orphan
+     1) should not exist in Whois
+     2) should exist in zone
+  """
+  w = Whoisdomains.objects.filter(fqdn=fqdn.upper())
+  if len(w) != 0:
+    return False, "exists in Whois"
+  outfile = io.StringIO()
+  found = True
+  try:
+    ddro.show(fqdn, None, outfile=outfile)
+  except autoreg.dns.db.DomainError as e:
+    found = False
+  except autoreg.dns.db.AccessError as e:
+    found = False
+  if found:
+    return True, ""
+  return False, "does not exist in zone"
+
+def _adopt_orphan(request, ddro, dbh, fqdn, form):
+  vars = {'is_admin': True}
+  vars['fqdn'] = fqdn.upper()
+  ok, errmsg = _is_orphan(fqdn, ddro)
+  if ok:
+    inwhois = _whoisrecord_from_form(fqdn, form, request.user.username)
+    w = autoreg.whois.db.Main(dbh)
+    whoisout = io.StringIO()
+    inwhois.append(u'changed: ' + suffixadd(request.user.username))
+    w.parsefile(inwhois, None, commit=True, outfile=whoisout)
+    vars['whoisin'] = inwhois
+    vars['whoisout'] = whoisout.getvalue()
+  else:
+    vars['msg'] = errmsg
+  vars = RequestContext(request, vars)
+  return render_to_response("dns/orphan.html", vars)
+
 def domainns(request, fqdn=None):
   """Show/edit record(s) for domain"""
   if fqdn and fqdn != fqdn.lower():
@@ -331,6 +375,10 @@ def domainns(request, fqdn=None):
       dbh2 = psycopg2.connect(autoreg.conf.dbstring)
       ddro = autoreg.dns.db.db(dbh2, nowrite=True)
       ddro.login('autoreg')
+
+      if is_admin and form.is_valid() and form.cleaned_data['orphan']:
+        return _adopt_orphan(request, ddro, dbh, fqdn, form)
+
       try:
         # don't really create (read-only session)
         ddro.new(fqdn, None, 'NS', file=io.StringIO())

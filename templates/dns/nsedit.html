@@ -30,6 +30,14 @@ Requesting an eu.org domain implies that you agree with the <a href="/policy.htm
 </div>
 (full domain name, including the enclosing domain. See the <a href="/opendomains.html">list</a>)</p>
 
+{% if is_admin %}
+<div class="admin fieldWrapper{% if form.orphan.errors %}error{% endif %}">
+    <label for="id_orphan">Adopt orphan domain</label>
+    {{ form.orphan }}
+    {% if form.orphan.errors %}{% for error in form.orphan.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
+</div>
+{% endif %}
+
 <fieldset>
 <legend>Organization</legend>
 <div class="fieldWrapper{% if form.pn1.errors %}error{% endif %}">

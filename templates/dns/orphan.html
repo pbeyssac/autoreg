@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{% endblock %}
+{% block h1title %}{% endblock %}
+{% block form %}
+{% if msg %}
+<span class="domain">{{ fqdn }}</span> {{ msg }}
+{% else %}
+Whois input:
+<pre>
+{{ whoisin }}
+</pre>
+Whois output:
+<pre class="whoisout">
+{{ whoisout }}
+</pre>
+{% endif %}
+{% endblock %}
