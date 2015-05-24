@@ -69,7 +69,7 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
     if newdomain:
       rqid = rq_make_id()
       ad = []
-      for i in ['ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'ad6']:
+      for i in ['pn1', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'ad6']:
         a = form.cleaned_data.get(i, None)
         if a is not None and a != '':
           ad.append('address: ' + a)
