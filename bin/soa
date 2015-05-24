@@ -113,7 +113,7 @@ if [ "$mod" != "" ]; then
 		echo "reloading"
 		$NDC -k $NDCKEY reload
 	else
-		if [ $optc = 0 ]; then echo "now:" echo "$NDC reload"; fi
+		if [ $optc = 0 ]; then echo "now: $NDC reload"; fi
 	fi
 	exit 0
 else
