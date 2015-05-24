@@ -105,6 +105,8 @@ def addrsplit(ta):
 _lhandlesuffix = len(HANDLESUFFIX)
 
 def suffixadd(h):
+  if h.endswith(HANDLESUFFIX):
+    return h
   return h + HANDLESUFFIX
 def suffixstrip(h):
   if h.endswith(HANDLESUFFIX):
