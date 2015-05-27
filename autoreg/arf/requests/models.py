@@ -14,7 +14,6 @@ import autoreg.arf.util
 from autoreg.arf.whois.models import Contacts
 import autoreg.common
 import autoreg.conf
-import autoreg.dns.db
 import autoreg.whois.db
 
 class Requests(models.Model):
@@ -61,6 +60,10 @@ def rq_accept(out, rqid, login, email, reasonfield=None):
   r = rl[0]
 
   mailto = [r.email]
+
+  # import here rather than at top of module to avoid weird name clashes
+  # with the external "dns" module when running Django manage.py.
+  import autoreg.dns.db
 
   dbh = psycopg2.connect(autoreg.conf.dbstring)
   dd = autoreg.dns.db.db(dbh)
