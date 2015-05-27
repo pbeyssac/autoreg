@@ -5,7 +5,6 @@ from __future__ import print_function
 import io
 
 import autoreg.conf
-import autoreg.dns.db
 
 
 def domain_delete(dd, fqdn, whoisdb, out,
