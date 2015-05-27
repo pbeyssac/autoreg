@@ -13,7 +13,26 @@ def render_to_mail(templatename, context, fromaddr, toaddrs):
   t = get_template(templatename)
   msg = t.render(Context(context))
   headers, body = msg.split('\n\n', 1)
-  msg = headers + '\n\n' + body.encode('utf-8').encode('quoted-printable')
+  outh = []
+  for line in headers.split('\n'):
+    try:
+      line.encode('ascii')
+    except UnicodeEncodeError:
+      if line[0] not in ' \n\t' and ':' in line:
+        key, val = line.split(':', 1)
+        val = '=?utf-8?Q?%s?=' \
+            % val.strip().encode('utf-8').encode('quoted-printable')
+        # quoted-printable encoding can add '\n' which is an absolute no-no
+        # in mail headers!
+        val = val.replace('=\n', '').replace('=\r', '') \
+                 .replace('\n', '').replace('\r', '')
+        outh.append(key + ': ' + val)
+      else:
+        outh.append(line)
+    else:
+      outh.append(line)
+  msg = '\n'.join(outh) + '\n\n' \
+        + body.encode('utf-8').encode('quoted-printable')
 
   try:
     server = smtplib.SMTP()
