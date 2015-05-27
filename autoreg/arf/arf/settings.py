@@ -1,4 +1,5 @@
 # Django settings for arf project.
+# -*- coding: utf-8 -*-
 # $Id$
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -39,6 +40,7 @@ TEMPLATE_LOADERS = (
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -78,6 +80,15 @@ TIME_ZONE = 'Europe/Paris'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+
+LANGUAGES = (
+  ('en', 'English'),
+  ('fr', 'Français'),
+)
+
+LOCALE_PATHS = (
+	'/home/freenix/pb/autoreg/locale',
+)
 
 #
 # Application-specific settings

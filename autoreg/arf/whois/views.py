@@ -114,8 +114,8 @@ class contactchange_form(forms.Form):
                         required=False)
   ad4 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 3)"),
                         required=False)
-  ad5 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 4)",
-                        required=False))
+  ad5 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 4)"),
+                        required=False)
   ad6 = forms.ChoiceField(initial='', label=ugettext_lazy("Country"),
                           choices=countries_get(connection.cursor()))
   ph1 = forms.RegexField(max_length=30, label=ugettext_lazy("Phone"),
