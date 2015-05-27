@@ -11,7 +11,23 @@ import dns.query
 import dns.rdatatype
 import dns.resolver
 
-from django.utils.translation import ugettext as _
+#
+# Import Django i18n framework, if available and configured.
+# If not available, make _() a noop.
+#
+try:
+  from django.utils.translation import ugettext as _
+  from django.core.exceptions import ImproperlyConfigured
+except ImportError:
+  def _(string):
+    return string
+
+try:
+  a = _("Save")
+except ImproperlyConfigured:
+  def _(string):
+    return string
+
 
 def checkip(ip):
   """Check IPv4/IPv6 address for validity"""
