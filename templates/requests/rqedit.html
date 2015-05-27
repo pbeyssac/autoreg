@@ -1,6 +1,6 @@
-{% extends "base.html" %}
-{% block title %}Whois edit{% endblock %}
-{% block h1title %}Whois edit{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Whois edit" %}{% endblock %}
+{% block h1title %}{% trans "Whois edit" %}{% endblock %}
 {% block msg %}
 
 <FORM class="form" ACTION="{% url 'arf.requests.views.rqedit' r.id %}" METHOD="POST">
@@ -13,6 +13,6 @@
 {% endif %}
 Tags: <INPUT TYPE="text" NAME="tags" size="40" VALUE="{% if r.tags != None %}{{ r.tags }}{% endif %}"/>
 <BR>
-<INPUT class="action" TYPE="submit" VALUE="Save All">
+<INPUT class="action" TYPE="submit" VALUE="{% trans "Save All" %}">
 </FORM>
 {% endblock %}

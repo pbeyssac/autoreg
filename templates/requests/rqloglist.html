@@ -1,10 +1,10 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load i18n %}
 {% block title %}{% endblock %}
 {% block h1title %}{% endblock %}
 {% block form %}
 <div class="rqloglist">
 <table>
-<tr><td>Date<td>Domain<td>Errors<td>Warnings
+<tr><td>{% trans "Date" %}<td>{% trans "Domain" %}<td>{% trans "Errors" %}<td>{% trans "Warnings" %}
 {% for r in rqlog %}
 <tr><td><a href="{% url 'autoreg.arf.requests.views.rqlogdisplay' r.id %}">{{ r.date|date:"o-m-d H:i" }}</a><td>{{ r.fqdn }}<td>{{ r.errors }}<td>{{ r.warnings }}
 {% endfor %}

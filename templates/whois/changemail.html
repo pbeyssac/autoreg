@@ -1,16 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Email address change{% endblock %}
-{% block h1title %}Email address change{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Email address change" %}{% endblock %}
+{% block h1title %}{% trans "Email address change" %}{% endblock %}
 {% block form %}
-Please look for email sent to <strong>{{ newemail }}</strong> and
-enter below the validation token you received from EU.org:<br>
+{% blocktrans %}Please look for email sent to <strong>{{ newemail }}</strong> and
+enter below the validation token you received from EU.org:{% endblocktrans %}<br>
 <FORM ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
 <TABLE>
 {{ form }}
 </TABLE>
 <P>
-Email address will be set to: <strong>{{ newemail }}</strong>
-<INPUT TYPE="submit" NAME="change" VALUE="Set email address">
+{% blocktrans %}Email address will be set to: <strong>{{ newemail }}</strong>{% endblocktrans %}
+<INPUT TYPE="submit" NAME="change" VALUE="{% trans "Set email address" %}">
 </FORM>
 {% endblock %}

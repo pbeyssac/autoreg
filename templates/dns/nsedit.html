@@ -1,16 +1,17 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}
 {% if newdomain %}
-New domain request
+{% trans "New domain request" %}
 {% else %}
-Configuration for {{ fqdn }}
+{% blocktrans %}Configuration for {{ fqdn }}{% endblocktrans %}
 {% endif %}
 {% endblock %}
 {% block h1title %}
 {% if newdomain %}
-New domain request
+{% trans "New domain request" %}
 {% else %}
-Configuration for {{ fqdn }}
+{% blocktrans %}Configuration for {{ fqdn }}{% endblocktrans %}
 {% endif %}
 {% endblock %}
 {% block msg %}
@@ -20,19 +21,19 @@ Configuration for {{ fqdn }}
 
 {% if newdomain %}
 
-Requesting an eu.org domain implies that you agree with the <a href="/policy.html">domain policy</a>.
+{% blocktrans %}Requesting an EU.org domain implies that you accept the <a href="/policy.html">domain policy</a>.{% endblocktrans %}
 
 <p>
 <div class="fieldWrapper{% if errors.fqdn %}error{% endif %}">
-    <label for="id_fqdn">Complete domain name</label>
+    <label for="id_fqdn">{% trans "Complete domain name" %}</label>
     <input name="fqdn" value="{{ fqdn }}" type="text"/>
     {% if errors.fqdn %}{% for error in errors.fqdn %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
-(full domain name, including the enclosing domain. See the <a href="/opendomains.html">list</a>)</p>
+{% blocktrans %}(full domain name, including the enclosing domain. See the <a href="/opendomains.html">list</a>){% endblocktrans %}</p>
 
 {% if is_admin %}
 <div class="admin fieldWrapper{% if form.orphan.errors %}error{% endif %}">
-    <label for="id_orphan">Adopt orphan domain</label>
+    <label for="id_orphan">{% trans "Adopt orphan domain" %}</label>
     {{ form.orphan }}
     {% if form.orphan.errors %}{% for error in form.orphan.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
@@ -41,196 +42,198 @@ Requesting an eu.org domain implies that you agree with the <a href="/policy.htm
 <fieldset>
 <legend>Organization</legend>
 <div class="fieldWrapper{% if form.pn1.errors %}error{% endif %}">
-    <label for="id_pn1"> Name</label>
+    <label for="id_pn1">{% trans "Name" %}</label>
     {{ form.pn1 }}
     {% if form.pn1.errors %}{% for error in form.pn1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 
 {% if form.em1 %}
 <div class="fieldWrapper{% if form.em1.errors %}error{% endif %}">
-    <label for="id_em1"> E-mail</label>
+    <label for="id_em1">{% trans "E-mail" %}</label>
     {{ form.em1 }}
     {% if form.em1.errors %}{% for error in form.em1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 {% endif %}
 
 <div class="fieldWrapper{% if form.ad1.errors %}error{% endif %}">
-    <label for="id_ad1"> Address (line 1)</label>
+    <label for="id_ad1">{% trans "Address (line 1)" %}</label>
     {{ form.ad1 }}
     {% if form.ad1.errors %}{% for error in form.ad1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad2.errors %}error{% endif %}">
-    <label for="id_ad2"> Address (line 2)</label>
+    <label for="id_ad2">{% trans "Address (line 2)" %}</label>
     {{ form.ad2 }}
     {% if form.ad2.errors %}{% for error in form.ad2.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad3.errors %}error{% endif %}">
-    <label for="id_ad3"> Address (line 3)</label>
+    <label for="id_ad3">{% trans "Address (line 3)" %}</label>
     {{ form.ad3 }}
     {% if form.ad3.errors %}{% for error in form.ad3.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad4.errors %}error{% endif %}">
-    <label for="id_ad4"> Address (line 4)</label>
+    <label for="id_ad4">{% trans "Address (line 4)" %}</label>
     {{ form.ad4 }}
     {% if form.ad4.errors %}{% for error in form.ad4.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad5.errors %}error{% endif %}">
-    <label for="id_ad5"> Address (line 5)</label>
+    <label for="id_ad5">{% trans "Address (line 5)" %}</label>
     {{ form.ad5 }}
     {% if form.ad5.errors %}{% for error in form.ad5.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad6.errors %}error{% endif %}">
-    <label for="id_ad6"> Country</label>
+    <label for="id_ad6">{% trans "Country" %}</label>
     {{ form.ad6 }}
     {% if form.ad6.errors %}{% for error in form.ad6.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ph1.errors %}error{% endif %}">
-    <label for="id_ph1"> Phone</label>
+    <label for="id_ph1">{% trans "Phone" %}</label>
     {{ form.ph1 }}
     {% if form.ph1.errors %}{% for error in form.ph1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.fx1.errors %}error{% endif %}">
-    <label for="id_fx1"> Fax</label>
+    <label for="id_fx1">{% trans "Fax" %}</label>
     {{ form.fx1 }}
     {% if form.fx1.errors %}{% for error in form.fx1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="addendum fieldWrapper{% if form.private.errors %}error{% endif %}">
-    <label for="id_private">Private (not shown in the public Whois)</label>
+    <label for="id_private">{% trans "Private (not shown in the public Whois)" %}</label>
     {{ form.private }}
     {% if form.private.errors %}{% for error in form.private.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 </fieldset>
 
 <fieldset>
-<legend>Administrative contact</legend>
+<legend>{% trans "Administrative contact" %}</legend>
 
-<p>The person in charge of administrative matters regarding the domain.
+<p>{% blocktrans %}The person in charge of administrative matters regarding the domain.
 <p>
 It is set to your handle, <span class="handle">{{ ah }}</span>.<p>
 
-You can change this later in the domain contact interface.<p>
+You can change this later in the domain contact interface.{% endblocktrans %}<p>
 </fieldset>
 
 <fieldset>
-<legend>Technical contact</legend>
+<legend>{% trans "Technical contact" %}</legend>
 
-<p>The person in charge of technical matters regarding the domain.</p>
+<p>{% trans "The person in charge of technical matters regarding the domain." %}</p>
 
 <div class="fieldWrapper{% if errors.th %}error{% endif %}">
     <input name="th" value="{{ th }}" type="text" />
-    <label for="id_th"> An existing handle; see <a href="{% url 'autoreg.arf.whois.views.contactcreate' %}">here</a> to create one.</label>
+    <label for="id_th">
+   {% url 'autoreg.arf.whois.views.contactcreate' as urlcontactcreate %}
+   {% blocktrans %}An existing handle; see <a href="{{ urlcontactcreate }}">here</a> to create one.{% endblocktrans %}</label>
     {% if errors.th %}{% for error in th.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 </fieldset>
 <fieldset class="nslist">
-<legend>Name servers</legend>
+<legend>{% trans "Name servers" %}</legend>
 
 {%else %}
 {% if rrlist %}
-<h2>Current DNS records</h2>
+<h2>{% trans "Current DNS records" %}</h2>
 <table class="zone rrlist">
 {% for rr in rrlist %}<tr><td>{{ rr.0 }}</td><td>{{ rr.1 }}</td><td>{{ rr.2 }}</td><td>{{ rr.3 }}</td>
 </tr>
 {% endfor %}
 </table>
 {% else %}
-<h2>No current DNS records</h2>
+<h2>{% trans "No current DNS records" %}</h2>
 {% endif %}
 <fieldset class="nslist">
-<legend>Name servers</legend>
-<strong>Warning: this will replace any current DNS records, except <span class="rrtype">DS</span> records</strong>
+<legend>{% trans "Name servers" %}</legend>
+<strong>{% blocktrans %}Warning: this will replace any current DNS records, except <span class="rrtype">DS</span> records{% endblocktrans %}</strong>
 {% endif %}
 <div class="nschecks">
-Check for correctness of:
+{% trans "Check for correctness of:" %}
   <label for="id_l1">
-  <input id="id_l1" name="level" type="radio" value="1">server names
+  <input id="id_l1" name="level" type="radio" value="1">{% trans "server names" %}
   </label>
   <label for="id_l2">
-  <input id="id_l2" name="level" type="radio" value="2">server names + replies on SOA
+  <input id="id_l2" name="level" type="radio" value="2">{% trans "server names + replies on SOA" %}
   </label>
   <label for="id_l3">
-  <input id="id_l3" name="level" type="radio" value="3" checked="checked">server names + replies on SOA + replies on NS (recommended)
+  <input id="id_l3" name="level" type="radio" value="3" checked="checked">{% trans "server names + replies on SOA + replies on NS (recommended)" %}
   </label>
 </div>
 
-<p>Fill <em>Name1...NameX</em> with the fully qualified domain names.
-<p>If necessary (i.e. "glue" records) fill <em>IP1...IPX</em> with the IPv4 or IPv6 addresses.
+<p>{% trans "Fill <em>Name1...NameX</em> with the fully qualified domain names." %}
+<p>{% blocktrans %}If necessary (i.e. "glue" records) fill <em>IP1...IPX</em> with the IPv4 or IPv6 addresses.{% endblocktrans %}
 
 <div class="fqdnip fieldWrapper{% if errors.nsip1 %}error{% endif %}">
-<label for="id_f1">Name1</label>
+<label for="id_f1">{% trans "Name1" %}</label>
 <input id="id_f1" type="text" name="f1" size="32" value="{{ nsiplist.0.0 }}">
-<label for="id_i1">IP1</label>
+<label for="id_i1">{% trans "IP1" %}</label>
 <input id="id_i1" type="text" name="i1" size="32" value="{{ nsiplist.0.1 }}">
     {% if errors.nsip1 %}{% for error in errors.nsip1 %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 
 <div class="fqdnip fieldWrapper{% if errors.nsip2 %}error{% endif %}">
-<label for="id_f2">Name2</label>
+<label for="id_f2">{% trans "Name2" %}</label>
 <input id="id_f2" type="text" name="f2" size="32" value="{{ nsiplist.1.0 }}">
-<label for="id_i2">IP2</label>
+<label for="id_i2">{% trans "IP2" %}</label>
 <input id="id_i2" type="text" name="i2" size="32" value="{{ nsiplist.1.1 }}">
     {% if errors.nsip2 %}{% for error in errors.nsip2 %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 
 <div class="fqdnip fieldWrapper{% if errors.nsip3 %}error{% endif %}">
-<label for="id_f3">Name3</label>
+<label for="id_f3">{% trans "Name3" %}</label>
 <input id="id_f3" type="text" name="f3" size="32" value="{{ nsiplist.2.0 }}">
-<label for="id_i3">IP3</label>
+<label for="id_i3">{% trans "IP3" %}</label>
 <input id="id_i3" type="text" name="i3" size="32" value="{{ nsiplist.2.1 }}">
     {% if errors.nsip3 %}{% for error in errors.nsip3 %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 
 <div class="fqdnip fieldWrapper{% if errors.nsip4 %}error{% endif %}">
-<label for="id_f4">Name4</label>
+<label for="id_f4">{% trans "Name4" %}</label>
 <input id="id_f4" type="text" name="f4" size="32" value="{{ nsiplist.3.0 }}">
-<label for="id_i4">IP4</label>
+<label for="id_i4">{% trans "IP4" %}</label>
 <input id="id_i4" type="text" name="i4" size="32" value="{{ nsiplist.3.1 }}">
     {% if errors.nsip4 %}{% for error in errors.nsip4 %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 
 <div class="fqdnip fieldWrapper{% if errors.nsip5 %}error{% endif %}">
-<label for="id_f5">Name5</label>
+<label for="id_f5">{% trans "Name5" %}</label>
 <input id="id_f5" type="text" name="f5" size="32" value="{{ nsiplist.4.0 }}">
-<label for="id_i5">IP5</label>
+<label for="id_i5">{% trans "IP5" %}</label>
 <input id="id_i5" type="text" name="i5" size="32" value="{{ nsiplist.4.1 }}">
     {% if errors.nsip5 %}{% for error in errors.nsip5 %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 
 <div class="fqdnip fieldWrapper{% if errors.nsip6 %}error{% endif %}">
-<label for="id_f6">Name6</label>
+<label for="id_f6">{% trans "Name6" %}</label>
 <input id="id_f6" type="text" name="f6" size="32" value="{{ nsiplist.5.0 }}">
-<label for="id_i6">IP6</label>
+<label for="id_i6">{% trans "IP6" %}</label>
 <input id="id_i6" type="text" name="i6" size="32" value="{{ nsiplist.5.1 }}">
     {% if errors.nsip6 %}{% for error in errors.nsip6 %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 
 <div class="fqdnip fieldWrapper{% if errors.nsip7 %}error{% endif %}">
-<label for="id_f7">Name7</label>
+<label for="id_f7">{% trans "Name7" %}</label>
 <input id="id_f7" type="text" name="f7" size="32" value="{{ nsiplist.6.0 }}">
-<label for="id_i7">IP7</label>
+<label for="id_i7">{% trans "IP7" %}</label>
 <input id="id_i7" type="text" name="i7" size="32" value="{{ nsiplist.6.1 }}">
     {% if errors.nsip7 %}{% for error in errors.nsip7 %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 
 <div class="fqdnip fieldWrapper{% if errors.nsip8 %}error{% endif %}">
-<label for="id_f8">Name8</label>
+<label for="id_f8">{% trans "Name8" %}</label>
 <input id="id_f8" type="text" name="f8" size="32" value="{{ nsiplist.7.0 }}">
-<label for="id_i8">IP8</label>
+<label for="id_i8">{% trans "IP8" %}</label>
 <input id="id_i8" type="text" name="i8" size="32" value="{{ nsiplist.7.1 }}">
     {% if errors.nsip8 %}{% for error in errors.nsip8 %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 
 <div class="fqdnip fieldWrapper{% if errors.nsip9 %}error{% endif %}">
-<label for="id_f9">Name9</label>
+<label for="id_f9">{% trans "Name9" %}</label>
 <input id="id_f9" type="text" name="f9" size="32" value="{{ nsiplist.8.0 }}">
-<label for="id_i9">IP9</label>
+<label for="id_i9">{% trans "IP9" %}</label>
 <input id="id_i9" type="text" name="i9" size="32" value="{{ nsiplist.8.1 }}">
     {% if errors.nsip9 %}{% for error in errors.nsip9 %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 
 </fieldset>
 
-<input class="action" type="submit" value="Submit">
+<input class="action" type="submit" value="{% trans "Submit" %}">
 </form>
 
 {% endblock %}

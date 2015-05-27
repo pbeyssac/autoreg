@@ -1,30 +1,31 @@
 {% extends "base.html" %}
-{% block title %}Domain Edit{% endblock %}
-{% block h1title %}Domain Edit{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Domain Edit" %}{% endblock %}
+{% block h1title %}{% trans "Domain Edit" %}{% endblock %}
 {% block msg %}{% if msg %}{{ msg }}<hr>
 {% endif %}{% endblock %}
 {% block form %}
 
-Whois data for domain <span class="domain">{{ whoisdomain.fqdn }}</span><P>
-Created on: {{ whoisdomain.created_on|date:"o-m-d H:i" }}
+{% blocktrans with fqdn=whoisdomain.fqdn %}Whois data for domain <span class="domain">{{ fqdn }}</span><P>
+Created on: {% endblocktrans %}{{ whoisdomain.created_on|date:"o-m-d H:i" }}
 <pre class="whoisdisplay">
 {{ whoisdisplay }}</pre>
 
 <div class="domainedits">
-<strong>Edit</strong>
+<strong>{% trans "Edit" %}</strong>
 <table>
 <tr>
-<td><A class="miniaction" HREF="{% url 'arf.whois.views.contactchange' whoisdomain.fqdn.lower %}">Registrant</A>
-<td><A class="miniaction" HREF="{% url 'arf.dns.views.domainns' whoisdomain.fqdn.lower %}">Nameservers</a>
+<td><A class="miniaction" HREF="{% url 'arf.whois.views.contactchange' whoisdomain.fqdn.lower %}">{% trans "Registrant" %}</A>
+<td><A class="miniaction" HREF="{% url 'arf.dns.views.domainns' whoisdomain.fqdn.lower %}">{% trans "Nameservers" %}</a>
 <td>{% if has_ns and can_ds %}<A class="miniaction" HREF="{% url 'arf.dns.views.domainds' whoisdomain.fqdn.lower %}">DNSSEC</A>{% endif %}
 <td>{% if registry_hold and end_grace_period %}
 <form action="{% url 'arf.whois.views.domainundelete' whoisdomain.fqdn.lower %}" method="POST">
 {% csrf_token %}
-<INPUT class="miniaction" TYPE="submit" NAME="undel" VALUE="Undelete (until {{ end_grace_period|date:"o-m-d" }})">
+<INPUT class="miniaction" TYPE="submit" NAME="undel" VALUE="{% trans "Undelete (until" %} {{ end_grace_period|date:"o-m-d" }})">
 {% else %}
 <td><form action="{% url 'arf.whois.views.domaindelete' whoisdomain.fqdn.lower %}" method="POST">
 {% csrf_token %}
-<INPUT class="miniaction" TYPE="submit" NAME="del" VALUE="Delete Domain">
+<INPUT class="miniaction" TYPE="submit" NAME="del" VALUE="{% trans "Delete Domain" %}">
 {% endif %}
 </form>
 </table>
@@ -40,7 +41,7 @@ Created on: {{ whoisdomain.created_on|date:"o-m-d H:i" }}
   <INPUT TYPE="hidden" NAME="handle" VALUE="{{ f.handle }}">
   <span class="descr">{{ f.contact_type }}</span>
   <span class="descr"><span class="handle">{{ f.handle }}</span></span>
-  <INPUT class="miniaction" TYPE="submit" NAME="submitd" VALUE="Remove">
+  <INPUT class="miniaction" TYPE="submit" NAME="submitd" VALUE="{% trans "Remove" %}">
   </FORM>
 {% endfor %}
   <FORM ACTION="{{ addform.posturi }}" METHOD="POST">
@@ -48,7 +49,7 @@ Created on: {{ whoisdomain.created_on|date:"o-m-d H:i" }}
   {% for field in addform.domcontact_form %}
     <span class="descr">{{ field }}</span>
   {% endfor %}
-  <INPUT class="miniaction" TYPE="submit" NAME="submita" VALUE="Add">
+  <INPUT class="miniaction" TYPE="submit" NAME="submita" VALUE="{% trans "Add" %}">
   </FORM>
  </div>
 </div>

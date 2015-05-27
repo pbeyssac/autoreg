@@ -10,6 +10,8 @@ import time
 
 import psycopg2
 
+from django.utils.translation import ugettext_lazy, ugettext as _
+
 from autoreg.whois.db import HANDLESUFFIX, \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
   countries_get
@@ -41,9 +43,9 @@ RESET_TOKEN_TTL = RESET_TOKEN_HOURS_TTL*3600
 EMAIL_TOKEN_TTL = EMAIL_TOKEN_HOURS_TTL*3600
 VAL_TOKEN_TTL = VAL_TOKEN_HOURS_TTL*3600
 
-domcontact_choices = [('technical', 'technical'),
-                      ('administrative', 'administrative'),
-                      ('zone', 'zone')]
+domcontact_choices = [('technical', ugettext_lazy('technical')),
+                      ('administrative', ugettext_lazy('administrative')),
+                      ('zone', ugettext_lazy('zone'))]
 
 # chars allowed in passwords or reset/validation tokens
 allowed_chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -95,66 +97,97 @@ class contactbyemail_form(forms.Form):
   email = forms.EmailField(max_length=100)
 
 class contactbyhandle_form(forms.Form):
-  handle = forms.CharField(max_length=15, initial=HANDLESUFFIX, help_text='Your handle')
+  handle = forms.CharField(max_length=15, initial=HANDLESUFFIX,
+                           help_text=ugettext_lazy('Your handle'))
 
 class contactbydomain_form(forms.Form):
-  domain = forms.CharField(max_length=80, initial='.eu.org', help_text='Domain')
+  domain = forms.CharField(max_length=80, initial='.eu.org',
+                           help_text=ugettext_lazy('Domain'))
 
 class contactchange_form(forms.Form):
-  pn1 = forms.RegexField(max_length=60, label="Name", regex='^[a-zA-Z \.-]+\s+[a-zA-Z \.-]')
-  em1 = forms.EmailField(max_length=64, label="E-mail")
-  ad1 = forms.CharField(max_length=80, label="Organization")
-  ad2 = forms.CharField(max_length=80, label="Address (line 1)")
-  ad3 = forms.CharField(max_length=80, label="Address (line 2)", required=False)
-  ad4 = forms.CharField(max_length=80, label="Address (line 3)", required=False)
-  ad5 = forms.CharField(max_length=80, label="Address (line 4)", required=False)
-  ad6 = forms.ChoiceField(initial='', label="Country (required)",
+  pn1 = forms.RegexField(max_length=60, label=ugettext_lazy("Name"),
+              regex='^[a-zA-Z \.-]+\s+[a-zA-Z \.-]')
+  em1 = forms.EmailField(max_length=64, label=ugettext_lazy("E-mail"))
+  ad1 = forms.CharField(max_length=80, label=ugettext_lazy("Organization"))
+  ad2 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 1)"))
+  ad3 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 2)"),
+                        required=False)
+  ad4 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 3)"),
+                        required=False)
+  ad5 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 4)",
+                        required=False))
+  ad6 = forms.ChoiceField(initial='', label=ugettext_lazy("Country"),
                           choices=countries_get(connection.cursor()))
-  ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
-  fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
-  private = forms.BooleanField(label="Hide address/phone/fax in public whois", required=False)
+  ph1 = forms.RegexField(max_length=30, label=ugettext_lazy("Phone"),
+                         regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
+  fx1 = forms.RegexField(max_length=30, label=ugettext_lazy("Fax"),
+                         regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
+  private = forms.BooleanField(label=ugettext_lazy("Private (not shown in the public Whois)"), required=False)
 
 class contact_form(contactchange_form):
-  p1 = forms.CharField(max_length=20, label='Password', required=False, widget=PasswordInput)
-  p2 = forms.CharField(max_length=20, label='Confirm Password', required=False, widget=PasswordInput)
+  p1 = forms.CharField(max_length=20, label=ugettext_lazy('Password'),
+                       required=False, widget=PasswordInput)
+  p2 = forms.CharField(max_length=20, label=ugettext_lazy('Confirm Password'),
+                       required=False, widget=PasswordInput)
   policy = forms.BooleanField(label="I accept the Policy", required=True)
 
 class registrant_form(forms.Form):
   # same as contactchange_form minus the email field
-  pn1 = forms.RegexField(max_length=60, label="Name", regex='^[a-zA-Z \.-]+\s+[a-zA-Z \.-]')
+  pn1 = forms.RegexField(max_length=60, label=ugettext_lazy(label="Name"),
+              regex='^[a-zA-Z \.-]+\s+[a-zA-Z \.-]')
   # disabled until we get rid of the RIPE model (unshared registrant records)
   #em1 = forms.EmailField(max_length=64, label="E-mail", required=False)
-  ad1 = forms.CharField(max_length=80, label="Organization")
-  ad2 = forms.CharField(max_length=80, label="Address (line 1)")
-  ad3 = forms.CharField(max_length=80, label="Address (line 2)", required=False)
-  ad4 = forms.CharField(max_length=80, label="Address (line 3)", required=False)
-  ad5 = forms.CharField(max_length=80, label="Address (line 4)", required=False)
-  ad6 = forms.ChoiceField(initial='', label="Country (required)",
+  ad1 = forms.CharField(max_length=80, label=ugettext_lazy("Organization"))
+  ad2 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 1)"))
+  ad3 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 2)"),
+                        required=False)
+  ad4 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 3)"),
+                        required=False)
+  ad5 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 4)"),
+                        required=False)
+  ad6 = forms.ChoiceField(initial='', label=ugettext_lazy("Country"),
                           choices=countries_get(connection.cursor()))
-  ph1 = forms.RegexField(max_length=30, label="Phone Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
-  fx1 = forms.RegexField(max_length=30, label="Fax Number", regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
-  private = forms.BooleanField(label="Hide address/phone/fax in public whois", required=False)
+  ph1 = forms.RegexField(max_length=30, label=ugettext_lazy("Phone"),
+                         regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
+  fx1 = forms.RegexField(max_length=30, label=ugettext_lazy("Fax"),
+                         regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
+  private = forms.BooleanField(label=ugettext_lazy("Private (not shown in the public Whois)"), required=False)
 
 class domcontact_form(forms.Form):
-  contact_type = forms.ChoiceField(choices=domcontact_choices, label="type")
+  contact_type = forms.ChoiceField(choices=domcontact_choices,
+                                   label=ugettext_lazy("type"))
   handle = forms.CharField(max_length=10, initial=HANDLESUFFIX)
 
 class contactlogin_form(forms.Form):
-  handle = forms.CharField(max_length=15, initial=HANDLESUFFIX, help_text='Your handle')
-  password = forms.CharField(max_length=30, help_text='Your password', widget=PasswordInput)
+  handle = forms.CharField(max_length=15, initial=HANDLESUFFIX,
+                           help_text=ugettext_lazy('Your handle'))
+  password = forms.CharField(max_length=30,
+                             help_text=ugettext_lazy('Your password'),
+                             widget=PasswordInput)
 
 class resetpass_form(forms.Form):
-  resettoken = forms.CharField(max_length=30, label='Reset Token')
-  pass1 = forms.CharField(max_length=20, label='New Password', widget=PasswordInput)
-  pass2 = forms.CharField(max_length=20, label='Confirm Password', widget=PasswordInput)
+  resettoken = forms.CharField(max_length=30,
+                               label=ugettext_lazy('Reset Token'))
+  pass1 = forms.CharField(max_length=20,
+                          label=ugettext_lazy('New Password'),
+                          widget=PasswordInput)
+  pass2 = forms.CharField(max_length=20,
+                          label=ugettext_lazy('Confirm Password'),
+                          widget=PasswordInput)
 
 class changemail_form(forms.Form):
   token = forms.CharField(max_length=30)
 
 class chpass_form(forms.Form):
-  pass0 = forms.CharField(max_length=30, label='Current Password', widget=PasswordInput)
-  pass1 = forms.CharField(max_length=30, label='New Password', widget=PasswordInput)
-  pass2 = forms.CharField(max_length=30, label='Confirm Password', widget=PasswordInput)
+  pass0 = forms.CharField(max_length=30,
+                          label=ugettext_lazy('Current Password'),
+                          widget=PasswordInput)
+  pass1 = forms.CharField(max_length=30,
+                          label=ugettext_lazy('New Password'),
+                          widget=PasswordInput)
+  pass2 = forms.CharField(max_length=30,
+                          label=ugettext_lazy('Confirm Password'),
+                          widget=PasswordInput)
 
 #
 # 'view' functions called from urls.py and friends
@@ -186,7 +219,7 @@ def login(request):
       return HttpResponseRedirect(next)
       #return HttpResponse('OK')
     if not request.session.test_cookie_worked():
-      vars['msg'] = "Please enable cookies"
+      vars['msg'] = _("Please enable cookies")
       vars['form'] = contactlogin_form().as_table()
       vars = RequestContext(request, vars)
       return render_to_response('whois/login.html', vars)
@@ -206,15 +239,15 @@ def login(request):
         raise SuspiciousOperation
       v = c[0].validated_on
       if not v:
-        vars['msg'] = "You need to validate your account. " \
-                      "Please check your e-mail for the validation link."
+        vars['msg'] = _("You need to validate your account. " \
+                      "Please check your e-mail for the validation link.")
       elif user.is_active:
         django.contrib.auth.login(request, user)
         return HttpResponseRedirect(next)
       else:
-        vars['msg'] = "Sorry, your account has been disabled"
+        vars['msg'] = _("Sorry, your account has been disabled")
     else:
-      vars['msg'] = "Your username and/or password is incorrect"
+      vars['msg'] = _("Your username and/or password is incorrect")
     vars = RequestContext(request, vars)
     return render_to_response('whois/login.html', vars)
   else:
@@ -275,7 +308,7 @@ def makeresettoken(request, handle=None):
                              'handleshort': handle,
                              'token': token }, FROMADDR, [ ct.email ]):
        vars = RequestContext(request,
-         {'msg': "Sorry, error while sending mail. Please try again later."})
+         {'msg': _("Sorry, error while sending mail. Please try again later.")})
        return render_to_response('whois/msgnext.html', vars)
     vars = RequestContext(request, {'ehandle': suffixadd(handle)})
     return render_to_response('whois/tokensent.html', vars)
@@ -299,11 +332,11 @@ def resetpass2(request, handle):
     pass1 = request.POST.get('pass1', 'A')
     pass2 = request.POST.get('pass2', 'B')
     if pass1 != pass2:
-      vars['msg'] = "They don't match, try again"
+      vars['msg'] = _("They don't match, try again")
       vars = RequestContext(request, vars)
       return render_to_response('whois/resetpass2.html', vars)
     if len(pass1) < 8:
-      vars['msg'] = "Password should be at least 8 chars"
+      vars['msg'] = _("Password should be at least 8 chars")
       vars = RequestContext(request, vars)
       return render_to_response('whois/resetpass2.html', vars)
     token = request.POST.get('resettoken', 'C')
@@ -311,7 +344,7 @@ def resetpass2(request, handle):
     if len(tkl) > 1:
       raise SuspiciousOperation
     if len(tkl) == 0 or token != tkl[0].token:
-      vars['msg'] = "Invalid reset token"
+      vars['msg'] = _("Invalid reset token")
       vars = RequestContext(request, vars)
       return render_to_response('whois/resetpass2.html', vars)
     tk = tkl[0]
@@ -338,9 +371,9 @@ def contactcreate(request):
     p1 = request.POST.get('p1', '')
     p2 = request.POST.get('p2', '')
     if p1 != p2:
-      p_errors = ["Passwords don't match"]
+      p_errors = [_("Passwords don't match")]
     elif len(p1) < 8:
-      p_errors = ["Password too short"]
+      p_errors = [_("Password too short")]
 
     if form.is_valid() and not p_errors:
       #
@@ -379,10 +412,11 @@ def contactcreate(request):
                                 'from': FROMADDR, 'to': d['em'][0],
                                 'handle': suffixadd(ehandle)},
                                FROMADDR, [d['em'][0]]):
-          vars['msg'] = "Sorry, error while sending mail. Please try again later."
+          vars['msg'] = _("Sorry, error while sending mail. Please try again later.")
           vars = RequestContext(request, vars)
           return render_to_response('whois/msgnext.html', vars)
-        vars['msg'] = "Contact successfully created as %s. Please check instructions sent to %s to validate it." % (suffixadd(ehandle), d['em'][0])
+        vars['msg'] = _("Contact successfully created as %(handle)s. Please check instructions sent to %(email)s to validate it.") \
+                        % {'handle': suffixadd(ehandle), 'email': d['em'][0]}
         vars = RequestContext(request, vars)
         return render_to_response('whois/msgnext.html', vars)
       # else: fall through
@@ -405,11 +439,11 @@ def contactvalidate(request, handle, valtoken):
   msg = None
   ctl = Contacts.objects.filter(handle=handle)
   if len(ctl) != 1:
-    msg = "Sorry, contact handle or validation token is not valid."
+    msg = _("Sorry, contact handle or validation token is not valid.")
   else:
     tkl = _token_find(ctl[0].id, "contactval")
     if len(tkl) != 1 or tkl[0].token != valtoken:
-      msg = "Sorry, contact handle or validation token is not valid."
+      msg = _("Sorry, contact handle or validation token is not valid.")
   if msg:
     vars = RequestContext(request, {'msg': msg})
     return render_to_response('whois/msgnext.html', vars)
@@ -424,7 +458,7 @@ def contactvalidate(request, handle, valtoken):
     ct.save()
     tkl[0].delete()
     vars = RequestContext(request,
-                          {'msg': "Your contact handle is now valid."})
+                          {'msg': _("Your contact handle is now valid.")})
     return render_to_response('whois/msgnext.html', vars)
   raise SuspiciousOperation
 
@@ -462,11 +496,11 @@ def chpass(request):
     pass1 = request.POST.get('pass1', '')
     pass2 = request.POST.get('pass2', '')
     if pass1 != pass2:
-      vars['msg'] = "They don't match, try again"
+      vars['msg'] = _("They don't match, try again")
       vars = RequestContext(request, vars)
       return render_to_response('whois/chpass.html', vars)
     if len(pass1) < 8:
-      vars['msg'] = "Password should be at least 8 chars"
+      vars['msg'] = _("Password should be at least 8 chars")
       vars = RequestContext(request, vars)
       return render_to_response('whois/chpass.html', vars)
 
@@ -476,7 +510,7 @@ def chpass(request):
 
     ct = ctlist[0]
     if ct.passwd != crypt.crypt(pass0, ct.passwd):
-      vars['msg'] = "Current password is not correct"
+      vars['msg'] = _("Current password is not correct")
       vars = RequestContext(request, vars)
       return render_to_response('whois/chpass.html', vars)
     ct.passwd = _pwcrypt(pass1)
@@ -593,14 +627,14 @@ def contactchange(request, registrantdomain=None):
                                 'newemail': newemail,
                                 'token': token }, FROMADDR, [ newemail ]):
           vars = RequestContext(request,
-            {'msg': "Sorry, error while sending mail. Please try again later."})
+            {'msg': _("Sorry, error while sending mail. Please try again later.")})
           return render_to_response('whois/msgnext.html', vars)
         return HttpResponseRedirect(reverse(changemail))
       if registrantdomain:
         return HttpResponseRedirect(reverse(domainedit,
                                             args=[registrantdomain]))
       else:
-        vars['msg'] = "Contact information changed successfully"
+        vars['msg'] = _("Contact information changed successfully")
         vars = RequestContext(request, vars)
         return render_to_response('whois/msgnext.html', vars)
     else:
@@ -629,7 +663,7 @@ def changemail(request):
   if len(tkl) > 1:
     raise SuspiciousOperation
   if len(tkl) == 0:
-      vars['msg'] = "Sorry, didn't find any waiting email address change."
+      vars['msg'] = _("Sorry, didn't find any waiting email address change.")
       vars = RequestContext(request, vars)
       return render_to_response('whois/changemail.html', vars)
   tk = tkl[0]
@@ -642,7 +676,7 @@ def changemail(request):
   elif request.method == "POST":
     token = request.POST.get('token', 'C')
     if token != tk.token:
-      vars['msg'] = "Invalid token"
+      vars['msg'] = _("Invalid token")
       vars = RequestContext(request, vars)
       return render_to_response('whois/changemail.html', vars)
     newemail = tk.args
@@ -704,7 +738,7 @@ def domainedit(request, fqdn):
   # check handle is authorized on domain
   if not check_handle_domain_auth(connection.cursor(), handle + HANDLESUFFIX, f) \
      and not is_admin:
-    return HttpResponseForbidden("Unauthorized")
+    return HttpResponseForbidden(_("Unauthorized"))
 
   dbdom = Domain(connection.cursor(), did=dom.id)
   dbdom.fetch()
@@ -719,7 +753,7 @@ def domainedit(request, fqdn):
       chandle = suffixstrip(request.POST['handle'].upper())
       ctl = Contacts.objects.filter(handle=chandle)
       if len(ctl) == 0:
-        msg = "Contact %s not found" % suffixadd(chandle)
+        msg = _("Contact %s not found") % suffixadd(chandle)
       elif len(ctl) != 1:
         raise SuspiciousOperation
       else:
@@ -737,12 +771,12 @@ def domainedit(request, fqdn):
               numcontacts += len(dbdom.d[i+'c'])
             if numcontacts == 1:
               # Refuse deletion of the last contact
-              msg = "Sorry, must leave at least one contact!"
+              msg = _("Sorry, must leave at least one contact!")
             else:
               dbdom.d[code].remove(cid)
               dbdom.update()
           else:
-            msg = "%s is not a contact" % suffixadd(chandle)
+            msg = _("%s is not a contact") % suffixadd(chandle)
           # Fall through to updated form display
         elif 'submit' in request.POST and request.POST['submit'] == 'Add' \
             or 'submita' in request.POST:
@@ -773,7 +807,7 @@ def domainedit(request, fqdn):
         posturi = reverse(domaineditconfirm, args=[f.lower()])
       else:
         posturi = request.path
-      formlist.append({'contact_type': ct,
+      formlist.append({'contact_type': ugettext_lazy(ct),
                        'handle': suffixadd(cthandle),
                        'posturi': posturi })
 
@@ -822,7 +856,7 @@ def domaindelete(request, fqdn):
     if err:
       msg = err;
     else:
-      msg = 'Sorry, domain deletion failed, please try again later.'
+      msg = _('Sorry, domain deletion failed, please try again later.')
     vars = RequestContext(request,
              {'msg': msg,
               'is_admin': check_is_admin(request.user.username)})
@@ -840,7 +874,7 @@ def domainundelete(request, fqdn):
     raise PermissionDenied
   if not check_handle_domain_auth(connection.cursor(),
                                   request.user.username, fqdn):
-    return HttpResponseForbidden("Unauthorized")
+    return HttpResponseForbidden(_("Unauthorized"))
 
   dbh = psycopg2.connect(autoreg.conf.dbstring)
   dd = autoreg.dns.db.db(dbh)

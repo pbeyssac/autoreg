@@ -10,6 +10,7 @@ from django.http import HttpResponseRedirect, HttpResponseNotFound, \
   HttpResponseForbidden, StreamingHttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.utils.translation import ugettext as _
 
 import autoreg.conf
 import autoreg.dns.check
@@ -62,9 +63,9 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
 
   if not errs and doit:
     if newdomain:
-      yield "No error, storing for validation...\n"
+      yield _("No error, storing for validation...\n")
     else:
-      yield "No error, applying changes...\n"
+      yield _("No error, applying changes...\n")
     rec = []
     for ns in soac.nslist:
       rec.append("\tNS\t%s." % ns)
@@ -91,8 +92,8 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
       rql = Requests.objects.filter(action='N', contact_id=contact.id,
                                     fqdn=domain.upper(), state='Open')
       if rql.count() > 0:
-        yield "IGNORED: you already have a pending request " \
-              + rql[0].id + " for that domain.\n"
+        yield _("IGNORED: you already have a pending request %(rqid)s"
+                " for that domain.\n") % {'rqid': rql[0].id}
         return
       req = Requests(id=rqid, action='N', language='en',
                      email=contact.email, fqdn=domain.upper(), state='Open',
@@ -100,7 +101,7 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
                      zonerecord=zonerecord,
                      whoisrecord=whoisrecord)
       req.save()
-      yield "Saved as request " + rqid + "\n"
+      yield _("Saved as request %(rqid)s\n") % {'rqid': rqid}
     else:
       try:
         dnsdb.modify(domain, None, 'NS', rrfile)
@@ -150,7 +151,7 @@ def domainds(request, fqdn):
   if not check_handle_domain_auth(connection.cursor(),
                                   request.user.username, fqdn) \
       and not is_admin:
-    return HttpResponseForbidden("Unauthorized")
+    return HttpResponseForbidden(_("Unauthorized"))
   handle = request.user.username.upper()
   verbose = False
 
@@ -163,7 +164,7 @@ def domainds(request, fqdn):
   try:
     dsok, elerr = dd.checkds(fqdn, None)
   except autoreg.dns.db.DomainError:
-    return HttpResponseNotFound("Domain not found")
+    return HttpResponseNotFound(_("Domain not found"))
 
   nslist = [ rr[3] for rr in dd.queryrr(fqdn, None, '', 'NS') ]
 
@@ -217,9 +218,9 @@ def domainds(request, fqdn):
       dsdup = [ ds for ds in dsnew if ds in dscur ]
       dsnew = [ ds for ds in dsnew if ds in dsserved and ds not in dscur ]
       if dsdup and not dsnew:
-        dserrs.append("Requested DS already in zone")
+        dserrs.append(_("Requested DS already in zone"))
       if dsnokey:
-        dserrs.append("Requested DS does not match any published DNSKEY in zone")
+        dserrs.append(_("Requested DS does not match any published DNSKEY in zone"))
       if dsok and not dserrs:
         for ds in dsnew:
           dd.addrr(fqdn, None, '', None, 'DS', '%d %d %d %s' % ds,
@@ -275,7 +276,7 @@ def _is_orphan(fqdn, ddro):
   """
   w = Whoisdomains.objects.filter(fqdn=fqdn.upper())
   if len(w) != 0:
-    return False, "exists in Whois"
+    return False, _("exists in Whois")
   outfile = io.StringIO()
   found = True
   try:
@@ -286,7 +287,7 @@ def _is_orphan(fqdn, ddro):
     found = False
   if found:
     return True, ""
-  return False, "does not exist in zone"
+  return False, _("does not exist in zone")
 
 def _adopt_orphan(request, ddro, dbh, fqdn, form):
   vars = {'is_admin': True}
@@ -316,7 +317,7 @@ def domainns(request, fqdn=None):
   if fqdn and not check_handle_domain_auth(connection.cursor(),
                                   handle, fqdn) \
       and not is_admin:
-    return HttpResponseForbidden("Unauthorized")
+    return HttpResponseForbidden(_("Unauthorized"))
 
   newdomain = (fqdn is None)
 
@@ -337,9 +338,9 @@ def domainns(request, fqdn=None):
       ip = request.POST.get(i).strip()
       e = []
       if fp and not autoreg.dns.check.checkfqdn(fp):
-        e.append('Invalid name')
+        e.append(_('Invalid name'))
       if ip and not autoreg.dns.check.checkip(ip):
-        e.append('Invalid IP address')
+        e.append(_('Invalid IP address'))
       if e:
         errors['nsip%d' % n] = e
       nsiplist.append((fp, ip))
@@ -369,9 +370,9 @@ def domainns(request, fqdn=None):
       therrors = []
       tcl = Contacts.objects.filter(handle=suffixstrip(th))
       if tcl.count() != 1:
-        errors['th'] = ['Contact does not exist']
+        errors['th'] = [_('Contact does not exist')]
       if not nsiplist:
-        errors['nsip1'] = ['NS list is empty']
+        errors['nsip1'] = [_('NS list is empty')]
       dbh2 = psycopg2.connect(autoreg.conf.dbstring)
       ddro = autoreg.dns.db.db(dbh2, nowrite=True)
       ddro.login('autoreg')

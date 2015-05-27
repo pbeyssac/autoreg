@@ -1,14 +1,12 @@
-{% extends "base-varheaders.mail" %}
-{% block subject %}new eu.org contact {{ handle }}{% endblock %}
-{% block content %}Hello,
+{% extends "base-varheaders.mail" %}{% load i18n %}
+{% block subject %}{% blocktrans %}new eu.org contact {{ handle }}{% endblocktrans %}{% endblock %}
+{% block content %}{% url 'arf.whois.views.contactvalidate' handleshort valtoken as url %}{% blocktrans %}Hello,
 
 Your contact record has been successfully created with the following
 data. You still need to activate it, by going to the following page:
-{{ urlbase }}{% url 'arf.whois.views.contactvalidate' handleshort valtoken %}
+{{ urlbase }}{{ url }}
 
-Best Regards,
-The EU.org team
-
--------------------------------------------------------------------
 {{ whoisdata }}
+
+{% endblocktrans %}
 {% endblock %}

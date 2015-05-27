@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}EU.org{% endblock %}
 {% block h1title %}EU.org{% endblock %}
 {% block msg %}{% if msg %}{{ msg }}
@@ -7,24 +8,24 @@
 <FORM class="form" id="id_loginform" ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
 <div>
-<label for="id_handle">Handle</label>
+<label for="id_handle">{% trans "Handle" %}</label>
 <input id="id_handle" maxlength="15" name="handle" type="text" value="-FREE" />
-<span class="helptext">Your handle</span>
+<span class="helptext">{% trans "Your handle" %}</span>
 </div>
 <div>
-<label for="id_password">Password</label><input id="id_password" maxlength="30" name="password" type="password" />
-<span class="helptext">Your password</span>
+<label for="id_password">{% trans "Password" %}</label><input id="id_password" maxlength="30" name="password" type="password" />
+<span class="helptext">{% trans "Your password" %}</span>
 </div>
 {% if next %}<INPUT TYPE="hidden" NAME="next" VALUE="{{ next }}">
 {% endif %}
-<INPUT class="action" TYPE="submit" NAME="login" VALUE="Login">
+<INPUT class="action" TYPE="submit" NAME="login" VALUE="{% trans "Login" %}">
 </FORM>
-<a class="action" href="{% url 'arf.whois.views.contactcreate' %}"><span>Register</span></a>
+<a class="action" href="{% url 'arf.whois.views.contactcreate' %}"><span>{% trans "Register" %}</span></a>
 <div class="loginhelp">
-<strong>You can't remember the contact handle or password?</strong>
+<strong>{% trans "You can't remember the contact handle or password?" %}</strong>
 <ul>
-<li>If you forgot your password or never had one, <a href="{% url 'arf.whois.views.makeresettoken' %}">set a new password here</a>.
-<li>If you remember your domain name, you can <a href="{% url 'arf.whois.views.contactbydomain' %}">find your contact handle</a>.
+<li>{% url 'arf.whois.views.makeresettoken' as urlreset %}{% blocktrans %}If you forgot your password or never had one, <a href="{{ urlreset }}">set a new password here</a>.{% endblocktrans %}
+<li>{% url 'arf.whois.views.contactbydomain' as urlbydom %}{% blocktrans %}If you remember your domain name, you can <a href="{{ urlbydom }}">find your contact handle</a>.{% endblocktrans %}
 </ul>
 </div>
 {% endblock %}

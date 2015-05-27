@@ -1,10 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Domain List{% endblock %}
-{% block h1title %}Domain List{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Domain List" %}{% endblock %}
+{% block h1title %}{% trans "Domain List" %}{% endblock %}
 {% block form %}
-<a class="action" href="{% url 'arf.dns.views.domainns' %}">New Domain</A>
+<a class="action" href="{% url 'arf.dns.views.domainns' %}">{% trans "New Domain" %}</A>
 <table class="domainlist">
-<tr><th>Domain</th><th>Created</th><th>Updated</th><th>DNSSEC</th><th>Flags</th></tr>
+<tr><th>{% trans "Domain" %}</th><th>{% trans "Created" %}</th><th>{% trans "Updated" %}</th><th>DNSSEC</th><th>{% trans "Flags" %}</th></tr>
 {% for dds in domds %}
 {% if dds.5 and dds.6 %}<tr class="deldom">{% else %}<tr>{% endif %}
 <td><a href="{% url 'arf.whois.views.domainedit' dds.0.lower %}">{{ dds.0 }}</a>
@@ -12,13 +13,13 @@
 <td>{{ dds.4|date:"o-m-d H:i" }}
 <td>
 {% if dds.2 %}
- {% if dds.1 %}{% if dds.7 %}Delegated{% else %}Eligible{% endif %}
- {% else %}Protected{% endif %}
+ {% if dds.1 %}{% if dds.7 %}{% trans "Delegated" %}{% else %}{% trans "Eligible" %}{% endif %}
+ {% else %}{% trans "Protected" %}{% endif %}
 {% else %}
  Unavailable
 {% endif %}
-<td>{% if dds.5 and dds.6 %}deleted{% endif %}
+<td>{% if dds.5 and dds.6 %}{% trans "deleted" %}{% endif %}
 <td><A class="miniaction" HREF="{% url 'arf.whois.views.domainedit' dds.0.lower %}">►</A>
 {% endfor %}</table>
-{% if next %}<a href="{{ next }}">Continue</a>{% endif %}
+{% if next %}<a href="{{ next }}">{% trans "Continue" %}</a>{% endif %}
 {% endblock %}

@@ -1,7 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Password changed{% endblock %}
-{% block h1title %}Password changed{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Password changed" %}{% endblock %}
+{% block h1title %}{% trans "Password changed" %}{% endblock %}
 {% block msg %}
-Password has been successfully changed for <span class="handle">{{ ehandle }}</span>.
-{% if next %}<br><a href="{{ next }}">Continue</a>{% endif %}
+{% blocktrans %}Password has been successfully changed for <span class="handle">{{ ehandle }}</span>.{% endblocktrans %}
+{% if next %}<br><a href="{{ next }}">{% trans "Continue" %}</a>{% endif %}
 {% endblock %}

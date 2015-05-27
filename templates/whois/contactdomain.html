@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}{{ title }}{% endblock %}
 {% block h1title %}{{ h1title }}{% endblock %}
 {% block form %}
 {% for h in handles %}
-<a href="{% url 'arf.whois.views.makeresettoken' h %}">My handle is {{ h }}{{ suffix }}</a>.<BR>
+<a href="{% url 'arf.whois.views.makeresettoken' h %}">{% blocktrans %}My handle is {{ h }}{{ suffix }}{% endblocktrans %}</a>.<BR>
 {% endfor %}
 {% endblock %}

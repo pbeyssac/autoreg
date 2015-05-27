@@ -1,6 +1,6 @@
-{% extends "base-varheaders.mail" %}
-{% block subject %}request [{{ rqid }}] (domain {{ domain }}) accepted{% endblock %}
-{% block content %}Hello,
+{% extends "base-varheaders.mail" %}{% load i18n %}
+{% block subject %}{% blocktrans %}request [{{ rqid }}] (domain {{ domain }}) accepted{% endblocktrans %}{% endblock %}
+{% block content %}{% blocktrans %}Hello,
 
 Your request [{{ rqid }}] for creation of domain {{ domain }}
 has been accepted.
@@ -9,15 +9,11 @@ The following records will be inserted in the zone file:
 {{ zonerecord }}
 
 The following records will be inserted in the WHOIS base:
-{{ whoisrecord }}
-{% if reasonfield %}Additional comment:
+{{ whoisrecord }}{% endblocktrans %}
+{% if reasonfield %}{% trans "Additional comment:" %}
 
 {{ reasonfield }}
 {% endif %}
-Please allow about half a day for propagation.
-
-Best Regards,
-The EU.org team
-
--------------------------------------------------------------------
+{% blocktrans %}Please allow about half a day for propagation.
+{% endblocktrans %}
 {% endblock %}

@@ -1,7 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Email address changed{% endblock %}
-{% block h1title %}Email address changed{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Email address changed" %}{% endblock %}
+{% block h1title %}{% trans "Email address changed" %}{% endblock %}
 {% block msg %}
-Email address has been successfully set to <span class="email">{{ newemail }}</span>.
-{% if next %}<br><a href="{{ next }}">Continue</a>{% endif %}
+{% blocktrans %}Email address has been successfully set to <span class="email">{{ newemail }}</span>.{% endblocktrans %}
+{% if next %}<br><a href="{{ next }}">{% trans "Continue" %}</a>{% endif %}
 {% endblock %}

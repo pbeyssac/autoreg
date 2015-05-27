@@ -1,9 +1,9 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load i18n %}
 {% block title %}{% endblock %}
 {% block h1title %}{% endblock %}
 {% block form %}
 <div class="rqlog">
-Date: {{ rql.date|date:"o-m-d H:i" }} FQDN: {{ rql.fqdn }} Errors: {{ rql.errors }} Warnings: {{ rql.warnings }}
+{% trans "Date:" %} {{ rql.date|date:"o-m-d H:i" }} FQDN: {{ rql.fqdn }} {% trans "Errors:" %} {{ rql.errors }} {% trans "Warnings:" %} {{ rql.warnings }}
 <pre>
 {{ rql.output }}
 </pre>

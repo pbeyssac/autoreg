@@ -1,6 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Password Change{% endblock %}
-{% block h1title %}Password Change{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Password Change" %}{% endblock %}
+{% block h1title %}{% trans "Password Change" %}{% endblock %}
 {% block msg %}{% if msg %}{{ msg }}
 {% endif %}{% endblock %}
 {% block form %}
@@ -9,6 +10,6 @@
 <TABLE>
 {{ form }}
 </TABLE>
-<INPUT class="action" TYPE="submit" NAME="change" VALUE="Change Password">
+<INPUT class="action" TYPE="submit" NAME="change" VALUE="{% trans "Change Password" %}">
 </FORM>
 {% endblock %}

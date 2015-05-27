@@ -1,77 +1,77 @@
-{% extends "base.html" %}
-{% block title %}Request display{% endblock %}
-{% block h1title %}Request display{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Request display" %}{% endblock %}
+{% block h1title %}{% trans "Request display" %}{% endblock %}
 {% block msg %}
 
 <FORM ACTION="{% url 'arf.requests.views.rqval' %}" METHOD="POST">
 {% csrf_token %}
 {% for r in rlist %}
-<h2>Request {{ r.id }}</h2>
+<h2>{% trans "Request" %} {{ r.id }}</h2>
 
 {% if r.action == 'D' %}
-<h3>Records to be deleted from zone file</h3>
+<h3>{% trans "Records to be deleted from zone file" %}</h3>
 <pre class="zone">
 {{ r.azout }}
 </pre>
 {% endif %}
 
 {% if r.zonerecord %}
-<h3>Records to be inserted in zone file</h3>
+<h3>{% trans "Records to be inserted in zone file" %}</h3>
 <pre class="zone">{{ r.zonerecord }}</pre>
 {% endif %}
 
 {% if r.whoisrecord %}
-<h3>Records to be inserted in WHOIS base</h3>
+<h3>{% trans "Records to be inserted in WHOIS base" %}</h3>
 <pre class="whoisdisplay">
 {{ r.whoisfiltered.strip }}</pre>
 {% endif %}
 
 Tags: {% if r.tags != None %}{{ r.tags }}{% endif %}<br>
-<a href="{% url 'arf.requests.views.rqedit' r.id %}" target="_blank">Edit whois/tags</a>
+<a href="{% url 'arf.requests.views.rqedit' r.id %}" target="_blank">{% trans "Edit whois/tags" %}</a>
 
 <br>
 {% for w in r.wlistout %}
-<h3>Current whois record for {{ w.0 }}</h3>
+<h3>{% blocktrans with fqdn=w.0 %}Current whois record for {{ fqdn }}{% endblocktrans %}</h3>
 <pre class="whoisdisplay">{{ w.1.strip }}</pre>
 {% endfor %}
 
-Requester: <a href="mailto:{{ r.email }}">{{ r.email }}</a>
+{% trans "Requester:" %} <a href="mailto:{{ r.email }}">{{ r.email }}</a>
 
 <INPUT NAME="rq{{ r.suffix }}" TYPE="hidden" VALUE="{{ r.id }}">
 
 <div class="rqaction">
 <h3>Action</h3>
   <label for="id_action{{ r.suffix }}_1">
-  <input id="id_action{{ r.suffix }}_1" name="action{{ r.suffix }}" type="radio" value="none">None
+  <input id="id_action{{ r.suffix }}_1" name="action{{ r.suffix }}" type="radio" value="none">{% trans "None" %}
   </label>
   <label for="id_action{{ r.suffix }}_2">
-  <input id="id_action{{ r.suffix }}_2" name="action{{ r.suffix }}" type="radio" value="accept">Accept
+  <input id="id_action{{ r.suffix }}_2" name="action{{ r.suffix }}" type="radio" value="accept">{% trans "Accept" %}
   </label>
   <label for="id_action{{ r.suffix }}_3">
-  <input id="id_action{{ r.suffix }}_3" name="action{{ r.suffix }}" type="radio" value="delete">Delete quietly
+  <input id="id_action{{ r.suffix }}_3" name="action{{ r.suffix }}" type="radio" value="delete">{% trans "Delete quietly" %}
   </label>
   <div class="rqrejectform">Reject:
    <label for="id_action{{ r.suffix }}_4">
-   <input id="id_action{{ r.suffix }}_4" name="action{{ r.suffix }}" type="radio" value="rejectbog">Bogus address
+   <input id="id_action{{ r.suffix }}_4" name="action{{ r.suffix }}" type="radio" value="rejectbog">{% trans "Bogus address" %}
    </label>
    <label for="id_action{{ r.suffix }}_5">
-   <input id="id_action{{ r.suffix }}_5" name="action{{ r.suffix }}" type="radio" value="rejectful">No full name
+   <input id="id_action{{ r.suffix }}_5" name="action{{ r.suffix }}" type="radio" value="rejectful">{% trans "No full name" %}
    </label>
    <label for="id_action{{ r.suffix }}_6">
-   <input id="id_action{{ r.suffix }}_6" name="action{{ r.suffix }}" type="radio" value="rejectnok">Already allocated
+   <input id="id_action{{ r.suffix }}_6" name="action{{ r.suffix }}" type="radio" value="rejectnok">{% trans "Already allocated" %}
    </label>
    <label for="id_action{{ r.suffix }}_7">
-   <input id="id_action{{ r.suffix }}_7" name="action{{ r.suffix }}" type="radio" value="rejectcust">Other
+   <input id="id_action{{ r.suffix }}_7" name="action{{ r.suffix }}" type="radio" value="rejectcust">{% trans "Other" %}
    </label>
   </div>
  <div class="rqcomment">
-  Optional comment mailed to requester (except for actions None or Delete)
+  {% trans "Optional comment mailed to requester (except for actions None or Delete)" %}
   <div><TEXTAREA NAME="reason{{ r.suffix }}" ROWS=3 COLS=77></TEXTAREA></div>
  </div>
 </div>
 
 <HR>
 {% endfor %}
-<INPUT class="action" TYPE="submit" VALUE="Submit all">
+<INPUT class="action" TYPE="submit" VALUE="{% trans "Submit all" %}">
 </FORM>
 {% endblock %}

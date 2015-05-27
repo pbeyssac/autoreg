@@ -22,6 +22,7 @@ from django.db import connection, transaction, IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.utils.translation import ugettext as _
 
 import models
 
@@ -108,9 +109,9 @@ def _rq1(request, r):
       dd.show(r.fqdn, None)
     except autoreg.dns.db.DomainError as e:
       if e.args[0] == autoreg.dns.db.DomainError.DNOTFOUND:
-        err = "Domain not found"
+        err = _("Domain not found")
       elif e.args[0] == autoreg.dns.db.DomainError.ZNOTFOUND:
-        err = "Domain not found"
+        err = _("Domain not found")
       else:
         raise
 
@@ -166,7 +167,7 @@ def rqedit(request, rqid):
     raise PermissionDenied
   r = models.Requests.objects.filter(id=rqid)
   if r.count() < 1:
-    vars = RequestContext(request, {'msg': 'Request not found'})
+    vars = RequestContext(request, {'msg': _('Request not found')})
     return render_to_response('requests/rqmsg.html', vars)
   r = r[0]
   if not autoreg.zauth.ZAuth(connection.cursor()).checkparent(r.fqdn, login):
@@ -199,7 +200,7 @@ def rq(request, rqid):
     raise PermissionDenied
   r = models.Requests.objects.filter(id=rqid)
   if r.count() < 1:
-    vars = RequestContext(request, {'msg': 'Request not found'})
+    vars = RequestContext(request, {'msg': _('Request not found')})
     return render_to_response('requests/rqmsg.html', vars)
   r = r[0]
   if not autoreg.zauth.ZAuth(connection.cursor()).checkparent(r.fqdn, login):
@@ -324,46 +325,47 @@ def rqlist(request, page='0'):
 
 def _rqexec(rq, out, za, login, email, action, reasonfield):
   if not models.Requests.objects.filter(id=rq).exists():
-    print("Request not found: %s" % rq, file=out)
+    print(_("Request not found: %(rqid)s") % {'rqid': rq}, file=out)
     return
   r = models.Requests.objects.get(id=rq)
   if not za.checkparent(r.fqdn, login):
-    print("Permission denied on %s" % rq, file=out)
+    print(_("Permission denied on %(rqid)s") % {'rqid': rq}, file=out)
     return
 
   has_transaction = True
   if action == 'rejectcust':
     ok = models.rq_reject(out, rq, login, '', reasonfield)
   elif action == 'rejectdup':
-    ok = models.rq_reject(out, rq, login, 'Duplicate request', reasonfield)
+    ok = models.rq_reject(out, rq, login, _('Duplicate request'), reasonfield)
   elif action == 'rejectbog':
     ok = models.rq_reject(out, rq, login,
-                          'Bogus address information', reasonfield)
+                          _('Bogus address information'), reasonfield)
   elif action == 'rejectful':
     ok = models.rq_reject(out, rq, login,
-                          'Please provide a full name', reasonfield)
+                          _('Please provide a full name'), reasonfield)
   elif action == 'rejectnok':
     ok = models.rq_reject(out, rq, login,
-                          'Sorry, this domain is already allocated',
+                          _('Sorry, this domain is already allocated'),
                           reasonfield)
   elif action == 'accept':
     ok = models.rq_accept(out, rq, login, email, reasonfield)
   else:
     if action == 'delete':
       _rq_remove(rq, 'DelQuiet');
-      print("Deleted %s" % rq, file=out)
+      print(_("Deleted %(rqid)s") % {'rqid': rq}, file=out)
     elif action == 'none':
-      print("Nothing done on %s" % rq, file=out)
+      print(_("Nothing done on %(rqid)s") % {'rqid': rq}, file=out)
     else:
-      print("What? On rq=%s action=%s reason=%s" % (rq, action, reason),
+      print(_("What? On rq=%(rqid)s action=%(action)s reason=%(reason)s") \
+              % (rq, action, reason),
             file=out)
     has_transaction = False
 
   if has_transaction:
     if ok:
-      print(u"Status: committed", file=out)
+      print(_("Status: committed"), file=out)
     else:
-      print(u"Status: cancelled", file=out)
+      print(_("Status: cancelled"), file=out)
       # raise to force a transaction rollback by Django
       raise IntegrityError("")
 
@@ -386,7 +388,7 @@ def rqval(request):
     action = request.POST['action' + str(i)]
     rq = request.POST['rq' + str(i)]
     reason = request.POST['reason' + str(i)].strip()
-    print("Processing %s..." % rq, file=out)
+    print(_("Processing %(rqid)s...") % {'rqid': rq}, file=out)
 
     with transaction.atomic():
       try:

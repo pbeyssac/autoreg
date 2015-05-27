@@ -9,6 +9,7 @@ import time
 import psycopg2
 
 from django.db import models
+from django.utils.translation import ugettext_lazy, ugettext as _
 
 import autoreg.arf.util
 from autoreg.arf.whois.models import Contacts
@@ -55,7 +56,7 @@ def rq_make_id(origin='arf'):
 def rq_accept(out, rqid, login, email, reasonfield=None):
   rl = Requests.objects.filter(id=rqid)
   if rl.count() == 0:
-    print(u"Request %s not found" % rqid, file=out)
+    print(_("Request %(rqid)s not found") % {'rqid': rqid}, file=out)
     return False
   r = rl[0]
 
@@ -83,10 +84,10 @@ def rq_accept(out, rqid, login, email, reasonfield=None):
       err = unicode(e)
 
     if err:
-      print(u"Error:", err, file=out)
+      print(_("Error:"), err, file=out)
       return False
 
-    print(u"Zone insert done\n", file=out)
+    print(_("Zone insert done\n"), file=out)
 
     inwhois = [line for line in r.whoisrecord.split('\n')
           if line != ''
@@ -105,7 +106,8 @@ def rq_accept(out, rqid, login, email, reasonfield=None):
             'whoisrecord': outwhois.getvalue(), 'zonerecord': r.zonerecord}
     if not autoreg.arf.util.render_to_mail("whois/domainnew.mail", vars,
                                            autoreg.conf.FROMADDR, mailto):
-      print(u"Mail to %s failed" % ' '.join(mailto), file=out)
+      print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
+            file=out)
       # we have to continue anyway, since the request has been executed
 
   elif r.action == 'D':
@@ -124,7 +126,8 @@ def rq_accept(out, rqid, login, email, reasonfield=None):
     vars = {'rqid': rqid, 'domain': r.fqdn.upper(), 'to': r.email}
     if not autoreg.arf.util.render_to_mail("whois/domaindel.mail", vars,
                                            autoreg.conf.FROMADDR, mailto):
-      print(u"Mail to %s failed" % ' '.join(mailto), file=out)
+      print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
+            file=out)
       # we have to continue anyway, since the request has been executed
 
   r.state = 'Acc'
@@ -135,16 +138,16 @@ def rq_accept(out, rqid, login, email, reasonfield=None):
 def rq_reject(out, rqid, login, reason, reasonfield):
   rl = Requests.objects.filter(id=rqid)
   if rl.count() == 0:
-    print(u"Request %s not found" % rqid, file=out)
+    print(_("Request %(rqid)s not found") % {'rqid': rqid}, file=out)
     return False
   r = rl[0]
 
   mailto = [r.email]
 
   if r.action == 'N':
-    action = "creation"
+    action = ugettext_lazy("creation")
   elif r.action == 'D':
-    action = "deletion"
+    action = ugettext_lazy("deletion")
   else:
     action = "???"
 
@@ -153,10 +156,11 @@ def rq_reject(out, rqid, login, reason, reasonfield):
 
   if not autoreg.arf.util.render_to_mail("whois/domainrej.mail", vars,
                                          autoreg.conf.FROMADDR, mailto):
-    print(u"Mail to %s failed" % ' '.join(mailto), file=out)
+    print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
+          file=out)
     return False
 
-  print(u"Mail to %s done" % ' '.join(mailto), file=out)
+  print(_("Mail to %(mails)s done") % {'mails': ' '.join(mailto)}, file=out)
 
   r.state = 'Rej'
   r.save()

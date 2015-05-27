@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>{% load i18n %}
 <HTML>
 <HEAD>
 <link rel="stylesheet" type="text/css" href="/style.css">
@@ -10,22 +10,22 @@
 <H1>{% block h1title %}{% endblock %}</H1>
 <nav class="main">
 {% if user.is_authenticated %}
-<A HREF="{% url 'arf.whois.views.domainlist' %}">Domains</A>
+<A HREF="{% url 'arf.whois.views.domainlist' %}">{% trans "Domains" %}</A>
 </nav>
 <nav class="profile">
  <span class="handle">{{ user.username }}-FREE</span>:
- <A HREF="{% url 'arf.whois.views.chpass' %}">Password</A>
- <A HREF="{% url 'arf.whois.views.contactchange' %}">Information</A>
- <A HREF="{% url 'arf.whois.views.logout' %}">Logout</A>
+ <A HREF="{% url 'arf.whois.views.chpass' %}">{% trans "Password" %}</A>
+ <A HREF="{% url 'arf.whois.views.contactchange' %}">{% trans "Information" %}</A>
+ <A HREF="{% url 'arf.whois.views.logout' %}">{% trans "Logout" %}</A>
 {% if is_admin %}
 </nav>
 <nav class="admin">
- <a href="{% url 'arf.requests.views.rqlist' %}">Requests</A>
- <a href="{% url 'arf.requests.views.rqloglist' %}">Log</A>
-{%if numdom %}{{ numdom }} domains{% endif %}
+ <a href="{% url 'arf.requests.views.rqlist' %}">{% trans "Requests" %}</A>
+ <a href="{% url 'arf.requests.views.rqloglist' %}">{% trans "Log" %}</A>
+{%if numdom %}{{ numdom }} {% trans "domains" %}{% endif %}
 {% endif %}
 {% else %}
- <A HREF="{% url 'arf.whois.views.domainlist' %}">Login</A>
+ <A HREF="{% url 'arf.whois.views.domainlist' %}">{% trans "Login" %}</A>
 {% endif %}
 </nav>
 <HR>

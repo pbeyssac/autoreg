@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% block title %}DNSSEC configuration for {{ domain }}{% endblock %}
-{% block h1title %}DNSSEC configuration for {{ domain }}{% endblock %}
+{% load i18n %}
+{% block title %}{% blocktrans %}DNSSEC configuration for {{ domain }}{% endblocktrans %}{% endblock %}
+{% block h1title %}{% blocktrans %}DNSSEC configuration for {{ domain }}{% endblocktrans %}{% endblock %}
 {% block msg %}
 {% if dscur %}
-<h2>Current DS records</h2>
+<h2>{% trans "Current DS records" %}</h2>
 <table class="zone rrlist dslist">
 {% for ds in dscur %}<tr><td></td><td></td><td>DS</td><td>{{ ds.0 }}</td><td>{{ ds.1 }}</td><td>{{ ds.2 }}</td><td>{{ ds.3 }}</td>
 <td>
@@ -21,34 +22,34 @@
 {% if dsok %}
 <div>
 {% if not dscur %}
-<p>Great news, your domain can be configured to use DNSSEC!
+<p>{% trans "Great news, your domain can be configured to use DNSSEC!" %}
 {% endif %}
 <p>
-<strong>Warning: use only if you know what you are doing!</strong>
+<strong>{% trans "Warning: use only if you know what you are doing!" %}</strong>
 <p>
-<p><strong>To add new <span class="rrtype">DS</span> records</strong>, please paste a <span class="rrtype">DS</span>, <span class="rrtype">DLV</span> or <span class="rrtype">DNSKEY</span> record in the box below.
-<p>We will check that your server publishes the associated <span class="rrtype">DNSKEY</span>, then we will generate and add a <span class="rrtype">DS</span> record to our zone.
-<p>If it does not work, you can come back here to delete all <span class="rrtype">DS</span> records.
+<p><strong>{% blocktrans %}To add new <span class="rrtype">DS</span> records</strong>, please paste a <span class="rrtype">DS</span>, <span class="rrtype">DLV</span> or <span class="rrtype">DNSKEY</span> record in the box below.{% endblocktrans %}</strong>
+<p>{% blocktrans %}We will check that your server publishes the associated <span class="rrtype">DNSKEY</span>, then we will generate and add a <span class="rrtype">DS</span> record to our zone.{% endblocktrans %}
+<p>{% blocktrans %}If it does not work, you can come back here to delete all <span class="rrtype">DS</span> records.{% endblocktrans %}
 </div>
 {% if dserrs %}{% for dserr in dserrs %}<div class="error">{{ dserr }}</div>
 {% endfor %}{% endif %}
 <form class="form" action="" method="POST">
 {% csrf_token %}
-<label><span class="rrtype">DS</span>, <span class="rrtype">DLV</span> or <span class="rrtype">DNSKEY</span> record:</label>
+<label>{% blocktrans %}<span class="rrtype">DS</span>, <span class="rrtype">DLV</span> or <span class="rrtype">DNSKEY</span> record:{% endblocktrans %}</label>
 <div>
 <textarea class="zone" name="rr" rows="4" cols="100" maxlength="4096" wrap="soft">{{ rr }}</textarea>
 </div>
 <input class="action" type="submit" value="Add">
 </form>
 {% if verbose and dsserved %}
-<h2><span class="rrtype">DS</span> list generated from zone <span class="rrtype">DNSKEY</span>'s</h2>
+<h2>{% blocktrans %}<span class="rrtype">DS</span> list generated from zone <span class="rrtype">DNSKEY</span>'s{% endblocktrans %}</h2>
 <table class="zone rrlist dslist">
 {% for ds in dscur %}<tr><td></td><td></td><td>DS</td><td>{{ ds.0 }}</td><td>{{ ds.1 }}</td><td>{{ ds.2 }}</td><td>{{ ds.3 }}</td></tr>
 {% endfor %}
 </table>
 {% endif %}
 {% else %}
-<div>Not eligible to DNSSEC:
+<div>{% trans "Not eligible to DNSSEC:" %}
 <div class="error">{{ elerr }}</div></div>
 {% endif %}
 {% endblock %}

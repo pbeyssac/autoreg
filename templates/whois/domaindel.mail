@@ -4,9 +4,4 @@
 
 Your request [{{ rqid }}] for deletion of domain {{ domain }}
 has been accepted.
-
-Best Regards,
-The EU.org team
-
--------------------------------------------------------------------
 {% endblock %}

@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}{{ title }}{% endblock %}
 {% block h1title %}{{ h1title }}{% endblock %}
 {% block msg %}
 {{ msg }}
-{% if next %}<br><a href="{{ next }}">Continue</a>{% endif %}
+{% if next %}<br><a href="{{ next }}">{% trans "Continue" %}</a>{% endif %}
 {% endblock %}

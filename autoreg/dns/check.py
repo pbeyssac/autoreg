@@ -11,6 +11,8 @@ import dns.query
 import dns.rdatatype
 import dns.resolver
 
+from django.utils.translation import ugettext as _
+
 def checkip(ip):
   """Check IPv4/IPv6 address for validity"""
   try:
@@ -43,9 +45,9 @@ def sendquery(q, server):
   try:
     r = dns.query.udp(q, server, timeout=10)
   except dns.query.BadResponse:
-    return None, "BadResponse"
+    return None, _("BadResponse")
   except dns.query.UnexpectedSource:
-    return None, "UnexpectedSource"
+    return None, _("UnexpectedSource")
   except dns.exception.Timeout:
     trytcp = True
   except socket.error as e:
@@ -57,13 +59,13 @@ def sendquery(q, server):
   try:
     r = dns.query.tcp(q, server, timeout=10)
   except dns.query.BadResponse:
-    return None, "BadResponse"
+    return None, _("BadResponse")
   except dns.query.UnexpectedSource:
-    return None, "UnexpectedSource"
+    return None, _("UnexpectedSource")
   except EOFError:
-    return None, "Dropped connection"
+    return None, _("Dropped connection")
   except dns.exception.Timeout:
-    return None, "Timeout"
+    return None, _("Timeout")
   except socket.error as e:
     return None, e
 
@@ -95,11 +97,11 @@ class MultiResolver(object):
     if not ok:
       return None, r
     if (r.flags & dns.flags.AA) == 0:
-      return None, "Answer not authoritative"
+      return None, _("Answer not authoritative")
     if len(r.answer) == 0:
-      return None, "Empty answer"
+      return None, _("Empty answer")
     if len(r.answer) != 1:
-      return None, "Unexpected answer length"
+      return None, _("Unexpected answer length")
     nslist = [a.to_text().upper() for a in r.answer[0].items]
     nslist = undot_list(nslist)
     nslist.sort()
@@ -118,13 +120,13 @@ class MultiResolver(object):
     try:
       ans = self.res.query(self.domain+'.', 'NS', tcp=tcp)
     except dns.resolver.NXDOMAIN:
-      return None, "Error: Domain not found"
+      return None, _("Error: Domain not found")
     except dns.exception.Timeout:
-      return None, "Error: Timeout"
+      return None, _("Error: Timeout")
     except dns.resolver.NoAnswer:
-      return None, "Error: No answer"
+      return None, _("Error: No answer")
     except dns.resolver.NoNameservers:
-      return None, "Error: No name servers"
+      return None, _("Error: No name servers")
     for i in ans.rrset.items:
       fqdn = i.to_text().upper()
       nslist.append(fqdn)
@@ -139,7 +141,7 @@ class MultiResolver(object):
       l = l[:-1]
       m = fqdnip.match(l)
       if not m:
-        errlist.append("Error: Invalid line")
+        errlist.append(_("Error: Invalid line"))
         continue
       fqdn, ip = m.groups()
       nsiplist.append((fqdn, ip))
@@ -156,7 +158,7 @@ class MultiResolver(object):
         ip = ip.upper()
 
         if not checkip(ip):
-          errlist.append("Error: Invalid IP address %s" % ip)
+          errlist.append(_("Error: Invalid IP address %s" % ip))
           ip = None
 
       if fqdn.endswith('.'+self.domain.upper()) \
@@ -166,10 +168,11 @@ class MultiResolver(object):
             self.manualip[fqdn] = []
           self.manualip[fqdn].append(ip)
         elif checkglue:
-          errlist.append("Missing glue IP for %s" % fqdn)
+          errlist.append(_("Missing glue IP for %s") % fqdn)
       elif ip:
-        warnlist.append("ignoring IP %s"
-                        " for %s (not in %s)" % (ip, fqdn, self.domain))
+        warnlist.append(_("ignoring IP %(ip)s"
+                        " for %(fqdn)s (not in %(domain)s)")
+                        % {'ip': ip, 'fqdn': fqdn, 'domain': self.domain})
 
       if fqdn not in nslist:
         nslist.append(fqdn)
@@ -226,11 +229,13 @@ class MultiResolver(object):
       resolved, fqdn, ip = resolved_fqdn_ip
       ips.append(resolved_fqdn_ip)
       if not ok:
-        yield None, "Getting IP for %s: FAILED" % fqdn,
+        yield None, _("Getting IP for %s: FAILED") % fqdn,
       elif resolved:
-        yield True, "Getting IP for %s: %s" % (fqdn, ' '.join(ip))
+        yield True, _("Getting IP for %(fqdn)s: %(ip)s") \
+                      % {'fqdn': fqdn, 'ip': ' '.join(ip)}
       else:
-        yield True, "Accepted IP for %s: %s" % (fqdn, ' '.join(ip))
+        yield True, _("Accepted IP for %(fqdn)s: %(ip)s") \
+                      % {'fqdn': fqdn, 'ip': ' '.join(ip)}
     self.ips = ips
 
   def resolve_ips(self):
@@ -265,15 +270,15 @@ class SOAChecker(MultiResolver):
     if not ok:
       return None, r
     if (r.flags & dns.flags.AA) == 0:
-      return None, "Answer not authoritative"
+      return None, _("Answer not authoritative")
     if len(r.answer) == 0:
-      return None, "Empty answer"
+      return None, _("Empty answer")
     if len(r.answer) != 1:
-      return None, "Unexpected answer length"
+      return None, _("Unexpected answer length")
     if len(r.answer[0].items) != 1:
-      return None, "Unexpected number of items"
+      return None, _("Unexpected number of items")
     if r.answer[0].items[0].rdtype != dns.rdatatype.SOA:
-      return None, "Answer type mismatch"
+      return None, _("Answer type mismatch")
     mastername = str(r.answer[0].items[0].mname).upper()
     serial = r.answer[0].items[0].serial
     return True, (mastername, serial)
@@ -294,18 +299,20 @@ class SOAChecker(MultiResolver):
     if self.level < LEVEL_SOA:
       return
 
-    yield True, "---- Checking SOA records for %s" % self.domain
+    yield True, _("---- Checking SOA records for %s") % self.domain
     yield True, ""
 
     for ok, fqdn, i, r in self.gen_soa():
       if not ok:
-        yield None, "SOA from %s at %s: Error: %s" % (fqdn, i, r)
+        yield None, _("SOA from %(fqdn)s at %(ip)s: Error: %(err)s") \
+                     % {'fqdn': fqdn, 'ip': i, 'err': r}
       else:
         if r[1] in serials:
           serials[r[1]].append(i)
         else:
           serials[r[1]] = [i]
-        yield True, "SOA from %s at %s: serial %s" % (fqdn, i, r[1])
+        yield True, _("SOA from %(fqdn)s at %(ip)s: serial %(serial)s") \
+                     % {'fqdn': fqdn, 'ip': i, 'serial': r[1]}
     if serials and len(serials) > 1:
       serialsk = serials.keys()
       serialsk.sort()
@@ -314,26 +321,28 @@ class SOAChecker(MultiResolver):
         values = []
         for f in serials.values():
           values.extend(f)
-        yield None, "Servers not up to date: " + ' '.join(values)
+        yield None, _("Servers not up to date: ") + ' '.join(values)
       else:
-        yield None, "Some servers are not up to date!"
+        yield None, _("Some servers are not up to date!")
 
     yield True, ""
 
     if self.level < LEVEL_NS:
       return
 
-    yield True, "---- Checking NS records for %s" % self.domain
+    yield True, _("---- Checking NS records for %s") % self.domain
     yield True, ""
 
     for ok, fqdn, i, r in self.gen_ns():
       if not ok:
-        yield None, "NS from %s at %s: Error: %s" % (fqdn, i, r)
+        yield None, _("NS from %(fqdn)s at %(ip)s: Error: %(err)s") \
+                      % {'fqdn': fqdn, 'ip': i, 'err': r}
       elif r != self.nslist:
-        yield None, "NS from %s at %s: Error: Bad NS list: %s" % (fqdn, i,
-                    ' '.join(r))
+        yield None, _("NS from %(fqdn)s at %(ip)s: Error: Bad NS list: %(err)s") \
+                      % {'fqdn': fqdn, 'ip': i, 'err': ' '.join(r)}
       else:
-        yield True, "NS from %s at %s: ok" % (fqdn, i)
+        yield True, _("NS from %(fqdn)s at %(ip)s: ok") \
+                      % {'fqdn': fqdn, 'ip': i}
     yield True, ""
 
   def main(self, file=None, nsiplist=None, checkglue=True):
@@ -346,11 +355,11 @@ class SOAChecker(MultiResolver):
     self.errs = 0
     self.warns = 0
 
-    yield True, "---- Servers and domain names check"
+    yield True, _("---- Servers and domain names check")
     yield True, ""
 
     if not self.domain:
-      yield None, "Error: no domain specified"
+      yield None, _("Error: no domain specified")
       return
 
     if self.domain.startswith('.'):
@@ -364,12 +373,13 @@ class SOAChecker(MultiResolver):
       #
       ok, r = self.setnslist_public()
       if not ok:
-        yield None, "Querying NS list for %s... %s" % (self.domain, r)
+        yield None, _("Querying NS list for %(fqdn)s... %(err)s") \
+                      % {'fqdn': self.domain, 'err': r}
         yield None, r
         self.errs += 1
         return
-      yield True, "Querying NS list for %s... %d records" \
-            % (self.domain, len(self.nslist))
+      yield True, _("Querying NS list for %(fqdn)s... %(len)d records") \
+            % {'fqdn': self.domain, 'len': len(self.nslist)}
       yield True, ""
 
     else:
@@ -382,18 +392,18 @@ class SOAChecker(MultiResolver):
         errlist, warnlist = self.setnslist_file(file, checkglue)
 
       for e in errlist:
-        yield None, "Error: %s" % e
+        yield None, _("Error: ") + e
       self.errs += len(errlist)
       for e in warnlist:
-        yield True, "Warning: %s" % e
+        yield True, _("Warning: ") + e
       self.warns += len(warnlist)
 
     if not self.nslist:
-      yield True, "Error: empty name server list"
+      yield True, _("Error: empty name server list")
       self.errs += 1
 
     if self.errs:
-      yield None, "%s errors(s)" % self.errs
+      yield None, _("%s errors(s)") % self.errs
       return
 
     #
@@ -406,7 +416,7 @@ class SOAChecker(MultiResolver):
         self.errs += 1
 
     if self.errs:
-      yield None, "%d errors(s)" % self.errs
+      yield None, _("%d errors(s)") % self.errs
       return
 
     for ok, msg in self.print_checks():
@@ -417,9 +427,9 @@ class SOAChecker(MultiResolver):
     if self.errs or self.warns:
       yield True, ""
     if self.errs:
-      yield None, "%d errors(s)" % self.errs
+      yield None, _("%d errors(s)") % self.errs
     if self.warns:
-      yield True, "%d warning(s)" % self.warns,
+      yield True, _("%d warning(s)") % self.warns,
     yield True, ""
 
 

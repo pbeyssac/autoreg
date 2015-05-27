@@ -1,16 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Domain contact deletion{% endblock %}
-{% block h1title %}Domain contact deletion{% endblock %}
-{% block form %}
+{% load i18n %}
+{% block title %}{% trans "Domain contact deletion" %}{% endblock %}
+{% block h1title %}{% trans "Domain contact deletion" %}{% endblock %}
+{% block form %}{% blocktrans %}
 <strong>WARNING</strong>: by removing yourself (<span class="handle">{{ user.username }}-FREE</span>) from
 contacts for <span class="domain">{{ fqdn }}</span>, you may lose some or all
-of your privileges on this domain.
+of your privileges on this domain.{% endblocktrans %}
 <P>
 <FORM ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
 <INPUT TYPE="hidden" NAME="contact_type" VALUE="{{ contact_type }}">
 <INPUT TYPE="hidden" NAME="handle" VALUE="{{ user.username }}">
-<INPUT class="action" TYPE="submit" NAME="submitd" VALUE="Confirm Remove">
-<INPUT class="action" TYPE="submit" NAME="submit" VALUE="Cancel">
+<INPUT class="action" TYPE="submit" NAME="submitd" VALUE="{% trans "Confirm Remove" %}">
+<INPUT class="action" TYPE="submit" NAME="submit" VALUE="{% trans "Cancel" %}">
 </FORM>
 {% endblock %}

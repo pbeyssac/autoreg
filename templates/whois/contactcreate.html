@@ -1,70 +1,71 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}Contact Creation{% endblock %}
 {% block h1title %}Contact Creation{% endblock %}
 {% block form %}
 <FORM class="form" ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
 <fieldset>
-<legend>Contact Information</legend>
+<legend>{% trans "Contact Information" %}</legend>
 <div class="fieldWrapper{% if form.pn1.errors %}error{% endif %}">
-    <label for="id_pn1">Name</label>
+    <label for="id_pn1">{% trans "Name" %}</label>
     {{ form.pn1 }}
     {% if form.pn1.errors %}{% for error in form.pn1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.em1.errors %}error{% endif %}">
-    <label for="id_em1">E-mail</label>
+    <label for="id_em1">{% trans "E-mail" %}</label>
     {{ form.em1 }}
     {% if form.em1.errors %}{% for error in form.em1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad1.errors %}error{% endif %}">
-    <label for="id_ad1">Address (line 1)</label>
+    <label for="id_ad1">{% trans "Address (line 1)" %}</label>
     {{ form.ad1 }}
     {% if form.ad1.errors %}{% for error in form.ad1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad2.errors %}error{% endif %}">
-    <label for="id_ad2">Address (line 2)</label>
+    <label for="id_ad2">{% trans "Address (line 2)" %}</label>
     {{ form.ad2 }}
     {% if form.ad2.errors %}{% for error in form.ad2.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad3.errors %}error{% endif %}">
-    <label for="id_ad3">Address (line 3)</label>
+    <label for="id_ad3">{% trans "Address (line 3)" %}</label>
     {{ form.ad3 }}
     {% if form.ad3.errors %}{% for error in form.ad3.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad4.errors %}error{% endif %}">
-    <label for="id_ad4">Address (line 4)</label>
+    <label for="id_ad4">{% trans "Address (line 4)" %}</label>
     {{ form.ad4 }}
     {% if form.ad4.errors %}{% for error in form.ad4.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad5.errors %}error{% endif %}">
-    <label for="id_ad5">Address (line 5)</label>
+    <label for="id_ad5">{% trans "Address (line 5)" %}</label>
     {{ form.ad5 }}
     {% if form.ad5.errors %}{% for error in form.ad5.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ad6.errors %}error{% endif %}">
-    <label for="id_ad6">Country</label>
+    <label for="id_ad6">{% trans "Country" %}</label>
     {{ form.ad6 }}
     {% if form.ad6.errors %}{% for error in form.ad6.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.ph1.errors %}error{% endif %}">
-    <label for="id_ph1">Phone</label>
+    <label for="id_ph1">{% trans "Phone" %}</label>
     {{ form.ph1 }}
     {% if form.ph1.errors %}{% for error in form.ph1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if form.fx1.errors %}error{% endif %}">
-    <label for="id_fx1">Fax</label>
+    <label for="id_fx1">{% trans "Fax" %}</label>
     {{ form.fx1 }}
     {% if form.fx1.errors %}{% for error in form.fx1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="addendum fieldWrapper{% if form.private.errors %}error{% endif %}">
-    <label for="id_private">Private (not shown in the public Whois)</label>
+    <label for="id_private">{% trans "Private (not shown in the public Whois)" %}</label>
     {{ form.private }}
     {% if form.private.errors %}{% for error in form.private.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 </fieldset>
 
 <div class="fieldWrapper{% if form.policy.errors %}error{% endif %}">
-    <label for="id_policy">I have read and I accept the <A HREF="/policy.html">domain policy</A></label>
+    <label for="id_policy">{% blocktrans %}I have read and I accept the <A HREF="/policy.html">domain policy</A>{% endblocktrans %}</label>
     {{ form.policy }}
     {% if form.policy.errors %}{% for error in form.policy.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
@@ -72,17 +73,17 @@
 <fieldset>
 <legend>Security</legend>
 <div class="fieldWrapper{% if p_errors %}error{% endif %}">
-    <label for="id_p1">Password</label>
+    <label for="id_p1">{% trans "Password" %}</label>
     {{ form.p1 }}
     {% if p_errors %}{% for error in p_errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 <div class="fieldWrapper{% if p_errors %}error{% endif %}">
-    <label for="id_p2">Confirm Password</label>
+    <label for="id_p2">{% trans "Confirm Password" %}</label>
     {{ form.p2 }}
     {% if p_errors %}{% for error in p_errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
 </fieldset>
 
-<INPUT class="action" TYPE="submit" NAME="submit" VALUE="Create">
+<INPUT class="action" TYPE="submit" NAME="submit" VALUE="{% trans "Create" %}">
 </FORM>
 {% endblock %}
