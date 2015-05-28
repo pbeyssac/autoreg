@@ -402,7 +402,7 @@ CREATE TABLE requests (
 	zonerecord VARCHAR(500),
 	whoisrecord VARCHAR(2000),
 	tags VARCHAR(50),
-	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL,
+	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL
 );
 CREATE INDEX requests_fqdn_index ON requests(fqdn);
 
@@ -417,7 +417,7 @@ CREATE TABLE requests_hist (
 	whoisrecord VARCHAR(2000),
 	tags VARCHAR(50),
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
-	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL,
+	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL
 );
 
 CREATE TABLE requests_log (
