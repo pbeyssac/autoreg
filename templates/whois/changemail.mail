@@ -1,12 +1,12 @@
 {% extends "base-varheaders.mail" %}{% load i18n %}
 {% block subject %}{% blocktrans %}email change for eu.org contact {{ handle }}{% endblocktrans %}{% endblock %}
-{% block content %}{% url 'arf.whois.views.changemail' as url %}{% blocktrans %}Hello,
+{% block content %}{% blocktrans %}Hello,
 
 Following a request on our web site (possibly by you), here is how
 to validate this email address on your eu.org contact record
 identified as {{ handle }}:
 
-- Connect to {{ urlbase }}{{ url }}
+- Connect to {{ absurl }}
 - Login using your handle and password, if necessary
 - Enter the following validation token: {{ token }}
 - Then validate to set the email address to

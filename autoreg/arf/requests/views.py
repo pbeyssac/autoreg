@@ -161,7 +161,7 @@ def _rq1(request, r):
 
 def rqedit(request, rqid):
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -194,7 +194,7 @@ def rq(request, rqid):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -216,7 +216,7 @@ def rqdom(request, domain):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -238,7 +238,7 @@ def rqlistdom(request, domain=None):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -263,7 +263,7 @@ def rqlistemail(request, email):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -285,7 +285,7 @@ def rqlist(request, page='0'):
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied

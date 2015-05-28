@@ -1,12 +1,12 @@
 {% extends "base-varheaders.mail" %}{% load i18n %}
 {% block subject %}{% blocktrans %}password reset for eu.org contact {{ handle }}{% endblocktrans %}{% endblock %}
-{% block content %}{% url 'arf.whois.views.resetpass2' handleshort as url %}{% blocktrans %}Hello,
+{% block content %}{% blocktrans %}Hello,
 
 Following a request on our web site, here is how to set a new
 password on your eu.org contact record identified
 as {{ handle }}:
 
-- Connect to {{ urlbase }}{{ url }}
+- Connect to {{ absurl }}
 - Enter the following reset code: {{ token }}
 - Enter the desired new password
 - Then validate.

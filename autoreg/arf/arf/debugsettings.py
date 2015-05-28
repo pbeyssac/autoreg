@@ -118,8 +118,6 @@ DATABASES = {
   }
 }
 
-URIBASE = os.environ.get('ARF_BASE', '/darf/')
-URLBASE = 'https://eu.org'
 SESSION_COOKIE_NAME = 'dsession_id'
 
 ADMINS = (

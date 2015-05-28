@@ -94,9 +94,6 @@ LOCALE_PATHS = (
 # Application-specific settings
 #
 
-URIBASE = os.environ.get('ARF_BASE', '/arf/')
-URLBASE = 'https://eu.org'
-
 from autoreg.conf import DATABASE_NAME
 
 DATABASES = {

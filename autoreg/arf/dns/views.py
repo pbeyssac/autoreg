@@ -147,7 +147,7 @@ def domainds(request, fqdn):
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domainds, args=[fqdn.lower()]))
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   is_admin = check_is_admin(request.user.username)
   if not check_handle_domain_auth(connection.cursor(),
                                   request.user.username, fqdn) \
@@ -312,7 +312,7 @@ def domainns(request, fqdn=None):
   if fqdn and fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domainns, args=[fqdn.lower()]))
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   handle = request.user.username.upper()
   is_admin = check_is_admin(request.user.username)
   if fqdn and not check_handle_domain_auth(connection.cursor(),

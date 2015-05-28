@@ -15,7 +15,6 @@ from django.utils.translation import ugettext_lazy, ugettext as _
 from autoreg.whois.db import HANDLESUFFIX, \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
   countries_get
-from autoreg.arf.arf.settings import URIBASE, URLBASE
 from autoreg.arf.util import render_to_mail
 from autoreg.common import domain_delete
 from autoreg.conf import FROMADDR
@@ -35,7 +34,6 @@ from django.template import RequestContext
 
 from models import Whoisdomains,Contacts,Tokens,DomainContact,check_is_admin
 
-URILOGIN = URIBASE + 'login/'
 RESET_TOKEN_HOURS_TTL = 24
 EMAIL_TOKEN_HOURS_TTL = 72
 VAL_TOKEN_HOURS_TTL = 72
@@ -200,19 +198,17 @@ class chpass_form(forms.Form):
 def login(request):
   """Login page"""
   if request.method == "GET":
-    next = request.GET.get('next', URIBASE)
+    next = request.GET.get('next', None)
     if request.user.is_authenticated():
-      return HttpResponseRedirect(next)
+      return HttpResponseRedirect(reverse(domainlist))
     f = contactlogin_form()
     form = f.as_table()
     request.session.set_test_cookie()
-    if next == URIBASE:
-      next = None
     vars = RequestContext(request,
                           {'form': form, 'posturi': request.path, 'next': next})
     return render_to_response('whois/login.html', vars)
   elif request.method == "POST":
-    next = request.POST.get('next', URIBASE)
+    next = request.POST.get('next', reverse(domainlist))
     vars = {'next': next}
     if request.user.is_authenticated():
       #django.contrib.auth.logout(request)
@@ -301,11 +297,12 @@ def makeresettoken(request, handle=None):
     _token_clear(ct.id, action="pwreset")
     token = _token_set(ct.id, action="pwreset", ttl=RESET_TOKEN_TTL)
 
+    absurl = request.build_absolute_uri(reverse(resetpass2,
+                                                args=[handle]))
     if not render_to_mail('whois/resetpass.mail',
                            { 'from': FROMADDR, 'to': ct.email,
-                             'urlbase': URLBASE,
+                             'absurl': absurl,
                              'handle': fullhandle,
-                             'handleshort': handle,
                              'token': token }, FROMADDR, [ ct.email ]):
        vars = RequestContext(request,
          {'msg': _("Sorry, error while sending mail. Please try again later.")})
@@ -404,9 +401,11 @@ def contactcreate(request):
         p.insert()
         valtoken = _token_set(p.cid, "contactval", ttl=VAL_TOKEN_TTL)
         ehandle = suffixstrip(p.gethandle())
+        absurl = request.build_absolute_uri(reverse(contactvalidate,
+                                                    args=[ehandle.upper(),
+                                                          valtoken]))
         if not render_to_mail('whois/contactcreate.mail',
-                               {'urlbase': URLBASE,
-                                'handleshort': ehandle.upper(),
+                               {'absurl': absurl,
                                 'valtoken': valtoken,
                                 'whoisdata': p.__str__(),
                                 'from': FROMADDR, 'to': d['em'][0],
@@ -482,7 +481,7 @@ def domain(request, fqdn):
 def chpass(request):
   """Contact password change"""
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
   f = chpass_form()
   form = f.as_table()
@@ -524,7 +523,7 @@ def chpass(request):
 def domainlist(request):
   """Display domain list for current contact"""
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
 
   domds = handle_domains_dnssec(connection.cursor(), handle)
@@ -540,7 +539,7 @@ def contactchange(request, registrantdomain=None):
      If registrant, registrantdomain contains the associated domain FQDN.
   """
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   if registrantdomain and registrantdomain != registrantdomain.lower():
     return HttpResponseRedirect(reverse(contactchange,
                                         args=[registrantdomain.lower()]))
@@ -620,9 +619,10 @@ def contactchange(request, registrantdomain=None):
       if emailchanged:
         _token_clear(c.id, "changemail")
         token = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
+        absurl = request.build_absolute_uri(reverse(changemail))
         if not render_to_mail('whois/changemail.mail',
                                {'from': FROMADDR, 'to': newemail,
-                                'urlbase': URLBASE,
+                                'absurl': absurl,
                                 'handle': suffixadd(ehandle),
                                 'newemail': newemail,
                                 'token': token }, FROMADDR, [ newemail ]):
@@ -648,7 +648,7 @@ def changemail(request):
      check provided change email token and force indicated email
      on the designated contact."""
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
   f = changemail_form()
   form = f.as_table()
@@ -690,7 +690,7 @@ def changemail(request):
 def domaineditconfirm(request, fqdn):
   """Request confirmation for self-deletion of a contact"""
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaineditconfirm, args=[fqdn.lower()]))
   nexturi = reverse(domainedit, args=[fqdn])
@@ -712,7 +712,7 @@ def domainedit(request, fqdn):
   typelist = ["administrative", "technical", "zone"]
 
   if not request.user.is_authenticated():
-    return HttpResponseRedirect((URILOGIN + '?next=%s') % request.path)
+    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
 
   if fqdn != fqdn.lower():
