@@ -105,7 +105,8 @@ def rq_accept(out, rqid, login, email, reasonfield=None):
             'reasonfield': reasonfield,
             'whoisrecord': outwhois.getvalue(), 'zonerecord': r.zonerecord}
     if not autoreg.arf.util.render_to_mail("whois/domainnew.mail", vars,
-                                           autoreg.conf.FROMADDR, mailto):
+                                           autoreg.conf.FROMADDR, mailto,
+                                           language=r.language):
       print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
             file=out)
       # we have to continue anyway, since the request has been executed
@@ -125,7 +126,8 @@ def rq_accept(out, rqid, login, email, reasonfield=None):
 
     vars = {'rqid': rqid, 'domain': r.fqdn.upper(), 'to': r.email}
     if not autoreg.arf.util.render_to_mail("whois/domaindel.mail", vars,
-                                           autoreg.conf.FROMADDR, mailto):
+                                           autoreg.conf.FROMADDR, mailto,
+                                           language=r.language):
       print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
             file=out)
       # we have to continue anyway, since the request has been executed
@@ -155,7 +157,8 @@ def rq_reject(out, rqid, login, reason, reasonfield):
           'action': action, 'reason': reason, 'reasonfield': reasonfield}
 
   if not autoreg.arf.util.render_to_mail("whois/domainrej.mail", vars,
-                                         autoreg.conf.FROMADDR, mailto):
+                                         autoreg.conf.FROMADDR, mailto,
+                                         language=r.language):
     print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
           file=out)
     return False

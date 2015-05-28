@@ -10,6 +10,7 @@ from django.http import HttpResponseRedirect, HttpResponseNotFound, \
   HttpResponseForbidden, StreamingHttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.utils import translation
 from django.utils.translation import ugettext as _
 
 import autoreg.conf
@@ -95,7 +96,7 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
         yield _("IGNORED: you already have a pending request %(rqid)s"
                 " for that domain.\n") % {'rqid': rql[0].id}
         return
-      req = Requests(id=rqid, action='N', language='en',
+      req = Requests(id=rqid, action='N', language=translation.get_language(),
                      email=contact.email, fqdn=domain.upper(), state='Open',
                      contact=contact,
                      zonerecord=zonerecord,
