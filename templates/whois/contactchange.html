@@ -25,8 +25,8 @@
 {% if form.em1 %}<div class="fieldWrapper{% if form.em1.errors %}error{% endif %}">
     <label for="id_em1">{% trans "E-mail" %}</label>
     {{ form.em1 }}
-    {% if form.em1.errors %}{% for error in form.em1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}{% endif %}
-</div>
+    {% if form.em1.errors %}{% for error in form.em1.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
+</div>{% endif %}
 <div class="fieldWrapper{% if form.ad1.errors %}error{% endif %}">
     <label for="id_ad1">{% trans "Address (line 1)" %}</label>
     {{ form.ad1 }}
