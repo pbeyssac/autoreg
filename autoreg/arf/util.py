@@ -3,15 +3,31 @@ import smtplib
 
 from django.template.loader import get_template
 from django.template import Context
+from django.utils import translation
 
 import autoreg.conf
 
-def render_to_mail(templatename, context, fromaddr, toaddrs):
+
+def render_to_mail(templatename, context, fromaddr, toaddrs, language=None):
   """Expand provided templatename and context, send the result
      by email to the indicated addresses."""
+
   failed = False
   t = get_template(templatename)
-  msg = t.render(Context(context))
+
+  # Possibly activate another language just during the mail rendering,
+  # instead of the current language, to get the mail
+  # in the proper language (asynchronous user request, etc)
+  #
+  # Inspired from sample code in Django i18n documentation
+  cur_language = translation.get_language()
+  try:
+    if language is not None:
+      translation.activate(language)
+    msg = t.render(Context(context))
+  finally:
+    translation.activate(cur_language)
+
   headers, body = msg.split('\n\n', 1)
   outh = []
   for line in headers.split('\n'):
