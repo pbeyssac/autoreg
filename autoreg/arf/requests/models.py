@@ -8,6 +8,7 @@ import time
 
 import psycopg2
 
+from django.conf import settings
 from django.db import models
 from django.utils.translation import ugettext_lazy, ugettext as _
 
@@ -60,7 +61,10 @@ def rq_accept(out, rqid, login, email, reasonfield=None):
     return False
   r = rl[0]
 
-  mailto = [r.email]
+  if settings.FORCEDEBUGMAIL:
+    mailto = [settings.FORCEDEBUGMAIL]
+  else:
+    mailto = [r.email]
 
   # import here rather than at top of module to avoid weird name clashes
   # with the external "dns" module when running Django manage.py.

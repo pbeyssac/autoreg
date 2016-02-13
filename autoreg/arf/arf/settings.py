@@ -109,3 +109,4 @@ ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
 MANAGERS = ADMINS
+FORCEDEBUGMAIL=''
