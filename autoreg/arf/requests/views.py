@@ -31,7 +31,8 @@ URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
 
 _l3match = re.compile('^[^\.]+\.[^\.]+\.[^\.]+\..+$')
 _attrval = re.compile('^([a-z0-9A-Z-]+):\s*(.*[^\s]+|)\s*$')
-_rqid = re.compile('^[0-9]{14,14}-\w+-\d+$')
+_rqid = re.compile('^([0-9]{14,14}-\w+-\d+)$')
+_hidden_rqid = re.compile('^h([0-9]{14,14}-\w+-\d+)$')
 
 #
 # 'view' functions called from urls.py and friends
@@ -201,13 +202,19 @@ def rq(request, rqid=None):
   if not login:
     raise PermissionDenied
 
+  if 'submitall' in request.POST:
+    _rq = _hidden_rqid
+  else:
+    _rq = _rqid
+
   if rqid is not None:
     rqidlist = [rqid]
   else:
     rqidlist = []
     for c in request.POST.iterkeys():
-      if _rqid.match(c):
-        rqidlist.append(c)
+      m = _rq.match(c)
+      if m:
+        rqidlist.append(m.group(1))
     rqidlist.sort()
 
   rlist = []
