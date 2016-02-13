@@ -45,23 +45,23 @@ Tags: {% if r.tags != None %}{{ r.tags }}{% endif %}<br>
   <input id="id_action{{ r.suffix }}_1" name="action{{ r.suffix }}" type="radio" value="none">{% trans "None" %}
   </label>
   <label for="id_action{{ r.suffix }}_2">
-  <input id="id_action{{ r.suffix }}_2" name="action{{ r.suffix }}" type="radio" value="accept">{% trans "Accept" %}
+  <input id="id_action{{ r.suffix }}_2" name="action{{ r.suffix }}" type="radio" value="accept"{% if r.default == "accept" %} checked="checked"{% endif %}>{% trans "Accept" %}
   </label>
   <label for="id_action{{ r.suffix }}_3">
-  <input id="id_action{{ r.suffix }}_3" name="action{{ r.suffix }}" type="radio" value="delete">{% trans "Delete quietly" %}
+  <input id="id_action{{ r.suffix }}_3" name="action{{ r.suffix }}" type="radio" value="delete"{% if r.default == "delete" %} checked="checked"{% endif %}>{% trans "Delete quietly" %}
   </label>
-  <div class="rqrejectform">Reject:
+  <div class="rqrejectform">{% trans "Reject:" %}
    <label for="id_action{{ r.suffix }}_4">
-   <input id="id_action{{ r.suffix }}_4" name="action{{ r.suffix }}" type="radio" value="rejectbog">{% trans "Bogus address" %}
+   <input id="id_action{{ r.suffix }}_4" name="action{{ r.suffix }}" type="radio" value="rejectbog"{% if r.default == "rejectbog" %} checked="checked"{% endif %}>{% trans "Bogus address" %}
    </label>
    <label for="id_action{{ r.suffix }}_5">
-   <input id="id_action{{ r.suffix }}_5" name="action{{ r.suffix }}" type="radio" value="rejectful">{% trans "No full name" %}
+   <input id="id_action{{ r.suffix }}_5" name="action{{ r.suffix }}" type="radio" value="rejectful"{% if r.default == "rejectful" %} checked="checked"{% endif %}>{% trans "No full name" %}
    </label>
    <label for="id_action{{ r.suffix }}_6">
-   <input id="id_action{{ r.suffix }}_6" name="action{{ r.suffix }}" type="radio" value="rejectnok">{% trans "Already allocated" %}
+   <input id="id_action{{ r.suffix }}_6" name="action{{ r.suffix }}" type="radio" value="rejectnok"{% if r.default == "rejectnok" %} checked="checked"{% endif %}>{% trans "Already allocated" %}
    </label>
    <label for="id_action{{ r.suffix }}_7">
-   <input id="id_action{{ r.suffix }}_7" name="action{{ r.suffix }}" type="radio" value="rejectcust">{% trans "Other" %}
+   <input id="id_action{{ r.suffix }}_7" name="action{{ r.suffix }}" type="radio" value="rejectcust"{% if r.default == "rejectcust" %} checked="checked"{% endif %}>{% trans "Other" %}
    </label>
   </div>
  <div class="rqcomment">

@@ -8,10 +8,18 @@
 <form action="{% url 'arf.requests.views.rqlistdom' %}" method="GET">
 {% csrf_token %}
 {% trans "Search by domain:" %} <input type="texte" name="domain">
-<INPUT TYPE="submit" VALUE="{% trans "Search" %}">
+<input class="action" type="submit" value="{% trans "Search" %}">
 </form>
+
+<form action="{% url 'arf.requests.views.rq' %}" method="POST">
+{% csrf_token %}
 <table class="rqlist">
-{% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}><td><a href="{% if r.rclass == 'dup' %}{% url 'arf.requests.views.rqdom' r.fqdn %}{% elif r.rclass == 'dup2' %}{% url 'arf.requests.views.rqlistdom' r.fqdn %}{% else %}{% url 'arf.requests.views.rq' r.id %}{% endif %}">{{ r.id|stringformat:".14s" }}</a><td>{{ r.action }}<td>{{ r.fqdn }}<td><a href="{% url 'arf.requests.views.rqlistemail' r.email %}">{{ r.email }}</a><td>{% if r.tags != None %}{{ r.tags }}{% endif %}
+{% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}>
+<td><input type="checkbox" name="{{ r.id }}" value="">
+<td><a href="{% if r.rclass == 'dup' %}{% url 'arf.requests.views.rqdom' r.fqdn %}{% elif r.rclass == 'dup2' %}{% url 'arf.requests.views.rqlistdom' r.fqdn %}{% else %}{% url 'arf.requests.views.rq' r.id %}{% endif %}">{{ r.id|stringformat:".14s" }}</a><td>{{ r.action }}<td>{{ r.fqdn }}<td><a href="{% url 'arf.requests.views.rqlistemail' r.email %}">{{ r.email }}</a><td>{% if r.tags != None %}{{ r.tags }}{% endif %}
 {% endfor %}
 </table>
+
+<input class="action" type="submit" value="{% trans "Open selected" %}">
+</form>
 {% endblock %}

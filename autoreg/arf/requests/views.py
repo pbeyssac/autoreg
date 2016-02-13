@@ -19,7 +19,7 @@ import autoreg.zauth
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import connection, transaction, IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
@@ -31,6 +31,7 @@ URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
 
 _l3match = re.compile('^[^\.]+\.[^\.]+\.[^\.]+\..+$')
 _attrval = re.compile('^([a-z0-9A-Z-]+):\s*(.*[^\s]+|)\s*$')
+_rqid = re.compile('^[0-9]{14,14}-\w+-\d+$')
 
 #
 # 'view' functions called from urls.py and friends
@@ -190,25 +191,44 @@ def rqedit(request, rqid):
   else:
     raise SuspiciousOperation
 
-def rq(request, rqid):
-  if request.method != "GET":
+def rq(request, rqid=None):
+  if request.method != "GET" and request.method != "POST":
     raise SuspiciousOperation
   if not request.user.is_authenticated():
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
-  r = models.Requests.objects.filter(id=rqid)
-  if r.count() < 1:
-    vars = RequestContext(request, {'msg': _('Request not found')})
-    return render_to_response('requests/rqmsg.html', vars)
-  r = r[0]
-  if not autoreg.zauth.ZAuth(connection.cursor()).checkparent(r.fqdn, login):
-    raise PermissionDenied
-  _rq1(request, r)
-  r.suffix = 1
+
+  if rqid is not None:
+    rqidlist = [rqid]
+  else:
+    rqidlist = []
+    for c in request.POST.iterkeys():
+      if _rqid.match(c):
+        rqidlist.append(c)
+    rqidlist.sort()
+
+  rlist = []
+  i = 1
+  for id in rqidlist:
+    rset = models.Requests.objects.filter(id=id)
+    if rset.count() < 1:
+      if rqid is not None:
+        # special case when called to display a single request
+        raise Http404("")
+      continue
+    r = rset[0]
+    if not autoreg.zauth.ZAuth(connection.cursor()).checkparent(r.fqdn, login):
+      raise PermissionDenied
+    _rq1(request, r)
+    r.suffix = i
+    r.default = "accept"
+    i += 1
+    rlist.append(r)
+
   vars = RequestContext(request,
-                        {'rlist': [r],
+                        {'rlist': rlist,
                          'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqdisplay.html', vars)
   
@@ -222,6 +242,26 @@ def rqdom(request, domain):
     raise PermissionDenied
   if domain.upper() != domain:
     return HttpResponseRedirect(reverse(rqlistdom, args=[domain.upper()]))
+
+  rlist = _rq_list_dom(domain)
+  i = 1
+  for r in rlist:
+    _rq1(request, r)
+    r.suffix = i
+    i += 1
+  vars = RequestContext(request,
+                {'rlist': rlist,
+                 'is_admin': check_is_admin(request.user.username)})
+  return render_to_response('requests/rqdisplay.html', vars)
+
+def rqdisplaychecked(request):
+  if request.method != "GET":
+    raise SuspiciousOperation
+  if not request.user.is_authenticated():
+    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
+  login = admin_login(connection.cursor(), request.user.username)
+  if not login:
+    raise PermissionDenied
 
   rlist = _rq_list_dom(domain)
   i = 1

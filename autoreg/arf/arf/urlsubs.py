@@ -27,6 +27,7 @@ urlpatterns = patterns('autoreg.arf.whois.views',
 )
 urlpatterns += patterns('autoreg.arf.requests.views',
     url(r'^rq/(?P<rqid>[a-z0-9-]+)$', 'rq'),
+    url(r'^rq$', 'rq'),
     url(r'^rqe/(?P<rqid>[a-z0-9-]+)$', 'rqedit'),
     url(r'^rqd/(?P<domain>[a-z0-9\.A-Z-]+)$', 'rqdom'),
     url(r'^r/$', 'rqlist'),
