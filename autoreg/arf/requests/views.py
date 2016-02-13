@@ -68,12 +68,6 @@ def _rq_nemail(fqdn):
   return _rq_list_unordered().filter(fqdn=fqdn) \
          .order_by('email').distinct('email').count()
 
-def _rq_remove(rqid, state):
-  r = models.Requests.objects.get(id=rqid)
-  r.state = state
-  r.save()
-  r.delete()
-
 def _rq_decorate(r):
   """Add attributes rclass, ndom, nemail to request"""
   if r.action == 'D':
@@ -380,26 +374,29 @@ def _rqexec(rq, out, za, login, email, action, reasonfield):
     print(_("Permission denied on %(rqid)s") % {'rqid': rq}, file=out)
     return
 
+  import autoreg.dns.db
+  dbh = psycopg2.connect(autoreg.conf.dbstring)
+  dd = autoreg.dns.db.db(dbh)
+  dd.login(login)
+  whoisdb = autoreg.whois.db.Main(dbh)
+
   has_transaction = True
   if action == 'rejectcust':
-    ok = models.rq_reject(out, rq, login, '', reasonfield)
+    ok = r.reject(out, login, '', reasonfield)
   elif action == 'rejectdup':
-    ok = models.rq_reject(out, rq, login, _('Duplicate request'), reasonfield)
+    ok = r.reject(out, login, _('Duplicate request'), reasonfield)
   elif action == 'rejectbog':
-    ok = models.rq_reject(out, rq, login,
-                          _('Bogus address information'), reasonfield)
+    ok = r.reject(out, login, _('Bogus address information'), reasonfield)
   elif action == 'rejectful':
-    ok = models.rq_reject(out, rq, login,
-                          _('Please provide a full name'), reasonfield)
+    ok = r.reject(out, login, _('Please provide a full name'), reasonfield)
   elif action == 'rejectnok':
-    ok = models.rq_reject(out, rq, login,
-                          _('Sorry, this domain is already allocated'),
-                          reasonfield)
+    ok = r.reject(out, login, _('Sorry, this domain is already allocated'),
+                  reasonfield)
   elif action == 'accept':
-    ok = models.rq_accept(out, rq, login, email, reasonfield)
+    ok = r.accept(out, login, email, reasonfield, dd=dd, whoisdb=whoisdb)
   else:
     if action == 'delete':
-      _rq_remove(rq, 'DelQuiet');
+      r.remove('DelQuiet');
       print(_("Deleted %(rqid)s") % {'rqid': rq}, file=out)
     elif action == 'none':
       print(_("Nothing done on %(rqid)s") % {'rqid': rq}, file=out)
