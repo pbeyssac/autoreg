@@ -123,9 +123,9 @@ class contactchange_form(forms.Form):
   private = forms.BooleanField(label=ugettext_lazy("Private (not shown in the public Whois)"), required=False)
 
 class contact_form(contactchange_form):
-  p1 = forms.CharField(max_length=20, label=ugettext_lazy('Password'),
+  p1 = forms.CharField(max_length=64, label=ugettext_lazy('Password'),
                        required=False, widget=PasswordInput)
-  p2 = forms.CharField(max_length=20, label=ugettext_lazy('Confirm Password'),
+  p2 = forms.CharField(max_length=64, label=ugettext_lazy('Confirm Password'),
                        required=False, widget=PasswordInput)
   policy = forms.BooleanField(label="I accept the Policy", required=True)
 
@@ -159,17 +159,17 @@ class domcontact_form(forms.Form):
 class contactlogin_form(forms.Form):
   handle = forms.CharField(max_length=15, initial=HANDLESUFFIX,
                            help_text=ugettext_lazy('Your handle'))
-  password = forms.CharField(max_length=30,
+  password = forms.CharField(max_length=64,
                              help_text=ugettext_lazy('Your password'),
                              widget=PasswordInput)
 
 class resetpass_form(forms.Form):
   resettoken = forms.CharField(max_length=30,
                                label=ugettext_lazy('Reset Token'))
-  pass1 = forms.CharField(max_length=20,
+  pass1 = forms.CharField(max_length=64,
                           label=ugettext_lazy('New Password'),
                           widget=PasswordInput)
-  pass2 = forms.CharField(max_length=20,
+  pass2 = forms.CharField(max_length=64,
                           label=ugettext_lazy('Confirm Password'),
                           widget=PasswordInput)
 
@@ -177,13 +177,13 @@ class changemail_form(forms.Form):
   token = forms.CharField(max_length=30)
 
 class chpass_form(forms.Form):
-  pass0 = forms.CharField(max_length=30,
+  pass0 = forms.CharField(max_length=64,
                           label=ugettext_lazy('Current Password'),
                           widget=PasswordInput)
-  pass1 = forms.CharField(max_length=30,
+  pass1 = forms.CharField(max_length=64,
                           label=ugettext_lazy('New Password'),
                           widget=PasswordInput)
-  pass2 = forms.CharField(max_length=30,
+  pass2 = forms.CharField(max_length=64,
                           label=ugettext_lazy('Confirm Password'),
                           widget=PasswordInput)
 
