@@ -142,8 +142,9 @@ def _rq1(request, r):
       else:
         w.append(line)
     if lastaddr is not None:
-      w[lastaddr] = 'address: ' + country_from_iso(countryaddr,
-                                                   connection.cursor())
+      c = country_from_iso(countryaddr, connection.cursor())
+      if c is not None:
+        w[lastaddr] = 'address: ' + c
   w = '\n'.join(w)
 
   wlistout = []
