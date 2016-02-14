@@ -3,6 +3,7 @@
 {% block h1title %}{% trans "Request display" %}{% endblock %}
 {% block msg %}
 
+<a href="#bottom">{% trans "Jump to bottom" %}</a>
 <FORM ACTION="{% url 'arf.requests.views.rqval' %}" METHOD="POST">
 {% csrf_token %}
 {% if goto %}<input name="goto" type="hidden" value="{{ goto }}">{% endif %}
@@ -73,6 +74,8 @@ Tags: {% if r.tags != None %}{{ r.tags }}{% endif %}<br>
 
 <HR>
 {% endfor %}
+<a name="bottom">
 <INPUT class="action" TYPE="submit" VALUE="{% trans "Submit all" %}">
+</a>
 </FORM>
 {% endblock %}
