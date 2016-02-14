@@ -402,7 +402,14 @@ CREATE TABLE requests (
 	zonerecord VARCHAR(500),
 	whoisrecord VARCHAR(2000),
 	tags VARCHAR(50),
-	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL
+	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL,
+
+	-- pending state variables
+	pending_state VARCHAR(10) DEFAULT NULL,
+	reason VARCHAR(80) DEFAULT NULL,
+	reasonfield VARCHAR(1000) DEFAULT NULL,
+	admin_login VARCHAR(16) DEFAULT NULL,
+	admin_email VARCHAR(80) DEFAULT NULL
 );
 CREATE INDEX requests_fqdn_index ON requests(fqdn);
 
@@ -417,7 +424,11 @@ CREATE TABLE requests_hist (
 	whoisrecord VARCHAR(2000),
 	tags VARCHAR(50),
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
-	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL
+	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL,
+	reason VARCHAR(80) DEFAULT NULL,
+	reasonfield VARCHAR(1000) DEFAULT NULL,
+	admin_login VARCHAR(16) DEFAULT NULL,
+	admin_email VARCHAR(80) DEFAULT NULL
 );
 
 CREATE TABLE requests_log (
@@ -438,11 +449,13 @@ CREATE OR REPLACE FUNCTION trig_del_requests()
 	INSERT INTO requests_hist (
 		id, email, action, fqdn, language,
 		state, zonerecord, whoisrecord, tags,
-		contact_id)
+		contact_id, reason, reasonfield,
+		admin_login, admin_email)
 	    VALUES (
 		OLD.id, OLD.email, OLD.action, OLD.fqdn, OLD.language,
 		OLD.state, OLD.zonerecord, OLD.whoisrecord, OLD.tags,
-		OLD.contact_id);
+		OLD.contact_id, OLD.reason, OLD.reasonfield,
+		OLD.admin_login, OLD.admin_email);
 	RETURN OLD;
     END;
 $trig_del_requests$ LANGUAGE plpgsql;

@@ -29,6 +29,11 @@ class Requests(models.Model):
     whoisrecord = models.CharField(max_length=2000)
     tags = models.CharField(max_length=50)
     contact = models.ForeignKey(Contacts)
+    pending_state = models.CharField(max_length=10, default=None)
+    reason = models.CharField(max_length=80, default=None)
+    reasonfield = models.CharField(max_length=1000, default=None)
+    admin_login = models.CharField(max_length=16, default=None)
+    admin_email = models.CharField(max_length=80, default=None)
     class Meta:
         db_table = 'requests'
         ordering = ['id']
