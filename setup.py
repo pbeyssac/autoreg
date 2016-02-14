@@ -10,5 +10,7 @@ setup(name='autoreg',
                 'autoreg.arf', 'autoreg.arf.arf',
                 'autoreg.arf.webdns',
                 'autoreg.arf.requests',
+                'autoreg.arf.requests.management',
+                'autoreg.arf.requests.management.commands',
                 'autoreg.arf.whois'],
       )

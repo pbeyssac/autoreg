@@ -428,7 +428,6 @@ def rqval(request):
 
     i += 1
 
-  models.rq_run(out)
 
   vars = RequestContext(request,
                 {'out': out.getvalue(),

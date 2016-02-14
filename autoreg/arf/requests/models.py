@@ -216,6 +216,7 @@ def rq_list():
   return rq_list_unordered().order_by('id')
 
 def rq_run(out):
+  import autoreg.dns.db
   dbh = psycopg2.connect(autoreg.conf.dbstring)
   dd = autoreg.dns.db.db(dbh)
   dd.login('autoreg')
