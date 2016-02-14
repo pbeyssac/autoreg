@@ -9,7 +9,7 @@ import time
 import psycopg2
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction, IntegrityError
 from django.utils.translation import ugettext_lazy, ugettext as _
 
 import autoreg.arf.util
@@ -42,9 +42,19 @@ class Requests(models.Model):
     class Admin:
         pass
 
-    def accept(self, out, login, email, reasonfield=None,
-               dd=None, whoisdb=None):
+    def accept(self, login, email, reasonfield=None):
+      self.pending_state = 'Acc'
+      self.reasonfield = reasonfield
+      self.admin_login = login
+      self.admin_email = email
+      self.save()
+      return True
+
+    def accept2(self, out, dd=None, whoisdb=None):
       r = self
+      reasonfield = r.reasonfield
+      login = r.admin_login
+      email = r.admin_email
 
       if settings.FORCEDEBUGMAIL:
         mailto = [settings.FORCEDEBUGMAIL]
@@ -121,8 +131,18 @@ class Requests(models.Model):
       r.delete()
       return True
 
-    def reject(self, out, login, reason, reasonfield):
+    def reject(self, login, reason, reasonfield):
+      self.pending_state = 'Rej'
+      self.admin_login = login
+      self.reason = reason
+      self.reasonfield = reasonfield
+      self.save()
+      return True
+
+    def reject2(self, out):
       r = self
+      reason = r.reason
+      reasonfield = r.reasonfield
 
       if settings.FORCEDEBUGMAIL:
         mailto = [settings.FORCEDEBUGMAIL]
@@ -153,6 +173,19 @@ class Requests(models.Model):
       r.delete()
       return True
 
+    def do_pending(self, out, dd, whoisdb):
+      if self.pending_state == 'Acc':
+        return self.accept2(out, dd, whoisdb)
+      elif self.pending_state == 'Rej':
+        return self.reject2(out)
+      return False
+
+    def do_pending_exc(self, out, dd, whoisdb):
+      ok = self.do_pending(out, dd, whoisdb)
+      if not ok:
+        # raise to force a transaction rollback by Django
+        raise IntegrityError(_("Error executing %(rqid)s" % {'rqid': self.id}))
+
     def remove(self, state):
       self.state = state
       self.save()
@@ -174,3 +207,32 @@ class RequestsLog(models.Model):
 def rq_make_id(origin='arf'):
   return ''.join([time.strftime('%Y%m%d%H%M%S'), '-', origin, '-',
                  str(random.getrandbits(16))])
+
+def rq_list_unordered():
+  return Requests.objects.filter(state='Open', pending_state=None)
+
+def rq_list():
+  return rq_list_unordered().order_by('id')
+
+def rq_run(out):
+  dbh = psycopg2.connect(autoreg.conf.dbstring)
+  dd = autoreg.dns.db.db(dbh)
+  dd.login('autoreg')
+  whoisdb = autoreg.whois.db.Main(dbh)
+
+  rl = Requests.objects.exclude(pending_state=None).order_by('id')
+
+  for r in rl:
+    with transaction.atomic():
+      try:
+        r.do_pending_exc(out, dd, whoisdb)
+        ok = True
+      except IntegrityError as e:
+        print(unicode(e), file=out)
+        ok = False
+      if ok:
+        dbh.commit()
+        print(_("Status: committed"), file=out)
+      else:
+        dbh.rollback()
+        print(_("Status: cancelled"), file=out)

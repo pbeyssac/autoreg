@@ -42,30 +42,24 @@ _hidden_rqid = re.compile('^h([0-9]{14,14}-\w+-\d+)$')
 # private helper functions
 #
 
-def _rq_list_unordered():
-  return models.Requests.objects.exclude(state='WaitAck')
-
-def _rq_list():
-  return _rq_list_unordered().order_by('id')
-
 def _rq_list_dom(domain):
   domain = domain.upper()
-  return _rq_list().filter(fqdn=domain)
+  return models.rq_list().filter(fqdn=domain)
 
 def _rq_list_email(email):
-  return _rq_list().filter(email=email)
+  return models.rq_list().filter(email=email)
 
 def _rq_num():
   """Return the number of pending requests"""
-  return _rq_list_unordered().count()
+  return models.rq_list_unordered().count()
 
 def _rq_ndom(fqdn):
   """Return the number of pending requests for fqdn"""
-  return _rq_list_unordered().filter(fqdn=fqdn).count()
+  return models.rq_list_unordered().filter(fqdn=fqdn).count()
 
 def _rq_nemail(fqdn):
   """Return the number of distinct emails in the pending requests for fqdn"""
-  return _rq_list_unordered().filter(fqdn=fqdn) \
+  return models.rq_list_unordered().filter(fqdn=fqdn) \
          .order_by('email').distinct('email').count()
 
 def _rq_decorate(r):
@@ -346,7 +340,7 @@ def rqlist(request, page='0'):
   z = autoreg.zauth.ZAuth(connection.cursor())
 
   rql = []
-  for r in _rq_list()[(page-1)*nbypage:page*nbypage]:
+  for r in models.rq_list()[(page-1)*nbypage:page*nbypage]:
     if not z.checkparent(r.fqdn, login):
       continue
     _rq_decorate(r)
@@ -374,26 +368,25 @@ def _rqexec(rq, out, za, login, email, action, reasonfield):
     print(_("Permission denied on %(rqid)s") % {'rqid': rq}, file=out)
     return
 
-  import autoreg.dns.db
-  dbh = psycopg2.connect(autoreg.conf.dbstring)
-  dd = autoreg.dns.db.db(dbh)
-  dd.login(login)
-  whoisdb = autoreg.whois.db.Main(dbh)
-
-  has_transaction = True
   if action == 'rejectcust':
-    ok = r.reject(out, login, '', reasonfield)
+    ok = r.reject(login, '', reasonfield)
+    print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectdup':
-    ok = r.reject(out, login, _('Duplicate request'), reasonfield)
+    ok = r.reject(login, _('Duplicate request'), reasonfield)
+    print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectbog':
-    ok = r.reject(out, login, _('Bogus address information'), reasonfield)
+    ok = r.reject(login, _('Bogus address information'), reasonfield)
+    print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectful':
-    ok = r.reject(out, login, _('Please provide a full name'), reasonfield)
+    ok = r.reject(login, _('Please provide a full name'), reasonfield)
+    print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectnok':
-    ok = r.reject(out, login, _('Sorry, this domain is already allocated'),
+    ok = r.reject(login, _('Sorry, this domain is already allocated'),
                   reasonfield)
+    print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'accept':
-    ok = r.accept(out, login, email, reasonfield, dd=dd, whoisdb=whoisdb)
+    ok = r.accept(login, email, reasonfield)
+    print(_("Accepted %(rqid)s (queued)") % {'rqid': rq}, file=out)
   else:
     if action == 'delete':
       r.remove('DelQuiet');
@@ -404,15 +397,6 @@ def _rqexec(rq, out, za, login, email, action, reasonfield):
       print(_("What? On rq=%(rqid)s action=%(action)s reason=%(reason)s") \
               % (rq, action, reason),
             file=out)
-    has_transaction = False
-
-  if has_transaction:
-    if ok:
-      print(_("Status: committed"), file=out)
-    else:
-      print(_("Status: cancelled"), file=out)
-      # raise to force a transaction rollback by Django
-      raise IntegrityError("")
 
 @transaction.non_atomic_requests
 def rqval(request):
@@ -442,6 +426,8 @@ def rqval(request):
         print(unicode(e), file=out)
 
     i += 1
+
+  models.rq_run(out)
 
   vars = RequestContext(request,
                 {'out': out.getvalue(),
