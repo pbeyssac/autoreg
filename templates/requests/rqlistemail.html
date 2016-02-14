@@ -3,7 +3,7 @@
 {% block h1title %}{% trans "Request List" %}{% endblock %}
 {% block msg %}
 <table class="rqlist">
-{% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}><td><a href="{% url 'arf.requests.views.rq' r.id %}">{{ r.id|stringformat:".14s" }}</a><td>{{ r.action }}<td>{{ r.fqdn }}<td>{{ r.email }}<td>{% if r.tags != None %}{{ r.tags }}{% endif %}
+{% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}><td><a href="{% url 'arf.requests.views.rq' r.id %}{% if goto %}?page={{ goto }}{% endif %}">{{ r.id|stringformat:".14s" }}</a><td>{{ r.action }}<td>{{ r.fqdn }}<td>{{ r.email }}<td>{% if r.tags != None %}{{ r.tags }}{% endif %}
 {% endfor %}
 </table>
 {% endblock %}

@@ -196,6 +196,11 @@ def rq(request, rqid=None):
   else:
     _rq = _rqid
 
+  if request.method == 'POST':
+    page = request.POST.get('page', '')
+  else:
+    page = request.GET.get('page', '')
+
   if rqid is not None:
     rqidlist = [rqid]
   else:
@@ -225,7 +230,7 @@ def rq(request, rqid=None):
     rlist.append(r)
 
   vars = RequestContext(request,
-                        {'rlist': rlist,
+                        {'rlist': rlist, 'goto': page,
                          'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqdisplay.html', vars)
   
@@ -248,6 +253,7 @@ def rqdom(request, domain):
     i += 1
   vars = RequestContext(request,
                 {'rlist': rlist,
+                 'goto': request.GET.get('page', ''),
                  'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqdisplay.html', vars)
 
@@ -268,6 +274,7 @@ def rqdisplaychecked(request):
     i += 1
   vars = RequestContext(request,
                 {'rlist': rlist,
+                 'goto': request.GET.get('page', ''),
                  'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqdisplay.html', vars)
 
@@ -293,7 +300,8 @@ def rqlistdom(request, domain=None):
       continue
     _rq_decorate(r)
 
-  vars = RequestContext(request, {'rlist': rlist, 'fqdn': domain})
+  vars = RequestContext(request, {'rlist': rlist, 'fqdn': domain,
+                                  'goto': request.GET.get('page', '') })
   return render_to_response('requests/rqlistdom.html', vars)
 
 def rqlistemail(request, email):
@@ -315,6 +323,7 @@ def rqlistemail(request, email):
 
   vars = RequestContext(request,
                 {'rlist': rlist, 'email': email,
+                 'goto': request.GET.get('page', ''),
                  'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqlistemail.html', vars)
 
@@ -414,6 +423,7 @@ def rqval(request):
   out = io.StringIO()
 
   i = 1
+  allok = True
   while 'action' + str(i) in request.POST:
     action = request.POST['action' + str(i)]
     rq = request.POST['rq' + str(i)]
@@ -425,12 +435,20 @@ def rqval(request):
         _rqexec(rq, out, za, login, email, action, reason)
       except IntegrityError as e:
         print(unicode(e), file=out)
+        allok = False
 
     i += 1
 
+  if 'goto' in request.POST and request.POST['goto']:
+    goto = reverse(rqlist, args=[request.POST['goto']])
+  else:
+    goto = ''
+
+  if allok and goto:
+    return HttpResponseRedirect(goto)
 
   vars = RequestContext(request,
-                {'out': out.getvalue(),
+                {'out': out.getvalue(), 'goto': goto,
                  'is_admin': check_is_admin(request.user.username)})
   page = render_to_response('requests/rqval.html', vars)
   return page

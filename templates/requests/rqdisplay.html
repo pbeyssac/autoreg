@@ -5,6 +5,7 @@
 
 <FORM ACTION="{% url 'arf.requests.views.rqval' %}" METHOD="POST">
 {% csrf_token %}
+{% if goto %}<input name="goto" type="hidden" value="{{ goto }}">{% endif %}
 {% for r in rlist %}
 <h2>{% trans "Request" %} {{ r.id }}</h2>
 
