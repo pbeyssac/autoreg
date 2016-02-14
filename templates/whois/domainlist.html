@@ -3,7 +3,7 @@
 {% block title %}{% trans "Domain List" %}{% endblock %}
 {% block h1title %}{% trans "Domain List" %}{% endblock %}
 {% block form %}
-<a class="action" href="{% url 'arf.dns.views.domainns' %}">{% trans "New Domain" %}</A>
+<a class="action" href="{% url 'arf.webdns.views.domainns' %}">{% trans "New Domain" %}</A>
 <table class="domainlist">
 <tr><th>{% trans "Domain" %}</th><th>{% trans "Created" %}</th><th>{% trans "Updated" %}</th><th>DNSSEC</th><th>{% trans "Flags" %}</th></tr>
 {% for dds in domds %}

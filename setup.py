@@ -8,6 +8,7 @@ setup(name='autoreg',
       url='http://eu.org/',
       packages=['autoreg', 'autoreg.dns', 'autoreg.whois',
                 'autoreg.arf', 'autoreg.arf.arf',
-                'autoreg.arf.dns', 'autoreg.arf.requests',
+                'autoreg.arf.webdns',
+                'autoreg.arf.requests',
                 'autoreg.arf.whois'],
       )

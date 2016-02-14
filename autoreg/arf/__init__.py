@@ -4,7 +4,7 @@
 
 __all__ = [
   'arf',
-  'dns',
   'requests',
+  'webdns',
   'whois',
 ]
