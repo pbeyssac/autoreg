@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+
 import base64
 import hashlib
 import re
 import struct
 
-import check
-import parser
+from . import check
+from . import parser
 
 def compute_keytag_wirekey(flags, protocol, algorithm, key):
   """Compute key tag and wire key."""

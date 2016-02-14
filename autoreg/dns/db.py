@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 # $Id$
 
+from __future__ import absolute_import
 from __future__ import print_function
 
 import datetime
@@ -10,10 +11,9 @@ import time
 
 # local modules
 from autoreg.conf import DEFAULT_GRACE_DAYS
-
-import check
-import parser
 import autoreg.zauth as zauth
+from . import check
+from . import parser
 
 class DnsDbError(Exception):
     pass

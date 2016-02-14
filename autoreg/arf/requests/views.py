@@ -1,5 +1,6 @@
 # $Id$
 
+from __future__ import absolute_import
 from __future__ import print_function
 
 import io
@@ -24,7 +25,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
 
-import models
+from . import models
 
 
 URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')

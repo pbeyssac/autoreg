@@ -1,6 +1,8 @@
 #!/usr/local/bin/python
 # $Id$
 
+from __future__ import absolute_import
+
 import base64
 import re
 import socket
