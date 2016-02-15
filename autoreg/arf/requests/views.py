@@ -167,6 +167,7 @@ def rqedit(request, rqid):
   if request.method == "GET":
     vars = RequestContext(request,
                           {'r': r,
+                           'numdom': Whoisdomains.objects.all().count(),
                            'is_admin': check_is_admin(request.user.username)})
     return render_to_response('requests/rqedit.html', vars)
   elif request.method == 'POST':
@@ -231,6 +232,7 @@ def rq(request, rqid=None):
 
   vars = RequestContext(request,
                         {'rlist': rlist, 'goto': page,
+                         'numdom': Whoisdomains.objects.all().count(),
                          'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqdisplay.html', vars)
   
@@ -254,6 +256,7 @@ def rqdom(request, domain):
   vars = RequestContext(request,
                 {'rlist': rlist,
                  'goto': request.GET.get('page', ''),
+                 'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqdisplay.html', vars)
 
@@ -275,6 +278,7 @@ def rqdisplaychecked(request):
   vars = RequestContext(request,
                 {'rlist': rlist,
                  'goto': request.GET.get('page', ''),
+                 'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqdisplay.html', vars)
 
@@ -324,6 +328,7 @@ def rqlistemail(request, email):
   vars = RequestContext(request,
                 {'rlist': rlist, 'email': email,
                  'goto': request.GET.get('page', ''),
+                 'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username)})
   return render_to_response('requests/rqlistemail.html', vars)
 
@@ -449,6 +454,7 @@ def rqval(request):
 
   vars = RequestContext(request,
                 {'out': out.getvalue(), 'goto': goto,
+                 'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username)})
   page = render_to_response('requests/rqval.html', vars)
   return page
@@ -462,7 +468,8 @@ def rqloglist(request):
   if not is_admin:
     raise PermissionDenied
   rqlog = models.RequestsLog.objects.all().order_by('-date')[:50]
-  vars = RequestContext(request, {'is_admin': is_admin, 'rqlog': rqlog})
+  vars = RequestContext(request, {'is_admin': is_admin, 'rqlog': rqlog,
+                                  'numdom': Whoisdomains.objects.all().count()})
   return render_to_response('requests/rqloglist.html', vars)
 
 def rqlogdisplay(request, id):
@@ -474,5 +481,6 @@ def rqlogdisplay(request, id):
   if not is_admin:
     raise PermissionDenied
   rql = models.RequestsLog.objects.get(id=id)
-  vars = RequestContext(request, {'is_admin': is_admin, 'rql': rql})
+  vars = RequestContext(request, {'is_admin': is_admin, 'rql': rql,
+                                  'numdom': Whoisdomains.objects.all().count()})
   return render_to_response('requests/rqlogdisplay.html', vars)
