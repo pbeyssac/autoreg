@@ -16,5 +16,5 @@ class Command(BaseCommand):
     o = out.getvalue()
     if o:
       # don't output if empty, or write() will add a newline, which
-      # messes up cron (usless mail).
+      # messes up cron (useless mail).
       self.stdout.write(out.getvalue())
