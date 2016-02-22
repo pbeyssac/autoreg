@@ -96,6 +96,12 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
         yield _("IGNORED: you already have a pending request %(rqid)s"
                 " for that domain.\n") % {'rqid': rql[0].id}
         return
+      rql = Requests.objects.filter(action='N',
+                                    fqdn=domain.upper(), state='Open')
+      if rql.count() > 0:
+        yield _("IGNORED: we already have pending request(s)"
+                " for that domain.\n")
+        return
       req = Requests(id=rqid, action='N', language=translation.get_language(),
                      email=contact.email, fqdn=domain.upper(), state='Open',
                      contact=contact,
