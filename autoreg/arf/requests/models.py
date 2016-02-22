@@ -226,8 +226,9 @@ def rq_run(out):
 
   for r in rl:
     with transaction.atomic():
+      r2 = Requests.objects.select_for_update().get(id=r.id)
       try:
-        r.do_pending_exc(out, dd, whoisdb)
+        r2.do_pending_exc(out, dd, whoisdb)
         ok = True
       except IntegrityError as e:
         print(unicode(e), file=out)
