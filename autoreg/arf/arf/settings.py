@@ -28,6 +28,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.sites',
     'autoreg.arf.webdns',
+    'autoreg.arf.logs',
     'autoreg.arf.requests',
     'autoreg.arf.whois'
 )

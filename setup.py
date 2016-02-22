@@ -12,5 +12,6 @@ setup(name='autoreg',
                 'autoreg.arf.requests',
                 'autoreg.arf.requests.management',
                 'autoreg.arf.requests.management.commands',
+		'autoreg.arf.logs',
                 'autoreg.arf.whois'],
       )

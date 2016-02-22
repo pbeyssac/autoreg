@@ -22,6 +22,7 @@
 <nav class="admin">
  <a href="{% url 'arf.requests.views.rqlist' %}">{% trans "Requests" %}</A>
  <a href="{% url 'arf.requests.views.rqloglist' %}">{% trans "Log" %}</A>
+ <a href="{% url 'loglist' %}">{% trans "Action log" %}</A>
 {%if numdom %}{{ numdom }} {% trans "domains" %}{% endif %}
 {% endif %}
 {% else %}

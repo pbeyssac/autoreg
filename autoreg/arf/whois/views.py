@@ -32,7 +32,10 @@ from django.views.decorators.cache import cache_control
 from django.db import connection
 from django.template import RequestContext
 
-from models import Whoisdomains,Contacts,Tokens,DomainContact,check_is_admin
+from models import Whoisdomains,Contacts,Tokens,DomainContact, check_is_admin
+
+from ..logs.models import log, Log
+
 
 RESET_TOKEN_HOURS_TTL = 24
 EMAIL_TOKEN_HOURS_TTL = 72
@@ -238,6 +241,7 @@ def login(request):
         vars['msg'] = _("You need to validate your account. " \
                       "Please check your e-mail for the validation link.")
       elif user.is_active:
+        log(handle, action='login')
         django.contrib.auth.login(request, user)
         return HttpResponseRedirect(next)
       else:
@@ -773,6 +777,8 @@ def domainedit(request, fqdn):
               # Refuse deletion of the last contact
               msg = _("Sorry, must leave at least one contact!")
             else:
+              log(handle, action='contactdel',
+                  message=fqdn.lower() + ' ' + chandle + HANDLESUFFIX)
               dbdom.d[code].remove(cid)
               dbdom.update()
           else:
@@ -781,6 +787,8 @@ def domainedit(request, fqdn):
         elif 'submit' in request.POST and request.POST['submit'] == 'Add' \
             or 'submita' in request.POST:
           if cid not in dbdom.d[code]:
+            log(handle, action='contactadd',
+                message=fqdn.lower() + ' ' + chandle + HANDLESUFFIX)
             dbdom.d[code].append(cid)
             dbdom.update()
           else:
@@ -886,5 +894,7 @@ def domainundelete(request, fqdn):
 
 def logout(request):
   """Logout page"""
+  if request.user.is_authenticated():
+    log(request.user.username, action='logout')
   django.contrib.auth.logout(request)
   return HttpResponseRedirect(reverse(login))

@@ -158,7 +158,13 @@ class Admins(models.Model):
     def __str__(self):
         return self.login
 
+
 def check_is_admin(handle):
   if not handle:
     return False
   return Admins.objects.filter(contact__handle=handle.upper()).exists()
+
+def log(handle, action, message=None):
+  l = Log(contact=Contacts.objects.get(handle=handle), action=action,
+          message=message)
+  l.save()

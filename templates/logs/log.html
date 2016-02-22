@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% endblock %}
+{% block h1title %}{% endblock %}
+{% block form %}
+
+<div class="pagination">
+  <span class="step-links">
+    {% if log.has_previous %}
+      <a href="?page=1">&lt;&lt;</a>
+      <a href="?page={{ log.previous_page_number }}">&lt;</a>
+    {% endif %}
+
+  <span class="current">
+ {{ log.number }}/{{ log.paginator.num_pages }}
+  </span>
+    {% if log.has_next %}
+      <a href="?page={{ log.next_page_number }}">&gt;</a>
+      <a href="?page={{ log.paginator.num_pages }}">&gt;&gt;</a>
+    {% endif %}
+  </span>
+</div>
+
+<div class="loglist">
+<table>
+<tr><td>{% trans "Date" %}<td>{% trans "Contact" %}<td>{% trans "Action" %}<td>{% trans "Message" %}
+{% for r in log %}
+<tr><td>{{ r.date|date:"o-m-d H:i" }}<td>{{ r.contact.handle }}-FREE<td>{{ r.action }}<td>{% if r.message %}{{ r.message }}{% endif %}
+{% endfor %}
+</table>
+</div>
+
+{% endblock %}

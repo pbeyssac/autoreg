@@ -465,6 +465,41 @@ CREATE TRIGGER trig_del_requests BEFORE DELETE ON requests
 	FOR EACH ROW EXECUTE PROCEDURE trig_del_requests();
 
 
+
+
+-- Logs
+
+CREATE TABLE log (
+	id SERIAL PRIMARY KEY,
+	date TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL,
+	action VARCHAR(10),
+	message VARCHAR(300) DEFAULT NULL
+);
+
+CREATE TABLE log_hist (
+	id INTEGER PRIMARY KEY,
+	date TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	contact_id INTEGER,
+	action VARCHAR(10),
+	message VARCHAR(300) DEFAULT NULL
+);
+
+CREATE OR REPLACE FUNCTION trig_del_log()
+    RETURNS TRIGGER as $trig_del_log$
+    BEGIN
+	INSERT INTO log_hist (id, date, contact_id, action, message)
+	    VALUES (
+		OLD.id, OLD.date, OLD.contact_id,
+		OLD.action, OLD.message);
+	RETURN OLD;
+    END;
+$trig_del_log$ LANGUAGE plpgsql;
+
+-- only useful on DELETE
+CREATE TRIGGER trig_del_log BEFORE DELETE ON log
+	FOR EACH ROW EXECUTE PROCEDURE trig_del_log();
+
 ---------------------------------------------------------------------
 --
 -- Database initialization
@@ -575,3 +610,8 @@ GRANT SELECT ON TABLE contacts, handle_secrets TO postfix;
 GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE requests TO autoreg, www;
 -- append-only
 GRANT INSERT ON TABLE requests_hist TO autoreg, www;
+
+-- Permissions on logs
+-- append-only
+GRANT INSERT, SELECT ON TABLE log, log_hist TO www;
+GRANT SELECT, UPDATE ON TABLE log_id_seq TO www;
