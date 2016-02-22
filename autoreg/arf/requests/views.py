@@ -226,7 +226,10 @@ def rq(request, rqid=None):
       raise PermissionDenied
     _rq1(request, r)
     r.suffix = i
-    r.default = "accept"
+    if _rq_ndom(r.fqdn) == 1:
+      r.default = "accept"
+    else:
+      r.default = "none"
     i += 1
     rlist.append(r)
 

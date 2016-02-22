@@ -44,7 +44,7 @@ Tags: {% if r.tags != None %}{{ r.tags }}{% endif %}<br>
 <div class="rqaction">
 <h3>Action</h3>
   <label for="id_action{{ r.suffix }}_1">
-  <input id="id_action{{ r.suffix }}_1" name="action{{ r.suffix }}" type="radio" value="none">{% trans "None" %}
+  <input id="id_action{{ r.suffix }}_1" name="action{{ r.suffix }}" type="radio" value="none"{% if r.default == "none" %} checked="checked"{% endif %}>{% trans "None" %}
   </label>
   <label for="id_action{{ r.suffix }}_2">
   <input id="id_action{{ r.suffix }}_2" name="action{{ r.suffix }}" type="radio" value="accept"{% if r.default == "accept" %} checked="checked"{% endif %}>{% trans "Accept" %}
