@@ -23,6 +23,7 @@ from django.db import connection, transaction, IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.utils import translation
 from django.utils.translation import ugettext as _
 
 from . import models
@@ -390,17 +391,24 @@ def _rqexec(rq, out, za, login, email, action, reasonfield):
     ok = r.reject(login, '', reasonfield)
     print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectdup':
-    ok = r.reject(login, _('Duplicate request'), reasonfield)
+    with translation.override(r.language):
+      reason = _('Duplicate request')
+    ok = r.reject(login, reason, reasonfield)
     print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectbog':
-    ok = r.reject(login, _('Bogus address information'), reasonfield)
+    with translation.override(r.language):
+      reason = _('Bogus address information')
+    ok = r.reject(login, reason, reasonfield)
     print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectful':
-    ok = r.reject(login, _('Please provide a full name'), reasonfield)
+    with translation.override(r.language):
+      reason = _('Please provide a full name')
+    ok = r.reject(login, reason, reasonfield)
     print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectnok':
-    ok = r.reject(login, _('Sorry, this domain is already allocated'),
-                  reasonfield)
+    with translation.override(r.language):
+      reason = _('Sorry, this domain is already allocated')
+    ok = r.reject(login, reason, reasonfield)
     print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'accept':
     ok = r.accept(login, email, reasonfield)
