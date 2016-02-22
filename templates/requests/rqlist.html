@@ -6,7 +6,6 @@
 {% for p in pages %}{% if p == cpage %}{{ p }} {% else %}<a href="{{ p }}">{{ p }} </a>{% endif %}{% endfor %}
 {% if next %}<a class="miniaction" href="{{ next }}">&gt;</a> {% endif %}
 <form action="{% url 'arf.requests.views.rqlistdom' %}" method="GET">
-{% csrf_token %}
 {% trans "Search by domain:" %} <input type="texte" name="domain">
 <input class="action" type="submit" value="{% trans "Search" %}">
 </form>
