@@ -8,7 +8,7 @@ from django.db import connection
 import django.forms as forms
 from django.http import HttpResponseRedirect, HttpResponseNotFound, \
   HttpResponseForbidden, StreamingHttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 from django.utils import translation
 from django.utils.translation import ugettext as _
@@ -244,7 +244,7 @@ def domainds(request, fqdn):
      { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
        'verbose': verbose, 'is_admin': is_admin,
        'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr })
-  return render_to_response('dns/dsedit.html', vars)
+  return render(request, 'dns/dsedit.html', vars)
 
 def _get_rr_nsip(dd, fqdn):
   rrlist = dd.queryrr(fqdn, None, None, None)
@@ -311,7 +311,7 @@ def _adopt_orphan(request, ddro, dbh, fqdn, form):
   else:
     vars['msg'] = errmsg
   vars = RequestContext(request, vars)
-  return render_to_response("dns/orphan.html", vars)
+  return render(request, "dns/orphan.html", vars)
 
 def domainns(request, fqdn=None):
   """Show/edit record(s) for domain"""
@@ -449,4 +449,4 @@ def domainns(request, fqdn=None):
        'errors': errors,
        'form': form,
        'nsiplist': nsiplist })
-  return render_to_response('dns/nsedit.html', vars)
+  return render(request, 'dns/nsedit.html', vars)

@@ -22,7 +22,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import connection, transaction, IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 from django.utils import translation
 from django.utils.translation import ugettext as _
@@ -162,7 +162,7 @@ def rqedit(request, rqid):
   r = models.Requests.objects.filter(id=rqid)
   if r.count() < 1:
     vars = RequestContext(request, {'msg': _('Request not found')})
-    return render_to_response('requests/rqmsg.html', vars)
+    return render(request, 'requests/rqmsg.html', vars)
   r = r[0]
   if not autoreg.zauth.ZAuth(connection.cursor()).checkparent(r.fqdn, login):
     raise PermissionDenied
@@ -171,7 +171,7 @@ def rqedit(request, rqid):
                           {'r': r,
                            'numdom': Whoisdomains.objects.all().count(),
                            'is_admin': check_is_admin(request.user.username)})
-    return render_to_response('requests/rqedit.html', vars)
+    return render(request, 'requests/rqedit.html', vars)
   elif request.method == 'POST':
     whoisrecord = request.POST.get('whois', '').strip('\n')
     r.tags = request.POST.get('tags', '').strip()
@@ -239,7 +239,7 @@ def rq(request, rqid=None):
                         {'rlist': rlist, 'goto': page,
                          'numdom': Whoisdomains.objects.all().count(),
                          'is_admin': check_is_admin(request.user.username)})
-  return render_to_response('requests/rqdisplay.html', vars)
+  return render(request, 'requests/rqdisplay.html', vars)
   
 def rqdom(request, domain):
   if request.method != "GET":
@@ -263,7 +263,7 @@ def rqdom(request, domain):
                  'goto': request.GET.get('page', ''),
                  'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username)})
-  return render_to_response('requests/rqdisplay.html', vars)
+  return render(request, 'requests/rqdisplay.html', vars)
 
 def rqdisplaychecked(request):
   if request.method != "GET":
@@ -285,7 +285,7 @@ def rqdisplaychecked(request):
                  'goto': request.GET.get('page', ''),
                  'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username)})
-  return render_to_response('requests/rqdisplay.html', vars)
+  return render(request, 'requests/rqdisplay.html', vars)
 
 def rqlistdom(request, domain=None):
   if request.method != "GET":
@@ -311,7 +311,7 @@ def rqlistdom(request, domain=None):
 
   vars = RequestContext(request, {'rlist': rlist, 'fqdn': domain,
                                   'goto': request.GET.get('page', '') })
-  return render_to_response('requests/rqlistdom.html', vars)
+  return render(request, 'requests/rqlistdom.html', vars)
 
 def rqlistemail(request, email):
   if request.method != "GET":
@@ -335,7 +335,7 @@ def rqlistemail(request, email):
                  'goto': request.GET.get('page', ''),
                  'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username)})
-  return render_to_response('requests/rqlistemail.html', vars)
+  return render(request, 'requests/rqlistemail.html', vars)
 
 def rqlist(request, page='0'):
   if request.method != "GET":
@@ -377,7 +377,7 @@ def rqlist(request, page='0'):
     v['next'] = page+1
 
   v = RequestContext(request, v)
-  return render_to_response('requests/rqlist.html', v)
+  return render(request, 'requests/rqlist.html', v)
 
 def _rqexec(rq, out, za, login, email, action, reasonfield):
   if not models.Requests.objects.filter(id=rq).exists():
@@ -468,7 +468,7 @@ def rqval(request):
                 {'out': out.getvalue(), 'goto': goto,
                  'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username)})
-  page = render_to_response('requests/rqval.html', vars)
+  page = render(request, 'requests/rqval.html', vars)
   return page
 
 def rqloglist(request):
@@ -492,7 +492,7 @@ def rqloglist(request):
 
   vars = RequestContext(request, {'is_admin': is_admin, 'list': logpage,
                                   'numdom': Whoisdomains.objects.all().count()})
-  return render_to_response('requests/rqloglist.html', vars)
+  return render(request, 'requests/rqloglist.html', vars)
 
 def rqlogdisplay(request, id):
   if request.method != "GET":
@@ -505,4 +505,4 @@ def rqlogdisplay(request, id):
   rql = models.RequestsLog.objects.get(id=id)
   vars = RequestContext(request, {'is_admin': is_admin, 'rql': rql,
                                   'numdom': Whoisdomains.objects.all().count()})
-  return render_to_response('requests/rqlogdisplay.html', vars)
+  return render(request, 'requests/rqlogdisplay.html', vars)
