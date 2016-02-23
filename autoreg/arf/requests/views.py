@@ -18,6 +18,7 @@ import autoreg.whois.query as query
 import autoreg.zauth
 
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import connection, transaction, IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, Http404
@@ -478,8 +479,18 @@ def rqloglist(request):
   is_admin = check_is_admin(request.user.username)
   if not is_admin:
     raise PermissionDenied
-  rqlog = models.RequestsLog.objects.all().order_by('-date')[:50]
-  vars = RequestContext(request, {'is_admin': is_admin, 'rqlog': rqlog,
+  log = models.RequestsLog.objects.all().order_by('-date')
+  paginator = Paginator(log, 100)
+
+  page = request.GET.get('page')
+  try:
+    logpage = paginator.page(page)
+  except PageNotAnInteger:
+    logpage = paginator.page(1)
+  except EmptyPage:
+    logpage = paginator.page(paginator.num_pages)
+
+  vars = RequestContext(request, {'is_admin': is_admin, 'list': logpage,
                                   'numdom': Whoisdomains.objects.all().count()})
   return render_to_response('requests/rqloglist.html', vars)
 
