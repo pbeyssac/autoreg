@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% endblock %}
+{% block h1title %}{% endblock %}
+
+{% block pagination %}
+<div class="pagination">
+  <span class="step-links">
+    {% if list.has_previous %}
+      <a href="?page=1">&lt;&lt;</a>
+      <a href="?page={{ list.previous_page_number }}">&lt;</a>
+    {% endif %}
+
+  <span class="current">
+ {{ list.number }}/{{ list.paginator.num_pages }}
+  </span>
+    {% if list.has_next %}
+      <a href="?page={{ list.next_page_number }}">&gt;</a>
+      <a href="?page={{ list.paginator.num_pages }}">&gt;&gt;</a>
+    {% endif %}
+  </span>
+</div>
+{% endblock %}

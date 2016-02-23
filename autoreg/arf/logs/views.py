@@ -31,7 +31,7 @@ def loglist(request):
   except EmptyPage:
     logpage = paginator.page(paginator.num_pages)
 
-  vars = RequestContext(request, {'is_admin': is_admin, 'log': logpage,
+  vars = RequestContext(request, {'is_admin': is_admin, 'list': logpage,
                                   'suffix': HANDLESUFFIX,
                                   'numdom': Whoisdomains.objects.all().count()})
 
