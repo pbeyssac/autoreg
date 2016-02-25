@@ -1,8 +1,10 @@
 # $Id$
 
+from __future__ import absolute_import
+
 from django.db import models
 
-from autoreg.arf.whois.models import Admins
+from ..whois.models import Admins
 
 
 class Zones(models.Model):

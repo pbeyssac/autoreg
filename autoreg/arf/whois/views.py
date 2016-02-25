@@ -1,5 +1,7 @@
 # $Id$
 
+from __future__ import absolute_import
+
 import crypt
 import datetime
 import io
@@ -15,7 +17,7 @@ from django.utils.translation import ugettext_lazy, ugettext as _
 from autoreg.whois.db import HANDLESUFFIX, \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
   countries_get
-from autoreg.arf.util import render_to_mail
+from ..util import render_to_mail
 from autoreg.common import domain_delete
 from autoreg.conf import FROMADDR
 import autoreg.dns.db
@@ -32,7 +34,7 @@ from django.views.decorators.cache import cache_control
 from django.db import connection
 from django.template import RequestContext
 
-from models import Whoisdomains,Contacts,Tokens,DomainContact, check_is_admin
+from .models import Whoisdomains,Contacts,Tokens,DomainContact, check_is_admin
 
 from ..logs.models import log, Log
 

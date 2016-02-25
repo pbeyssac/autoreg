@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import io
 
 import psycopg2
@@ -20,10 +22,10 @@ import autoreg.dns.dnssec
 from autoreg.whois.db import check_handle_domain_auth, \
   suffixadd, suffixstrip, HANDLESUFFIX
 
-from autoreg.arf.requests.models import Requests, rq_make_id
-from autoreg.arf.whois.models import Contacts, Whoisdomains, check_is_admin
-from autoreg.arf.whois.views import registrant_form
-from models import Domains, Rrs
+from ..requests.models import Requests, rq_make_id
+from ..whois.models import Contacts, Whoisdomains, check_is_admin
+from ..whois.views import registrant_form
+from .models import Domains, Rrs
 
 URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
 

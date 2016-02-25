@@ -13,8 +13,8 @@ from django.conf import settings
 from django.db import models, transaction, IntegrityError
 from django.utils.translation import ugettext_lazy, ugettext as _
 
-import autoreg.arf.util
-from autoreg.arf.whois.models import Contacts
+from .. import util
+from ..whois.models import Contacts
 import autoreg.common
 import autoreg.conf
 import autoreg.whois.db
@@ -99,9 +99,9 @@ class Requests(models.Model):
         vars = {'rqid': self.id, 'domain': r.fqdn.upper(), 'to': r.email,
                 'reasonfield': reasonfield,
                 'whoisrecord': outwhois.getvalue(), 'zonerecord': r.zonerecord}
-        if not autoreg.arf.util.render_to_mail("whois/domainnew.mail", vars,
-                                               autoreg.conf.FROMADDR, mailto,
-                                               language=r.language):
+        if not util.render_to_mail("whois/domainnew.mail", vars,
+                                   autoreg.conf.FROMADDR, mailto,
+                                   language=r.language):
           print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
                 file=out)
           # we have to continue anyway, since the request has been executed
@@ -120,9 +120,9 @@ class Requests(models.Model):
           return False
 
         vars = {'rqid': self.id, 'domain': r.fqdn.upper(), 'to': r.email}
-        if not autoreg.arf.util.render_to_mail("whois/domaindel.mail", vars,
-                                               autoreg.conf.FROMADDR, mailto,
-                                               language=r.language):
+        if not util.render_to_mail("whois/domaindel.mail", vars,
+                                   autoreg.conf.FROMADDR, mailto,
+                                   language=r.language):
           print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
                 file=out)
           # we have to continue anyway, since the request has been executed
@@ -160,9 +160,9 @@ class Requests(models.Model):
       vars = {'rqid': r.id, 'domain': r.fqdn.upper(), 'to': r.email,
               'action': action, 'reason': reason, 'reasonfield': reasonfield}
 
-      if not autoreg.arf.util.render_to_mail("whois/domainrej.mail", vars,
-                                             autoreg.conf.FROMADDR, mailto,
-                                             language=r.language):
+      if not util.render_to_mail("whois/domainrej.mail", vars,
+                                 autoreg.conf.FROMADDR, mailto,
+                                 language=r.language):
         print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
               file=out)
         return False

@@ -10,7 +10,7 @@ import sys
 
 import psycopg2
 
-from autoreg.arf.whois.models import check_is_admin, Whoisdomains
+from ..whois.models import check_is_admin, Whoisdomains
 import autoreg.conf
 import autoreg.dns.db
 from autoreg.whois.db import admin_login, country_from_iso
