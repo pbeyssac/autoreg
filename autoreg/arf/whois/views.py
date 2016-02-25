@@ -24,6 +24,7 @@ import autoreg.dns.db
 
 import django.contrib.auth
 from django.core.exceptions import SuspiciousOperation, PermissionDenied
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, \
   HttpResponseRedirect, HttpResponseForbidden
@@ -528,14 +529,25 @@ def chpass(request):
 @cache_control(private=True)
 def domainlist(request):
   """Display domain list for current contact"""
+  if request.method != "GET":
+    raise SuspiciousOperation
   if not request.user.is_authenticated():
     return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
 
   domds = handle_domains_dnssec(connection.cursor(), handle)
+  paginator = Paginator(domds, 50)
+
+  page = request.GET.get('page')
+  try:
+    dompage = paginator.page(page)
+  except PageNotAnInteger:
+    dompage = paginator.page(1)
+  except EmptyPage:
+    dompage = paginator.page(paginator.num_pages)
 
   vars = RequestContext(request,
-           {'posturi': request.path, 'domds': domds,
+           {'posturi': request.path, 'list': dompage,
             'is_admin': check_is_admin(request.user.username)})
   return render(request, 'whois/domainlist.html', vars)
 

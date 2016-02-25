@@ -58,6 +58,8 @@ span.email {font-weight: bold; font-family: monospace; background-color:#eef;}
 }
 .deldom { color: #f66 }
 
+.pagination {margin-top: 1em;}
+
 // table alignment for .contactarray forms
 .contactarray {border-collapse: collapse;}
 .contactarray form {display: table-row}

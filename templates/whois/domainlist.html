@@ -1,12 +1,16 @@
-{% extends "base.html" %}
+{% extends "baselist.html" %}
 {% load i18n %}
 {% block title %}{% trans "Domain List" %}{% endblock %}
 {% block h1title %}{% trans "Domain List" %}{% endblock %}
-{% block form %}
+{% block msg %}
+<div>
 <a class="action" href="{% url 'arf.webdns.views.domainns' %}">{% trans "New Domain" %}</A>
+</div>
+{% endblock %}
+{% block form %}
 <table class="domainlist">
 <tr><th>{% trans "Domain" %}</th><th>{% trans "Created" %}</th><th>{% trans "Updated" %}</th><th>DNSSEC</th><th>{% trans "Flags" %}</th></tr>
-{% for dds in domds %}
+{% for dds in list %}
 {% if dds.5 and dds.6 %}<tr class="deldom">{% else %}<tr>{% endif %}
 <td><a href="{% url 'arf.whois.views.domainedit' dds.0.lower %}">{{ dds.0 }}</a>
 <td>{{ dds.3|date:"o-m-d H:i" }}
