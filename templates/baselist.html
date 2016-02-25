@@ -6,16 +6,17 @@
 <div class="pagination">
   <span class="step-links">
     {% if list.has_previous %}
-      <a href="?page=1">&lt;&lt;</a>
-      <a href="?page={{ list.previous_page_number }}">&lt;</a>
+      <a class="miniaction" href="?page=1">&lt;&lt;</a>
+      <a class="miniaction" href="?page={{ list.previous_page_number }}">&lt;</a>
     {% endif %}
-
-  <span class="current">
- {{ list.number }}/{{ list.paginator.num_pages }}
-  </span>
+    {% if list.paginator.num_pages != 1 %}
+     <span class="current">
+     {{ list.number }}/{{ list.paginator.num_pages }}
+     </span>
+    {% endif %}
     {% if list.has_next %}
-      <a href="?page={{ list.next_page_number }}">&gt;</a>
-      <a href="?page={{ list.paginator.num_pages }}">&gt;&gt;</a>
+      <a class="miniaction" href="?page={{ list.next_page_number }}">&gt;</a>
+      <a class="miniaction" href="?page={{ list.paginator.num_pages }}">&gt;&gt;</a>
     {% endif %}
   </span>
 </div>
