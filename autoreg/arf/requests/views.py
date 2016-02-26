@@ -50,7 +50,7 @@ def _rq_list_dom(domain):
   return models.rq_list().filter(fqdn=domain)
 
 def _rq_list_email(email):
-  return models.rq_list().filter(email=email)
+  return models.rq_list().filter(email=email).order_by('id')
 
 def _rq_num():
   """Return the number of pending requests"""
