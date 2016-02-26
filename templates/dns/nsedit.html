@@ -30,7 +30,7 @@
     <input name="fqdn" value="{{ fqdn }}" type="text"/>
     {% if errors.fqdn %}{% for error in errors.fqdn %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>
-{% blocktrans %}(full domain name, including the enclosing domain. See the <a href="/opendomains.html">list</a>){% endblocktrans %}</p>
+{% blocktrans %}(full domain name, including the enclosing domain. See the <a href="/opendomains.html">list</a>){% endblocktrans %}
 
 {% if is_admin %}
 <div class="admin fieldWrapper{% if form.orphan.errors %}error{% endif %}">
