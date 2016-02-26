@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% block inhead %}{%if captcha %}<script src='https://www.google.com/recaptcha/api.js'></script>{% endif %}{% endblock %}
 {% block title %}
 {% if newdomain %}
 {% trans "New domain request" %}
@@ -233,6 +234,7 @@ You can change this later in the domain contact interface.{% endblocktrans %}<p>
 
 </fieldset>
 
+{% if captcha %}<div class="g-recaptcha" data-sitekey="{{ captcha_key }}"></div>{% endif %}
 <input class="action" type="submit" value="{% trans "Submit" %}">
 </form>
 

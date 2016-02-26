@@ -127,3 +127,9 @@ ADMINS = (
 
 MANAGERS = ADMINS
 FORCEDEBUGMAIL='pb@eu.org'
+
+RECAPTCHA_PUBLIC_KEY='6LdLMRkTAAAAACM-hHnNRNq_ptBpeU6W_5AL8-ta'
+RECAPTCHA_PRIVATE_KEY='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+RECAPTCHA_API_URL='https://www.google.com/recaptcha/api/siteverify'
+RECAPTCHA_REQUESTS_MIN=10
+RECAPTCHA_DOMAINS_MIN=10

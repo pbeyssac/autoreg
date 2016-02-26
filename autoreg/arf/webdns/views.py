@@ -4,6 +4,7 @@ import io
 
 import psycopg2
 
+from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import connection
@@ -329,6 +330,14 @@ def domainns(request, fqdn=None):
     return HttpResponseForbidden(_("Unauthorized"))
 
   newdomain = (fqdn is None)
+  contact = Contacts.objects.get(handle=handle)
+  captcha = newdomain and hasattr(settings, 'RECAPTCHA_PRIVATE_KEY') and \
+    (Whoisdomains.objects.filter(domaincontact__contact_id=contact.id)
+                 .distinct().count() > settings.RECAPTCHA_DOMAINS_MIN
+      or
+     Requests.objects.filter(contact_id=contact.id,
+                             action='N', state='Open').count()
+                             > settings.RECAPTCHA_REQUESTS_MIN)
 
   dbh = psycopg2.connect(autoreg.conf.dbstring)
   dd = autoreg.dns.db.db(dbh)
@@ -338,6 +347,8 @@ def domainns(request, fqdn=None):
 
   if request.method == 'POST':
     nsiplist = []
+    if captcha:
+      captcha_response = request.POST.get('g-recaptcha-response', None)
     for n in range(1, 10):
       f = 'f%d' % n
       i = 'i%d' % n
@@ -404,7 +415,23 @@ def domainns(request, fqdn=None):
       th, ah, form = None, None, None
       rrlist, dummy = _get_rr_nsip(dd, fqdn)
 
-    if not errors and (not form or form.is_valid()):
+    if captcha:
+      import json
+      import requests
+
+      if captcha_response:
+        args = {'secret': settings.RECAPTCHA_PRIVATE_KEY,
+                'response': captcha_response}
+
+        r = requests.post(settings.RECAPTCHA_API_URL, args)
+        j = json.loads(r.text)
+        captcha_success = j['success']
+      else:
+        captcha_success = False
+    else:
+      captcha_success = True
+
+    if not errors and (not form or form.is_valid()) and captcha_success:
       # Everything seems ok in the form, proceed to DNS checks
       #
       # Cleanup possible empty lines
@@ -428,7 +455,6 @@ def domainns(request, fqdn=None):
     rrlist = []
     if request.method == "GET":
       nsiplist = []
-      contact = Contacts.objects.get(handle=handle)
       # be nice: pre-fill registrant with current contact details
       form = newdomain_form(initial=contact.initial_form())
       ah = suffixadd(handle)
@@ -445,6 +471,7 @@ def domainns(request, fqdn=None):
 
   vars = RequestContext(request,
      { 'newdomain': newdomain,
+       'captcha': captcha, 'captcha_key': settings.RECAPTCHA_PUBLIC_KEY,
        'is_admin': is_admin,
        'fqdn': fqdn or '', 'rrlist': rrlist,
        'th': th, 'ah': ah,
