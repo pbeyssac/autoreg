@@ -313,30 +313,6 @@ def rqlistdom(request, domain=None):
                                   'goto': request.GET.get('page', '') })
   return render(request, 'requests/rqlistdom.html', vars)
 
-def rqlistemail(request, email):
-  if request.method != "GET":
-    raise SuspiciousOperation
-  if not request.user.is_authenticated():
-    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
-  login = admin_login(connection.cursor(), request.user.username)
-  if not login:
-    raise PermissionDenied
-
-  z = autoreg.zauth.ZAuth(connection.cursor())
-
-  rlist = _rq_list_email(email)
-  for r in rlist:
-    if not z.checkparent(r.fqdn, login):
-      continue
-    _rq_decorate(r)
-
-  vars = RequestContext(request,
-                {'rlist': rlist, 'email': email,
-                 'goto': request.GET.get('page', ''),
-                 'numdom': Whoisdomains.objects.all().count(),
-                 'is_admin': check_is_admin(request.user.username)})
-  return render(request, 'requests/rqlistemail.html', vars)
-
 def rqlist(request, page='0'):
   if request.method != "GET":
     raise SuspiciousOperation
@@ -346,8 +322,18 @@ def rqlist(request, page='0'):
   if not login:
     raise PermissionDenied
 
-  nbypage = 100
-  num = _rq_num()
+  email = request.GET.get('email', None)
+  if email:
+    rlist = _rq_list_email(email)
+    nbypage = len(rlist)
+    page = '1'
+    cpage = request.GET.get('cpage', None)
+  else:
+    rlist = models.rq_list()
+    nbypage = 100
+    cpage = None
+  num = len(rlist)
+
   npages = (num+nbypage-1) // nbypage
   if npages == 0:
     npages = 1
@@ -360,13 +346,13 @@ def rqlist(request, page='0'):
   z = autoreg.zauth.ZAuth(connection.cursor())
 
   rql = []
-  for r in models.rq_list()[(page-1)*nbypage:page*nbypage]:
+  for r in rlist[(page-1)*nbypage:page*nbypage]:
     if not z.checkparent(r.fqdn, login):
       continue
     _rq_decorate(r)
     rql.append(r)
 
-  v = { 'cpage': page,
+  v = { 'cpage': cpage or page,
         'pages': range(1, npages+1),
         'rlist': rql,
         'numdom': numdom,
