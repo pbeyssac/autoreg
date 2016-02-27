@@ -3,7 +3,7 @@
 from django.conf.urls import patterns, include, url
 
 urlpatterns = patterns('autoreg.arf.whois.views',
-    url(r'^$', 'domainlist'),
+    url(r'^$', 'domainlist', name='home'),
     url(r'^login/$', 'login'),
     url(r'^logout/$', 'logout'),
     url(r'^contact/change/$', 'contactchange'),
@@ -46,4 +46,5 @@ urlpatterns += patterns('autoreg.arf.webdns.views',
     url(r'^ds/(?P<fqdn>[a-z0-9\.A-Z-]+)/$', 'domainds'),
     url(r'^ns/(?P<fqdn>[a-z0-9\.A-Z-]+)/$', 'domainns'),
     url(r'^domain/new/$', 'domainns'),
+    url(r'^special/$', 'special', name='special'),
 )

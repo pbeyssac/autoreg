@@ -15,7 +15,7 @@ from django.http import HttpResponseRedirect, HttpResponseNotFound, \
 from django.shortcuts import render
 from django.template import RequestContext
 from django.utils import translation
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy, ugettext as _
 
 import autoreg.conf
 import autoreg.dns.check
@@ -36,6 +36,17 @@ class newdomain_form(registrant_form):
   th = forms.CharField(max_length=10, initial=HANDLESUFFIX,
                        help_text='Technical Contact', required=True)
   orphan = forms.BooleanField(required=False)
+
+
+class special_form(forms.Form):
+  domain = forms.CharField(max_length=80, initial='.eu.org',
+                           help_text=ugettext_lazy('Domain'), required=True)
+  action = forms.ChoiceField(choices=[('none', ugettext_lazy('None')),
+                                      ('lock1', ugettext_lazy('Lock')),
+                                      ('lock0', ugettext_lazy('Unlock')),
+                                      ('hold1', ugettext_lazy('Hold')),
+                                      ('hold0', ugettext_lazy('Unhold'))],
+                             required=True, widget=forms.RadioSelect)
 
 
 def _whoisrecord_from_form(domain, form, handle):
@@ -480,3 +491,39 @@ def domainns(request, fqdn=None):
        'form': form,
        'nsiplist': nsiplist })
   return render(request, 'dns/nsedit.html', vars)
+
+
+def special(request):
+  """Special actions on domain"""
+  if not request.user.is_authenticated():
+    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
+  handle = request.user.username.upper()
+  is_admin = check_is_admin(request.user.username)
+  if not is_admin:
+    return HttpResponseForbidden(_("Unauthorized"))
+
+  if request.method == 'POST':
+    form = special_form(request.POST)
+    if form.is_valid():
+      domain = form.cleaned_data['domain'].upper()
+      action = form.cleaned_data['action']
+
+      if action != 'none':
+        dbh = psycopg2.connect(autoreg.conf.dbstring)
+        dd = autoreg.dns.db.db(dbh)
+        dd.login('autoreg')
+        if action.startswith('hold'):
+          dd.set_registry_hold(domain, None, action[4] == '1')
+        elif action.startswith('lock'):
+          dd.set_registry_lock(domain, None, action[4] == '1')
+      return HttpResponseRedirect(reverse('home'))
+
+  elif request.method == "GET":
+    form = special_form()
+  else:
+    raise SuspiciousOperation
+
+  vars = RequestContext(request,
+     { 'is_admin': is_admin,
+       'form': form })
+  return render(request, 'dns/special.html', vars)
