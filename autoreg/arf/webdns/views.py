@@ -394,6 +394,9 @@ def domainns(request, fqdn=None):
       # remove trailing '.'
       if fqdn.endswith('.'):
         fqdn = fqdn[:-1]
+
+      fqdn = fqdn.lower().encode('idna')
+
       th = request.POST.get('th').strip().upper()
 
       ah = suffixadd(handle)

@@ -8,11 +8,14 @@
 <FORM class="form" ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
 <fieldset>
-{% if domain %}
+{% if idna %}
 <legend>{% trans "Registrant Information" %}</legend>
 <div>
 <span class="domaincell">{% trans "Domain" %}</span>
-<span class="domaincell"><span class="domain">{{ domain }}</span></span>
+<span class="domaincell">
+  <span class="domain">{{ idna }}</span>
+  {% if fqdn != idna %}(<span class="domain">{{ fqdn }}</span>){% endif %}
+</span>
 </div>
 {% else %}
 <legend>{% trans "Contact Information" %}</legend>

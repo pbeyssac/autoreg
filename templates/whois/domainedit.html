@@ -6,7 +6,7 @@
 {% endif %}{% endblock %}
 {% block form %}
 
-{% blocktrans with fqdn=whoisdomain.fqdn %}Whois data for domain <span class="domain">{{ fqdn }}</span><P>
+{% blocktrans %}Whois data for domain <span class="domain">{{ idna }}</span><P>
 Created on: {% endblocktrans %}{{ whoisdomain.created_on|date:"o-m-d H:i" }}
 <pre class="whoisdisplay">
 {{ whoisdisplay }}</pre>
@@ -15,15 +15,15 @@ Created on: {% endblocktrans %}{{ whoisdomain.created_on|date:"o-m-d H:i" }}
 <strong>{% trans "Edit" %}</strong>
 <table>
 <tr>
-<td><A class="miniaction" HREF="{% url 'arf.whois.views.contactchange' whoisdomain.fqdn.lower %}">{% trans "Registrant" %}</A>
-<td><A class="miniaction" HREF="{% url 'arf.webdns.views.domainns' whoisdomain.fqdn.lower %}">{% trans "Nameservers" %}</a>
-<td>{% if has_ns and can_ds %}<A class="miniaction" HREF="{% url 'arf.webdns.views.domainds' whoisdomain.fqdn.lower %}">DNSSEC</A>{% endif %}
+<td><A class="miniaction" HREF="{% url 'arf.whois.views.contactchange' fqdn %}">{% trans "Registrant" %}</A>
+<td><A class="miniaction" HREF="{% url 'arf.webdns.views.domainns' fqdn %}">{% trans "Nameservers" %}</a>
+<td>{% if has_ns and can_ds %}<A class="miniaction" HREF="{% url 'arf.webdns.views.domainds' fqdn %}">DNSSEC</A>{% endif %}
 <td>{% if registry_hold and end_grace_period %}
-<form action="{% url 'arf.whois.views.domainundelete' whoisdomain.fqdn.lower %}" method="POST">
+<form action="{% url 'arf.whois.views.domainundelete' fqdn %}" method="POST">
 {% csrf_token %}
 <INPUT class="miniaction" TYPE="submit" NAME="undel" VALUE="{% trans "Undelete (until" %} {{ end_grace_period|date:"o-m-d" }})">
 {% else %}
-<td><form action="{% url 'arf.whois.views.domaindelete' whoisdomain.fqdn.lower %}" method="POST">
+<td><form action="{% url 'arf.whois.views.domaindelete' fqdn %}" method="POST">
 {% csrf_token %}
 <INPUT class="miniaction" TYPE="submit" NAME="del" VALUE="{% trans "Delete Domain" %}">
 {% endif %}

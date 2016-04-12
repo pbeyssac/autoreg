@@ -93,6 +93,16 @@ def _token_set(contact_id, action, args=None, ttl=3600):
   tk.save()
   return token
 
+def _to_idna(fqdn):
+  fqdn = fqdn.lower()
+  try:
+    idna = fqdn.decode('idna')
+  except UnicodeDecodeError:
+    idna = fqdn
+  except UnicodeError:
+    idna = fqdn
+  return idna
+
 #
 # Forms
 #
@@ -536,6 +546,11 @@ def domainlist(request):
   handle = request.user.username
 
   domds = handle_domains_dnssec(connection.cursor(), handle)
+
+  domds = [(d[0].lower(), d[1], d[2], d[3], d[4], d[5], d[6], d[7],
+            _to_idna(d[0])) for d in domds]
+  domds.sort(key=lambda d: d[8])
+
   paginator = Paginator(domds, 50)
 
   page = request.GET.get('page')
@@ -583,7 +598,10 @@ def contactchange(request, registrantdomain=None):
     c = Contacts.objects.get(handle=ehandle)
     initial = c.initial_form()
     if registrantdomain:
-      vars['domain'] = registrantdomain.upper()
+      fqdn = registrantdomain.lower()
+      vars['fqdn'] = fqdn
+      idna = _to_idna(fqdn)
+      vars['idna'] = idna
       vars['form'] = registrant_form(initial=initial)
     else:
       vars['ehandle'] = suffixadd(ehandle)
@@ -712,7 +730,7 @@ def domaineditconfirm(request, fqdn):
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaineditconfirm, args=[fqdn.lower()]))
   nexturi = reverse(domainedit, args=[fqdn])
-  vars = {'fqdn': fqdn.upper(), 'posturi': nexturi,
+  vars = {'fqdn': fqdn, 'posturi': nexturi,
           'is_admin': check_is_admin(request.user.username)}
   contact_type = request.POST.get('contact_type', None)
   handle = request.POST.get('handle', None)
@@ -742,7 +760,7 @@ def domainedit(request, fqdn):
   except Whoisdomains.DoesNotExist:
     dom = None
   if dom is None:
-    vars = RequestContext(request, {'fqdn': fqdn})
+    vars = RequestContext(request, {'fqdn': fqdn, 'idna': _to_idna(fqdn)})
     return render(request, 'whois/domainnotfound.html', vars)
 
   domds = handle_domains_dnssec(connection.cursor(), None, fqdn)
@@ -792,7 +810,7 @@ def domainedit(request, fqdn):
               msg = _("Sorry, must leave at least one contact!")
             else:
               log(handle, action='contactdel',
-                  message=fqdn.lower() + ' ' + chandle + HANDLESUFFIX)
+                  message=fqdn + ' ' + chandle + HANDLESUFFIX)
               dbdom.d[code].remove(cid)
               dbdom.update()
           else:
@@ -802,7 +820,7 @@ def domainedit(request, fqdn):
             or 'submita' in request.POST:
           if cid not in dbdom.d[code]:
             log(handle, action='contactadd',
-                message=fqdn.lower() + ' ' + chandle + HANDLESUFFIX)
+                message=fqdn + ' ' + chandle + HANDLESUFFIX)
             dbdom.d[code].append(cid)
             dbdom.update()
           else:
@@ -833,7 +851,10 @@ def domainedit(request, fqdn):
                        'handle': suffixadd(cthandle),
                        'posturi': posturi })
 
+  idna = _to_idna(fqdn)
+
   vars = {'whoisdomain': dom, 'domaincontact_list': cl,
+          'fqdn': fqdn, 'idna': idna,
           'is_admin': is_admin,
           'msg': msg,
           'formlist': formlist,
@@ -904,7 +925,7 @@ def domainundelete(request, fqdn):
 
   dd.undelete(fqdn, None)
 
-  return HttpResponseRedirect(reverse(domainedit, args=[fqdn.upper()]))
+  return HttpResponseRedirect(reverse(domainedit, args=[fqdn]))
 
 def logout(request):
   """Logout page"""

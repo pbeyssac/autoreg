@@ -1197,10 +1197,10 @@ msgstr "Modification de domaine"
 #: templates/whois/domainedit.html:9
 #, python-format
 msgid ""
-"Whois data for domain <span class=\"domain\">%(fqdn)s</span><P>\n"
+"Whois data for domain <span class=\"domain\">%(idna)s</span><P>\n"
 "Created on: "
 msgstr ""
-"Données Whois pour le domaine <span class=\"domain\">%(fqdn)s</span><P>\n"
+"Données Whois pour le domaine <span class=\"domain\">%(idna)s</span><P>\n"
 "Créé le : "
 
 #: templates/whois/domainedit.html:15
