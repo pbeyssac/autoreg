@@ -16,7 +16,8 @@ class AuthBackend:
     if login_valid:
       ct = ctlist[0]
       cryptpass = ct.passwd
-      pwd_valid = cryptpass and crypt.crypt(password, cryptpass) == cryptpass
+      pwd_valid = cryptpass and crypt.crypt(password.encode('UTF-8'),
+                                            cryptpass) == cryptpass
     else:
       pwd_valid = False
     if login_valid and pwd_valid:
