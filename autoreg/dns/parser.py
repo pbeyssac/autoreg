@@ -50,7 +50,8 @@ class DnsParser:
         if rrfilter is not None and typ not in rrfilter:
             raise ParseError('Not an allowed resource record type', typ)
         if typ == 'AAAA':
-	    value = value.upper()
+            # RFC 5952 mandates lower case
+	    value = value.lower()
             try:
                 dummy = socket.inet_pton(socket.AF_INET6, value)
             except socket.error:
