@@ -123,7 +123,33 @@ msgstr "Hein ? Sur rq=%(rqid)s action=%(action)s reason=%(reason)s"
 msgid "Processing %(rqid)s..."
 msgstr "Traitement de %(rqid)s..."
 
-#: autoreg/arf/webdns/views.py:69
+#: autoreg/arf/webdns/views.py:43 autoreg/arf/whois/views.py:120
+#: templates/requests/rqloglist.html:8 templates/whois/contactchange.html:14
+#: templates/whois/domainlist.html:12
+msgid "Domain"
+msgstr "Domaine"
+
+#: autoreg/arf/webdns/views.py:44 templates/requests/rqdisplay.html:47
+msgid "None"
+msgstr "Aucune"
+
+#: autoreg/arf/webdns/views.py:45
+msgid "Lock"
+msgstr "Verrouillage"
+
+#: autoreg/arf/webdns/views.py:46
+msgid "Unlock"
+msgstr "Déverrouillage"
+
+#: autoreg/arf/webdns/views.py:47
+msgid "Hold"
+msgstr "Suspension"
+
+#: autoreg/arf/webdns/views.py:48
+msgid "Unhold"
+msgstr "Fin de suspension"
+
+#: autoreg/arf/webdns/views.py:82
 msgid "No error, storing for validation...\n"
 msgstr "Pas d'erreur, enregistrement pour validation...\n"
 
@@ -592,7 +618,7 @@ msgstr "Déconnexion"
 msgid "Requests"
 msgstr "Requêtes"
 
-#: templates/base.html:24
+#: templates/base.html:25
 msgid "Log"
 msgstr "Journal"
 
@@ -601,10 +627,14 @@ msgid "Action log"
 msgstr "Actions"
 
 #: templates/base.html:26
+msgid "Special"
+msgstr "Spécial"
+
+#: templates/base.html:28
 msgid "domains"
 msgstr "domaines"
 
-#: templates/base.html:29 templates/whois/login.html:21
+#: templates/base.html:31 templates/whois/login.html:21
 msgid "Login"
 msgstr "Connexion"
 
@@ -882,6 +912,10 @@ msgstr ""
 msgid "Submit"
 msgstr "Valider"
 
+#: templates/dns/special.html:3 templates/dns/special.html.py:4
+msgid "Special actions on domain"
+msgstr "Actions spéciales sur le domaine"
+
 #: templates/logs/log.html:8 templates/requests/rqloglist.html:8
 msgid "Date"
 msgstr ""
@@ -934,10 +968,6 @@ msgstr "Enregistrement Whois actuel pour %(fqdn)s"
 #: templates/requests/rqdisplay.html:40
 msgid "Requester:"
 msgstr "Demandeur :"
-
-#: templates/requests/rqdisplay.html:47
-msgid "None"
-msgstr "Aucune"
 
 #: templates/requests/rqdisplay.html:50
 msgid "Accept"
