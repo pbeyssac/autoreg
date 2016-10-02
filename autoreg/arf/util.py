@@ -24,7 +24,11 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, language=None):
   # in the proper language (asynchronous user request, etc)
   #
   # Inspired from sample code in Django i18n documentation
-  with translation.override(language):
+
+  if language is not None:
+    with translation.override(language):
+      msg = t.render(Context(context))
+  else:
     msg = t.render(Context(context))
 
   headers, body = msg.split('\n\n', 1)
