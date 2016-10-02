@@ -494,13 +494,13 @@ msgstr "--- Vérification des enregistrements SOA pour %s"
 
 #: autoreg/dns/check.py:325
 #, python-format
-msgid "SOA from %(fqdn)s at %(ip)s: Error: %(err)s"
-msgstr "SOA de %(fqdn)s à %(ip)s: Erreur: %(err)s"
+msgid "SOA from %(fqdn)s at %(ip)s: Error: %(err)s (%(t).3f ms)"
+msgstr "SOA de %(fqdn)s à %(ip)s: Erreur: %(err)s (%(t).3f ms)"
 
 #: autoreg/dns/check.py:332
 #, python-format
-msgid "SOA from %(fqdn)s at %(ip)s: serial %(serial)s"
-msgstr "SOA de %(fqdn)s à %(ip)s: n° de série %(serial)s"
+msgid "SOA from %(fqdn)s at %(ip)s: serial %(serial)s (%(t).3f ms)"
+msgstr "SOA de %(fqdn)s à %(ip)s: n° de série %(serial)s (%(t).3f ms)"
 
 #: autoreg/dns/check.py:342
 msgid "Servers not up to date: "
@@ -517,18 +517,19 @@ msgstr "--- Vérification des enregistrements NS pour %s"
 
 #: autoreg/dns/check.py:356
 #, python-format
-msgid "NS from %(fqdn)s at %(ip)s: Error: %(err)s"
-msgstr "NS de %(fqdn)s à %(ip)s: Erreur: %(err)s"
+msgid "NS from %(fqdn)s at %(ip)s: Error: %(err)s (%(t).3f ms)"
+msgstr "NS de %(fqdn)s à %(ip)s: Erreur: %(err)s (%(t).3f ms)"
 
 #: autoreg/dns/check.py:359
 #, python-format
-msgid "NS from %(fqdn)s at %(ip)s: Error: Bad NS list: %(err)s"
-msgstr "NS de %(fqdn)s à %(ip)s: Erreur: Liste de NS incorrecte: %(err)s"
+msgid "NS from %(fqdn)s at %(ip)s: Error: Bad NS list: %(err)s (%(t).3f ms)"
+msgstr ""
+"NS de %(fqdn)s à %(ip)s: Erreur: Liste de NS incorrecte: %(err)s (%(t).3f ms)"
 
 #: autoreg/dns/check.py:362
 #, python-format
-msgid "NS from %(fqdn)s at %(ip)s: ok"
-msgstr "NS de %(fqdn)s à %(ip)s: ok"
+msgid "NS from %(fqdn)s at %(ip)s: ok (%(t).3f ms)"
+msgstr "NS de %(fqdn)s à %(ip)s: ok (%(t).3f ms)"
 
 #: autoreg/dns/check.py:376
 msgid "---- Servers and domain names check"
