@@ -319,6 +319,7 @@ def makeresettoken(request, handle=None):
     if not render_to_mail('whois/resetpass.mail',
                            { 'from': FROMADDR, 'to': ct.email,
                              'absurl': absurl,
+                             'remoteip': request.META.get('REMOTE_ADDR', None),
                              'handle': fullhandle,
                              'token': token }, FROMADDR, [ ct.email ]):
        vars = RequestContext(request,
