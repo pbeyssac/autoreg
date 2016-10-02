@@ -98,6 +98,7 @@ class Requests(models.Model):
         print(outwhois.getvalue(), file=out)
         vars = {'rqid': self.id, 'domain': r.fqdn.upper(), 'to': r.email,
                 'reasonfield': reasonfield,
+                'from': autoreg.conf.FROMADDR,
                 'whoisrecord': outwhois.getvalue(), 'zonerecord': r.zonerecord}
         if not util.render_to_mail("whois/domainnew.mail", vars,
                                    autoreg.conf.FROMADDR, mailto,
@@ -119,7 +120,8 @@ class Requests(models.Model):
             print(unicode(err), file=out)
           return False
 
-        vars = {'rqid': self.id, 'domain': r.fqdn.upper(), 'to': r.email}
+        vars = {'rqid': self.id, 'domain': r.fqdn.upper(), 'to': r.email,
+                'from': autoreg.conf.FROMADDR}
         if not util.render_to_mail("whois/domaindel.mail", vars,
                                    autoreg.conf.FROMADDR, mailto,
                                    language=r.language):
@@ -158,7 +160,8 @@ class Requests(models.Model):
         action = "???"
 
       vars = {'rqid': r.id, 'domain': r.fqdn.upper(), 'to': r.email,
-              'action': action, 'reason': reason, 'reasonfield': reasonfield}
+              'action': action, 'reason': reason, 'reasonfield': reasonfield,
+              'from': autoreg.conf.FROMADDR}
 
       if not util.render_to_mail("whois/domainrej.mail", vars,
                                  autoreg.conf.FROMADDR, mailto,
