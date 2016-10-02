@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: autoreg\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-02-25 02:33+0100\n"
+"POT-Creation-Date: 2016-10-02 22:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Pierre Beyssac <translate@eu.org>\n"
 "Language-Team: French <translate@eu.org>\n"
@@ -24,40 +24,40 @@ msgstr "Erreur :"
 msgid "Zone insert done\n"
 msgstr "Insertion dans la zone réalisée\n"
 
-#: autoreg/arf/requests/models.py:105 autoreg/arf/requests/models.py:126
-#: autoreg/arf/requests/models.py:166
+#: autoreg/arf/requests/models.py:106 autoreg/arf/requests/models.py:128
+#: autoreg/arf/requests/models.py:169
 #, python-format
 msgid "Mail to %(mails)s failed"
 msgstr "Échec de l'envoi à %(mails)s"
 
-#: autoreg/arf/requests/models.py:154
+#: autoreg/arf/requests/models.py:156
 msgid "creation"
 msgstr "création"
 
-#: autoreg/arf/requests/models.py:156
+#: autoreg/arf/requests/models.py:158
 msgid "deletion"
 msgstr "destruction"
 
-#: autoreg/arf/requests/models.py:170
+#: autoreg/arf/requests/models.py:173
 #, python-format
 msgid "Mail to %(mails)s done"
 msgstr "Courriel envoyé à %(mails)s"
 
-#: autoreg/arf/requests/models.py:188
+#: autoreg/arf/requests/models.py:191
 #, python-format
 msgid "Error executing %(rqid)s"
 msgstr "Erreur pendant le traitement de %(rqid)s"
 
-#: autoreg/arf/requests/models.py:238
+#: autoreg/arf/requests/models.py:241
 msgid "Status: committed"
 msgstr "État : committed"
 
-#: autoreg/arf/requests/models.py:241
+#: autoreg/arf/requests/models.py:244
 msgid "Status: cancelled"
 msgstr "État : annulé"
 
 #: autoreg/arf/requests/views.py:105 autoreg/arf/requests/views.py:107
-#: autoreg/arf/webdns/views.py:176
+#: autoreg/arf/webdns/views.py:189
 msgid "Domain not found"
 msgstr "Domaine introuvable"
 
@@ -65,60 +65,60 @@ msgstr "Domaine introuvable"
 msgid "Request not found"
 msgstr "Requête introuvable"
 
-#: autoreg/arf/requests/views.py:384
+#: autoreg/arf/requests/views.py:370
 #, python-format
 msgid "Request not found: %(rqid)s"
 msgstr "Requête introuvable : %(rqid)s"
 
-#: autoreg/arf/requests/views.py:388
+#: autoreg/arf/requests/views.py:374
 #, python-format
 msgid "Permission denied on %(rqid)s"
 msgstr "Permission refusée sur %(rqid)s"
 
-#: autoreg/arf/requests/views.py:393 autoreg/arf/requests/views.py:398
-#: autoreg/arf/requests/views.py:403 autoreg/arf/requests/views.py:408
-#: autoreg/arf/requests/views.py:413
+#: autoreg/arf/requests/views.py:379 autoreg/arf/requests/views.py:384
+#: autoreg/arf/requests/views.py:389 autoreg/arf/requests/views.py:394
+#: autoreg/arf/requests/views.py:399
 #, python-format
 msgid "Rejected %(rqid)s (queued)"
 msgstr "%(rqid)s rejetée (en attente)"
 
-#: autoreg/arf/requests/views.py:396
+#: autoreg/arf/requests/views.py:382
 msgid "Duplicate request"
 msgstr "Requête en double"
 
-#: autoreg/arf/requests/views.py:401
+#: autoreg/arf/requests/views.py:387
 msgid "Bogus address information"
 msgstr "Informations d'adresse incorrectes"
 
-#: autoreg/arf/requests/views.py:406
+#: autoreg/arf/requests/views.py:392
 msgid "Please provide a full name"
 msgstr "Veuillez fournir un nom complet"
 
-#: autoreg/arf/requests/views.py:411
+#: autoreg/arf/requests/views.py:397
 msgid "Sorry, this domain is already allocated"
 msgstr "Désolé, ce domaine est déjà alloué"
 
-#: autoreg/arf/requests/views.py:416
+#: autoreg/arf/requests/views.py:402
 #, python-format
 msgid "Accepted %(rqid)s (queued)"
 msgstr "%(rqid)s acceptée (en attente)"
 
-#: autoreg/arf/requests/views.py:420
+#: autoreg/arf/requests/views.py:406
 #, python-format
 msgid "Deleted %(rqid)s"
 msgstr "%(rqid)s supprimée"
 
-#: autoreg/arf/requests/views.py:422
+#: autoreg/arf/requests/views.py:408
 #, python-format
 msgid "Nothing done on %(rqid)s"
 msgstr "Aucune action sur %(rqid)s"
 
-#: autoreg/arf/requests/views.py:424
+#: autoreg/arf/requests/views.py:410
 #, python-format
 msgid "What? On rq=%(rqid)s action=%(action)s reason=%(reason)s"
 msgstr "Hein ? Sur rq=%(rqid)s action=%(action)s reason=%(reason)s"
 
-#: autoreg/arf/requests/views.py:448
+#: autoreg/arf/requests/views.py:434
 #, python-format
 msgid "Processing %(rqid)s..."
 msgstr "Traitement de %(rqid)s..."
@@ -153,60 +153,61 @@ msgstr "Fin de suspension"
 msgid "No error, storing for validation...\n"
 msgstr "Pas d'erreur, enregistrement pour validation...\n"
 
-#: autoreg/arf/webdns/views.py:71
+#: autoreg/arf/webdns/views.py:84
 msgid "No error, applying changes...\n"
 msgstr "Pas d'erreur, prise en compte des changements...\n"
 
-#: autoreg/arf/webdns/views.py:98
+#: autoreg/arf/webdns/views.py:111
 #, python-format
 msgid "IGNORED: you already have a pending request %(rqid)s for that domain.\n"
 msgstr ""
 "IGNORÉ : vous avez déjà une requête en cours %(rqid)s pour ce domaine.\n"
 
-#: autoreg/arf/webdns/views.py:104
+#: autoreg/arf/webdns/views.py:117
 msgid "IGNORED: we already have pending request(s) for that domain.\n"
 msgstr ""
 "IGNORÉ : nous avons déjà une ou des requête(s) en cours pour ce domaine.\n"
 
-#: autoreg/arf/webdns/views.py:113
+#: autoreg/arf/webdns/views.py:126
 #, python-format
 msgid "Saved as request %(rqid)s\n"
 msgstr "Enregistré en tant que requête %(rqid)s\n"
 
-#: autoreg/arf/webdns/views.py:163 autoreg/arf/webdns/views.py:329
-#: autoreg/arf/whois/views.py:767 autoreg/arf/whois/views.py:907
+#: autoreg/arf/webdns/views.py:176 autoreg/arf/webdns/views.py:342
+#: autoreg/arf/webdns/views.py:527 autoreg/arf/whois/views.py:785
+#: autoreg/arf/whois/views.py:928
 msgid "Unauthorized"
 msgstr "Non autorisé"
 
-#: autoreg/arf/webdns/views.py:230
+#: autoreg/arf/webdns/views.py:243
 msgid "Requested DS already in zone"
 msgstr "L'enregistrement DS demandé est déjà dans la zone"
 
-#: autoreg/arf/webdns/views.py:232
+#: autoreg/arf/webdns/views.py:245
 msgid "Requested DS does not match any published DNSKEY in zone"
 msgstr "L'enregistrement DS demandé ne correspond à aucune DNSKEY publiée"
 
-#: autoreg/arf/webdns/views.py:288
+#: autoreg/arf/webdns/views.py:301
 msgid "exists in Whois"
 msgstr "existe dans Whois"
 
-#: autoreg/arf/webdns/views.py:299
+#: autoreg/arf/webdns/views.py:312
 msgid "does not exist in zone"
 msgstr "n'existe pas dans la zone"
 
-#: autoreg/arf/webdns/views.py:350
+#: autoreg/arf/webdns/views.py:373
 msgid "Invalid name"
 msgstr "Nom invalide"
 
-#: autoreg/arf/webdns/views.py:352
+#: autoreg/arf/webdns/views.py:375
 msgid "Invalid IP address"
 msgstr "Adresse IP invalide"
 
-#: autoreg/arf/webdns/views.py:382
+#: autoreg/arf/webdns/views.py:408
 msgid "Contact does not exist"
 msgstr "Ce contact n'existe pas"
 
-#: autoreg/arf/webdns/views.py:384
+#: autoreg/arf/webdns/views.py:410
 msgid "NS list is empty"
 msgstr "La liste d'enregistrements NS est vide"
 
@@ -222,114 +223,109 @@ msgstr "administratif"
 msgid "zone"
 msgstr ""
 
-#: autoreg/arf/whois/views.py:106 autoreg/arf/whois/views.py:168
+#: autoreg/arf/whois/views.py:116 autoreg/arf/whois/views.py:178
 #: templates/whois/login.html:13
 msgid "Your handle"
 msgstr "Votre identifiant"
 
-#: autoreg/arf/whois/views.py:110 templates/requests/rqloglist.html:8
-#: templates/whois/contactchange.html:14 templates/whois/domainlist.html:12
-msgid "Domain"
-msgstr "Domaine"
-
-#: autoreg/arf/whois/views.py:113 autoreg/arf/whois/views.py:141
-#: templates/dns/nsedit.html:45 templates/whois/contactchange.html:21
+#: autoreg/arf/whois/views.py:123 autoreg/arf/whois/views.py:151
+#: templates/dns/nsedit.html:46 templates/whois/contactchange.html:24
 #: templates/whois/contactcreate.html:11
 msgid "Name"
 msgstr "Nom"
 
-#: autoreg/arf/whois/views.py:115 templates/dns/nsedit.html:52
-#: templates/whois/contactchange.html:26 templates/whois/contactcreate.html:16
+#: autoreg/arf/whois/views.py:125 templates/dns/nsedit.html:53
+#: templates/whois/contactchange.html:29 templates/whois/contactcreate.html:16
 msgid "E-mail"
 msgstr "Courriel"
 
-#: autoreg/arf/whois/views.py:116 autoreg/arf/whois/views.py:145
+#: autoreg/arf/whois/views.py:126 autoreg/arf/whois/views.py:155
 msgid "Organization"
 msgstr "Organisation"
 
-#: autoreg/arf/whois/views.py:117 autoreg/arf/whois/views.py:146
-#: templates/dns/nsedit.html:59 templates/whois/contactchange.html:31
+#: autoreg/arf/whois/views.py:127 autoreg/arf/whois/views.py:156
+#: templates/dns/nsedit.html:60 templates/whois/contactchange.html:34
 #: templates/whois/contactcreate.html:21
 msgid "Address (line 1)"
 msgstr "Adresse (ligne 1)"
 
-#: autoreg/arf/whois/views.py:118 autoreg/arf/whois/views.py:147
-#: templates/dns/nsedit.html:64 templates/whois/contactchange.html:36
+#: autoreg/arf/whois/views.py:128 autoreg/arf/whois/views.py:157
+#: templates/dns/nsedit.html:65 templates/whois/contactchange.html:39
 #: templates/whois/contactcreate.html:26
 msgid "Address (line 2)"
 msgstr "Adresse (ligne 2)"
 
-#: autoreg/arf/whois/views.py:120 autoreg/arf/whois/views.py:149
-#: templates/dns/nsedit.html:69 templates/whois/contactchange.html:41
+#: autoreg/arf/whois/views.py:130 autoreg/arf/whois/views.py:159
+#: templates/dns/nsedit.html:70 templates/whois/contactchange.html:44
 #: templates/whois/contactcreate.html:31
 msgid "Address (line 3)"
 msgstr "Adresse (ligne 3)"
 
-#: autoreg/arf/whois/views.py:122 autoreg/arf/whois/views.py:151
-#: templates/dns/nsedit.html:74 templates/whois/contactchange.html:46
+#: autoreg/arf/whois/views.py:132 autoreg/arf/whois/views.py:161
+#: templates/dns/nsedit.html:75 templates/whois/contactchange.html:49
 #: templates/whois/contactcreate.html:36
 msgid "Address (line 4)"
 msgstr "Adresse (ligne 4)"
 
-#: autoreg/arf/whois/views.py:124 autoreg/arf/whois/views.py:153
-#: templates/dns/nsedit.html:84 templates/whois/contactchange.html:56
+#: autoreg/arf/whois/views.py:134 autoreg/arf/whois/views.py:163
+#: templates/dns/nsedit.html:85 templates/whois/contactchange.html:59
 #: templates/whois/contactcreate.html:46
 msgid "Country"
 msgstr "Pays"
 
-#: autoreg/arf/whois/views.py:126 autoreg/arf/whois/views.py:155
-#: templates/dns/nsedit.html:89 templates/whois/contactchange.html:61
+#: autoreg/arf/whois/views.py:136 autoreg/arf/whois/views.py:165
+#: templates/dns/nsedit.html:90 templates/whois/contactchange.html:64
 #: templates/whois/contactcreate.html:51
 msgid "Phone"
 msgstr "Téléphone"
 
-#: autoreg/arf/whois/views.py:128 autoreg/arf/whois/views.py:157
-#: templates/dns/nsedit.html:94 templates/whois/contactchange.html:66
+#: autoreg/arf/whois/views.py:138 autoreg/arf/whois/views.py:167
+#: templates/dns/nsedit.html:95 templates/whois/contactchange.html:69
 #: templates/whois/contactcreate.html:56
 msgid "Fax"
 msgstr "Télécopie"
 
-#: autoreg/arf/whois/views.py:130 autoreg/arf/whois/views.py:159
-#: templates/dns/nsedit.html:99 templates/whois/contactchange.html:71
+#: autoreg/arf/whois/views.py:140 autoreg/arf/whois/views.py:169
+#: templates/dns/nsedit.html:100 templates/whois/contactchange.html:74
 #: templates/whois/contactcreate.html:61
 msgid "Private (not shown in the public Whois)"
 msgstr "Privé (non visible dans le Whois public)"
 
-#: autoreg/arf/whois/views.py:133 templates/base.html:17
+#: autoreg/arf/whois/views.py:143 templates/base.html:18
 #: templates/whois/contactcreate.html:76 templates/whois/login.html:16
 msgid "Password"
 msgstr "Mot de passe"
 
-#: autoreg/arf/whois/views.py:135 autoreg/arf/whois/views.py:180
-#: autoreg/arf/whois/views.py:194 templates/whois/contactcreate.html:81
+#: autoreg/arf/whois/views.py:145 autoreg/arf/whois/views.py:190
+#: autoreg/arf/whois/views.py:204 templates/whois/contactcreate.html:81
 msgid "Confirm Password"
 msgstr "Confirmez le mot de passe"
 
-#: autoreg/arf/whois/views.py:163
+#: autoreg/arf/whois/views.py:173
 msgid "type"
 msgstr ""
 
-#: autoreg/arf/whois/views.py:170 templates/whois/login.html:17
+#: autoreg/arf/whois/views.py:180 templates/whois/login.html:17
 msgid "Your password"
 msgstr "Votre mot de passe"
 
-#: autoreg/arf/whois/views.py:175
+#: autoreg/arf/whois/views.py:185
 msgid "Reset Token"
 msgstr "Code de remise à zéro"
 
-#: autoreg/arf/whois/views.py:177 autoreg/arf/whois/views.py:191
+#: autoreg/arf/whois/views.py:187 autoreg/arf/whois/views.py:201
 msgid "New Password"
 msgstr "Nouveau mot de passe"
 
-#: autoreg/arf/whois/views.py:188
+#: autoreg/arf/whois/views.py:198
 msgid "Current Password"
 msgstr "Mot de passe actuel"
 
-#: autoreg/arf/whois/views.py:225
+#: autoreg/arf/whois/views.py:235
 msgid "Please enable cookies"
 msgstr "Veuillez accepter les cookies"
 
-#: autoreg/arf/whois/views.py:245
+#: autoreg/arf/whois/views.py:255
 msgid ""
 "You need to validate your account. Please check your e-mail for the "
 "validation link."
@@ -337,40 +333,40 @@ msgstr ""
 "Vous devez valider votre compte. Le lien de validation vous a été envoyé par "
 "courriel."
 
-#: autoreg/arf/whois/views.py:252
+#: autoreg/arf/whois/views.py:262
 msgid "Sorry, your account has been disabled"
 msgstr "Désolé, votre compte est désactivé"
 
-#: autoreg/arf/whois/views.py:254
+#: autoreg/arf/whois/views.py:264
 msgid "Your username and/or password is incorrect"
 msgstr "Votre identifiant et/ou mot de passe est incorrect"
 
-#: autoreg/arf/whois/views.py:316 autoreg/arf/whois/views.py:422
-#: autoreg/arf/whois/views.py:656
+#: autoreg/arf/whois/views.py:327 autoreg/arf/whois/views.py:433
+#: autoreg/arf/whois/views.py:674
 msgid "Sorry, error while sending mail. Please try again later."
 msgstr "Erreur pendant l'envoi de courriel. Désolé, réessayez plus tard."
 
-#: autoreg/arf/whois/views.py:340 autoreg/arf/whois/views.py:506
+#: autoreg/arf/whois/views.py:351 autoreg/arf/whois/views.py:517
 msgid "They don't match, try again"
 msgstr "Ils ne correspondent pas, recommencez"
 
-#: autoreg/arf/whois/views.py:344 autoreg/arf/whois/views.py:510
+#: autoreg/arf/whois/views.py:355 autoreg/arf/whois/views.py:521
 msgid "Password should be at least 8 chars"
 msgstr "Le mot de passe doit contenir au moins 8 caractères"
 
-#: autoreg/arf/whois/views.py:352
+#: autoreg/arf/whois/views.py:363
 msgid "Invalid reset token"
 msgstr "Code de remise à zéro invalide"
 
-#: autoreg/arf/whois/views.py:379
+#: autoreg/arf/whois/views.py:390
 msgid "Passwords don't match"
 msgstr "Les mots de passe ne correspondent pas"
 
-#: autoreg/arf/whois/views.py:381
+#: autoreg/arf/whois/views.py:392
 msgid "Password too short"
 msgstr "Mot de passe trop court"
 
-#: autoreg/arf/whois/views.py:425
+#: autoreg/arf/whois/views.py:436
 #, python-format
 msgid ""
 "Contact successfully created as %(handle)s. Please check instructions sent "
@@ -379,242 +375,242 @@ msgstr ""
 "Contact créé avec l'identifiant %(handle)s.\n"
 "Validez-le en suivant les instructions qui vous ont été envoyées à %(email)s."
 
-#: autoreg/arf/whois/views.py:449 autoreg/arf/whois/views.py:453
+#: autoreg/arf/whois/views.py:460 autoreg/arf/whois/views.py:464
 msgid "Sorry, contact handle or validation token is not valid."
 msgstr ""
 "Désolé, l'identifiant de contact ou le code de validation ne sont pas "
 "corrects."
 
-#: autoreg/arf/whois/views.py:468
+#: autoreg/arf/whois/views.py:479
 msgid "Your contact handle is now valid."
 msgstr "Votre identifiant de contact est maintenant valide."
 
-#: autoreg/arf/whois/views.py:520
+#: autoreg/arf/whois/views.py:531
 msgid "Current password is not correct"
 msgstr "Le mot de passe actuel n'est pas correct"
 
-#: autoreg/arf/whois/views.py:663
+#: autoreg/arf/whois/views.py:681
 msgid "Contact information changed successfully"
 msgstr "Informations de contact modifées"
 
-#: autoreg/arf/whois/views.py:692
+#: autoreg/arf/whois/views.py:710
 msgid "Sorry, didn't find any waiting email address change."
 msgstr "Désolé, aucun changement d'adresse courriel en attente."
 
-#: autoreg/arf/whois/views.py:705
+#: autoreg/arf/whois/views.py:723
 msgid "Invalid token"
 msgstr "Code invalide"
 
-#: autoreg/arf/whois/views.py:782
+#: autoreg/arf/whois/views.py:800
 #, python-format
 msgid "Contact %s not found"
 msgstr "Contact %s introuvable"
 
-#: autoreg/arf/whois/views.py:800
+#: autoreg/arf/whois/views.py:818
 msgid "Sorry, must leave at least one contact!"
 msgstr "Désolé, il faut qu'il reste au minimum un contact !"
 
-#: autoreg/arf/whois/views.py:807
+#: autoreg/arf/whois/views.py:825
 #, python-format
 msgid "%s is not a contact"
 msgstr "%s n'est pas un contact"
 
-#: autoreg/arf/whois/views.py:889
+#: autoreg/arf/whois/views.py:910
 msgid "Sorry, domain deletion failed, please try again later."
 msgstr "Désolé, la destruction du domaine a échoué. Réessayez plus tard."
 
-#: autoreg/dns/check.py:28 templates/whois/contactchange.html:77
+#: autoreg/dns/check.py:29 templates/whois/contactchange.html:80
 msgid "Save"
 msgstr "Valider"
 
-#: autoreg/dns/check.py:66 autoreg/dns/check.py:80
+#: autoreg/dns/check.py:67 autoreg/dns/check.py:81
 msgid "BadResponse"
 msgstr ""
 
-#: autoreg/dns/check.py:68 autoreg/dns/check.py:82
+#: autoreg/dns/check.py:69 autoreg/dns/check.py:83
 msgid "UnexpectedSource"
 msgstr ""
 
-#: autoreg/dns/check.py:84
+#: autoreg/dns/check.py:85
 msgid "Dropped connection"
 msgstr "Connexion perdue"
 
-#: autoreg/dns/check.py:86
+#: autoreg/dns/check.py:87
 msgid "Timeout"
 msgstr "Temps d'attente dépassé"
 
-#: autoreg/dns/check.py:118 autoreg/dns/check.py:291
+#: autoreg/dns/check.py:122 autoreg/dns/check.py:298
 msgid "Answer not authoritative"
 msgstr "Réponse ne faisant pas autorité"
 
-#: autoreg/dns/check.py:120 autoreg/dns/check.py:293
+#: autoreg/dns/check.py:124 autoreg/dns/check.py:300
 msgid "Empty answer"
 msgstr "Réponse vide"
 
-#: autoreg/dns/check.py:122 autoreg/dns/check.py:295
+#: autoreg/dns/check.py:126 autoreg/dns/check.py:302
 msgid "Unexpected answer length"
 msgstr "Réponse de longueur non attendue"
 
-#: autoreg/dns/check.py:141
+#: autoreg/dns/check.py:145
 msgid "Error: Domain not found"
 msgstr "Erreur : Domaine introuvable"
 
-#: autoreg/dns/check.py:143
+#: autoreg/dns/check.py:147
 msgid "Error: Timeout"
 msgstr "Erreur : temps d'attente dépassé"
 
-#: autoreg/dns/check.py:145
+#: autoreg/dns/check.py:149
 msgid "Error: No answer"
 msgstr "Erreur : pas de réponse"
 
-#: autoreg/dns/check.py:147
+#: autoreg/dns/check.py:151
 msgid "Error: No name servers"
 msgstr "Erreur : aucun serveur de noms"
 
-#: autoreg/dns/check.py:162
+#: autoreg/dns/check.py:166
 msgid "Error: Invalid line"
 msgstr "Erreur : ligne invalide"
 
-#: autoreg/dns/check.py:179
+#: autoreg/dns/check.py:183
 #, python-format
 msgid "Error: Invalid IP address %s"
 msgstr "Erreur : adresse IP invalide %s"
 
-#: autoreg/dns/check.py:189
+#: autoreg/dns/check.py:193
 #, python-format
 msgid "Missing glue IP for %s"
 msgstr "Adresse IP de glue manquante pour %s"
 
-#: autoreg/dns/check.py:191
+#: autoreg/dns/check.py:195
 #, python-format
 msgid "ignoring IP %(ip)s for %(fqdn)s (not in %(domain)s)"
 msgstr "Adresse IP %(ip)s pour %(fqdn)s ignorée (hors de %(domain)s)"
 
-#: autoreg/dns/check.py:250
+#: autoreg/dns/check.py:254
 #, python-format
 msgid "Getting IP for %s: FAILED"
 msgstr "Récupération de l'adresse IP pour %s : ÉCHEC"
 
-#: autoreg/dns/check.py:252
+#: autoreg/dns/check.py:256
 #, python-format
 msgid "Getting IP for %(fqdn)s: %(ip)s"
 msgstr "Récupération de l'adresse IP pour %(fqdn)s... %(ip)s"
 
-#: autoreg/dns/check.py:255
+#: autoreg/dns/check.py:259
 #, python-format
 msgid "Accepted IP for %(fqdn)s: %(ip)s"
 msgstr "IP %(ip)s pour %(fqdn)s acceptée"
 
-#: autoreg/dns/check.py:297
+#: autoreg/dns/check.py:304
 msgid "Unexpected number of items"
 msgstr "Nombre d'items non attendu"
 
-#: autoreg/dns/check.py:299
+#: autoreg/dns/check.py:306
 msgid "Answer type mismatch"
 msgstr "Le type de la réponse ne correspond pas"
 
-#: autoreg/dns/check.py:320
+#: autoreg/dns/check.py:327
 #, python-format
 msgid "---- Checking SOA records for %s"
 msgstr "--- Vérification des enregistrements SOA pour %s"
 
-#: autoreg/dns/check.py:325
+#: autoreg/dns/check.py:332
 #, python-format
 msgid "SOA from %(fqdn)s at %(ip)s: Error: %(err)s (%(t).3f ms)"
 msgstr "SOA de %(fqdn)s à %(ip)s: Erreur: %(err)s (%(t).3f ms)"
 
-#: autoreg/dns/check.py:332
+#: autoreg/dns/check.py:339
 #, python-format
 msgid "SOA from %(fqdn)s at %(ip)s: serial %(serial)s (%(t).3f ms)"
 msgstr "SOA de %(fqdn)s à %(ip)s: n° de série %(serial)s (%(t).3f ms)"
 
-#: autoreg/dns/check.py:342
+#: autoreg/dns/check.py:349
 msgid "Servers not up to date: "
 msgstr "Serveurs pas à jour :"
 
-#: autoreg/dns/check.py:344
+#: autoreg/dns/check.py:351
 msgid "Some servers are not up to date!"
 msgstr "Certains serveurs ne sont pas à jour !"
 
-#: autoreg/dns/check.py:351
+#: autoreg/dns/check.py:358
 #, python-format
 msgid "---- Checking NS records for %s"
 msgstr "--- Vérification des enregistrements NS pour %s"
 
-#: autoreg/dns/check.py:356
+#: autoreg/dns/check.py:363
 #, python-format
 msgid "NS from %(fqdn)s at %(ip)s: Error: %(err)s (%(t).3f ms)"
 msgstr "NS de %(fqdn)s à %(ip)s: Erreur: %(err)s (%(t).3f ms)"
 
-#: autoreg/dns/check.py:359
+#: autoreg/dns/check.py:366
 #, python-format
 msgid "NS from %(fqdn)s at %(ip)s: Error: Bad NS list: %(err)s (%(t).3f ms)"
 msgstr ""
 "NS de %(fqdn)s à %(ip)s: Erreur: Liste de NS incorrecte: %(err)s (%(t).3f ms)"
 
-#: autoreg/dns/check.py:362
+#: autoreg/dns/check.py:369
 #, python-format
 msgid "NS from %(fqdn)s at %(ip)s: ok (%(t).3f ms)"
 msgstr "NS de %(fqdn)s à %(ip)s: ok (%(t).3f ms)"
 
-#: autoreg/dns/check.py:376
+#: autoreg/dns/check.py:383
 msgid "---- Servers and domain names check"
 msgstr "--- Vérification des noms de serveurs et de domaines"
 
-#: autoreg/dns/check.py:380
+#: autoreg/dns/check.py:387
 msgid "Error: no domain specified"
 msgstr "Erreur : aucun domaine spécifié"
 
-#: autoreg/dns/check.py:394
+#: autoreg/dns/check.py:401
 #, python-format
 msgid "Querying NS list for %(fqdn)s... %(err)s"
 msgstr "Recherche de la liste de NS pour %(fqdn)s... %(err)s"
 
-#: autoreg/dns/check.py:399
+#: autoreg/dns/check.py:406
 #, python-format
 msgid "Querying NS list for %(fqdn)s... %(len)d records"
 msgstr "Recherche de la liste de NS pour %(fqdn)s... %(len)d enregistrement(s)"
 
-#: autoreg/dns/check.py:413
+#: autoreg/dns/check.py:420
 msgid "Error: "
 msgstr "Erreur : "
 
-#: autoreg/dns/check.py:416
+#: autoreg/dns/check.py:423
 msgid "Warning: "
 msgstr "Avertissement : "
 
-#: autoreg/dns/check.py:420
+#: autoreg/dns/check.py:427
 msgid "Error: empty name server list"
 msgstr "Erreur : liste vide de noms de serveurs"
 
-#: autoreg/dns/check.py:424
+#: autoreg/dns/check.py:431
 #, python-format
 msgid "%s errors(s)"
 msgstr "%s erreur(s)"
 
-#: autoreg/dns/check.py:437 autoreg/dns/check.py:448
+#: autoreg/dns/check.py:444 autoreg/dns/check.py:455
 #, python-format
 msgid "%d errors(s)"
 msgstr "%d erreur(s)"
 
-#: autoreg/dns/check.py:450
+#: autoreg/dns/check.py:457
 #, python-format
 msgid "%d warning(s)"
 msgstr "%d warning(s)"
 
-#: templates/base.html:13
+#: templates/base.html:14
 msgid "Domains"
 msgstr "Domaines"
 
-#: templates/base.html:18
+#: templates/base.html:19
 msgid "Information"
 msgstr ""
 
-#: templates/base.html:19
+#: templates/base.html:20
 msgid "Logout"
 msgstr "Déconnexion"
 
-#: templates/base.html:23
+#: templates/base.html:24
 msgid "Requests"
 msgstr "Requêtes"
 
@@ -622,11 +618,11 @@ msgstr "Requêtes"
 msgid "Log"
 msgstr "Journal"
 
-#: templates/base.html:25
+#: templates/base.html:26
 msgid "Action log"
 msgstr "Actions"
 
-#: templates/base.html:26
+#: templates/base.html:27
 msgid "Special"
 msgstr "Spécial"
 
@@ -712,16 +708,16 @@ msgstr ""
 msgid "Not eligible to DNSSEC:"
 msgstr "Non éligible à DNSSEC:"
 
-#: templates/dns/nsedit.html:5 templates/dns/nsedit.html.py:12
+#: templates/dns/nsedit.html:6 templates/dns/nsedit.html.py:13
 msgid "New domain request"
 msgstr "Demande de nouveau domaine"
 
-#: templates/dns/nsedit.html:7 templates/dns/nsedit.html.py:14
+#: templates/dns/nsedit.html:8 templates/dns/nsedit.html.py:15
 #, python-format
 msgid "Configuration for %(fqdn)s"
 msgstr "Configuration pour %(fqdn)s"
 
-#: templates/dns/nsedit.html:24
+#: templates/dns/nsedit.html:25
 msgid ""
 "Requesting an EU.org domain implies that you accept the <a href=\"/policy."
 "html\">domain policy</a>."
@@ -729,11 +725,11 @@ msgstr ""
 "Demander un domaine EU.org implique votre acceptation de la <a href=\"/"
 "policy.html\">charte</a>."
 
-#: templates/dns/nsedit.html:28
+#: templates/dns/nsedit.html:29
 msgid "Complete domain name"
 msgstr "Nom de domaine complet"
 
-#: templates/dns/nsedit.html:32
+#: templates/dns/nsedit.html:33
 msgid ""
 "(full domain name, including the enclosing domain. See the <a href=\"/"
 "opendomains.html\">list</a>)"
@@ -741,20 +737,20 @@ msgstr ""
 "(nom de domaine complet, incluant le domaine parent. Voir la <a href=\"/fr/"
 "opendomains.html\">liste</a>)"
 
-#: templates/dns/nsedit.html:36
+#: templates/dns/nsedit.html:37
 msgid "Adopt orphan domain"
 msgstr "Adopter un domaine orphelin"
 
-#: templates/dns/nsedit.html:79 templates/whois/contactchange.html:51
+#: templates/dns/nsedit.html:80 templates/whois/contactchange.html:54
 #: templates/whois/contactcreate.html:41
 msgid "Address (line 5)"
 msgstr "Adresse (ligne 5)"
 
-#: templates/dns/nsedit.html:106
+#: templates/dns/nsedit.html:107
 msgid "Administrative contact"
 msgstr "Contact administratif"
 
-#: templates/dns/nsedit.html:108
+#: templates/dns/nsedit.html:109
 #, python-format
 msgid ""
 "The person in charge of administrative matters regarding the domain.\n"
@@ -769,15 +765,15 @@ msgstr ""
 "\n"
 "Vous pourrez le changer plus tard dans l'interface de contact du domaine."
 
-#: templates/dns/nsedit.html:116
+#: templates/dns/nsedit.html:117
 msgid "Technical contact"
 msgstr "Contact technique"
 
-#: templates/dns/nsedit.html:118
+#: templates/dns/nsedit.html:119
 msgid "The person in charge of technical matters regarding the domain."
 msgstr "Personne chargée des questions techniques au sujet du domaine."
 
-#: templates/dns/nsedit.html:124
+#: templates/dns/nsedit.html:125
 #, python-format
 msgid ""
 "An existing handle; see <a href=\"%(urlcontactcreate)s\">here</a> to create "
@@ -786,19 +782,19 @@ msgstr ""
 "Un identifiant existant ; voir <a href=\"%(urlcontactcreate)s\">ici</a> pour "
 "en créer un."
 
-#: templates/dns/nsedit.html:129 templates/dns/nsedit.html.py:143
+#: templates/dns/nsedit.html:130 templates/dns/nsedit.html.py:144
 msgid "Name servers"
 msgstr "Serveurs de noms"
 
-#: templates/dns/nsedit.html:133
+#: templates/dns/nsedit.html:134
 msgid "Current DNS records"
 msgstr "Enregistrements DNS actuels"
 
-#: templates/dns/nsedit.html:140
+#: templates/dns/nsedit.html:141
 msgid "No current DNS records"
 msgstr "Pas d'enregistrement DNS actuellement"
 
-#: templates/dns/nsedit.html:144
+#: templates/dns/nsedit.html:145
 msgid ""
 "Warning: this will replace any current DNS records, except <span class="
 "\"rrtype\">DS</span> records"
@@ -806,29 +802,29 @@ msgstr ""
 "Attention : cela remplacera tous les enregistrements DNS actuels, sauf les "
 "enregistrements <span class=\"rrtype\">DS</span>"
 
-#: templates/dns/nsedit.html:147
+#: templates/dns/nsedit.html:148
 msgid "Check for correctness of:"
 msgstr "Vérifier la conformité des :"
 
-#: templates/dns/nsedit.html:149
+#: templates/dns/nsedit.html:150
 msgid "server names"
 msgstr "noms de serveurs"
 
-#: templates/dns/nsedit.html:152
+#: templates/dns/nsedit.html:153
 msgid "server names + replies on SOA"
 msgstr "noms de serveurs + réponses SOA"
 
-#: templates/dns/nsedit.html:155
+#: templates/dns/nsedit.html:156
 msgid "server names + replies on SOA + replies on NS (recommended)"
 msgstr "noms de serveurs + réponses SOA + réponses NS (recommandé)"
 
-#: templates/dns/nsedit.html:159
+#: templates/dns/nsedit.html:160
 msgid "Fill <em>Name1...NameX</em> with the fully qualified domain names."
 msgstr ""
 "Remplissez <em>Nom1...NomX</em> avec les noms de domaine complètement "
 "qualifiés."
 
-#: templates/dns/nsedit.html:160
+#: templates/dns/nsedit.html:161
 msgid ""
 "If necessary (i.e. \"glue\" records) fill <em>IP1...IPX</em> with the IPv4 "
 "or IPv6 addresses."
@@ -836,79 +832,79 @@ msgstr ""
 "Si nécessaire (enregistrements \"glue\"), remplissez <em>IP1...IPX</em> avec "
 "les adresses IPv4 ou IPv6."
 
-#: templates/dns/nsedit.html:163
+#: templates/dns/nsedit.html:164
 msgid "Name1"
 msgstr "Nom1"
 
-#: templates/dns/nsedit.html:165
+#: templates/dns/nsedit.html:166
 msgid "IP1"
 msgstr ""
 
-#: templates/dns/nsedit.html:171
+#: templates/dns/nsedit.html:172
 msgid "Name2"
 msgstr "Nom2"
 
-#: templates/dns/nsedit.html:173
+#: templates/dns/nsedit.html:174
 msgid "IP2"
 msgstr ""
 
-#: templates/dns/nsedit.html:179
+#: templates/dns/nsedit.html:180
 msgid "Name3"
 msgstr "Nom3"
 
-#: templates/dns/nsedit.html:181
+#: templates/dns/nsedit.html:182
 msgid "IP3"
 msgstr ""
 
-#: templates/dns/nsedit.html:187
+#: templates/dns/nsedit.html:188
 msgid "Name4"
 msgstr "Nom4"
 
-#: templates/dns/nsedit.html:189
+#: templates/dns/nsedit.html:190
 msgid "IP4"
 msgstr ""
 
-#: templates/dns/nsedit.html:195
+#: templates/dns/nsedit.html:196
 msgid "Name5"
 msgstr "Nom5"
 
-#: templates/dns/nsedit.html:197
+#: templates/dns/nsedit.html:198
 msgid "IP5"
 msgstr ""
 
-#: templates/dns/nsedit.html:203
+#: templates/dns/nsedit.html:204
 msgid "Name6"
 msgstr "Nom6"
 
-#: templates/dns/nsedit.html:205
+#: templates/dns/nsedit.html:206
 msgid "IP6"
 msgstr ""
 
-#: templates/dns/nsedit.html:211
+#: templates/dns/nsedit.html:212
 msgid "Name7"
 msgstr "Nom7"
 
-#: templates/dns/nsedit.html:213
+#: templates/dns/nsedit.html:214
 msgid "IP7"
 msgstr ""
 
-#: templates/dns/nsedit.html:219
+#: templates/dns/nsedit.html:220
 msgid "Name8"
 msgstr "Nom8"
 
-#: templates/dns/nsedit.html:221
+#: templates/dns/nsedit.html:222
 msgid "IP8"
 msgstr ""
 
-#: templates/dns/nsedit.html:227
+#: templates/dns/nsedit.html:228
 msgid "Name9"
 msgstr "Nom9"
 
-#: templates/dns/nsedit.html:229
+#: templates/dns/nsedit.html:230
 msgid "IP9"
 msgstr ""
 
-#: templates/dns/nsedit.html:236
+#: templates/dns/nsedit.html:238 templates/dns/special.html:11
 msgid "Submit"
 msgstr "Valider"
 
@@ -1018,7 +1014,6 @@ msgstr "Tout sauvegarder"
 
 #: templates/requests/rqlist.html:2 templates/requests/rqlist.html.py:3
 #: templates/requests/rqlistdom.html:2 templates/requests/rqlistdom.html:3
-#: templates/requests/rqlistemail.html:2 templates/requests/rqlistemail.html:3
 msgid "Request List"
 msgstr "Liste des requêtes"
 
@@ -1140,7 +1135,7 @@ msgstr "Identifiant de contact :"
 msgid "Registrant Information"
 msgstr "Informations sur le détenteur"
 
-#: templates/whois/contactchange.html:18 templates/whois/contactcreate.html:9
+#: templates/whois/contactchange.html:21 templates/whois/contactcreate.html:9
 msgid "Contact Information"
 msgstr "Informations de contact"
 
