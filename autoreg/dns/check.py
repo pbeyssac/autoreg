@@ -438,6 +438,9 @@ class SOAChecker(MultiResolver):
 
     if self.errs:
       yield None, _("%d errors(s)") % self.errs
+
+    if not self.ips:
+      yield None, _("No IP address found, exiting")
       return
 
     for ok, msg in self.print_checks():
