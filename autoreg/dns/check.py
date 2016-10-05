@@ -383,10 +383,6 @@ class SOAChecker(MultiResolver):
     yield True, _("---- Servers and domain names check")
     yield True, ""
 
-    if not self.domain:
-      yield None, _("Error: no domain specified")
-      return
-
     if self.domain.startswith('.'):
       self.domain = self.domain[1:]
     if self.domain.endswith('.'):
