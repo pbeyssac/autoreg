@@ -15,7 +15,7 @@ DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ALLOWED_HOSTS = [
-  'eu.org', 'www.eu.org'
+  'eu.org', 'www.eu.org', 'nic.eu.org'
 ]
 
 # Application definition
