@@ -30,3 +30,24 @@ def domain_delete(dd, fqdn, whoisdb, out,
 
     print(outwhois.getvalue(), file=out)
   return True
+
+
+def expiremain():
+  import sys
+
+  import psycopg2
+
+  import autoreg.dns.db
+  import autoreg.whois.db
+
+
+  dbh = psycopg2.connect(autoreg.conf.dbstring)
+  dd = autoreg.dns.db.db(dbh)
+  dd.login('autoreg')
+
+  whoisdb = autoreg.whois.db.Main(dbh)
+
+  for dom, zone, dateexp in dd.expired(now=True):
+    print('%s %s.%s' % (dateexp, dom, zone))
+    fqdn = dom + '.' + zone
+    domain_delete(dd, fqdn, whoisdb, out=sys.stdout, grace_days=0)

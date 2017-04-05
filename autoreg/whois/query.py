@@ -293,5 +293,8 @@ def command(argv):
     query(args[0], dbstring, sys.stdout, remote=False)
   return 0
 
-if __name__ == "__main__":
+def whoisdbmain():
   sys.exit(command(sys.argv))
+
+if __name__ == "__main__":
+  whoisdbmain()

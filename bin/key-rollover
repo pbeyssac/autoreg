@@ -36,115 +36,120 @@ def ymd_to_time(s):
 	int(s[8:10]), int(s[10:12]), int(s[12:14]),
 	0, 0, 0)) - mktime_offset
 
-dryrun = False
 
-try:
-    opts, args = getopt.getopt(sys.argv[1:], "a:d:D:g:i:I:nr:")
-except getopt.GetoptError:
-    sys.exit(1)
+def main():
+  dryrun = False
 
-for o, a in opts:
-    if o == "-a":
-        key_rollover_algo = int(a)
-    elif o == "-d":
-        dnskey_ttl = int(a)
-    elif o == "-D":
-        postpub_duration = int(a)
-    elif o == "-i":
-        prepub_duration = int(a)
-    elif o == "-I":
-        key_lifetime = int(a)
-    elif o == "-g":
-        keygen_margin = int(a)
-    elif o == "-r":
-        reload_margin = int(a)
-    elif o == "-n":
-        dryrun = True
+  try:
+      opts, args = getopt.getopt(sys.argv[1:], "a:d:D:g:i:I:nr:")
+  except getopt.GetoptError:
+      sys.exit(1)
 
-domargs = []
-for adom in args:
-  domargs.append(adom.lower())
+  for o, a in opts:
+      if o == "-a":
+          key_rollover_algo = int(a)
+      elif o == "-d":
+          dnskey_ttl = int(a)
+      elif o == "-D":
+          postpub_duration = int(a)
+      elif o == "-i":
+          prepub_duration = int(a)
+      elif o == "-I":
+          key_lifetime = int(a)
+      elif o == "-g":
+          keygen_margin = int(a)
+      elif o == "-r":
+          reload_margin = int(a)
+      elif o == "-n":
+          dryrun = True
 
-domains = {}
-activate = {}
-active = []
-publish = []
+  domargs = []
+  for adom in args:
+    domargs.append(adom.lower())
 
-year, month, day, h, m, s, wd, yd, dst = time.gmtime()
-nowu = time.time()
-now = time_to_ymd(nowu)
+  domains = {}
+  activate = {}
+  active = []
+  publish = []
 
-for f in os.listdir('.'):
-  m = keyfilename.match(f)
-  if not m:
-    continue
-  keyname = "K%s.+%s+%s" % m.groups()
+  year, month, day, h, m, s, wd, yd, dst = time.gmtime()
+  nowu = time.time()
+  now = time_to_ymd(nowu)
 
-  dom, algo, keyid = m.groups()
-  if dom not in domargs:
-    continue
-
-  algo = int(algo)
-  keyid = int(keyid)
-  keytimes = {}
-  for line in open(f):
-    m = keytimestamp.match(line)
+  for f in os.listdir('.'):
+    m = keyfilename.match(f)
     if not m:
-      m = keyrr.match(line)
+      continue
+    keyname = "K%s.+%s+%s" % m.groups()
+
+    dom, algo, keyid = m.groups()
+    if dom not in domargs:
+      continue
+
+    algo = int(algo)
+    keyid = int(keyid)
+    keytimes = {}
+    for line in open(f):
+      m = keytimestamp.match(line)
       if not m:
-        continue
-      keytimes['flags'] = int(m.groups()[2])
+        m = keyrr.match(line)
+        if not m:
+          continue
+        keytimes['flags'] = int(m.groups()[2])
+      else:
+        g = m.groups()
+        keytimes[g[0]] = g[1]
+    if keytimes['flags'] & 1:
+      # Key is a KSK
+      ksk = True
     else:
-      g = m.groups()
-      keytimes[g[0]] = g[1]
-  if keytimes['flags'] & 1:
-    # Key is a KSK
-    ksk = True
-  else:
-    ksk = False
-  if dom not in domains:
-    domains[dom] = {}
-  if 'Delete' in keytimes and keytimes['Delete'] < now:
-    continue
-  if 'Activate' not in keytimes:
-    if not ksk:
-      print("No active date set for", dom, algo, keyid)
-      keytimes['Activate'] = now
-      cmd  = DNSSEC_SETTIME + " -A%s %s" % (keytimes['Activate'], keyname)
-      if not dryrun:
-        os.system(cmd)
-  if 'Inactive' not in keytimes:
-    if keytimes['Activate'] <= now:
-      active.append((dom, algo, keyid))
-    if ('Publish' not in keytimes or keytimes['Publish'] <= now) \
-        and ('Delete' not in keytimes or keytimes['Delete'] > now):
-      publish.append((dom, algo, keyid))
-    if not ksk and ymd_to_time(keytimes['Activate']) \
-      + zsk_lifetime - max(dnskey_ttl, prepub_duration) \
-      - keygen_margin < nowu:
-      oldact = ymd_to_time(keytimes['Activate'])
-      oldina = max(oldact + zsk_lifetime,
-                   nowu + prepub_duration + reload_margin,
-                   nowu + dnskey_ttl + reload_margin)
-      olddel = oldina + postpub_duration
-      oldina = time_to_ymd(oldina)
-      olddel = time_to_ymd(olddel)
-      print(keyname, "has no successor at %s, creating one" % oldina)
-      cmd = DNSSEC_SETTIME + " -I%s -D%s %s" % (oldina, olddel, keyname)
-      if not dryrun:
-        os.system(cmd)
-      cmd = DNSSEC_KEYGEN + " -i%d -S %s" % (prepub_duration, keyname)
-      if not dryrun:
-        os.system(cmd)
-  elif keytimes['Inactive'] > now:
-    if keytimes['Activate'] <= now:
-      active.append((dom, algo, keyid))
-    if ('Publish' not in keytimes or keytimes['Publish'] <= now) \
-        and ('Delete' not in keytimes or keytimes['Delete'] > now):
-      publish.append((dom, algo, keyid))
-  domains[dom][algo, keyid] = keytimes
+      ksk = False
+    if dom not in domains:
+      domains[dom] = {}
+    if 'Delete' in keytimes and keytimes['Delete'] < now:
+      continue
+    if 'Activate' not in keytimes:
+      if not ksk:
+        print("No active date set for", dom, algo, keyid)
+        keytimes['Activate'] = now
+        cmd  = DNSSEC_SETTIME + " -A%s %s" % (keytimes['Activate'], keyname)
+        if not dryrun:
+          os.system(cmd)
+    if 'Inactive' not in keytimes:
+      if keytimes['Activate'] <= now:
+        active.append((dom, algo, keyid))
+      if ('Publish' not in keytimes or keytimes['Publish'] <= now) \
+          and ('Delete' not in keytimes or keytimes['Delete'] > now):
+        publish.append((dom, algo, keyid))
+      if not ksk and ymd_to_time(keytimes['Activate']) \
+        + zsk_lifetime - max(dnskey_ttl, prepub_duration) \
+        - keygen_margin < nowu:
+        oldact = ymd_to_time(keytimes['Activate'])
+        oldina = max(oldact + zsk_lifetime,
+                     nowu + prepub_duration + reload_margin,
+                     nowu + dnskey_ttl + reload_margin)
+        olddel = oldina + postpub_duration
+        oldina = time_to_ymd(oldina)
+        olddel = time_to_ymd(olddel)
+        print(keyname, "has no successor at %s, creating one" % oldina)
+        cmd = DNSSEC_SETTIME + " -I%s -D%s %s" % (oldina, olddel, keyname)
+        if not dryrun:
+          os.system(cmd)
+        cmd = DNSSEC_KEYGEN + " -i%d -S %s" % (prepub_duration, keyname)
+        if not dryrun:
+          os.system(cmd)
+    elif keytimes['Inactive'] > now:
+      if keytimes['Activate'] <= now:
+        active.append((dom, algo, keyid))
+      if ('Publish' not in keytimes or keytimes['Publish'] <= now) \
+          and ('Delete' not in keytimes or keytimes['Delete'] > now):
+        publish.append((dom, algo, keyid))
+    domains[dom][algo, keyid] = keytimes
 
-print("Active:", active)
-print("Publish:", publish)
+  print("Active:", active)
+  print("Publish:", publish)
 
-sys.exit(0)
+  sys.exit(0)
+
+if __name__ == "__main__":
+  main()

@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 
 import re
 import socket
+import sys
 import time
 
 import dns
@@ -494,3 +495,64 @@ class DNSKEYChecker(MultiResolver):
           if newkey.rdtype == dns.rdatatype.DNSKEY and newkey not in dnskey:
             dnskey.append(newkey)
     return dnskey
+
+
+def main():
+  """Gets on stdin :
+  1)    a domain name
+  2)    lines giving, for each server, its fqdn and
+        (optionally) its IP address.
+
+        -- OR --
+
+  Gets a domain name in argument then retrieves the NS list on the Internet.
+
+  Then proceeds with SOAChecker.main().
+  """
+  errs = 0
+  fqdnlist = []
+  manualip = { }
+  nat = { }
+  checkglue = True
+
+  import getopt
+
+  try:
+    optlist, args = getopt.getopt(sys.argv[1:], 'go:')
+  except getopt.GetoptError as err:
+    print(str(err))
+    return 2
+
+  for opt, val in optlist:
+    if opt == '-o':
+      oldip, newip = val.split('=')
+      for ip in oldip, newip:
+        if not checkip(ip):
+          print("Error: Invalid IP address", ip)
+          errs += 1
+          ip = None
+      if ip is not None:
+        nat[oldip] = newip
+    if opt == '-g':
+        checkglue = False
+
+  if len(args) == 1:
+    domain = args[0]
+  else:
+    # Fetch domain from stdin
+    domain = sys.stdin.readline()
+    domain = domain[:-1]
+
+  soac = SOAChecker(domain, manualip, nat)
+
+  for ok, out in soac.main(file=sys.stdin, checkglue=checkglue):
+    print(out)
+    if not ok:
+      errs += 1
+
+  if errs:
+    return 1
+  return 0
+
+if __name__ == "__main__":
+  sys.exit(main())

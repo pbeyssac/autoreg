@@ -7,7 +7,7 @@
 #	-A ignore arguments, update all zones
 
 # Where to find the "access-zone" script
-AZ=/usr/local/autoreg/bin/access-zone
+AZ=/usr/local/bin/access-zone
 # The directory where "master" zone files are located
 DEST=/etc/namedb/autoreg
 # Command to reload the nameserver. Used only if option -r is provided.

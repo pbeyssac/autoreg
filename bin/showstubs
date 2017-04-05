@@ -1,6 +1,6 @@
 #!/bin/sh
 
-AUTOREGBIN=/usr/local/autoreg/bin
+AUTOREGBIN=/usr/local/bin
 
 for z in `${AUTOREGBIN}/access-zone -alist`; do
   if [ "$z" = "EU.ORG" ]; then

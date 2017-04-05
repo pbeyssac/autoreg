@@ -11,7 +11,7 @@ import sys
 import mx
 import mx.DateTime
 
-from ..conf import HANDLESUFFIX, HANDLEMAILHOST
+from ..conf import dbstring, HANDLESUFFIX, HANDLEMAILHOST
 
 _tv68 = re.compile('^(\S+)\s*(?:(\d\d))?(\d\d)(\d\d)(\d\d)$')
 _tv = re.compile('^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)'
@@ -1234,3 +1234,45 @@ class Main:
     if err:
       print(u"%d error(s), aborting" % err, file=outfile)
     return err == 0
+
+
+
+def usage(argv):
+  print("Usage: %s [-e encoding] [-U] [-n]" % argv[0])
+
+def main():
+  import getopt
+  import psycopg2
+
+  encoding = 'ISO-8859-1'
+
+  dbh = psycopg2.connect(dbstring)
+  w = Main(dbh)
+
+  try:
+    optlist, args = getopt.getopt(sys.argv[1:], 'Une:')
+  except getopt.GetoptError as err:
+    print(str(err))
+    usage(sys.argv)
+    sys.exit(2)
+
+  commit = True
+  for opt, val in optlist:
+    if opt == '-n':
+      # Dry run
+      commit = False
+    elif opt == '-e':
+      encoding = val
+    elif opt == '-U':
+      encoding = 'utf-8'
+
+  # to avoid deadlock, read everything on input first
+  lines = sys.stdin.readlines()
+
+  if w.parsefile(lines, encoding, commit):
+    print("STATUS OK")
+  else:
+    print("STATUS ERR")
+
+if __name__ == "__main__":
+  main()
