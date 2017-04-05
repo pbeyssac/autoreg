@@ -8,6 +8,10 @@ FROMADDR='noreply@eu.org'
 DEFAULT_GRACE_DAYS=30
 # for debug purposes
 MAILBCC="pb@eu.org"
+# eu.org/FreeDNS handle suffix
+HANDLESUFFIX = '-FREE'
+# right-hand side domain for anti-spam handles
+HANDLEMAILHOST = 'handles.eu.org'
 
 dbstring=os.getenv('AUTOREG_DBSTRING') or 'dbname=eu.org'
 

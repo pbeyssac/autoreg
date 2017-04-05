@@ -17,12 +17,12 @@ from django.template import RequestContext
 from django.utils import translation
 from django.utils.translation import ugettext_lazy, ugettext as _
 
-import autoreg.conf
+from autoreg.conf import dbstring, HANDLESUFFIX
 import autoreg.dns.check
 import autoreg.dns.db
 import autoreg.dns.dnssec
 from autoreg.whois.db import check_handle_domain_auth, \
-  suffixadd, suffixstrip, HANDLESUFFIX
+  suffixadd, suffixstrip
 
 from ..requests.models import Requests, rq_make_id
 from ..whois.models import Contacts, Whoisdomains, check_is_admin
@@ -177,7 +177,7 @@ def domainds(request, fqdn):
   handle = request.user.username.upper()
   verbose = False
 
-  dbh = psycopg2.connect(autoreg.conf.dbstring)
+  dbh = psycopg2.connect(dbstring)
   dd = autoreg.dns.db.db(dbh)
   dd.login('autoreg')
 
@@ -258,7 +258,8 @@ def domainds(request, fqdn):
   vars = RequestContext(request,
      { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
        'verbose': verbose, 'is_admin': is_admin,
-       'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr })
+       'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr,
+       'suffix': HANDLESUFFIX })
   return render(request, 'dns/dsedit.html', vars)
 
 def _get_rr_nsip(dd, fqdn):
@@ -312,8 +313,8 @@ def _is_orphan(fqdn, ddro):
   return False, _("does not exist in zone")
 
 def _adopt_orphan(request, ddro, dbh, fqdn, form):
-  vars = {'is_admin': True}
-  vars['fqdn'] = fqdn.upper()
+  vars = {'is_admin': True, 'fqdn': fqdn.upper(),
+          'suffix': HANDLESUFFIX}
   ok, errmsg = _is_orphan(fqdn, ddro)
   if ok:
     inwhois = _whoisrecord_from_form(fqdn, form, request.user.username)
@@ -351,7 +352,7 @@ def domainns(request, fqdn=None):
                              action='N', state='Open').count()
                              > settings.RECAPTCHA_REQUESTS_MIN)
 
-  dbh = psycopg2.connect(autoreg.conf.dbstring)
+  dbh = psycopg2.connect(dbstring)
   dd = autoreg.dns.db.db(dbh)
   dd.login('autoreg')
 
@@ -408,7 +409,7 @@ def domainns(request, fqdn=None):
         errors['th'] = [_('Contact does not exist')]
       if not nsiplist:
         errors['nsip1'] = [_('NS list is empty')]
-      dbh2 = psycopg2.connect(autoreg.conf.dbstring)
+      dbh2 = psycopg2.connect(dbstring)
       ddro = autoreg.dns.db.db(dbh2, nowrite=True)
       ddro.login('autoreg')
 
@@ -492,7 +493,8 @@ def domainns(request, fqdn=None):
        'th': th, 'ah': ah,
        'errors': errors,
        'form': form,
-       'nsiplist': nsiplist })
+       'nsiplist': nsiplist,
+       'suffix': HANDLESUFFIX })
   return render(request, 'dns/nsedit.html', vars)
 
 
@@ -512,7 +514,7 @@ def special(request):
       action = form.cleaned_data['action']
 
       if action != 'none':
-        dbh = psycopg2.connect(autoreg.conf.dbstring)
+        dbh = psycopg2.connect(dbstring)
         dd = autoreg.dns.db.db(dbh)
         dd.login('autoreg')
         if action.startswith('hold'):
@@ -528,5 +530,6 @@ def special(request):
 
   vars = RequestContext(request,
      { 'is_admin': is_admin,
-       'form': form })
+       'form': form,
+       'suffix': HANDLESUFFIX })
   return render(request, 'dns/special.html', vars)

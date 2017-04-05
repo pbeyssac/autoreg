@@ -9,7 +9,7 @@
 {% csrf_token %}
 <div>
 <label for="id_handle">{% trans "Handle" %}</label>
-<input id="id_handle" maxlength="15" name="handle" type="text" value="-FREE" />
+<input id="id_handle" maxlength="15" name="handle" type="text" value="{{suffix }}" />
 <span class="helptext">{% trans "Your handle" %}</span>
 </div>
 <div>

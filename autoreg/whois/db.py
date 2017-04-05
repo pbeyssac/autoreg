@@ -9,8 +9,7 @@ import sys
 import mx
 import mx.DateTime
 
-HANDLESUFFIX = '-FREE'
-HANDLEMAILHOST = 'handles.eu.org'
+from ..conf import HANDLESUFFIX, HANDLEMAILHOST
 
 _tv68 = re.compile('^(\S+)\s*(?:(\d\d))?(\d\d)(\d\d)(\d\d)$')
 _tv = re.compile('^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)'

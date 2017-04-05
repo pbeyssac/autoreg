@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy, ugettext as _
 
-from autoreg.whois.db import HANDLESUFFIX
+from autoreg.conf import HANDLESUFFIX
 
 from models import Log
 from ..whois.models import Whoisdomains, check_is_admin

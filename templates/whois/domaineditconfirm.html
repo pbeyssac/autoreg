@@ -3,7 +3,7 @@
 {% block title %}{% trans "Domain contact deletion" %}{% endblock %}
 {% block h1title %}{% trans "Domain contact deletion" %}{% endblock %}
 {% block form %}{% with username=user.username %}{% blocktrans %}
-<strong>WARNING</strong>: by removing yourself (<span class="handle">{{ username }}-FREE</span>) from
+<strong>WARNING</strong>: by removing yourself (<span class="handle">{{ username }}{{ suffix }}</span>) from
 contacts for <span class="domain">{{ fqdn }}</span>, you may lose some or all
 of your privileges on this domain.{% endblocktrans %}{% endwith %}
 <P>
