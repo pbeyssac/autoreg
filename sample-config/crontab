@@ -1,0 +1,20 @@
+10	0,12	*	*	*	root	cd /etc/namedb/pri; /usr/local/autoreg/bin/key-rollover -a8 -i172800 -I1728000 -D172800 beyssac.org; make beyssac.org.resign
+11	0,12	*	*	*	root	cd /etc/namedb/pri; /usr/local/autoreg/bin/key-rollover -a8 -i172800 -I1728000 -D172800 eriomem.net; make eriomem.net.resign
+
+# zone monitoring
+23	*	*	*	*	autoreg	(/usr/local/autoreg/bin/checkallsoa; /usr/local/autoreg/bin/cmpstubs) | /usr/bin/Mail -E -s "URGENT: eu.org checks failed" pb@eu.org
+
+# force serial update for DNSSEC zones
+9	0,12	*	*	*	autoreg	cd /etc/namedb/autoreg; for z in *.DNSSEC; do /usr/local/bin/access-zone -asoa -uautoreg -s `basename $z .DNSSEC`; done
+# key rollover for DNSSEC zones
+7	0,12	*	*	*	autoreg	cd /etc/namedb/autoreg; /usr/local/autoreg/bin/key-rollover -a8 -i432000 -I1728000 -D172800 `echo *.DNSSEC ""| sed 's/\.DNSSEC//g'`
+
+# request processing
+*/10	*	*	*	*	www	DJANGO_SETTINGS_MODULE=autoreg.arf.arf.settings /usr/local/bin/django-admin rqrun
+# zone updates
+4,19,34,49	*	*	*	*	autoreg /usr/local/autoreg/bin/soa -c -r -A
+# antispam mail handle seed
+1	1	*	*	*	autoreg	/usr/local/autoreg/bin/new-handle-secret
+
+# domain grace period expiration
+0	0	*	*	*	autoreg	/usr/local/bin/autoreg-expire

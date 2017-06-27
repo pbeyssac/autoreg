@@ -1,90 +1,13 @@
-$Id$
+			AutoReg 0.4
 
-			AR41 0.11 beta
+Autoreg (formerly known as AutoReg 4.1, short name AR41, now retired),
+is the software that's been running most of nic.eu.org since 1996.
 
-AR41 currently runs on the following software configuration and
-needs the following software packages:
+The current version requires:
+	- Python 2.7
+	- the Django web framework
+	- BIND
+	- the Postfix mail server
+	- a web server with WSGI
 
-	Perl 4
-		AR41 probably won't work on Perl 5 without some work
-
-		Apache httpd 1.1.x, 1.2.x or 1.3.x
-		Any Apache above 1.0 should be ok
-
-	sendmail
-		Any version; at least 8.x recommended
-		Use mailer option "9" (if available) to decode
-		quoted-printable garbage.
-
-	named
-		Any version of BIND will probably do;
-		Most recent versions (currently 4.9.7 or 8.1.2) recommended
-		for security reasons.
-
-	dig
-		Any version will probably do; 2.1 or above recommended.
-		It's included in the BIND distribution.
-
-In this distribution you'll find the following directories:
-
-	./html			sample HTML
-	./zones			sample zones (EU.ORG)
-	./bin			scripts
-	./cgi-bin		CGI scripts
-	./conf			config files
-	./lib			Perl library files
-
-The request flow in AR41 is organized in the following way:
-
-
-(1) the user sends a request by HTTP or mail
-
-	   Web (httpd)			Mail (sendmail)
-		|				|
-	cgi-bin/nph-dnsreq		bin/receive-mail
-		|				|
-		---------------------------------
-				|
-			 check-request -> request stored in val/*,
-						state "WaitAck".
-				       -> confirmation request sent
-					  by mail to user.
-
-(2) the user acknowledges the request by mail
-
-			Mail (sendmail)
-				|
-			bin/receive-mail -> request updated to state = "Open".
-					 -> Mail reply to the user
-
-(3) the administrator accesses requests in val/* through the CGI script
-	"val".
-	
-			      httpd
-				|
-			   cgi-bin/val
-
-(4) the administrator validates a request:
-
-			      httpd
-				|
-			   cgi-bin/val -> request file deleted
-				       -> bin/access-zone (zone file updated)
-				       -> Mail to the user (confirmation)
-				       -> Mail to the Whois db manager
-
-Once in a while the "real" zones need to be updated:
-
-(5) the administrator updates the master zones (needs access to a shell)
-
-	# soa -r UK.EU.ORG FR.EU.ORG
-
-    soa displays the diffs between the current zones (stored in /etc/namedb)
-    and the new zones (stored in the zone directory you chose).
-    Then it updates the SOA of the updated zones, copies these zones
-    to /etc/namedb, then reloads named (if started with option -r).
-
-    I run soa through a cron job, 3 or 4 times per hour.
-    In that case, I run soa with option -c so that it stays quiet
-    if there is nothing to do (in that case, cron doesn't send
-    a mail).
+See the INSTALL file for installation instructions.

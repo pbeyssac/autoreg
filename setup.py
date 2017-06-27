@@ -3,9 +3,15 @@
 from setuptools import setup
 
 setup(name='autoreg',
-      version='0.2',
+      version='0.3',
       author='Pierre Beyssac', author_email='autoreg-devel@eu.org',
-      url='http://eu.org/',
+      url='https://nic.eu.org/',
+      install_requires = ['bsddb3',
+                          'dnspython',
+                          'egenix-mx-base',
+                          'python-dateutil',
+                          'psycopg2',
+                          'pygost'],
       packages=['autoreg', 'autoreg.dns', 'autoreg.whois',
                 'autoreg.arf', 'autoreg.arf.arf',
                 'autoreg.arf.webdns',
