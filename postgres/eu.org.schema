@@ -574,7 +574,7 @@ GRANT SELECT,UPDATE ON TABLE requests_log_id_seq TO www;
 -- read-only
 GRANT SELECT ON TABLE contact_types TO www, autoreg;
 GRANT SELECT ON TABLE contacts, contacts_email, handle_secrets, whoisdomains, domain_contact TO whois;
-GRANT SELECT ON TABLE contacts_email, TO www, autoreg;
+GRANT SELECT ON TABLE contacts_email TO www, autoreg;
 GRANT SELECT ON TABLE iso3166_countries TO www, autoreg, whois;
 GRANT SELECT ON TABLE contacts, handle_secrets TO postfix;
 
