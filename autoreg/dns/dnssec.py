@@ -46,6 +46,13 @@ def compute_ds(domain, flags, protocol, algorithm, key, digesttypelist=[1, 2, 4]
       dslist.append((tag, algorithm, 1, hashlib.sha1(wire).hexdigest()))
     elif digesttype == 2:
       dslist.append((tag, algorithm, 2, hashlib.sha256(wire).hexdigest()))
+    elif digesttype == 3:
+      try:
+        from pygost.gost341194 import GOST341194
+      except ImportError:
+        pass
+      else:
+        dslist.append((tag, algorithm, 3, GOST341194(wire).hexdigest()))
     else:
       dslist.append((tag, algorithm, 4, hashlib.sha384(wire).hexdigest()))
   return dslist
