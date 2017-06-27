@@ -1,9 +1,9 @@
 {% extends "base-varheaders.mail" %}{% load i18n %}
-{% block subject %}{% blocktrans %}email change for eu.org contact {{ handle }}{% endblocktrans %}{% endblock %}
+{% block subject %}{% blocktrans %}email change for {{ sitename }} contact {{ handle }}{% endblocktrans %}{% endblock %}
 {% block content %}{% blocktrans %}Hello,
 
 Following a request on our web site (possibly by you), here is how
-to validate this email address on your eu.org contact record
+to validate this email address on your {{ sitename }} contact record
 identified as {{ handle }}:
 
 - Connect to {{ absurl }}

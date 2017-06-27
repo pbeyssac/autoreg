@@ -14,7 +14,7 @@ import psycopg2
 
 from django.utils.translation import ugettext_lazy, ugettext as _
 
-from autoreg.conf import HANDLESUFFIX
+from autoreg.conf import HANDLESUFFIX, SITENAME
 from autoreg.whois.db import \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
   countries_get
@@ -223,11 +223,11 @@ def login(request):
     request.session.set_test_cookie()
     vars = RequestContext(request,
                           {'form': form, 'posturi': request.path, 'next': next,
-                           'suffix': HANDLESUFFIX})
+                           'sitename': SITENAME, 'suffix': HANDLESUFFIX})
     return render(request, 'whois/login.html', vars)
   elif request.method == "POST":
     next = request.POST.get('next', reverse(domainlist))
-    vars = {'next': next, 'suffix': HANDLESUFFIX}
+    vars = {'next': next, 'sitename': SITENAME, 'suffix': HANDLESUFFIX}
     if request.user.is_authenticated():
       #django.contrib.auth.logout(request)
       return HttpResponseRedirect(next)
@@ -246,6 +246,7 @@ def login(request):
 
     vars = {'posturi': request.path, 'next': request.path,
             'form': contactlogin_form().as_table(),
+            'sitename': SITENAME,
             'suffix': HANDLESUFFIX}
     user = django.contrib.auth.authenticate(username=handle, password=password)
     if user is not None:
@@ -275,6 +276,7 @@ def contactbydomain(request):
     f = contactbydomain_form()
     form = f.as_table()
     vars = RequestContext(request, {'form': form, 'is_admin': is_admin,
+                                    'sitename': SITENAME,
                                     'suffix': HANDLESUFFIX})
     return render(request, 'whois/contactdomainform.html', vars)
   elif request.method == "POST":
@@ -284,6 +286,7 @@ def contactbydomain(request):
                        contact_id__email__isnull=False) \
                .distinct().values_list('contact_id__handle', flat=True)
     vars = RequestContext(request, {'handles': handles, 'is_admin': is_admin,
+                                    'sitename': SITENAME,
                                     'suffix': HANDLESUFFIX })
     return render(request, 'whois/contactdomain.html', vars)
   else:
@@ -298,6 +301,7 @@ def makeresettoken(request, handle=None):
       f = contactbyhandle_form()
     form = f.as_table()
     vars = RequestContext(request, {'form': form, 'posturi': request.path,
+                                    'sitename': SITENAME,
                                     'suffix': HANDLESUFFIX})
     return render(request, 'whois/resetpass.html', vars)
   elif request.method == "POST":
@@ -310,6 +314,7 @@ def makeresettoken(request, handle=None):
                             {'posturi': request.path,
                              'ehandle': suffixadd(handle),
                              'next': request.path,
+                             'sitename': SITENAME,
                              'suffix': HANDLESUFFIX})
       return render(request, 'whois/contactnotfound.html', vars)
     if len(ctl) != 1:
@@ -327,12 +332,15 @@ def makeresettoken(request, handle=None):
                              'absurl': absurl,
                              'remoteip': request.META.get('REMOTE_ADDR', None),
                              'handle': fullhandle,
+                             'sitename': SITENAME,
                              'token': token }, FROMADDR, [ ct.email ]):
        vars = RequestContext(request,
          {'msg': _("Sorry, error while sending mail. Please try again later."),
+          'sitename': SITENAME,
           'suffix': HANDLESUFFIX})
        return render(request, 'whois/msgnext.html', vars)
     vars = RequestContext(request, {'ehandle': suffixadd(handle),
+                                    'sitename': SITENAME,
                                     'suffix': HANDLESUFFIX})
     return render(request, 'whois/tokensent.html', vars)
 
@@ -342,7 +350,8 @@ def resetpass2(request, handle):
      on the designated contact."""
   f = resetpass_form()
   form = f.as_table()
-  vars = {'form': form, 'posturi': request.path, 'suffix': HANDLESUFFIX}
+  vars = {'form': form, 'posturi': request.path,
+          'sitename': SITENAME, 'suffix': HANDLESUFFIX}
   if request.method == "GET":
     vars = RequestContext(request, vars)
     return render(request, 'whois/resetpass2.html', vars)
@@ -375,6 +384,7 @@ def resetpass2(request, handle):
     ct.save()
     tk.delete()
     vars = RequestContext(request, {'ehandle': suffixadd(handle),
+                                    'sitename': SITENAME,
                                     'suffix': HANDLESUFFIX})
     return render(request, 'whois/passchanged.html', vars)
 
@@ -385,6 +395,7 @@ def contactcreate(request):
   else:
     handle = None
   vars = {'is_admin': check_is_admin(request.user.username),
+          'sitename': SITENAME,
           'suffix': HANDLESUFFIX}
   p_errors = []
   if request.method == "GET":
@@ -437,7 +448,8 @@ def contactcreate(request):
                                 'valtoken': valtoken,
                                 'whoisdata': p.__str__(),
                                 'from': FROMADDR, 'to': d['em'][0],
-                                'handle': suffixadd(ehandle)},
+                                'handle': suffixadd(ehandle),
+                                'sitename': SITENAME},
                                FROMADDR, [d['em'][0]]):
           vars['msg'] = _("Sorry, error while sending mail. Please try again later.")
           vars = RequestContext(request, vars)
@@ -472,13 +484,16 @@ def contactvalidate(request, handle, valtoken):
     if len(tkl) != 1 or tkl[0].token != valtoken:
       msg = _("Sorry, contact handle or validation token is not valid.")
   if msg:
-    vars = RequestContext(request, {'msg': msg, 'suffix': HANDLESUFFIX})
+    vars = RequestContext(request, {'msg': msg,
+                                    'sitename': SITENAME,
+                                    'suffix': HANDLESUFFIX})
     return render(request, 'whois/msgnext.html', vars)
   ct = ctl[0]
   if request.method == "GET":
     vars = RequestContext(request,
             {'handle': suffixadd(handle), 'email': ct.email,
             'valtoken': valtoken, 'posturi': request.path,
+            'sitename': SITENAME,
             'suffix': HANDLESUFFIX})
     return render(request, 'whois/contactvalidate.html', vars)
   elif request.method == "POST":
@@ -487,6 +502,7 @@ def contactvalidate(request, handle, valtoken):
     tkl[0].delete()
     vars = RequestContext(request,
                           {'msg': _("Your contact handle is now valid."),
+                           'sitename': SITENAME,
                            'suffix': HANDLESUFFIX})
     return render(request, 'whois/msgnext.html', vars)
   raise SuspiciousOperation
@@ -499,10 +515,13 @@ def domain(request, fqdn):
   except Whoisdomains.DoesNotExist:
     dom = None
   if dom is None:
-    vars = RequestContext(request, {'fqdn': fqdn, 'suffix': HANDLESUFFIX})
+    vars = RequestContext(request, {'fqdn': fqdn,
+                                    'sitename': SITENAME,
+                                    'suffix': HANDLESUFFIX})
     return render(request, 'whois/domainnotfound.html', vars)
   cl = dom.domaincontact_set.all()
   vars = RequestContext(request, {'whoisdomain': dom, 'domaincontact_list': cl,
+                                  'sitename': SITENAME,
                                   'suffix': HANDLESUFFIX})
   return render(request, 'whois/fqdn.html', vars)
 
@@ -518,6 +537,7 @@ def chpass(request):
   form = f.as_table()
   vars = {'form': form, 'posturi': request.path,
           'is_admin': check_is_admin(request.user.username),
+          'sitename': SITENAME,
           'suffix': HANDLESUFFIX}
   if request.method == "GET":
     vars = RequestContext(request, vars)
@@ -579,6 +599,7 @@ def domainlist(request):
   vars = RequestContext(request,
            {'posturi': request.path, 'list': dompage,
             'is_admin': check_is_admin(request.user.username),
+            'sitename': SITENAME,
             'suffix': HANDLESUFFIX})
   return render(request, 'whois/domainlist.html', vars)
 
@@ -610,6 +631,7 @@ def contactchange(request, registrantdomain=None):
     ehandle = handle
 
   vars = {'posturi': request.path, 'is_admin': is_admin,
+          'sitename': SITENAME,
           'suffix': HANDLESUFFIX}
   if request.method == "GET":
     c = Contacts.objects.get(handle=ehandle)
@@ -678,9 +700,11 @@ def contactchange(request, registrantdomain=None):
                                 'absurl': absurl,
                                 'handle': suffixadd(ehandle),
                                 'newemail': newemail,
+                                'sitename': SITENAME,
                                 'token': token }, FROMADDR, [ newemail ]):
           vars = RequestContext(request,
             {'msg': _("Sorry, error while sending mail. Please try again later."),
+             'sitename': SITENAME,
              'suffix': HANDLESUFFIX})
           return render(request, 'whois/msgnext.html', vars)
         return HttpResponseRedirect(reverse(changemail))
@@ -708,6 +732,7 @@ def changemail(request):
   form = f.as_table()
   vars = {'form': form, 'posturi': request.path,
           'is_admin': check_is_admin(request.user.username),
+          'sitename': SITENAME,
           'suffix': HANDLESUFFIX}
 
   ctl = Contacts.objects.filter(handle=handle)
@@ -751,6 +776,7 @@ def domaineditconfirm(request, fqdn):
   nexturi = reverse(domainedit, args=[fqdn])
   vars = {'fqdn': fqdn, 'posturi': nexturi,
           'is_admin': check_is_admin(request.user.username),
+          'sitename': SITENAME,
           'suffix': HANDLESUFFIX}
   contact_type = request.POST.get('contact_type', None)
   handle = request.POST.get('handle', None)
@@ -781,6 +807,7 @@ def domainedit(request, fqdn):
     dom = None
   if dom is None:
     vars = RequestContext(request, {'fqdn': fqdn, 'idna': _to_idna(fqdn),
+                                    'sitename': SITENAME,
                                     'suffix': HANDLESUFFIX})
     return render(request, 'whois/domainnotfound.html', vars)
 
@@ -884,6 +911,7 @@ def domainedit(request, fqdn):
           'registry_hold': registry_hold, 'end_grace_period': end_grace_period,
           'addform': {'posturi': request.path,
                       'domcontact_form': domcontact_form()},
+          'sitename': SITENAME,
           'suffix': HANDLESUFFIX}
   vars = RequestContext(request, vars)
   return render(request, 'whois/domainedit.html', vars)
@@ -925,6 +953,7 @@ def domaindelete(request, fqdn):
     vars = RequestContext(request,
              {'msg': msg,
               'is_admin': check_is_admin(request.user.username),
+              'sitename': SITENAME,
               'suffix': HANDLESUFFIX})
     return render(request, 'whois/msgnext.html', vars)
 

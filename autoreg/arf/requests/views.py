@@ -11,7 +11,7 @@ import sys
 import psycopg2
 
 from ..whois.models import check_is_admin, Whoisdomains
-from autoreg.conf import dbstring, HANDLESUFFIX
+from autoreg.conf import dbstring, HANDLESUFFIX, SITENAME
 import autoreg.dns.db
 from autoreg.whois.db import admin_login, country_from_iso
 import autoreg.whois.query as query
@@ -162,6 +162,7 @@ def rqedit(request, rqid):
   r = models.Requests.objects.filter(id=rqid)
   if r.count() < 1:
     vars = RequestContext(request, {'msg': _('Request not found'),
+                                    'sitename': SITENAME,
                                     'suffix': HANDLESUFFIX})
     return render(request, 'requests/rqmsg.html', vars)
   r = r[0]
@@ -172,6 +173,7 @@ def rqedit(request, rqid):
                           {'r': r,
                            'numdom': Whoisdomains.objects.all().count(),
                            'is_admin': check_is_admin(request.user.username),
+                           'sitename': SITENAME,
                            'suffix': HANDLESUFFIX})
     return render(request, 'requests/rqedit.html', vars)
   elif request.method == 'POST':
@@ -241,6 +243,7 @@ def rq(request, rqid=None):
                         {'rlist': rlist, 'goto': page,
                          'numdom': Whoisdomains.objects.all().count(),
                          'is_admin': check_is_admin(request.user.username),
+                         'sitename': SITENAME,
                          'suffix': HANDLESUFFIX})
   return render(request, 'requests/rqdisplay.html', vars)
   
@@ -266,6 +269,7 @@ def rqdom(request, domain):
                  'goto': request.GET.get('page', ''),
                  'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username),
+                 'sitename': SITENAME,
                  'suffix': HANDLESUFFIX})
   return render(request, 'requests/rqdisplay.html', vars)
 
@@ -289,6 +293,7 @@ def rqdisplaychecked(request):
                  'goto': request.GET.get('page', ''),
                  'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username),
+                 'sitename': SITENAME,
                  'suffix': HANDLESUFFIX})
   return render(request, 'requests/rqdisplay.html', vars)
 
@@ -316,6 +321,7 @@ def rqlistdom(request, domain=None):
 
   vars = RequestContext(request, {'rlist': rlist, 'fqdn': domain,
                                   'goto': request.GET.get('page', ''),
+                                  'sitename': SITENAME,
                                   'suffix': HANDLESUFFIX})
   return render(request, 'requests/rqlistdom.html', vars)
 
@@ -363,6 +369,7 @@ def rqlist(request, page='0'):
         'rlist': rql,
         'numdom': numdom,
         'is_admin': check_is_admin(request.user.username),
+        'sitename': SITENAME,
         'suffix': HANDLESUFFIX}
   if page != 1:
     v['prev'] = page-1
@@ -461,6 +468,7 @@ def rqval(request):
                 {'out': out.getvalue(), 'goto': goto,
                  'numdom': Whoisdomains.objects.all().count(),
                  'is_admin': check_is_admin(request.user.username),
+                 'sitename': SITENAME,
                  'suffix': HANDLESUFFIX})
   page = render(request, 'requests/rqval.html', vars)
   return page
@@ -486,6 +494,7 @@ def rqloglist(request):
 
   vars = RequestContext(request, {'is_admin': is_admin, 'list': logpage,
                                   'numdom': Whoisdomains.objects.all().count(),
+                                  'sitename': SITENAME,
                                   'suffix': HANDLESUFFIX})
   return render(request, 'requests/rqloglist.html', vars)
 
@@ -500,5 +509,6 @@ def rqlogdisplay(request, id):
   rql = models.RequestsLog.objects.get(id=id)
   vars = RequestContext(request, {'is_admin': is_admin, 'rql': rql,
                                   'numdom': Whoisdomains.objects.all().count(),
+                                  'sitename': SITENAME,
                                   'suffix': HANDLESUFFIX})
   return render(request, 'requests/rqlogdisplay.html', vars)

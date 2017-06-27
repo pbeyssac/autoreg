@@ -9,4 +9,4 @@ Content-Transfer-Encoding: {% block encoding %}quoted-printable{% endblock %}
 
 {% block content %}{% endblock %}
 {% load i18n %}{% block regards %}{% blocktrans %}Best Regards,
-The EU.org team{% endblocktrans %}{% endblock %}
+The {{ sitename }} team{% endblocktrans %}{% endblock %}

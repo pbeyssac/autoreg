@@ -4,7 +4,7 @@
 {% block h1title %}{% trans "Email address change" %}{% endblock %}
 {% block form %}
 {% blocktrans %}Please look for email sent to <strong>{{ newemail }}</strong> and
-enter below the validation token you received from EU.org:{% endblocktrans %}<br>
+enter below the validation token you received:{% endblocktrans %}<br>
 <FORM ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
 <TABLE>

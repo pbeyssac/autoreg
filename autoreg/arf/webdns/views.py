@@ -17,7 +17,7 @@ from django.template import RequestContext
 from django.utils import translation
 from django.utils.translation import ugettext_lazy, ugettext as _
 
-from autoreg.conf import dbstring, HANDLESUFFIX
+from autoreg.conf import dbstring, HANDLESUFFIX, SITENAME
 import autoreg.dns.check
 import autoreg.dns.db
 import autoreg.dns.dnssec
@@ -259,6 +259,7 @@ def domainds(request, fqdn):
      { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
        'verbose': verbose, 'is_admin': is_admin,
        'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr,
+       'sitename': SITENAME,
        'suffix': HANDLESUFFIX })
   return render(request, 'dns/dsedit.html', vars)
 
@@ -314,7 +315,7 @@ def _is_orphan(fqdn, ddro):
 
 def _adopt_orphan(request, ddro, dbh, fqdn, form):
   vars = {'is_admin': True, 'fqdn': fqdn.upper(),
-          'suffix': HANDLESUFFIX}
+          'sitename': SITENAME, 'suffix': HANDLESUFFIX}
   ok, errmsg = _is_orphan(fqdn, ddro)
   if ok:
     inwhois = _whoisrecord_from_form(fqdn, form, request.user.username)
@@ -494,6 +495,7 @@ def domainns(request, fqdn=None):
        'errors': errors,
        'form': form,
        'nsiplist': nsiplist,
+       'sitename': SITENAME,
        'suffix': HANDLESUFFIX })
   return render(request, 'dns/nsedit.html', vars)
 
@@ -531,5 +533,6 @@ def special(request):
   vars = RequestContext(request,
      { 'is_admin': is_admin,
        'form': form,
+       'sitename': SITENAME,
        'suffix': HANDLESUFFIX })
   return render(request, 'dns/special.html', vars)

@@ -16,6 +16,7 @@ MAILBCC="pb@eu.org"
 HANDLESUFFIX = '-FREE'
 # right-hand side domain for anti-spam handles
 HANDLEMAILHOST = 'handles.eu.org'
+SITENAME = 'EU.org'
 
 dbstring=os.getenv('AUTOREG_DBSTRING') or 'dbname=eu.org'
 

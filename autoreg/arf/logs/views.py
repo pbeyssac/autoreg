@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy, ugettext as _
 
-from autoreg.conf import HANDLESUFFIX
+from autoreg.conf import HANDLESUFFIX, SITENAME
 
 from models import Log
 from ..whois.models import Whoisdomains, check_is_admin
@@ -33,6 +33,7 @@ def loglist(request):
 
   vars = RequestContext(request, {'is_admin': is_admin, 'list': logpage,
                                   'suffix': HANDLESUFFIX,
+                                  'sitename': SITENAME,
                                   'numdom': Whoisdomains.objects.all().count()})
 
   return render(request, 'logs/log.html', vars)

@@ -1,5 +1,5 @@
 {% extends "base-varheaders.mail" %}{% load i18n %}
-{% block subject %}{% blocktrans %}new eu.org contact {{ handle }}{% endblocktrans %}{% endblock %}
+{% block subject %}{% blocktrans %}new {{ sitename }} contact {{ handle }}{% endblocktrans %}{% endblock %}
 {% block content %}{% blocktrans %}Hello,
 
 Your contact record has been successfully created with the following
