@@ -32,10 +32,10 @@ def compute_keytag(flags, protocol, algorithm, key):
 def compute_ds(domain, flags, protocol, algorithm, key, digesttypelist=[1, 2, 4]):
   """Compute DS/DLV records from DNSKEY data"""
   domain = str(domain.lower())
-  if domain[-1] != '.':
-    domain += '.'
-  wire = ''
-  for d in domain.split('.'):
+  if domain[-1] != b'.':
+    domain += b'.'
+  wire = b''
+  for d in domain.split(b'.'):
     wire += struct.pack('B', len(d)) + d
   tag, wirekey = compute_keytag_wirekey(flags, protocol, algorithm, key)
   wire += wirekey
