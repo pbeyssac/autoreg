@@ -10,6 +10,8 @@ import io
 import sys
 import time
 
+import six
+
 # local modules
 from autoreg.conf import DEFAULT_GRACE_DAYS
 import autoreg.zauth as zauth
@@ -197,6 +199,9 @@ class _Domain:
 	 self._internal, self._zone_id, self._registrar_id,
 	 idcr, self._created_on, idup, self._updated_on,
          self._end_grace_period) = self._dbc.fetchone()
+        if six.PY2:
+          self._zone_name = unicode(self._zone_name)
+          self.name = unicode(self.name)
 	# "GRANT SELECT" perms do not allow "SELECT ... FOR UPDATE",
 	# hence the request below is done separately from the request above.
 	self._dbc.execute('SELECT ad1.login, ad2.login '
@@ -434,6 +439,8 @@ class _ZoneList:
 	t = self._dbc.fetchone()
 	while t:
 	    name, zid = t
+            if six.PY2:
+              name = unicode(name)
 	    self.zones[name] = _Zone(dbc, id=zid, name=name)
 	    t = self._dbc.fetchone()
     def newzone(self, name):
