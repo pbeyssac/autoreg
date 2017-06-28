@@ -400,9 +400,10 @@ class _Domain:
 	    t = self._dbc.fetchone()
 	if self._dbc.rowcount == 0:
 	    print(u'; (NO RECORD)', file=outfile)
-    def show(self, outfile=sys.stdout):
+    def show(self, rrs_only=False, outfile=sys.stdout):
 	"""Shorthand to call show_head() then show_rrs()."""
-	self.show_head(outfile)
+        if not rrs_only:
+	  self.show_head(outfile)
 	self.show_rrs(outfile)
     def set_registry_lock(self, val):
 	"""Set value of boolean registry_lock."""
@@ -564,12 +565,12 @@ class db:
 	"""Logout current user."""
 	self._check_login_perm()
 	self._login_id = None
-    def show(self, domain, zone, outfile=sys.stdout):
+    def show(self, domain, zone, rrs_only=False, outfile=sys.stdout):
 	"""Show a pretty-printed zone excerpt for domain."""
 	d, z = self._zl.find(domain, zone)
 	self._check_login_perm(z.name)
 	d.fetch()
-	d.show(outfile=outfile)
+	d.show(rrs_only=rrs_only, outfile=outfile)
     def delete(self, domain, zone, override_internal=False,
                grace_days=DEFAULT_GRACE_DAYS,
                commit=True):

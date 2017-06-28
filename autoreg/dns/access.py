@@ -19,6 +19,8 @@
 		the same name, if any update in the zone occurred.
 		Print the serial in any case.
 	show:	display entry for domainname.
+	showstubs:	display delegation data for all zones.
+	cmpstubs:	check consistency of delegation data for all zones.
         hold:	put domain on hold.
         unhold:	unhold domain.
         lock:	protect domain from 'modify' or 'delete' unless forced with -i.
@@ -46,7 +48,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 # standard modules
+import difflib
 import getopt
+import io
 import logging
 import os
 import psycopg2
@@ -64,8 +68,8 @@ logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
 
 action_list = ['addrr', 'cat', 'delete', 'delrr', 'lock', 'modify', 'unlock',
 		'hold', 'unhold',
-		'new', 'show', 'soa', 'list', 'newzone',
-		'expire']
+		'new', 'show', 'soa', 'list', 'showstubs', 'cmpstubs',
+                'newzone', 'expire']
 
 MSG_ALLOC="Error: domain %s is already allocated."
 MSG_SHORT="Error: minimal length for subdomains in %s is %d."
@@ -119,7 +123,8 @@ def main():
   if action == None or user == None:
       usage()
       sys.exit(1)
-  if action == 'list' or action == 'expire':
+  if action == 'list' or action == 'showstubs' or action == 'cmpstubs' \
+      or action == 'expire':
       if len(args) != 0:
           usage()
           sys.exit(1)
@@ -198,6 +203,40 @@ def main():
     elif action == 'list':
       for zone in dd.zonelist():
           print(zone)
+    elif action == 'showstubs':
+      zones = dd.zonelist()
+      for domain in zones:
+        dummy, zone = domain.split('.', 1)
+        if zone in zones:
+          dd.show(domain, zone)
+        dd.show(domain, domain)
+    elif action == 'cmpstubs':
+      zones = dd.zonelist()
+      for domain in zones:
+        dummy, zone = domain.split('.', 1)
+        if zone not in zones:
+          continue
+        parent_out = io.StringIO()
+        zone_out = io.StringIO()
+        dd.show(domain, unicode(zone), rrs_only=True, outfile=parent_out)
+        dd.show(domain, unicode(domain), rrs_only=True, outfile=zone_out)
+        p_out = parent_out.getvalue().split('\n')
+
+        # drop initial label in parent zone
+	if not p_out[0].startswith('\t'):
+          p_out[0] = '\t' + p_out[0].split('\t', 1)[1]
+
+        # drop DS records in parent zone
+        p_out = [line for line in p_out if '\tDS\t' not in line]
+
+        z_out = zone_out.getvalue().split('\n')
+        if p_out != z_out:
+          print(zone, domain, 'differ')
+          for line in difflib.unified_diff(p_out, z_out,
+                                           fromfile='parent zone '+zone,
+                                           tofile='zone '+domain,
+                                           lineterm=''):
+            print(line)
     elif action == 'newzone':
       dd.newzone(domain)
     elif action == 'expire':
