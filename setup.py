@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='autoreg',
-      version='0.3',
+      version='0.4',
       author='Pierre Beyssac', author_email='autoreg-devel@eu.org',
       url='https://nic.eu.org/',
       install_requires = ['bsddb3',
@@ -11,7 +11,8 @@ setup(name='autoreg',
                           'egenix-mx-base',
                           'python-dateutil',
                           'psycopg2',
-                          'pygost'],
+                          'pygost',
+                          'six'],
       packages=['autoreg', 'autoreg.dns', 'autoreg.whois',
                 'autoreg.arf', 'autoreg.arf.arf',
                 'autoreg.arf.webdns',
