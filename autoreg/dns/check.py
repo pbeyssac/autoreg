@@ -56,10 +56,18 @@ def checkip(ip):
 _valid_fqdn = re.compile('^(?:[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?\.)+'
                              '[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?$',
                          re.IGNORECASE)
+# Internal FQDN: same but allow _ in addition to letters.
+_internal_valid_fqdn = re.compile('^(?:[_A-Z0-9](?:[_A-Z0-9-]*[_A-Z0-9])?\.)+'
+                                  '[_A-Z0-9](?:[_A-Z0-9-]*[_A-Z0-9])?$',
+                         re.IGNORECASE)
 
 def checkfqdn(fqdn):
   """Check fully-qualified domain name for validity"""
   return _valid_fqdn.match(fqdn)
+
+def checkinternalfqdn(fqdn):
+  """Check fully-qualified internal domain name for validity"""
+  return _internal_valid_fqdn.match(fqdn)
 
 def sendquery(q, server):
   """Send DNS query q, in UDP then TCP, to server"""

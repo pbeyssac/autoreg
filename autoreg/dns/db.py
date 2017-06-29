@@ -733,7 +733,10 @@ class db:
 	internal: if set, protect domain from user requests and bypass
 		length checks.
 	"""
-        if not check.checkfqdn(domain):
+        if internal:
+          if not check.checkinternalfqdn(domain):
+	    raise DomainError(DomainError.DINVALID, domain)
+        elif not check.checkfqdn(domain):
 	  raise DomainError(DomainError.DINVALID, domain)
 	d, z = self._zl.find(domain, zone, wlock=True, raise_nf=False)
 	self._check_login_perm(z.name)
