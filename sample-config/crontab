@@ -14,7 +14,7 @@
 # zone updates
 4,19,34,49	*	*	*	*	autoreg /usr/local/autoreg/bin/soa -c -r -A
 # antispam mail handle seed
-1	1	*	*	*	autoreg	/usr/local/autoreg/bin/new-handle-secret
+1	1	*	*	*	autoreg	/usr/local/bin/new-handle-secret
 
 # domain grace period expiration
 0	0	*	*	*	autoreg	/usr/local/bin/autoreg-expire

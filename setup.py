@@ -27,6 +27,7 @@ setup(name='autoreg',
           'autoreg-expire = autoreg.common:expiremain',
           'check-ns = autoreg.dns.check:main',
           'checkallsoa = autoreg.dns.check:main_checkallsoa',
+          'new-handle-secret = autoreg.common:new_handle_secret',
           'whoisdb = autoreg.whois.query:whoisdbmain',
           'whoisupdate = autoreg.whois.db:main'
         ]
