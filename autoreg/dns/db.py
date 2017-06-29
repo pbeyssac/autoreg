@@ -113,14 +113,14 @@ class _Zone:
 	if self._dbc.rowcount == 1: return
 	assert self._dbc.rowcount == 0
 	raise AccessError(AccessError.ILLRR, rrtype, zid)
-    def cat(self):
-	"""Output zone file to stdout."""
-	print("; zone name=%s id=%d" % (self.name, self.id))
-	if self._ttl is not None: print('$TTL', self._ttl)
+    def cat(self, outfile=sys.stdout):
+	"""Output zone file."""
+	print("; zone name=%s id=%d" % (self.name, self.id), file=outfile)
+	if self._ttl is not None: print('$TTL', self._ttl, file=outfile)
 	print("@\tSOA\t%s %s %d %d %d %d %d" %
 	    (self._soaprimary, self._soaemail, self._soaserial,
 	     self._soarefresh, self._soaretry,
-	     self._soaexpires, self._soaminimum))
+	     self._soaexpires, self._soaminimum), file=outfile)
 
 	self._dbc.execute(
 	    'SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value '
@@ -154,7 +154,7 @@ class _Zone:
 		l = ''
 	    else:
 		lastlabel = l
-	    print("%s\t%s%s\t%s" % (l, ttl, typ, value))
+	    print("%s\t%s%s\t%s" % (l, ttl, typ, value), file=outfile)
 	    t = self._dbc.fetchone()
     def lock(self):
 	"""Lock zone row for update."""
@@ -780,11 +780,11 @@ class db:
 	(r, serial) = z.soa(forceincr)
 	self._dbh.commit()
         return r, serial
-    def cat(self, zone):
-	"""Output zone file to stdout."""
+    def cat(self, zone, outfile=sys.stdout):
+	"""Output zone file."""
 	z = self._zl.zones[zone.upper()]
 	z.fetch()
-	z.cat()
+	z.cat(outfile=outfile)
     def zonelist(self):
         """Return zone list."""
         return self._zl.get()

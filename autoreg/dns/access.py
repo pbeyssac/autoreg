@@ -88,7 +88,7 @@ def errexit(msg, args):
     print(msg % args, file=sys.stderr)
     sys.exit(1)
 
-def main(argv=sys.argv):
+def main(argv=sys.argv, outfile=sys.stdout):
   try:
       opts, args = getopt.getopt(argv[1:], "a:cdist:u:z:")
   except getopt.GetoptError:
@@ -194,15 +194,15 @@ def main(argv=sys.argv):
     elif action == 'unhold':
       dd.set_registry_hold(domain, zone, False)
     elif action == 'cat':
-      dd.cat(domain)
+      dd.cat(domain, outfile=outfile)
     elif action == 'soa':
       (updated, serial) = dd.soa(domain, forceincr)
       if not updated:
   	r = 1
-      print(serial)
+      print(serial, file=outfile)
     elif action == 'list':
       for zone in dd.zonelist():
-          print(zone)
+          print(zone, file=outfile)
     elif action == 'showstubs':
       zones = dd.zonelist()
       for domain in zones:
@@ -231,17 +231,17 @@ def main(argv=sys.argv):
 
         z_out = zone_out.getvalue().split('\n')
         if p_out != z_out:
-          print(zone, domain, 'differ')
+          print(zone, domain, 'differ', file=outfile)
           for line in difflib.unified_diff(p_out, z_out,
                                            fromfile='parent zone '+zone,
                                            tofile='zone '+domain,
                                            lineterm=''):
-            print(line)
+            print(line, file=outfile)
     elif action == 'newzone':
       dd.newzone(domain)
     elif action == 'expire':
       for dom, zone, dateexp in dd.expired():
-        print('%s %s.%s' % (dateexp, dom, zone))
+        print('%s %s.%s' % (dateexp, dom, zone), file=outfile)
     else:
       usage()
       r = 1
