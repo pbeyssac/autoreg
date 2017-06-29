@@ -238,7 +238,26 @@ def main(argv=sys.argv, outfile=sys.stdout):
                                            lineterm=''):
             print(line, file=outfile)
     elif action == 'newzone':
-      dd.newzone(domain)
+      dd.newzone(domain, autoreg.conf.SOA_MASTER, autoreg.conf.SOA_EMAIL)
+
+      if '.' in domain:
+        dummy, parent = domain.split('.', 1)
+      else:
+        parent = None
+
+      dd.login('autoreg')
+
+      records = io.StringIO('\tNS\t' + autoreg.conf.SOA_MASTER + '.')
+      dd.new(domain, domain, typ=None, file=records, internal=True)
+
+      records = io.StringIO('\tTXT\t"end mark"')
+      dd.new('_END-MARK.'+domain, domain, typ=None,
+             file=records, internal=True)
+
+      if parent in dd.zonelist():
+        records = io.StringIO('\tNS\t' + autoreg.conf.SOA_MASTER + '.')
+        dd.new(domain, parent, typ=None, file=records, internal=True)
+
     elif action == 'expire':
       for dom, zone, dateexp in dd.expired():
         print('%s %s.%s' % (dateexp, dom, zone), file=outfile)

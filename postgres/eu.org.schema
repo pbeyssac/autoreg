@@ -546,6 +546,8 @@ GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE rrs TO root, www, nobody, autoreg;
 GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE domains TO root, www, nobody, autoreg;
 GRANT SELECT,UPDATE ON domains_id_seq TO root, www, nobody, autoreg;
 GRANT SELECT,UPDATE ON TABLE zones TO root, www, nobody, autoreg;
+GRANT INSERT ON TABLE zones TO autoreg;
+GRANT SELECT,UPDATE ON TABLE zones_id_seq TO autoreg;
 -- append-only
 GRANT INSERT,SELECT ON TABLE domains_hist,rrs_hist TO root, www, nobody, autoreg;
 GRANT INSERT,SELECT ON TABLE allowed_rr TO autoreg;

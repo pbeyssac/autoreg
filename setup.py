@@ -28,6 +28,7 @@ setup(name='autoreg',
           'check-ns = autoreg.dns.check:main',
           'checkallsoa = autoreg.dns.check:main_checkallsoa',
           'new-handle-secret = autoreg.common:new_handle_secret',
+          'newzone = autoreg.dns.newzones:create',
           'whoisdb = autoreg.whois.query:whoisdbmain',
           'whoisupdate = autoreg.whois.db:main'
         ]
