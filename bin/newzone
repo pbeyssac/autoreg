@@ -9,7 +9,6 @@ if [ "`whoami`" != "root" ]; then
 fi
 
 AZ=/usr/local/bin/access-zone
-ZONESAUTH=/usr/local/autoreg/conf/zones-auth
 
 # Create zone record
 $AZ -uautoreg -anewzone "$DOM"
@@ -35,9 +34,5 @@ chown autoreg:autoreg "/etc/namedb/autoreg/$DOM"
 
 # Add it to BIND configuration
 echo "zone \"$DOM\" { type master; file \"autoreg/$DOM\"; };" >> /etc/namedb/zones-autoreg.conf
-
-# set legacy permissions
-AUTHLIST=`awk -F: '$1 == "EU.ORG" { print $2 }' < $ZONESAUTH`
-echo "$DOM:$AUTHLIST" >> $ZONESAUTH
 
 echo "Now run 'rndc reconfig'"

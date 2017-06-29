@@ -34,7 +34,7 @@
 -d: in 'modify', 'addrr', 'delrr', 'show': apply both on the domain
     and the parent zone.
 -u: username, used to check access permissions with respect to the
-    zones-auth config file. Defaults to USER environment variable.
+    zone permissions. Defaults to USER environment variable.
 -t: type of resource record (for 'new' or 'modify'), checked with respect to
     allowed record types in the zone.
 -z: specify zone, in case there is an ambiguity with respect to handled zones.
