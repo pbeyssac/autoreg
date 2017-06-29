@@ -88,9 +88,9 @@ def errexit(msg, args):
     print(msg % args, file=sys.stderr)
     sys.exit(1)
 
-def main():
+def main(argv=sys.argv):
   try:
-      opts, args = getopt.getopt(sys.argv[1:], "a:cdist:u:z:")
+      opts, args = getopt.getopt(argv[1:], "a:cdist:u:z:")
   except getopt.GetoptError:
       usage()
       sys.exit(1)
@@ -122,16 +122,16 @@ def main():
   
   if action == None or user == None:
       usage()
-      sys.exit(1)
+      return 1
   if action == 'list' or action == 'showstubs' or action == 'cmpstubs' \
       or action == 'expire':
       if len(args) != 0:
           usage()
-          sys.exit(1)
+          return 1
       domain = None
   elif len(args) != 1:
       usage()
-      sys.exit(1)
+      return 1
   else:
       domain = args[0].upper()
   
@@ -144,7 +144,7 @@ def main():
   
   if action not in action_list:
       usage()
-      sys.exit(1)
+      return 1
   
   dbh = psycopg2.connect(conf.dbstring)
   dd = dnsdb.db(dbh, nowrite)
@@ -247,31 +247,31 @@ def main():
       r = 1
   except dnsdb.AccessError as e:
     if e.args[0] == dnsdb.AccessError.NOAUTH:
-      errexit(MSG_NUSER, (user))
+      return errexit(MSG_NUSER, (user))
     if e.args[0] == dnsdb.AccessError.UNKLOGIN:
-      errexit(MSG_NUSER, (user))
+      return errexit(MSG_NUSER, (user))
     if e.args[0] == dnsdb.AccessError.NOTLOGGED:
-      errexit(MSG_NUSER, (user))
+      return errexit(MSG_NUSER, (user))
     if e.args[0] == dnsdb.AccessError.DLOCKED:
-      errexit(MSG_LOCKD, (domain))
+      return errexit(MSG_LOCKD, (domain))
     if e.args[0] == dnsdb.AccessError.DINTERNAL:
-      errexit(MSG_LOCKD, (domain))
+      return errexit(MSG_LOCKD, (domain))
     if e.args[0] == dnsdb.AccessError.ILLRR:
-      errexit(MSG_NOTYP, (type))
+      return errexit(MSG_NOTYP, (type))
     if e.args[0] == dnsdb.AccessError.DLENSHORT:
-      errexit(MSG_SHORT, e.args[1])
+      return errexit(MSG_SHORT, e.args[1])
     if e.args[0] == dnsdb.AccessError.DLENLONG:
-      errexit(MSG_LONG, e.args[1])
+      return errexit(MSG_LONG, e.args[1])
     logging.exception("Unexpected exception in access-zone:\n")
     logging.error("variables:\n%s", str(locals()))
     raise
   except dnsdb.DomainError as e:
     if e.args[0] == dnsdb.DomainError.DNOTFOUND:
-      errexit(MSG_NODOM, (domain, action))
+      return errexit(MSG_NODOM, (domain, action))
     if e.args[0] == dnsdb.DomainError.ZNOTFOUND:
-      errexit(MSG_NODOM, (domain, action))
+      return errexit(MSG_NODOM, (domain, action))
     if e.args[0] == dnsdb.DomainError.DEXISTS:
-      errexit(MSG_ALLOC, (domain))
+      return errexit(MSG_ALLOC, (domain))
     logging.exception("Unexpected exception in access-zone:\n")
     logging.error("variables:\n%s", str(locals()))
     raise
@@ -280,7 +280,7 @@ def main():
     logging.error("variables:\n%s", str(locals()))
     raise
   else:
-    sys.exit(r)
+    return r
 
 if __name__ == "__main__":
   main()
