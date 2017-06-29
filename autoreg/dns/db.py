@@ -13,7 +13,7 @@ import time
 import six
 
 # local modules
-from autoreg.conf import DEFAULT_GRACE_DAYS
+from autoreg.conf import DEFAULT_GRACE_DAYS, SOA_MASTER, SOA_EMAIL
 import autoreg.zauth as zauth
 from . import check
 from . import parser
@@ -444,19 +444,27 @@ class _ZoneList:
               name = unicode(name)
 	    self.zones[name] = _Zone(dbc, id=zid, name=name)
 	    t = self._dbc.fetchone()
-    def newzone(self, name):
+    def newzone(self, name, soamaster, soaemail,
+                default_ttl, soaserial, soarefresh, soaretry,
+                soaexpires, soaminimum):
 	"""Create a new zone."""
 	name = name.upper()
 	if name in self.zones:
-	    raise DomainError(DomainError.ZEXISTS, self.name)
+	    raise DomainError(DomainError.ZEXISTS, name)
+        if not soaemail.endswith('.'):
+          soaemail += '.'
+        if not soamaster.endswith('.'):
+          soamaster += '.'
 	self._dbc.execute(
 	  'INSERT INTO zones '
 	  '(name,minlen,maxlen,ttl,updateserial,'
 	  'soaserial,soarefresh,soaretry,soaexpires,soaminimum,'
 	  'soaprimary,soaemail)'
-	  ' VALUES (%s,2,24,259200,FALSE,1,3600,1800,12096000,259200,'
-	  '%s,%s)',
-	  (name, 'ns.eu.org.', 'hostmaster.eu.org.'))
+	  ' VALUES (%s,2,24,%s,FALSE,%s,%s,%s,%s,%s,%s,%s)',
+	  (name, default_ttl,
+           soaserial, soarefresh, soaretry, soaexpires, soaminimum,
+           soamaster, soaemail))
+
 	self._dbc.execute("SELECT currval('zones_id_seq')")
 	assert self._dbc.rowcount == 1
 	zid, = self._dbc.fetchone()
@@ -777,9 +785,16 @@ class db:
     def zonelist(self):
         """Return zone list."""
         return self._zl.get()
-    def newzone(self, zone, commit=True):
-	"""Create a new zone for which we are master."""
-	z = self._zl.newzone(zone.upper())
+    def newzone(self, zone, soamaster=SOA_MASTER, soaemail=SOA_EMAIL,
+                default_ttl=259200,
+                soaserial=1, soarefresh=3600, soaretry=1800,
+                soaexpires=12096000, soaminimum=259200,
+                commit=True):
+	"""Create a new zone."""
+	z = self._zl.newzone(zone.upper(), soamaster, soaemail,
+                default_ttl=default_ttl,
+                soaserial=soaserial, soarefresh=soarefresh, soaretry=soaretry,
+                soaexpires=soaexpires, soaminimum=soaminimum)
         if commit:
 	  self._dbh.commit()
     def expired(self, now=False):

@@ -17,6 +17,10 @@ HANDLESUFFIX = '-FREE'
 # right-hand side domain for anti-spam handles
 HANDLEMAILHOST = 'handles.eu.org'
 SITENAME = 'EU.org'
+# Default master server shown in SOA record
+SOA_MASTER='NS.EU.ORG'
+# Default hostmaster email, in SOA record format (@ changed to .)
+SOA_EMAIL='hostmaster.eu.org'
 
 dbstring=os.getenv('AUTOREG_DBSTRING') or 'dbname=eu.org'
 
