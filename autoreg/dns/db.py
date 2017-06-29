@@ -777,10 +777,11 @@ class db:
     def zonelist(self):
         """Return zone list."""
         return self._zl.get()
-    def newzone(self, zone):
+    def newzone(self, zone, commit=True):
 	"""Create a new zone for which we are master."""
 	z = self._zl.newzone(zone.upper())
-	self._dbh.commit()
+        if commit:
+	  self._dbh.commit()
     def expired(self, now=False):
         """List domains in grace period."""
         if not now:
