@@ -25,6 +25,7 @@ setup(name='autoreg',
           'access-zone = autoreg.dns.access:main',
           'autoreg-expire = autoreg.common:expiremain',
           'check-ns = autoreg.dns.check:main',
+          'checkallsoa = autoreg.dns.check:main_checkallsoa',
           'whoisdb = autoreg.whois.query:whoisdbmain',
           'whoisupdate = autoreg.whois.db:main'
         ]

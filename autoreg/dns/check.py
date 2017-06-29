@@ -497,7 +497,7 @@ class DNSKEYChecker(MultiResolver):
     return dnskey
 
 
-def main():
+def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   """Gets on stdin :
   1)    a domain name
   2)    lines giving, for each server, its fqdn and
@@ -518,9 +518,9 @@ def main():
   import getopt
 
   try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'go:')
+    optlist, args = getopt.getopt(argv[1:], 'go:')
   except getopt.GetoptError as err:
-    print(str(err))
+    print(str(err), file=outfile)
     return 2
 
   for opt, val in optlist:
@@ -528,7 +528,7 @@ def main():
       oldip, newip = val.split('=')
       for ip in oldip, newip:
         if not checkip(ip):
-          print("Error: Invalid IP address", ip)
+          print("Error: Invalid IP address", ip, file=outfile)
           errs += 1
           ip = None
       if ip is not None:
@@ -539,20 +539,57 @@ def main():
   if len(args) == 1:
     domain = args[0]
   else:
-    # Fetch domain from stdin
-    domain = sys.stdin.readline()
+    # Fetch domain from infile (default stdin)
+    domain = infile.readline()
     domain = domain[:-1]
 
   soac = SOAChecker(domain, manualip, nat)
 
-  for ok, out in soac.main(file=sys.stdin, checkglue=checkglue):
-    print(out)
+  for ok, out in soac.main(file=infile, checkglue=checkglue):
+    print(out, file=outfile)
     if not ok:
       errs += 1
 
   if errs:
     return 1
   return 0
+
+
+def main_checkallsoa():
+  import io
+  import os
+  import re
+
+  import psycopg2
+
+  import autoreg.conf
+  import autoreg.dns.db
+
+  re_ns = re.compile('^\t+(?:\d+)?\t+NS\t+(\S+)\.')
+  dbh = psycopg2.connect(autoreg.conf.dbstring)
+  dd = autoreg.dns.db.db(dbh, nowrite=True)
+  user = os.getenv('USER', None)
+  dd.login(user)
+
+  exitcode = 0
+  for zone in dd.zonelist():
+    z_out = io.StringIO()
+    dd.show(zone, zone, outfile=z_out)
+    infile = io.StringIO()
+    for line in z_out.getvalue().split('\n'):
+      if not line or line[0] == ';':
+        continue
+      m = re_ns.match(line)
+      if m:
+        print(m.groups()[0], file=infile)
+    infile.seek(0)
+    outfile = io.StringIO()
+    r = main(argv=['check-ns', '-g', zone], infile=infile, outfile=outfile)
+    if r:
+      print('****', zone, 'FAILED ****')
+      print(outfile.getvalue(), end='')
+      exitcode = 1
+  return exitcode
 
 if __name__ == "__main__":
   sys.exit(main())
