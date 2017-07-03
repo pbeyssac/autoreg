@@ -1,6 +1,7 @@
 # $Id$
 
 from django.conf.urls import patterns, include, url
+from django.contrib import admin
 
 urlpatterns = patterns('autoreg.arf.whois.views',
     url(r'^$', 'domainlist', name='home'),
@@ -48,4 +49,8 @@ urlpatterns += patterns('autoreg.arf.webdns.views',
     url(r'^ns/(?P<fqdn>[a-z0-9\.A-Z-]+)/$', 'domainns'),
     url(r'^domain/new/$', 'domainns'),
     url(r'^special/$', 'special', name='special'),
+)
+urlpatterns += patterns('',
+    # Uncomment this for admin:
+    url(r'^admin/', include(admin.site.urls)),
 )

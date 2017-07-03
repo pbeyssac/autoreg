@@ -25,6 +25,7 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.staticfiles',
     'django.contrib.messages',
     'django.contrib.sites',
     'autoreg.arf.webdns',
@@ -124,3 +125,5 @@ CSRF_COOKIE_SECURE=True
 SESSION_COOKIE_AGE=1209600
 SESSION_COOKIE_HTTPONLY=True
 SESSION_COOKIE_SECURE=True
+SITE_ID=1
+STATIC_URL='/arf/en/admin/static/'

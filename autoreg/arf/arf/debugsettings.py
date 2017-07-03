@@ -24,6 +24,7 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.staticfiles',
     'django.contrib.sites',
     'autoreg.arf.webdns',
     'autoreg.arf.logs',
@@ -129,7 +130,8 @@ MANAGERS = ADMINS
 FORCEDEBUGMAIL='pb@eu.org'
 
 RECAPTCHA_PUBLIC_KEY='6LdLMRkTAAAAACM-hHnNRNq_ptBpeU6W_5AL8-ta'
-RECAPTCHA_PRIVATE_KEY='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 RECAPTCHA_API_URL='https://www.google.com/recaptcha/api/siteverify'
 RECAPTCHA_REQUESTS_MIN=10
 RECAPTCHA_DOMAINS_MIN=10
+SITE_ID=1
+STATIC_URL='/arf/en/admin/static/'

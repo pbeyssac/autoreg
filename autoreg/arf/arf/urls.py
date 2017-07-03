@@ -11,7 +11,4 @@ urlpatterns = i18n_patterns('autoreg.arf.whois.views',
     url(r'^', include('autoreg.arf.arf.urlsubs')),
 )
 
-urlpatterns += patterns('',
-    # Uncomment this for admin:
-#    url(r'^admin/', include('django.contrib.admin.urls')),
 )
