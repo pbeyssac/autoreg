@@ -28,6 +28,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.messages',
     'django.contrib.sites',
+    'autoreg.arf',		# for templates & static web files
     'autoreg.arf.webdns',
     'autoreg.arf.logs',
     'autoreg.arf.requests',
@@ -56,7 +57,7 @@ ROOT_URLCONF = 'autoreg.arf.arf.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [ "/usr/local/autoreg/arf/templates" ],
+        'DIRS': [ ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

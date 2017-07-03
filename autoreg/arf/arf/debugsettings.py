@@ -26,6 +26,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'autoreg.arf',		# for templates & static web files
     'autoreg.arf.webdns',
     'autoreg.arf.logs',
     'autoreg.arf.man',
@@ -68,8 +69,6 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            "/usr/local/autoreg/arf/templates-devel",
-            "/home/freenix/pb/autoreg/templates"
           ],
         'APP_DIRS': True,
         'OPTIONS': {

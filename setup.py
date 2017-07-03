@@ -21,6 +21,11 @@ setup(name='autoreg',
                 'autoreg.arf.requests.management.commands',
 		'autoreg.arf.logs',
                 'autoreg.arf.whois'],
+      package_data={
+        '': ['static/*',
+             'templates/*.html', 'templates/*.mail',
+             'templates/*/*.html', 'templates/*/*.mail'],
+      },
       entry_points = {
         'console_scripts': [
           'access-zone = autoreg.dns.access:main',
