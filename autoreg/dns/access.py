@@ -3,7 +3,7 @@
 #
 
 """Usage:
-	access-zone [-cdi] [-t type] [-z zone] [-u user] -a action domainname
+	access-zone [-cdi] [-t type] [-z zone] [-u user] -a action [domainname]
 
 -c: check only, don't update any file (used for request check)
 -a: action, one of:
@@ -21,15 +21,19 @@
 	show:	display entry for domainname.
 	showstubs:	display delegation data for all zones.
 	cmpstubs:	check consistency of delegation data for all zones.
-        hold:	put domain on hold.
-        unhold:	unhold domain.
-        lock:	protect domain from 'modify' or 'delete' unless forced with -i.
-        unlock:	unprotect domain.
+        hold:	put domain(s) on hold.
+        unhold:	unhold domain(s).
+        lock:	protect domain(s) from 'modify' or 'delete'
+                unless forced with -i.
+        unlock:	unprotect domain(s).
 	list:	show list of known zones.
 	newzone:	create a new zone.
 	addrr:	add resource records
 	delrr:	delete resource records
 	expire:	list expired domains
+
+'hold', 'unhold', 'lock', 'unlock' can work on a stdin-provided
+domain list for better performance.
 
 -d: in 'modify', 'addrr', 'delrr', 'show': apply both on the domain
     and the parent zone.
@@ -123,7 +127,16 @@ def main(argv=sys.argv, outfile=sys.stdout):
   if action == None or user == None:
       usage()
       return 1
-  if action == 'list' or action == 'showstubs' or action == 'cmpstubs' \
+  if action == 'hold' or action == 'unhold' \
+     or action == 'lock' or action == 'unlock':
+      if len(args) == 0:
+        domainlist = [line[:-1].upper() for line in infile.readlines()]
+      elif len(args) == 1:
+        domainlist = [args[0].upper()]
+      else:
+        usage()
+        return 1
+  elif action == 'list' or action == 'showstubs' or action == 'cmpstubs' \
       or action == 'expire':
       if len(args) != 0:
           usage()
@@ -186,13 +199,17 @@ def main(argv=sys.argv, outfile=sys.stdout):
     elif action == 'delete':
       dd.delete(domain, zone, override_internal=internal)
     elif action == 'lock':
-      dd.set_registry_lock(domain, zone, True)
+      for domain in domainlist:
+        dd.set_registry_lock(domain, zone, True)
     elif action == 'unlock':
-      dd.set_registry_lock(domain, zone, False)
+      for domain in domainlist:
+        dd.set_registry_lock(domain, zone, False)
     elif action == 'hold':
-      dd.set_registry_hold(domain, zone, True)
+      for domain in domainlist:
+        dd.set_registry_hold(domain, zone, True)
     elif action == 'unhold':
-      dd.set_registry_hold(domain, zone, False)
+      for domain in domainlist:
+        dd.set_registry_hold(domain, zone, False)
     elif action == 'cat':
       dd.cat(domain, outfile=outfile)
     elif action == 'soa':
