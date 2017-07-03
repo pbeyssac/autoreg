@@ -92,7 +92,7 @@ def errexit(msg, args):
     print(msg % args, file=sys.stderr)
     sys.exit(1)
 
-def main(argv=sys.argv, outfile=sys.stdout):
+def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   try:
       opts, args = getopt.getopt(argv[1:], "a:cdist:u:z:")
   except getopt.GetoptError:

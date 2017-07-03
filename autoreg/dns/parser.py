@@ -133,6 +133,8 @@ class DnsParser:
             value = "%d %d %d %s" % (flags, protocol, algo, key)
         elif typ in ['TXT', 'RRSIG', 'HINFO', 'SPF', 'SSHFP', 'TLSA']:
 	    pass
+	elif typ == 'SOA':
+	    pass
 	else:
 	    raise ParseError('Illegal record type', typ)
 	return label, ttl, typ, value
