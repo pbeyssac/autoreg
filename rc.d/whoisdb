@@ -1,11 +1,16 @@
 #!/bin/sh
-
+#
+# REQUIRE: postgresql
+# PROVIDE: whoisdb
+#
 CMD=whoisdb
 
+echo "Whois daemons $1"
+
 if [ "$1" == "stop" -o "$1" == "restart" ]; then
-  kill `ps -U whois -o pid -o command | grep 'python.*'$CMD | awk '{ print $1 }'`
+  /bin/kill `/bin/ps -U whois -o pid -o command | /usr/bin/grep 'python.*'$CMD | /usr/bin/awk '{ print $1 }'`
 fi
-if [ "$1" == "start" -o "$1" == "restart" ]; then
+if [ "$1" == "start" -o "$1" == "restart" -o "$1" == "faststart" -o "$1" == "quietstart" ]; then
   # Next generation whois on production database
   /usr/local/autoreg/bin/$CMD -D dbname=eu.org -p 43 -u whois
   # Next generation whois on development database
