@@ -39,8 +39,10 @@ class newdomain_form(registrant_form):
 
 
 class special_form(forms.Form):
-  domain = forms.CharField(max_length=80, initial='.eu.org',
-                           help_text=ugettext_lazy('Domain'), required=True)
+  domains = forms.CharField(max_length=200000, initial='.eu.org',
+                            help_text=ugettext_lazy('Domain List'),
+                            widget=forms.Textarea,
+                            required=True)
   action = forms.ChoiceField(choices=[('none', ugettext_lazy('None')),
                                       ('lock1', ugettext_lazy('Lock')),
                                       ('lock0', ugettext_lazy('Unlock')),
@@ -512,17 +514,19 @@ def special(request):
   if request.method == 'POST':
     form = special_form(request.POST)
     if form.is_valid():
-      domain = form.cleaned_data['domain'].upper()
+      domainlist = form.cleaned_data['domains'].split()
       action = form.cleaned_data['action']
 
       if action != 'none':
         dbh = psycopg2.connect(dbstring)
         dd = autoreg.dns.db.db(dbh)
         dd.login('autoreg')
-        if action.startswith('hold'):
-          dd.set_registry_hold(domain, None, action[4] == '1')
-        elif action.startswith('lock'):
-          dd.set_registry_lock(domain, None, action[4] == '1')
+        for domain in domainlist:
+          domain = domain.strip().upper()
+          if action.startswith('hold'):
+            dd.set_registry_hold(domain, None, action[4] == '1')
+          elif action.startswith('lock'):
+            dd.set_registry_lock(domain, None, action[4] == '1')
       return HttpResponseRedirect(reverse('home'))
 
   elif request.method == "GET":
