@@ -131,7 +131,7 @@ class DnsParser:
                 raise ParseError('Bad key in DNSKEY record:' + e, key)
             key = key.replace(' ', '').replace('\t', '')
             value = "%d %d %d %s" % (flags, protocol, algo, key)
-        elif typ in ['TXT', 'RRSIG', 'HINFO', 'SSHFP', 'TLSA']:
+        elif typ in ['TXT', 'RRSIG', 'HINFO', 'SPF', 'SSHFP', 'TLSA']:
 	    pass
 	else:
 	    raise ParseError('Illegal record type', typ)

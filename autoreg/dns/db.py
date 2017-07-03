@@ -248,7 +248,7 @@ class _Domain:
 		    raise DomainError(DomainError.NODOT, value)
 		value = value[:-1]
 	    elif typ in ['A', 'AAAA', 'DLV', 'DNSKEY', 'DS', 'HINFO',
-			 'RRSIG', 'SSHFP', 'SRV', 'TLSA', 'TXT']:
+			 'RRSIG', 'SPF', 'SSHFP', 'SRV', 'TLSA', 'TXT']:
 		pass
 	    else:
 		raise DomainError(DomainError.RRUNSUP, typ)
