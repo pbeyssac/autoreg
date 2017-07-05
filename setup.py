@@ -23,6 +23,8 @@ setup(name='autoreg',
                 'autoreg.arf.whois'],
       package_data={
         '': ['static/*',
+             'locale/*/LC_MESSAGES/*.po',
+             'locale/*/LC_MESSAGES/*.mo',
              'templates/*.html', 'templates/*.mail',
              'templates/*/*.html', 'templates/*/*.mail'],
       },
