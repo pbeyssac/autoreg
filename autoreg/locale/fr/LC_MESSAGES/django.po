@@ -646,6 +646,9 @@ msgid "Search"
 msgstr "Chercher"
 
 #: autoreg/arf/templates/requests/rqlist.html:24
+msgid "Default action"
+msgstr "Action par défaut"
+
 msgid "Open selected"
 msgstr "Ouvrir sélection"
 

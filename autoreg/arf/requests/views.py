@@ -198,6 +198,9 @@ def rq(request, rqid=None):
   if not login:
     raise PermissionDenied
 
+  action = request.POST.get('action', None)
+  reason = request.POST.get('reason', '')
+
   if 'submitall' in request.POST:
     _rq = _hidden_rqid
   else:
@@ -232,7 +235,9 @@ def rq(request, rqid=None):
       raise PermissionDenied
     _rq1(request, r)
     r.suffix = i
-    if _rq_ndom(r.fqdn) == 1:
+    if action is not None:
+      r.default = action
+    elif _rq_ndom(r.fqdn) == 1:
       r.default = "accept"
     else:
       r.default = "none"
@@ -244,6 +249,7 @@ def rq(request, rqid=None):
                          'numdom': Whoisdomains.objects.all().count(),
                          'is_admin': check_is_admin(request.user.username),
                          'sitename': SITENAME,
+                         'reason': reason,
                          'suffix': HANDLESUFFIX})
   return render(request, 'requests/rqdisplay.html', vars)
   

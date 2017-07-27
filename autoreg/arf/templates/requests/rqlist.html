@@ -21,6 +21,37 @@
 {% endfor %}
 </table>
 
+<div class="rqaction">
+<h3>{% trans "Default action" %}</h3>
+  <label for="id_action_1">
+  <input id="id_action_1" name="action" type="radio" value="none">{% trans "None" %}
+  </label>
+  <label for="id_action_2">
+  <input id="id_action_2" name="action" type="radio" value="accept" checked="checked">{% trans "Accept" %}
+  </label>
+  <label for="id_action_3">
+  <input id="id_action_3" name="action" type="radio" value="delete">{% trans "Delete quietly" %}
+  </label>
+  <div class="rqrejectform">{% trans "Reject:" %}
+   <label for="id_action_4">
+   <input id="id_action_4" name="action" type="radio" value="rejectbog">{% trans "Bogus address" %}
+   </label>
+   <label for="id_action_5">
+   <input id="id_action_5" name="action" type="radio" value="rejectful">{% trans "No full name" %}
+   </label>
+   <label for="id_action_6">
+   <input id="id_action_6" name="action" type="radio" value="rejectnok">{% trans "Already allocated" %}
+   </label>
+   <label for="id_action_7">
+   <input id="id_action_7" name="action" type="radio" value="rejectcust">{% trans "Other" %}
+   </label>
+  </div>
+ <div class="rqcomment">
+  {% trans "Optional comment mailed to requester (except for actions None or Delete)" %}
+  <div><TEXTAREA NAME="reason" ROWS=3 COLS=77></TEXTAREA></div>
+ </div>
+</div>
+
 <input class="action" type="submit" name="submitselect" value="{% trans "Open selected" %}">
 <input class="action" type="submit" name="submitall" value="{% trans "Open all" %}">
 </form>
