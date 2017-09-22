@@ -34,7 +34,7 @@ def main():
   # -d
   dnskey_ttl = 86400
   # -r
-  reload_margin = 86400
+  reload_margin = 43200
   # -g
   keygen_margin = 2*86400
   # -I
