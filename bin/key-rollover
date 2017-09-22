@@ -13,16 +13,6 @@ import time
 DNSSEC_SETTIME="/usr/local/sbin/dnssec-settime"
 DNSSEC_KEYGEN="/usr/local/sbin/dnssec-keygen"
 
-max_zone_ttl = 86400
-dnskey_ttl = 86400		# -d
-reload_margin = 86400		# -r
-keygen_margin = 2*86400		# -g
-
-zsk_lifetime = 20*86400		# -I
-prepub_duration = 2*86400	# -i
-postpub_duration = max_zone_ttl	# -D
-zsk_rollover_algo = 8		# -a
-
 keyfilename = re.compile('^K([a-z0-9\.-]+)\.\+(\d{3})\+(\d{5}).key$')
 keytimestamp = re.compile('^;\s*(Created|Publish|Activate|Revoke|Inactive|Delete):\s*(\d{14})\s+')
 keyrr = re.compile('^([a-z0-9\.-]+)\.\s+(IN\s+|)DNSKEY\s+(\d+)\s+(\d+)\s+(\d+)\s+', re.IGNORECASE)
@@ -40,6 +30,22 @@ def ymd_to_time(s):
 
 
 def main():
+  max_zone_ttl = 86400
+  # -d
+  dnskey_ttl = 86400
+  # -r
+  reload_margin = 86400
+  # -g
+  keygen_margin = 2*86400
+  # -I
+  zsk_lifetime = 20*86400
+  # -i
+  prepub_duration = 2*86400
+  # -D
+  postpub_duration = max_zone_ttl
+  # -a
+  zsk_rollover_algo = 8
+
   dryrun = False
 
   try:
