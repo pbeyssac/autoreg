@@ -572,6 +572,7 @@ GRANT INSERT,SELECT ON TABLE whoisdomains_hist TO www, autoreg;
 GRANT INSERT,SELECT ON TABLE domain_contact_hist TO www, autoreg;
 GRANT INSERT,SELECT ON TABLE requests_log TO www;
 GRANT SELECT,UPDATE ON TABLE requests_log_id_seq TO www;
+GRANT INSERT ON TABLE admin_zone TO autoreg;
 -- read-only
 GRANT SELECT ON TABLE contact_types TO www, autoreg;
 GRANT SELECT ON TABLE contacts, contacts_email, handle_secrets, whoisdomains, domain_contact TO whois;

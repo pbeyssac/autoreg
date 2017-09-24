@@ -175,11 +175,23 @@ def create():
     print("Please run as user autoreg")
     return 1
 
-  autoreg.dns.access.main(['access-zone', '-anewzone', domain])
+  exitcode = autoreg.dns.access.main(['access-zone', '-anewzone', domain])
+  if exitcode != 0:
+    return 1
 
   filename = os.path.join(autoreg.conf.ZONEFILES_DIR, domain)
   with open(filename, 'w+') as file:
     autoreg.dns.access.main(['access-zone', '-acat', domain], outfile=file)
+
+  dbh = psycopg2.connect(autoreg.conf.dbstring)
+  dbc = dbh.cursor()
+  dbc.execute("INSERT INTO admin_zone"
+              " SELECT id AS admin_id, "
+                      "(SELECT id FROM zones WHERE name = %s) AS zone_id"
+              " FROM admins WHERE admins.id != 0", (domain.upper()));
+  nadm = dbc.rowcount
+  dbh.commit()
+  print('Allowed zone %s to %d administrators' % (domain, nadm))
 
   print('Add the following to your BIND configuration file:')
   print('zone "%s" { type master; file \"%s\"; allow-transfer {}; };'
