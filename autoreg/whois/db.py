@@ -1133,7 +1133,8 @@ class Main:
       return self.process(o, dodel, persons, forcechanged, outfile=outfile)
     return True
 
-  def parsefile(self, file, encoding=DEFAULTENCODING, commit=True,
+  def parsefile(self, file, encoding=DEFAULTENCODING,
+                intrans=True, commit=True,
                 forcechangedemail=None, outfile=sys.stdout):
     """Parse file and reorder objects before calling process()."""
     o = { 'encoding': encoding }
@@ -1143,9 +1144,10 @@ class Main:
     dodel = False
     err = 0
 
-    # set transaction isolation level to READ COMMITTED.
-    self._dbh.set_isolation_level(1)
-    self._dbc.execute('START TRANSACTION')
+    if intrans:
+      # set transaction isolation level to READ COMMITTED.
+      self._dbh.set_isolation_level(1)
+      #self._dbc.execute('START TRANSACTION')
 
     # Get transaction date
     self._dbc.execute("SELECT NOW()")
@@ -1219,9 +1221,10 @@ class Main:
                           outfile=outfile):
         err += 1
 
-    if commit and err == 0:
+    if intrans:
+      if commit and err == 0:
         self._dbh.commit()
-    else:
+      else:
         self._dbh.rollback()
 
     print(u"Domains: %d" % self.ndom, file=outfile)

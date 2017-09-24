@@ -80,6 +80,7 @@ class Requests(models.Model):
 
         if err:
           print(_("Error:"), err, file=out)
+          dd._dbh.rollback()
           return False
 
         print(_("Zone insert done\n"), file=out)
@@ -91,9 +92,12 @@ class Requests(models.Model):
               and not line.startswith('changed:')]
         inwhois.append(u'changed: ' + email)
 
-        if not whoisdb.parsefile(inwhois, None, commit=True, outfile=outwhois):
+        if not whoisdb.parsefile(inwhois, None, outfile=outwhois,
+                                 intrans=False):
           print(outwhois.getvalue(), file=out)
+          dd._dbh.rollback()
           return False
+        dd._dbh.commit()
 
         print(outwhois.getvalue(), file=out)
         vars = {'rqid': self.id, 'domain': r.fqdn.upper(), 'to': r.email,
@@ -240,8 +244,8 @@ def rq_run(out):
         print(unicode(e), file=out)
         ok = False
       if ok:
-        dbh.commit()
+        #dbh.commit()
         print(_("Status: committed"), file=out)
       else:
-        dbh.rollback()
+        #dbh.rollback()
         print(_("Status: cancelled"), file=out)
