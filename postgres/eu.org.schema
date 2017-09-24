@@ -201,7 +201,7 @@ CREATE TRIGGER trig_rrs BEFORE UPDATE OR DELETE ON rrs
 
 CREATE TABLE contacts (
 	id SERIAL PRIMARY KEY,
-	handle varchar(20) UNIQUE,
+	handle varchar(20) UNIQUE NOT NULL,
 	exthandle varchar(20),
 	name varchar(255),
 	email varchar(80),
