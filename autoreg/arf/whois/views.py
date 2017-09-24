@@ -658,7 +658,7 @@ def contactchange(request, registrantdomain=None):
       for i in '12345':
         k = 'ad%c' % i
         if form.cleaned_data[k] != '':
-          ad.append(form.cleaned_data[k]) 
+          ad.append(form.cleaned_data[k])
       changed = False
       emailchanged = False
       if c.name != form.cleaned_data['pn1']:

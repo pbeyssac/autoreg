@@ -98,13 +98,13 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   except getopt.GetoptError:
       usage()
       sys.exit(1)
-  
+
   action, type, zone = None, None, None
   keepds = False
   nowrite, internal, deleg, forceincr = False, False, False, False
   user = os.getenv('USER', None)
   lang = os.getenv('LANG', '')
-  
+
   for o, a in opts:
       if o == "-a":
   	action = a.lower()
@@ -123,7 +123,7 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   	deleg = True
       elif o == "-s":
   	forceincr = True
-  
+
   if action == None or user == None:
       usage()
       return 1
@@ -147,26 +147,26 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
       return 1
   else:
       domain = args[0].upper()
-  
+
   if action == 'n': action='new'
   elif action == 'modnods':
     action = 'modify'
     keepds = True
   elif action.startswith('m'):
     action='modify'
-  
+
   if action not in action_list:
       usage()
       return 1
-  
+
   dbh = psycopg2.connect(conf.dbstring)
   dd = dnsdb.db(dbh, nowrite)
-  
+
   dd.login(user)
-  
+
   if deleg and '.' in domain:
     dummy, zone = domain.split('.', 1)
-  
+
   r = 0
   try:
     if action == 'show':

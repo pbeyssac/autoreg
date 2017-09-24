@@ -295,7 +295,7 @@ class _whoisobject(object):
     'ad': [80, re.compile('^[^\x00-\x1f]*$')],
     'pr': [10, re.compile('^(?:true|yes)$', re.IGNORECASE)]
     }
-  
+
   def check(self, o, attrlist):
     """Check and convert from RIPE-style attributes."""
     self.d = o
@@ -606,7 +606,7 @@ class Person(_whoisobject):
         if j is not None:
           s += "%-12s %s\n" % (l+':', j)
     return s
-  
+
 class Domain(_whoisobject):
   def __init__(self, dbc, did=None, fqdn=None,
                updated_by=None, updated_on=None):

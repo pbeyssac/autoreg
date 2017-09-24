@@ -387,7 +387,7 @@ class _Domain:
 	    else:
 		l = label + dom
 	    if l == lastlabel: l = ''
-	    else: lastlabel = l 
+	    else: lastlabel = l
 
 	    # tabulate output
 	    if len(l) > 15: pass

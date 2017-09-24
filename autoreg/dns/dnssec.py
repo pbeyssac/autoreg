@@ -10,6 +10,7 @@ import struct
 from . import check
 from . import parser
 
+
 def compute_keytag_wirekey(flags, protocol, algorithm, key):
   """Compute key tag and wire key."""
   wirekey = struct.pack(">HBB", flags, protocol, algorithm) + key

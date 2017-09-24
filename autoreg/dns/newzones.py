@@ -186,5 +186,6 @@ def create():
         % (domain, filename))
   print("Then run 'rndc reconfig'")
 
+
 if __name__ == "__main__":
     transfer()

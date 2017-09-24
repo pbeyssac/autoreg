@@ -177,10 +177,10 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
   except getopt.GetoptError:
     return
 
-  for optval, aval in opts:                                                    
+  for optval, aval in opts:
     if optval == '-R' and not remote:
       real_info = True
-    elif optval == '-U':                                                       
+    elif optval == '-U':
       encoding = 'utf-8'
 
   a = ' '.join(args)

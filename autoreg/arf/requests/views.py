@@ -252,7 +252,7 @@ def rq(request, rqid=None):
                          'reason': reason,
                          'suffix': HANDLESUFFIX})
   return render(request, 'requests/rqdisplay.html', vars)
-  
+
 def rqdom(request, domain):
   if request.method != "GET":
     raise SuspiciousOperation
