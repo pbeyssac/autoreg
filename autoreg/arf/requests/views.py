@@ -28,6 +28,7 @@ from django.utils import translation
 from django.utils.translation import ugettext as _
 
 from . import models
+from ..webdns.models import Admins, Zones
 
 
 URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
@@ -340,16 +341,22 @@ def rqlist(request, page='0'):
   if not login:
     raise PermissionDenied
 
+  # Get list of authorized zones for this admin, to filter the request list
+  admin_id = Admins.objects.get(contact__handle=request.user.username).id
+  zlist = [z.id for z in
+             Zones.objects.filter(adminzone__admin_id=admin_id).only('id')]
+
   email = request.GET.get('email', None)
   if email:
-    rlist = _rq_list_email(email)
+    rlist = _rq_list_email(email).filter(zone_id__in=zlist)
     nbypage = len(rlist)
     page = '1'
     cpage = request.GET.get('cpage', None)
   else:
-    rlist = models.rq_list()
+    rlist = models.rq_list().filter(zone_id__in=zlist)
     nbypage = 100
     cpage = None
+
   num = len(rlist)
 
   npages = (num+nbypage-1) // nbypage
@@ -361,12 +368,8 @@ def rqlist(request, page='0'):
 
   numdom = Whoisdomains.objects.all().count()
 
-  z = autoreg.zauth.ZAuth(connection.cursor())
-
   rql = []
   for r in rlist[(page-1)*nbypage:page*nbypage]:
-    if not z.checkparent(r.fqdn, login):
-      continue
     _rq_decorate(r)
     rql.append(r)
 

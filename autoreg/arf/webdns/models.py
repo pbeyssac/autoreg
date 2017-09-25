@@ -29,6 +29,18 @@ class Zones(models.Model):
     def __str__(self):
         return self.name
 
+
+class AdminZone(models.Model):
+    id = models.IntegerField(primary_key=True)
+    zone_id = models.ForeignKey(Zones, db_column='zone_id')
+    admin_id = models.ForeignKey(Admins, db_column='admin_id')
+    class Meta:
+        db_table = 'admin_zone'
+        ordering = ['id']
+    def __str__(self):
+        return str(self.id)
+
+
 class Domains(models.Model):
     id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=64)

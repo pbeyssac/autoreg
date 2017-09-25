@@ -14,16 +14,19 @@ from django.db import models, transaction, IntegrityError
 from django.utils.translation import ugettext_lazy, ugettext as _
 
 from .. import util
+from ..webdns.models import Zones
 from ..whois.models import Contacts
 import autoreg.common
 import autoreg.conf
 import autoreg.whois.db
+
 
 class Requests(models.Model):
     id = models.CharField(max_length=30, primary_key=True)
     email = models.CharField(max_length=80)
     action = models.CharField(max_length=8)
     fqdn = models.CharField(max_length=200)
+    zone = models.ForeignKey(Zones)
     language = models.CharField(max_length=2)
     state = models.CharField(max_length=10)
     zonerecord = models.CharField(max_length=500)

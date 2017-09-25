@@ -397,6 +397,7 @@ CREATE TABLE requests (
 	email VARCHAR(80),
 	action VARCHAR(8),
 	fqdn VARCHAR(200),
+	zone_id INTEGER REFERENCES zones(id) NOT NULL,
 	language VARCHAR(5),
 	state VARCHAR(10),
 	zonerecord VARCHAR(500),
@@ -418,6 +419,7 @@ CREATE TABLE requests_hist (
 	email VARCHAR(80),
 	action VARCHAR(8),
 	fqdn VARCHAR(200),
+	zone_id INTEGER REFERENCES zones(id) DEFAULT NULL,
 	language VARCHAR(5),
 	state VARCHAR(10),
 	zonerecord VARCHAR(500),
@@ -447,12 +449,14 @@ CREATE OR REPLACE FUNCTION trig_del_requests()
     RETURNS TRIGGER as $trig_del_requests$
     BEGIN
 	INSERT INTO requests_hist (
-		id, email, action, fqdn, language,
+		id, email, action, fqdn, zone_id,
+		language,
 		state, zonerecord, whoisrecord, tags,
 		contact_id, reason, reasonfield,
 		admin_login, admin_email)
 	    VALUES (
-		OLD.id, OLD.email, OLD.action, OLD.fqdn, OLD.language,
+		OLD.id, OLD.email, OLD.action, OLD.fqdn, OLD.zone_id,
+		OLD.language,
 		OLD.state, OLD.zonerecord, OLD.whoisrecord, OLD.tags,
 		OLD.contact_id, OLD.reason, OLD.reasonfield,
 		OLD.admin_login, OLD.admin_email);

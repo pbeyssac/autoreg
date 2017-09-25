@@ -27,7 +27,7 @@ from autoreg.whois.db import check_handle_domain_auth, \
 from ..requests.models import Requests, rq_make_id
 from ..whois.models import Contacts, Whoisdomains, check_is_admin
 from ..whois.views import registrant_form
-from .models import Domains, Rrs
+from .models import Domains, Rrs, Zones
 
 URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
 
@@ -119,8 +119,10 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
         yield _("IGNORED: we already have pending request(s)"
                 " for that domain.\n")
         return
+      zone = Zones.objects.get(name=domain.split('.', 1)[1].upper())
       req = Requests(id=rqid, action='N', language=translation.get_language(),
-                     email=contact.email, fqdn=domain.upper(), state='Open',
+                     email=contact.email, fqdn=domain.upper(), zone=zone,
+                     state='Open',
                      contact=contact,
                      zonerecord=zonerecord,
                      whoisrecord=whoisrecord)
