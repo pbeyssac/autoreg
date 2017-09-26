@@ -216,7 +216,7 @@ def login(request):
   """Login page"""
   if request.method == "GET":
     next = request.GET.get('next', None)
-    if request.user.is_authenticated():
+    if request.user.is_authenticated() and request.user.is_active:
       return HttpResponseRedirect(reverse(domainlist))
     f = contactlogin_form()
     form = f.as_table()
@@ -390,7 +390,7 @@ def resetpass2(request, handle):
 
 def contactcreate(request):
   """Contact creation page"""
-  if request.user.is_authenticated():
+  if request.user.is_authenticated() and request.user.is_active:
     handle = request.user.username
   else:
     handle = None
@@ -530,7 +530,7 @@ def domain(request, fqdn):
 @cache_control(private=True)
 def chpass(request):
   """Contact password change"""
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
   f = chpass_form()
@@ -576,7 +576,7 @@ def domainlist(request):
   """Display domain list for current contact"""
   if request.method != "GET":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
 
@@ -608,7 +608,7 @@ def contactchange(request, registrantdomain=None):
   """Contact or registrant modification page.
      If registrant, registrantdomain contains the associated domain FQDN.
   """
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   if registrantdomain and registrantdomain != registrantdomain.lower():
     return HttpResponseRedirect(reverse(contactchange,
@@ -725,7 +725,7 @@ def changemail(request):
   """Email change step 2:
      check provided change email token and force indicated email
      on the designated contact."""
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
   f = changemail_form()
@@ -769,7 +769,7 @@ def changemail(request):
 @cache_control(private=True)
 def domaineditconfirm(request, fqdn):
   """Request confirmation for self-deletion of a contact"""
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaineditconfirm, args=[fqdn.lower()]))
@@ -793,7 +793,7 @@ def domainedit(request, fqdn):
   # list of shown and editable contact types
   typelist = ["administrative", "technical", "zone"]
 
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
 
@@ -920,7 +920,7 @@ def domainedit(request, fqdn):
 def domaindelete(request, fqdn):
   if request.method != "POST":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     raise PermissionDenied
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaindelete, args=[fqdn.lower()]))
@@ -963,7 +963,7 @@ def domaindelete(request, fqdn):
 def domainundelete(request, fqdn):
   if request.method != "POST":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     raise PermissionDenied
   if fqdn != fqdn.lower():
     raise PermissionDenied
@@ -981,7 +981,7 @@ def domainundelete(request, fqdn):
 
 def logout(request):
   """Logout page"""
-  if request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     log(request.user.username, action='logout')
   django.contrib.auth.logout(request)
   return HttpResponseRedirect(reverse(login))

@@ -171,7 +171,7 @@ def domainds(request, fqdn):
   """Show/edit DNSSEC DS record(s) for domain"""
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domainds, args=[fqdn.lower()]))
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   is_admin = check_is_admin(request.user.username)
   if not check_handle_domain_auth(connection.cursor(),
@@ -338,7 +338,7 @@ def domainns(request, fqdn=None):
   """Show/edit record(s) for domain"""
   if fqdn and fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domainns, args=[fqdn.lower()]))
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   handle = request.user.username.upper()
   is_admin = check_is_admin(request.user.username)
@@ -506,7 +506,7 @@ def domainns(request, fqdn=None):
 
 def special(request):
   """Special actions on domain"""
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   handle = request.user.username.upper()
   is_admin = check_is_admin(request.user.username)

@@ -123,7 +123,7 @@ def _rq1(request, r):
 #
 
 def rqedit(request, rqid):
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -161,7 +161,7 @@ def rqedit(request, rqid):
 def rq(request, rqid=None):
   if request.method != "GET" and request.method != "POST":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -225,7 +225,7 @@ def rq(request, rqid=None):
 def rqdom(request, domain):
   if request.method != "GET":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -251,7 +251,7 @@ def rqdom(request, domain):
 def rqdisplaychecked(request):
   if request.method != "GET":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -275,7 +275,7 @@ def rqdisplaychecked(request):
 def rqlistdom(request, domain=None):
   if request.method != "GET":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -303,7 +303,7 @@ def rqlistdom(request, domain=None):
 def rqlist(request, page='0'):
   if request.method != "GET":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -405,7 +405,7 @@ def _rqexec(rq, out, za, login, email, action, reasonfield):
 def rqval(request):
   if request.method != "POST":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     raise PermissionDenied
   login, email = admin_login(connection.cursor(), request.user.username,
                              get_email=True)
@@ -452,7 +452,7 @@ def rqval(request):
 def rqloglist(request):
   if request.method != "GET":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     raise PermissionDenied
   is_admin = check_is_admin(request.user.username)
   if not is_admin:
@@ -477,7 +477,7 @@ def rqloglist(request):
 def rqlogdisplay(request, id):
   if request.method != "GET":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
+  if not request.user.is_authenticated() or not request.user.is_active:
     raise PermissionDenied
   is_admin = check_is_admin(request.user.username)
   if not is_admin:
