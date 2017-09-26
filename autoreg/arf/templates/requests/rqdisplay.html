@@ -10,13 +10,6 @@
 {% for r in rlist %}
 <h2>{% trans "Request" %} {{ r.id }}</h2>
 
-{% if r.action == 'D' %}
-<h3>{% trans "Records to be deleted from zone file" %}</h3>
-<pre class="zone">
-{{ r.azout }}
-</pre>
-{% endif %}
-
 {% if r.zonerecord %}
 <h3>{% trans "Records to be inserted in zone file" %}</h3>
 <pre class="zone">{{ r.zonerecord }}</pre>

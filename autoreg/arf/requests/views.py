@@ -65,52 +65,23 @@ def _rq_nemail(fqdn):
 
 def _rq_decorate(r):
   """Add attributes rclass, ndom, nemail to request"""
-  if r.action == 'D':
-    rclass = 'del'
-    r.ndom = 0
-    r.nemail = 0
-  else:
-    r.ndom = _rq_ndom(r.fqdn)
-    if r.ndom > 1:
-      r.nemail = _rq_nemail(r.fqdn)
-      if r.nemail > 1:
-        rclass = "dup2"
-      else:
-        rclass = "dup"
+  r.ndom = _rq_ndom(r.fqdn)
+  if r.ndom > 1:
+    r.nemail = _rq_nemail(r.fqdn)
+    if r.nemail > 1:
+      rclass = "dup2"
     else:
-      r.nemail = 1
-      if _l3match.match(r.fqdn):
-        rclass = "l3"
-      else:
-        rclass = None
+      rclass = "dup"
+  else:
+    r.nemail = 1
+    if _l3match.match(r.fqdn):
+      rclass = "l3"
+    else:
+      rclass = None
   r.rclass = rclass
 
 def _rq1(request, r):
   wlist = []
-  if r.action != 'N':
-    wlist.append(r.fqdn)
-  if r.action == 'D':
-    err = None
-    dbh = psycopg2.connect(dbstring)
-    dd = autoreg.dns.db.db(dbh, True)
-    dd.login('autoreg')
-    oldout = sys.stdout
-    sys.stdout = io.StringIO()
-    try:
-      dd.show(r.fqdn, None)
-    except autoreg.dns.db.DomainError as e:
-      if e.args[0] == autoreg.dns.db.DomainError.DNOTFOUND:
-        err = _("Domain not found")
-      elif e.args[0] == autoreg.dns.db.DomainError.ZNOTFOUND:
-        err = _("Domain not found")
-      else:
-        raise
-
-    if err:
-      r.azout = err
-    else:
-      r.azout = sys.stdout.getvalue()
-    sys.stdout = oldout
 
   w = []
   lastaddr = None

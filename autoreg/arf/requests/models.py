@@ -71,72 +71,48 @@ class Requests(models.Model):
 
       outwhois = io.StringIO()
 
-      if r.action == 'N':
-        err = None
-        rrfile = io.StringIO(r.zonerecord)
-        try:
-          dd.new(r.fqdn, None, 'NS', file=rrfile, commit=False)
-        except autoreg.dns.db.AccessError as e:
-          err = unicode(e)
-        except autoreg.dns.db.DomainError as e:
-          err = unicode(e)
+      err = None
+      rrfile = io.StringIO(r.zonerecord)
+      try:
+        dd.new(r.fqdn, None, 'NS', file=rrfile, commit=False)
+      except autoreg.dns.db.AccessError as e:
+        err = unicode(e)
+      except autoreg.dns.db.DomainError as e:
+        err = unicode(e)
 
-        if err:
-          print(_("Error:"), err, file=out)
-          dd._dbh.rollback()
-          return False
+      if err:
+        print(_("Error:"), err, file=out)
+        dd._dbh.rollback()
+        return False
 
-        print(_("Zone insert done\n"), file=out)
+      print(_("Zone insert done\n"), file=out)
 
-        inwhois = [line for line in r.whoisrecord.split('\n')
-              if line != ''
-              and not line.startswith('mnt-by:')
-              and not line.startswith('source:')
-              and not line.startswith('changed:')]
-        inwhois.append(u'changed: ' + email)
+      inwhois = [line for line in r.whoisrecord.split('\n')
+            if line != ''
+            and not line.startswith('mnt-by:')
+            and not line.startswith('source:')
+            and not line.startswith('changed:')]
+      inwhois.append(u'changed: ' + email)
 
-        if not whoisdb.parsefile(inwhois, None, outfile=outwhois,
-                                 intrans=False):
-          print(outwhois.getvalue(), file=out)
-          dd._dbh.rollback()
-          return False
-        dd._dbh.commit()
-
+      if not whoisdb.parsefile(inwhois, None, outfile=outwhois,
+                               intrans=False):
         print(outwhois.getvalue(), file=out)
-        vars = {'rqid': self.id, 'domain': r.fqdn.upper(), 'to': r.email,
-                'reasonfield': reasonfield,
-                'from': autoreg.conf.FROMADDR,
-                'sitename': autoreg.conf.SITENAME,
-                'whoisrecord': outwhois.getvalue(), 'zonerecord': r.zonerecord}
-        if not util.render_to_mail("whois/domainnew.mail", vars,
-                                   autoreg.conf.FROMADDR, mailto,
-                                   language=r.language):
-          print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
-                file=out)
-          # we have to continue anyway, since the request has been executed
+        dd._dbh.rollback()
+        return False
+      dd._dbh.commit()
 
-      elif r.action == 'D':
-        err, ok = None, False
-        try:
-          ok = autoreg.common.domain_delete(dd, r.fqdn, w, out, None)
-        except autoreg.dns.db.AccessError as e:
-          err = unicode(e)
-        except autoreg.dns.db.DomainError as e:
-          err = unicode(e)
-        if not ok:
-          if err:
-            print(unicode(err), file=out)
-          return False
-
-        vars = {'rqid': self.id, 'domain': r.fqdn.upper(), 'to': r.email,
-                'from': autoreg.conf.FROMADDR,
-                'sitename': autoreg.conf.SITENAME}
-        if not util.render_to_mail("whois/domaindel.mail", vars,
-                                   autoreg.conf.FROMADDR, mailto,
-                                   language=r.language):
-          print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
-                file=out)
-          # we have to continue anyway, since the request has been executed
+      print(outwhois.getvalue(), file=out)
+      vars = {'rqid': self.id, 'domain': r.fqdn.upper(), 'to': r.email,
+              'reasonfield': reasonfield,
+              'from': autoreg.conf.FROMADDR,
+              'sitename': autoreg.conf.SITENAME,
+              'whoisrecord': outwhois.getvalue(), 'zonerecord': r.zonerecord}
+      if not util.render_to_mail("whois/domainnew.mail", vars,
+                                 autoreg.conf.FROMADDR, mailto,
+                                 language=r.language):
+        print(_("Mail to %(mails)s failed") % {'mails': ' '.join(mailto)},
+              file=out)
+        # we have to continue anyway, since the request has been executed
 
       r.state = 'Acc'
       r.save()
@@ -161,12 +137,7 @@ class Requests(models.Model):
       else:
         mailto = [r.email]
 
-      if r.action == 'N':
-        action = ugettext_lazy("creation")
-      elif r.action == 'D':
-        action = ugettext_lazy("deletion")
-      else:
-        action = "???"
+      action = ugettext_lazy("creation")
 
       vars = {'rqid': r.id, 'domain': r.fqdn.upper(), 'to': r.email,
               'action': action, 'reason': reason, 'reasonfield': reasonfield,
