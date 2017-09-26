@@ -50,9 +50,6 @@ def _rq_list_dom(domain):
   domain = domain.upper()
   return models.rq_list().filter(fqdn=domain)
 
-def _rq_list_email(email):
-  return models.rq_list().filter(email=email).order_by('id')
-
 def _rq_num():
   """Return the number of pending requests"""
   return models.rq_list_unordered().count()
@@ -346,25 +343,22 @@ def rqlist(request, page='0'):
   zlist = [z.id for z in
              Zones.objects.filter(adminzone__admin_id=admin_id).only('id')]
 
+  rlist = models.rq_list().filter(zone_id__in=zlist)
   email = request.GET.get('email', None)
   if email:
-    rlist = _rq_list_email(email).filter(zone_id__in=zlist)
-    nbypage = len(rlist)
-    page = '1'
-    cpage = request.GET.get('cpage', None)
-  else:
-    rlist = models.rq_list().filter(zone_id__in=zlist)
-    nbypage = 100
-    cpage = None
+    rlist = rlist.filter(email=email)
+  cpage = None
 
   num = len(rlist)
 
+  nbypage = 100
   npages = (num+nbypage-1) // nbypage
   if npages == 0:
     npages = 1
   page = int(page)
   if page > npages or page <= 0:
-    return HttpResponseRedirect(reverse(rqlist, args=[str(npages)]))
+    qargs = '?email='+email if email else ''
+    return HttpResponseRedirect(reverse(rqlist, args=[str(npages)]) + qargs)
 
   numdom = Whoisdomains.objects.all().count()
 
@@ -380,6 +374,8 @@ def rqlist(request, page='0'):
         'is_admin': check_is_admin(request.user.username),
         'sitename': SITENAME,
         'suffix': HANDLESUFFIX}
+  if email:
+    v['filter_email'] = email
   if page != 1:
     v['prev'] = page-1
   if page < npages:
