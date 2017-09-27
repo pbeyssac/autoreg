@@ -6,6 +6,7 @@ import io
 import psycopg2
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import connection
@@ -17,6 +18,7 @@ from django.template import RequestContext
 from django.utils import translation
 from django.utils.translation import ugettext_lazy, ugettext as _
 
+import autoreg.arf.whois.views as whois_views
 from autoreg.conf import dbstring, HANDLESUFFIX, SITENAME
 import autoreg.dns.check
 import autoreg.dns.db
@@ -49,6 +51,19 @@ class special_form(forms.Form):
                                       ('hold1', ugettext_lazy('Hold')),
                                       ('hold0', ugettext_lazy('Unhold'))],
                              required=True, widget=forms.RadioSelect)
+
+
+class special2_form(forms.Form):
+  handle = forms.CharField(max_length=10, initial=HANDLESUFFIX,
+                            help_text=ugettext_lazy('Contact Handle'),
+                            required=True)
+  action = forms.ChoiceField(choices=[
+    ('none', ugettext_lazy('None')),
+    ('fill', ugettext_lazy('Copy contact domain list above')),
+    ('showdom', ugettext_lazy('Go to domain list')),
+    ('block1', ugettext_lazy('Block')),
+    ('block0', ugettext_lazy('Unblock'))],
+    required=True, widget=forms.RadioSelect)
 
 
 def _whoisrecord_from_form(domain, form, handle):
@@ -513,32 +528,91 @@ def special(request):
   if not is_admin:
     return HttpResponseForbidden(_("Unauthorized"))
 
+  msg = ''
+  contact = None
+
   if request.method == 'POST':
-    form = special_form(request.POST)
-    if form.is_valid():
-      domainlist = form.cleaned_data['domains'].split()
-      action = form.cleaned_data['action']
+    action = ''
+    if 'submit2' in request.POST:
+      form = special_form()
+      form2 = special2_form(request.POST)
+      if form2.is_valid():
+        action = form2.cleaned_data['action']
+        handle = suffixstrip(form2.cleaned_data['handle']).upper()
+        contactlist = Contacts.objects.filter(handle=handle)
+        if not contactlist:
+          msg = _('Contact not found')
+          contact = None
+        else:
+          contact = contactlist[0]
 
-      if action != 'none':
-        dbh = psycopg2.connect(dbstring)
-        dd = autoreg.dns.db.db(dbh)
-        dd.login('autoreg')
-        for domain in domainlist:
-          domain = domain.strip().upper()
-          if action.startswith('hold'):
-            dd.set_registry_hold(domain, None, action[4] == '1')
-          elif action.startswith('lock'):
-            dd.set_registry_lock(domain, None, action[4] == '1')
-      return HttpResponseRedirect(reverse('home'))
+    elif 'submit' in request.POST:
+      form = special_form(request.POST)
+      form2 = special2_form()
+      if form.is_valid():
+        action = form.cleaned_data['action']
+        domainlist = form.cleaned_data['domains'].split()
+    else:
+      raise SuspiciousOperation
 
+    if action.startswith('hold') or action.startswith('lock'):
+      dbh = psycopg2.connect(dbstring)
+      dd = autoreg.dns.db.db(dbh)
+      dd.login('autoreg')
+      for domain in domainlist:
+        domain = domain.strip().upper()
+        if action.startswith('hold'):
+          dd.set_registry_hold(domain, None, action[4] == '1')
+        elif action.startswith('lock'):
+          dd.set_registry_lock(domain, None, action[4] == '1')
+      dmsg = {'hold0': _('Unheld %d domain(s)'),
+              'hold1': _('Held %d domain(s)'),
+              'lock0': _('Unlocked %d domain(s)'),
+              'lock1': _('Locked %d domain(s)')}
+      if action not in dmsg:
+        raise SuspiciousOperation
+      msg = dmsg[action] % len(domainlist)
+    elif action.startswith('block'):
+      u = User.objects.get(username=handle)
+      if u.is_active != (action == 'block0'):
+        u.is_active = (action == 'block0')
+        u.save()
+      if action == 'block0':
+        msg = _('Unblocked %s' % suffixadd(handle))
+      elif action == 'block1':
+        msg = _('Blocked %s' % suffixadd(handle))
+      else:
+        raise SuspiciousOperation
+    elif action == 'fill':
+      if contact:
+        domainlist = [d.fqdn
+                        for d in Whoisdomains.objects.filter(
+                          domaincontact__contact__handle=handle)
+                          .order_by('fqdn').distinct()]
+        msg = _('Copied %d domain(s) from contact %s'
+                % (len(domainlist), suffixadd(handle)))
+        v = {'domains': '\n'.join(domainlist)}
+        form = special_form(v)
+      else:
+        form = special_form()
+    elif action == 'showdom':
+      if contact:
+        return HttpResponseRedirect(reverse(whois_views.domainlist,
+                                    args=[handle]))
+    elif action:
+      raise SuspiciousOperation
+    # no action: do nothing, just redisplay the page
   elif request.method == "GET":
     form = special_form()
+    form2 = special2_form()
   else:
     raise SuspiciousOperation
 
   vars = RequestContext(request,
      { 'is_admin': is_admin,
        'form': form,
+       'form2': form2,
+       'msg': msg,
        'sitename': SITENAME,
        'suffix': HANDLESUFFIX })
   return render(request, 'dns/special.html', vars)

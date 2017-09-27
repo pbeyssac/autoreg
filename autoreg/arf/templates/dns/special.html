@@ -1,13 +1,23 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% block title %}{% trans "Special actions on domain" %}{% endblock %}
-{% block h1title %}{% trans "Special actions on domain" %}{% endblock %}
+{% block title %}{% trans "Special actions" %}{% endblock %}
+{% block h1title %}{% trans "Special actions" %}{% endblock %}
+{% block msg %}{{ msg }}{% endblock %}
 {% block form %}
+<h1>{% trans "Special actions" %}</h1>
 <FORM ACTION="" METHOD="POST">
 {% csrf_token %}
 <table>
 {{ form }}
 </table>
 <input class="action" type="submit" name="submit" value="{% trans "Submit" %}">
+</FORM>
+<hr>
+<FORM ACTION="" METHOD="POST">
+{% csrf_token %}
+<table>
+{{ form2 }}
+</table>
+<input class="action" type="submit" name="submit2" value="{% trans "Submit" %}">
 </FORM>
 {% endblock %}
