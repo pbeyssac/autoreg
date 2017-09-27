@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block title %}{% trans "Contact Change" %}{% endblock %}
-{% block h1title %}{% trans "Contact Change" %}{% endblock %}
 {% block form %}{% if ehandle and ehandle != handle %}
 {% trans "Contact handle: " %}<span class="handle">{{ ehandle }}</span><br>
 {% endif %}

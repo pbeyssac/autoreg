@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block title %}{% trans "Email address change" %}{% endblock %}
-{% block h1title %}{% trans "Email address change" %}{% endblock %}
 {% block form %}
+<h1>{% trans "Email address change" %}</h1>
 {% blocktrans %}Please look for email sent to <strong>{{ newemail }}</strong> and
 enter below the validation token you received:{% endblocktrans %}<br>
 <FORM ACTION="{{ posturi }}" METHOD="POST">

@@ -1,6 +1,5 @@
 {% extends "base.html" %}{% load i18n %}
 {% block title %}{% trans "Request List" %}{% endblock %}
-{% block h1title %}{% trans "Request List" %}{% endblock %}
 {% block msg %}
 {% if prev %}<a class="miniaction" href="{{ prev }}">&lt;</a> {% endif %}
 {% for p in pages %}{% if p == cpage %}{{ p }} {% else %}<a href="{{ p }}{% if filter_email %}?email={{ filter_email }}{% endif %}">{{ p }} </a>{% endif %}{% endfor %}

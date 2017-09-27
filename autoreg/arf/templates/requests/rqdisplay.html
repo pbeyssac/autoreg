@@ -1,14 +1,14 @@
 {% extends "base.html" %}{% load i18n %}
 {% block title %}{% trans "Request display" %}{% endblock %}
-{% block h1title %}{% trans "Request display" %}{% endblock %}
 {% block msg %}
-
 <a href="#bottom">{% trans "Jump to bottom" %}</a>
 <FORM ACTION="{% url 'arf.requests.views.rqval' %}" METHOD="POST">
 {% csrf_token %}
 {% if goto %}<input name="goto" type="hidden" value="{{ goto }}">{% endif %}
 {% for r in rlist %}
-<h2>{% trans "Request" %} {{ r.id }}</h2>
+<p>
+<h2>{% blocktrans with fqdn=r.fqdn %}Request for <span class="domain">{{ fqdn }}</span>{% endblocktrans %}</h2>
+<span class="requestid">{{ r.id }}</span>
 
 {% if r.zonerecord %}
 <h3>{% trans "Records to be inserted in zone file" %}</h3>

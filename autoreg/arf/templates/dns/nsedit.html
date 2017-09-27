@@ -8,14 +8,15 @@
 {% blocktrans %}Configuration for {{ fqdn }}{% endblocktrans %}
 {% endif %}
 {% endblock %}
-{% block h1title %}
+{% block msg %}
+
+<h1>
 {% if newdomain %}
 {% trans "New domain request" %}
 {% else %}
 {% blocktrans %}Configuration for {{ fqdn }}{% endblocktrans %}
 {% endif %}
-{% endblock %}
-{% block msg %}
+</h1>
 
 <form class="form" action="" method="POST">
 {% csrf_token %}

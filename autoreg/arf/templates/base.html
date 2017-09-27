@@ -8,7 +8,6 @@
 </HEAD>
 
 <BODY>
-<H1>{% block h1title %}{% endblock %}</H1>
 <nav class="main">
 {% if user.is_authenticated %}
 <A HREF="{% url 'arf.whois.views.domainlist' %}">{% trans "Domains" %}</A>

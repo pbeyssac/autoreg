@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% load i18n %}
 {% block title %}{% trans "Whois edit" %}{% endblock %}
-{% block h1title %}{% trans "Whois edit" %}{% endblock %}
 {% block msg %}
+<h1>{% trans "Whois edit" %}<h1>
 
 <FORM class="form" ACTION="{% url 'arf.requests.views.rqedit' r.id %}" METHOD="POST">
 {% csrf_token %}

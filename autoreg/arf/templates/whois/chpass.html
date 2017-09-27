@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block title %}{% trans "Password Change" %}{% endblock %}
-{% block h1title %}{% trans "Password Change" %}{% endblock %}
 {% block msg %}{% if msg %}{{ msg }}
 {% endif %}{% endblock %}
 {% block form %}
+<h1>{% trans "Password Change" %}</h1>
 <FORM class="form" ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
 <TABLE>
