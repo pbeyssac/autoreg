@@ -572,13 +572,18 @@ def chpass(request):
     return render(request, 'whois/passchanged.html', vars)
 
 @cache_control(private=True)
-def domainlist(request):
-  """Display domain list for current contact"""
+def domainlist(request, handle=None):
+  """Display domain list for a contact"""
   if request.method != "GET":
     raise SuspiciousOperation
   if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
-  handle = request.user.username
+
+  if handle is not None:
+    if not check_is_admin(request.user.username):
+      raise PermissionDenied
+  else:
+    handle = request.user.username
 
   domds = handle_domains_dnssec(connection.cursor(), handle)
 
@@ -598,6 +603,7 @@ def domainlist(request):
 
   vars = RequestContext(request,
            {'posturi': request.path, 'list': dompage,
+            'handle': handle,
             'is_admin': check_is_admin(request.user.username),
             'sitename': SITENAME,
             'suffix': HANDLESUFFIX})

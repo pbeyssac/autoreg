@@ -1,13 +1,13 @@
 {% extends "baselist.html" %}
 {% load i18n %}
-{% block title %}{% trans "Domain List" %}{% endblock %}
-{% block h1title %}{% trans "Domain List" %}{% endblock %}
+{% block title %}{% blocktrans %}Domain List for {{ handle }}{{ suffix }}{% endblocktrans %}{% endblock %}
 {% block msg %}
 <div>
 <a class="action" href="{% url 'arf.webdns.views.domainns' %}">{% trans "New Domain" %}</A>
 </div>
 {% endblock %}
 {% block form %}
+{% if handle != user.username %}<h2>{% blocktrans %}Domain List for {{ handle }}{{ suffix }}{% endblocktrans %}</h2>{% endif %}
 <table class="domainlist">
 <tr><th>{% trans "Domain" %}</th><th>{% trans "Created" %}</th><th>{% trans "Updated" %}</th><th>DNSSEC</th><th>{% trans "Flags" %}</th></tr>
 {% for dds in list %}
