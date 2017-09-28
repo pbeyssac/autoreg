@@ -3,6 +3,6 @@
 {% block title %}{{ title }}{% endblock %}
 {% block form %}
 {% for h in handles %}
-<a href="{% url 'arf.whois.views.makeresettoken' h %}">{% blocktrans %}My handle is {{ h }}{{ suffix }}{% endblocktrans %}</a>.<BR>
+<a href="{% url 'makeresettoken' h %}">{% blocktrans %}My handle is {{ h }}{{ suffix }}{% endblocktrans %}</a>.<BR>
 {% endfor %}
 {% endblock %}

@@ -122,7 +122,7 @@ You can change this later in the domain contact interface.{% endblocktrans %}<p>
 <div class="fieldWrapper{% if errors.th %}error{% endif %}">
     <input name="th" value="{{ th }}" type="text" />
     <label for="id_th">
-   {% url 'autoreg.arf.whois.views.contactcreate' as urlcontactcreate %}
+   {% url 'contactcreate' as urlcontactcreate %}
    {% blocktrans %}An existing handle; see <a href="{{ urlcontactcreate }}">here</a> to create one.{% endblocktrans %}</label>
     {% if errors.th %}{% for error in th.errors %}<strong>{{ error|escape }}</strong>{% endfor %}{% endif %}
 </div>

@@ -6,7 +6,7 @@
 <table>
 <tr><td>{% trans "Date" %}<td>{% trans "Domain" %}<td>{% trans "Errors" %}<td>{% trans "Warnings" %}
 {% for r in list %}
-<tr><td><a href="{% url 'autoreg.arf.requests.views.rqlogdisplay' r.id %}">{{ r.date|date:"o-m-d H:i" }}</a><td>{{ r.fqdn }}<td>{{ r.errors }}<td>{{ r.warnings }}
+<tr><td><a href="{% url 'rqlogdisplay' r.id %}">{{ r.date|date:"o-m-d H:i" }}</a><td>{{ r.fqdn }}<td>{{ r.errors }}<td>{{ r.warnings }}
 {% endfor %}
 </table>
 </div>

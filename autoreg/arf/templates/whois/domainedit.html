@@ -14,15 +14,15 @@ Created on: {% endblocktrans %}{{ whoisdomain.created_on|date:"o-m-d H:i" }}
 <strong>{% trans "Edit" %}</strong>
 <table>
 <tr>
-<td><A class="miniaction" HREF="{% url 'arf.whois.views.contactchange' fqdn %}">{% trans "Registrant" %}</A>
-<td><A class="miniaction" HREF="{% url 'arf.webdns.views.domainns' fqdn %}">{% trans "Nameservers" %}</a>
-<td>{% if has_ns and can_ds %}<A class="miniaction" HREF="{% url 'arf.webdns.views.domainds' fqdn %}">DNSSEC</A>{% endif %}
+<td><A class="miniaction" HREF="{% url 'contactchange' fqdn %}">{% trans "Registrant" %}</A>
+<td><A class="miniaction" HREF="{% url 'domainns' fqdn %}">{% trans "Nameservers" %}</a>
+<td>{% if has_ns and can_ds %}<A class="miniaction" HREF="{% url 'domainds' fqdn %}">DNSSEC</A>{% endif %}
 <td>{% if registry_hold and end_grace_period %}
-<form action="{% url 'arf.whois.views.domainundelete' fqdn %}" method="POST">
+<form action="{% url 'domainundelete' fqdn %}" method="POST">
 {% csrf_token %}
 <INPUT class="miniaction" TYPE="submit" NAME="undel" VALUE="{% trans "Undelete (until" %} {{ end_grace_period|date:"o-m-d" }})">
 {% else %}
-<td><form action="{% url 'arf.whois.views.domaindelete' fqdn %}" method="POST">
+<td><form action="{% url 'domaindelete' fqdn %}" method="POST">
 {% csrf_token %}
 <INPUT class="miniaction" TYPE="submit" NAME="del" VALUE="{% trans "Delete Domain" %}">
 {% endif %}

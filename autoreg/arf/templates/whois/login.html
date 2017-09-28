@@ -19,12 +19,12 @@
 {% endif %}
 <INPUT class="action" TYPE="submit" NAME="login" VALUE="{% trans "Login" %}">
 </FORM>
-<a class="action" href="{% url 'arf.whois.views.contactcreate' %}"><span>{% trans "Register" %}</span></a>
+<a class="action" href="{% url 'contactcreate' %}"><span>{% trans "Register" %}</span></a>
 <div class="loginhelp">
 <strong>{% trans "You can't remember the contact handle or password?" %}</strong>
 <ul>
-<li>{% url 'arf.whois.views.makeresettoken' as urlreset %}{% blocktrans %}If you forgot your password or never had one, <a href="{{ urlreset }}">set a new password here</a>.{% endblocktrans %}
-<li>{% url 'arf.whois.views.contactbydomain' as urlbydom %}{% blocktrans %}If you remember your domain name, you can <a href="{{ urlbydom }}">find your contact handle</a>.{% endblocktrans %}
+<li>{% url 'makeresettoken' as urlreset %}{% blocktrans %}If you forgot your password or never had one, <a href="{{ urlreset }}">set a new password here</a>.{% endblocktrans %}
+<li>{% url 'contactbydomain' as urlbydom %}{% blocktrans %}If you remember your domain name, you can <a href="{{ urlbydom }}">find your contact handle</a>.{% endblocktrans %}
 </ul>
 </div>
 {% endblock %}

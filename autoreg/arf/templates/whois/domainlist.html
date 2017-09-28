@@ -3,7 +3,7 @@
 {% block title %}{% blocktrans %}Domain List for {{ handle }}{{ suffix }}{% endblocktrans %}{% endblock %}
 {% block msg %}
 <div>
-<a class="action" href="{% url 'arf.webdns.views.domainns' %}">{% trans "New Domain" %}</A>
+<a class="action" href="{% url 'domainns' %}">{% trans "New Domain" %}</A>
 </div>
 {% endblock %}
 {% block form %}
@@ -12,7 +12,7 @@
 <tr><th>{% trans "Domain" %}</th><th>{% trans "Created" %}</th><th>{% trans "Updated" %}</th><th>DNSSEC</th><th>{% trans "Flags" %}</th></tr>
 {% for dds in list %}
 {% if dds.5 and dds.6 %}<tr class="deldom">{% else %}<tr>{% endif %}
-<td><a href="{% url 'arf.whois.views.domainedit' dds.0 %}">{{ dds.8 }}</a>
+<td><a href="{% url 'domainedit' dds.0 %}">{{ dds.8 }}</a>
 <td>{{ dds.3|date:"o-m-d H:i" }}
 <td>{{ dds.4|date:"o-m-d H:i" }}
 <td>
@@ -23,7 +23,7 @@
  Unavailable
 {% endif %}
 <td>{% if dds.5 and dds.6 %}{% trans "deleted" %}{% endif %}
-<td><A class="miniaction" HREF="{% url 'arf.whois.views.domainedit' dds.0 %}">►</A>
+<td><A class="miniaction" HREF="{% url 'domainedit' dds.0 %}">►</A>
 {% endfor %}</table>
 {% if next %}<a href="{{ next }}">{% trans "Continue" %}</a>{% endif %}
 {% endblock %}

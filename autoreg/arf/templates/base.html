@@ -10,24 +10,24 @@
 <BODY>
 <nav class="main">
 {% if user.is_authenticated %}
-<A HREF="{% url 'arf.whois.views.domainlist' %}">{% trans "Domains" %}</A>
+<A HREF="{% url 'domainlist' %}">{% trans "Domains" %}</A>
 </nav>
 <nav class="profile">
  <span class="handle">{{ user.username }}{{ suffix }}</span>:
- <A HREF="{% url 'arf.whois.views.chpass' %}">{% trans "Password" %}</A>
- <A HREF="{% url 'arf.whois.views.contactchange' %}">{% trans "Information" %}</A>
- <A HREF="{% url 'arf.whois.views.logout' %}">{% trans "Logout" %}</A>
+ <A HREF="{% url 'chpass' %}">{% trans "Password" %}</A>
+ <A HREF="{% url 'contactchange' %}">{% trans "Information" %}</A>
+ <A HREF="{% url 'logout' %}">{% trans "Logout" %}</A>
 {% if is_admin %}
 </nav>
 <nav class="admin">
- <a href="{% url 'arf.requests.views.rqlist' %}">{% trans "Requests" %}</A>
- <a href="{% url 'arf.requests.views.rqloglist' %}">{% trans "Log" %}</A>
- <a href="{% url 'arf.logs.views.loglist' %}">{% trans "Action log" %}</A>
- <a href="{% url 'arf.webdns.views.special' %}">{% trans "Special" %}</A>
+ <a href="{% url 'rqlist' %}">{% trans "Requests" %}</A>
+ <a href="{% url 'rqloglist' %}">{% trans "Log" %}</A>
+ <a href="{% url 'loglist' %}">{% trans "Action log" %}</A>
+ <a href="{% url 'special' %}">{% trans "Special" %}</A>
 {%if numdom %}{{ numdom }} {% trans "domains" %}{% endif %}
 {% endif %}
 {% else %}
- <A HREF="{% url 'arf.whois.views.domainlist' %}">{% trans "Login" %}</A>
+ <A HREF="{% url 'domainlist' %}">{% trans "Login" %}</A>
 {% endif %}
 </nav>
 <HR>

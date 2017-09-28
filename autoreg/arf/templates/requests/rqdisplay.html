@@ -2,7 +2,7 @@
 {% block title %}{% trans "Request display" %}{% endblock %}
 {% block msg %}
 <a href="#bottom">{% trans "Jump to bottom" %}</a>
-<FORM ACTION="{% url 'arf.requests.views.rqval' %}" METHOD="POST">
+<FORM ACTION="{% url 'rqval' %}" METHOD="POST">
 {% csrf_token %}
 {% if goto %}<input name="goto" type="hidden" value="{{ goto }}">{% endif %}
 {% for r in rlist %}
@@ -22,7 +22,7 @@
 {% endif %}
 
 Tags: {% if r.tags != None %}{{ r.tags }}{% endif %}<br>
-<a href="{% url 'arf.requests.views.rqedit' r.id %}" target="_blank">{% trans "Edit whois/tags" %}</a>
+<a href="{% url 'rqedit' r.id %}" target="_blank">{% trans "Edit whois/tags" %}</a>
 
 <br>
 {% for w in r.wlistout %}
