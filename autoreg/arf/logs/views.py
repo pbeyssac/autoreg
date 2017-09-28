@@ -19,7 +19,7 @@ def loglist(request):
   is_admin = check_is_admin(request.user.username)
   if not is_admin:
     raise PermissionDenied
-  log = Log.objects.select_related('contact__handle').all().order_by('-date')
+  log = Log.objects.all().order_by('-date')
   paginator = Paginator(log, 100)
 
   page = request.GET.get('page')
