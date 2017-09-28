@@ -28,10 +28,10 @@ from autoreg.whois.db import check_handle_domain_auth, \
 
 from ..requests.models import Requests, rq_make_id
 from ..whois.models import Contacts, Whoisdomains, check_is_admin
-from ..whois.views import registrant_form
+from ..whois.views import registrant_form, login
 from .models import Domains, Rrs, Zones
 
-URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
+URILOGIN = reverse_lazy(login)
 
 
 class newdomain_form(registrant_form):

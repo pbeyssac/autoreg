@@ -29,9 +29,10 @@ from django.utils.translation import ugettext as _
 
 from . import models
 from ..webdns.models import Admins, Zones
+from ..whois import views as whois_views
 
 
-URILOGIN = reverse_lazy('autoreg.arf.whois.views.login')
+URILOGIN = reverse_lazy(whois_views.login)
 
 _l3match = re.compile('^[^\.]+\.[^\.]+\.[^\.]+\..+$')
 _attrval = re.compile('^([a-z0-9A-Z-]+):\s*(.*[^\s]+|)\s*$')
