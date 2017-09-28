@@ -3,7 +3,6 @@
 from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import render
-from django.template import RequestContext
 from django.utils.translation import ugettext_lazy, ugettext as _
 
 from autoreg.conf import HANDLESUFFIX, SITENAME
@@ -31,9 +30,9 @@ def loglist(request):
   except EmptyPage:
     logpage = paginator.page(paginator.num_pages)
 
-  vars = RequestContext(request, {'is_admin': is_admin, 'list': logpage,
-                                  'suffix': HANDLESUFFIX,
-                                  'sitename': SITENAME,
-                                  'numdom': Whoisdomains.objects.all().count()})
+  vars = {'is_admin': is_admin, 'list': logpage,
+          'suffix': HANDLESUFFIX,
+          'sitename': SITENAME,
+          'numdom': Whoisdomains.objects.all().count()}
 
   return render(request, 'logs/log.html', vars)

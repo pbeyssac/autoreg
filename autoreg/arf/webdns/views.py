@@ -14,7 +14,6 @@ import django.forms as forms
 from django.http import HttpResponseRedirect, HttpResponseNotFound, \
   HttpResponseForbidden, StreamingHttpResponse
 from django.shortcuts import render
-from django.template import RequestContext
 from django.utils import translation
 from django.utils.translation import ugettext_lazy, ugettext as _
 
@@ -274,12 +273,11 @@ def domainds(request, fqdn):
   elif request.method != "GET":
     raise SuspiciousOperation
 
-  vars = RequestContext(request,
-     { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
-       'verbose': verbose, 'is_admin': is_admin,
-       'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr,
-       'sitename': SITENAME,
-       'suffix': HANDLESUFFIX })
+  vars = { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
+           'verbose': verbose, 'is_admin': is_admin,
+           'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr,
+           'sitename': SITENAME,
+           'suffix': HANDLESUFFIX }
   return render(request, 'dns/dsedit.html', vars)
 
 def _get_rr_nsip(dd, fqdn):
@@ -346,7 +344,6 @@ def _adopt_orphan(request, ddro, dbh, fqdn, form):
     vars['whoisout'] = whoisout.getvalue()
   else:
     vars['msg'] = errmsg
-  vars = RequestContext(request, vars)
   return render(request, "dns/orphan.html", vars)
 
 def domainns(request, fqdn=None):
@@ -505,17 +502,16 @@ def domainns(request, fqdn=None):
   while len(nsiplist) < 9:
     nsiplist.append(('', ''))
 
-  vars = RequestContext(request,
-     { 'newdomain': newdomain,
-       'captcha': captcha, 'captcha_key': settings.RECAPTCHA_PUBLIC_KEY,
-       'is_admin': is_admin,
-       'fqdn': fqdn or '', 'rrlist': rrlist,
-       'th': th, 'ah': ah,
-       'errors': errors,
-       'form': form,
-       'nsiplist': nsiplist,
-       'sitename': SITENAME,
-       'suffix': HANDLESUFFIX })
+  vars = { 'newdomain': newdomain,
+           'captcha': captcha, 'captcha_key': settings.RECAPTCHA_PUBLIC_KEY,
+           'is_admin': is_admin,
+           'fqdn': fqdn or '', 'rrlist': rrlist,
+           'th': th, 'ah': ah,
+           'errors': errors,
+           'form': form,
+           'nsiplist': nsiplist,
+           'sitename': SITENAME,
+           'suffix': HANDLESUFFIX }
   return render(request, 'dns/nsedit.html', vars)
 
 
@@ -608,11 +604,10 @@ def special(request):
   else:
     raise SuspiciousOperation
 
-  vars = RequestContext(request,
-     { 'is_admin': is_admin,
-       'form': form,
-       'form2': form2,
-       'msg': msg,
-       'sitename': SITENAME,
-       'suffix': HANDLESUFFIX })
+  vars = { 'is_admin': is_admin,
+           'form': form,
+           'form2': form2,
+           'msg': msg,
+           'sitename': SITENAME,
+           'suffix': HANDLESUFFIX }
   return render(request, 'dns/special.html', vars)
