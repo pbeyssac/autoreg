@@ -318,7 +318,23 @@ def rqlist(request, page='0'):
   email = request.GET.get('email', None)
   if email:
     rlist = rlist.filter(email=email)
+  handle = request.GET.get('handle', None)
+  if handle:
+    rlist = rlist.filter(contact__handle=handle)
+  domsub = request.GET.get('domsub', None)
+  if domsub:
+    rlist = rlist.filter(fqdn__icontains=domsub)
   cpage = None
+
+  filter = ''
+  if email:
+    filter += '&email=' + email
+  if handle:
+    filter += '&handle=' + handle
+  if domsub:
+    filter += '&domsub=' + domsub
+  if filter:
+    filter = '?' + filter[1:]
 
   num = len(rlist)
 
@@ -328,8 +344,7 @@ def rqlist(request, page='0'):
     npages = 1
   page = int(page)
   if page > npages or page <= 0:
-    qargs = '?email='+email if email else ''
-    return HttpResponseRedirect(reverse(rqlist, args=[str(npages)]) + qargs)
+    return HttpResponseRedirect(reverse(rqlist, args=[str(npages)]) + filter)
 
   numdom = Whoisdomains.objects.all().count()
 
@@ -345,8 +360,9 @@ def rqlist(request, page='0'):
         'is_admin': check_is_admin(request.user.username),
         'sitename': SITENAME,
         'suffix': HANDLESUFFIX}
-  if email:
-    v['filter_email'] = email
+  if filter:
+    v['filter'] = filter
+    v['filter_desc'] = filter[1:].replace('&', ' ')
   if page != 1:
     v['prev'] = page-1
   if page < npages:

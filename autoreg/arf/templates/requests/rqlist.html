@@ -2,14 +2,14 @@
 {% block title %}{% trans "Request List" %}{% endblock %}
 {% block msg %}
 {% if prev %}<a class="miniaction" href="{{ prev }}">&lt;</a> {% endif %}
-{% for p in pages %}{% if p == cpage %}{{ p }} {% else %}<a href="{{ p }}{% if filter_email %}?email={{ filter_email }}{% endif %}">{{ p }} </a>{% endif %}{% endfor %}
+{% for p in pages %}{% if p == cpage %}{{ p }} {% else %}<a href="{{ p }}{% if filter %}?{{ filter }}{% endif %}">{{ p }} </a>{% endif %}{% endfor %}
 {% if next %}<a class="miniaction" href="{{ next }}">&gt;</a> {% endif %}
-<form action="{% url 'arf.requests.views.rqlistdom' %}" method="GET">
-{% trans "Search by domain:" %} <input type="texte" name="domain">
+<form action="{% url 'arf.requests.views.rqlist' %}" method="GET">
+{% trans "Search by domain substring:" %} <input type="text" name="domsub">
 <input class="action" type="submit" value="{% trans "Search" %}">
 </form>
 
-{% if filter_email %}<div class="filter">{% trans "Remove" %} <a href="1">{% trans "email filter" %}</a></div>{% endif %}
+{% if filter %}<div class="filter"><a href="1">{% trans "Remove filters" %}</a> {{ filter_desc }}</div>{% endif %}
 <form action="{% url 'arf.requests.views.rq' %}" method="POST">
 {% csrf_token %}
 <input name="page" type="hidden" value="{{ cpage }}">
@@ -17,7 +17,7 @@
 {% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}>
 <td><input type="checkbox" name="{{ r.id }}" value="">
 <input type="hidden" name="h{{ r.id }}">
-<td><a href="{% if r.rclass == 'dup' %}{% url 'arf.requests.views.rqdom' r.fqdn %}{% elif r.rclass == 'dup2' %}{% url 'arf.requests.views.rqdom' r.fqdn %}{% else %}{% url 'arf.requests.views.rq' r.id %}{% endif %}?page={{ cpage }}">{{ r.id|stringformat:".14s" }}</a><td>{{ r.fqdn }}<td><a href="{% url 'arf.requests.views.rqlist' %}?email={{ r.email }}&cpage={{ cpage }}">{{ r.email }}</a><td>{% if r.tags != None %}{{ r.tags }}{% endif %}
+<td><a href="{% if r.rclass == 'dup' %}{% url 'arf.requests.views.rqdom' r.fqdn %}{% elif r.rclass == 'dup2' %}{% url 'arf.requests.views.rqdom' r.fqdn %}{% else %}{% url 'arf.requests.views.rq' r.id %}{% endif %}?page={{ cpage }}">{{ r.id|stringformat:".14s" }}</a><td>{{ r.fqdn }}<td><a href="{% url 'arf.requests.views.rqlist' %}?handle={{ r.contact.handle }}&cpage={{ cpage }}">{{ r.contact.handle }}{{ suffix }}</a><td>{% if r.tags != None %}{{ r.tags }}{% endif %}
 {% endfor %}
 </table>
 
