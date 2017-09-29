@@ -240,7 +240,7 @@ def domainds(request, fqdn):
 
     if act == 'del' and value:
       if dd.delrr(fqdn, None, '', 'DS', value) < 1:
-        dserrs.append('Cannot delete DS record')
+        dserrs.append(_('Cannot delete DS record'))
       else:
         # Refresh dscur
         rrv = value.split(' ', 3)
@@ -537,7 +537,7 @@ def special(request):
         handle = suffixstrip(form2.cleaned_data['handle']).upper()
         contactlist = Contacts.objects.filter(handle=handle)
         if not contactlist:
-          msg = _('Contact not found')
+          msg = _('Contact %s not found') % suffixadd(handle)
           contact = None
         else:
           contact = contactlist[0]
@@ -585,8 +585,8 @@ def special(request):
                         for d in Whoisdomains.objects.filter(
                           domaincontact__contact__handle=handle)
                           .order_by('fqdn').distinct()]
-        msg = _('Copied %d domain(s) from contact %s'
-                % (len(domainlist), suffixadd(handle)))
+        msg = _('Copied %(ndom)d domain(s) from contact %(handle)s'
+                % {'ndom': len(domainlist), 'handle': suffixadd(handle)})
         v = {'domains': '\n'.join(domainlist)}
         form = special_form(v)
       else:
