@@ -8,7 +8,6 @@ import re
 import subprocess
 import sys
 
-import psycopg2
 
 from ..whois.models import check_is_admin, Whoisdomains
 from autoreg.conf import dbstring, HANDLESUFFIX, SITENAME
@@ -16,6 +15,7 @@ import autoreg.dns.db
 from autoreg.whois.db import admin_login, country_from_iso
 import autoreg.whois.query as query
 import autoreg.zauth
+
 
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger

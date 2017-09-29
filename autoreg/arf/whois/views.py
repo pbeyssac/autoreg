@@ -229,7 +229,6 @@ def login(request):
     if request.user.is_authenticated():
       #django.contrib.auth.logout(request)
       return HttpResponseRedirect(next)
-      #return HttpResponse('OK')
     if not request.session.test_cookie_worked():
       vars['msg'] = _("Please enable cookies")
       vars['form'] = contactlogin_form().as_table()
