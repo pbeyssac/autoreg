@@ -18,7 +18,7 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy, ugettext as _
 
 import autoreg.arf.whois.views as whois_views
-from autoreg.conf import dbstring, HANDLESUFFIX, SITENAME
+from autoreg.conf import dbstring, HANDLESUFFIX
 import autoreg.dns.check
 import autoreg.dns.db
 import autoreg.dns.dnssec
@@ -274,10 +274,8 @@ def domainds(request, fqdn):
     raise SuspiciousOperation
 
   vars = { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
-           'verbose': verbose, 'is_admin': is_admin,
-           'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr,
-           'sitename': SITENAME,
-           'suffix': HANDLESUFFIX }
+           'verbose': verbose,
+           'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr }
   return render(request, 'dns/dsedit.html', vars)
 
 def _get_rr_nsip(dd, fqdn):
@@ -331,8 +329,7 @@ def _is_orphan(fqdn, ddro):
   return False, _("does not exist in zone")
 
 def _adopt_orphan(request, ddro, dbh, fqdn, form):
-  vars = {'is_admin': True, 'fqdn': fqdn.upper(),
-          'sitename': SITENAME, 'suffix': HANDLESUFFIX}
+  vars = {'fqdn': fqdn.upper()}
   ok, errmsg = _is_orphan(fqdn, ddro)
   if ok:
     inwhois = _whoisrecord_from_form(fqdn, form, request.user.username)
@@ -504,14 +501,11 @@ def domainns(request, fqdn=None):
 
   vars = { 'newdomain': newdomain,
            'captcha': captcha, 'captcha_key': settings.RECAPTCHA_PUBLIC_KEY,
-           'is_admin': is_admin,
            'fqdn': fqdn or '', 'rrlist': rrlist,
            'th': th, 'ah': ah,
            'errors': errors,
            'form': form,
-           'nsiplist': nsiplist,
-           'sitename': SITENAME,
-           'suffix': HANDLESUFFIX }
+           'nsiplist': nsiplist }
   return render(request, 'dns/nsedit.html', vars)
 
 
@@ -604,10 +598,7 @@ def special(request):
   else:
     raise SuspiciousOperation
 
-  vars = { 'is_admin': is_admin,
-           'form': form,
+  vars = { 'form': form,
            'form2': form2,
-           'msg': msg,
-           'sitename': SITENAME,
-           'suffix': HANDLESUFFIX }
+           'msg': msg }
   return render(request, 'dns/special.html', vars)

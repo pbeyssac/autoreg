@@ -8,7 +8,8 @@ from django.utils import translation
 import autoreg.conf
 
 
-def render_to_mail(templatename, context, fromaddr, toaddrs, language=None):
+def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
+                   language=None):
   """Expand provided templatename and context, send the result
      by email to the indicated addresses."""
 
@@ -27,9 +28,9 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, language=None):
 
   if language is not None:
     with translation.override(language):
-      msg = t.render(Context(context))
+      msg = t.render(Context(context), request)
   else:
-    msg = t.render(Context(context))
+    msg = t.render(Context(context), request)
 
   headers, body = msg.split('\n\n', 1)
   outh = []
