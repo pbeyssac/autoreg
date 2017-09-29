@@ -551,7 +551,7 @@ def chpass(request):
     vars['ehandle'] = suffixadd(handle)
     return render(request, 'whois/passchanged.html', vars)
 
-@cache_control(private=True)
+@cache_control(private=True, max_age=10)
 def domainlist(request, handle=None):
   """Display domain list for a contact"""
   if request.method != "GET":
@@ -764,7 +764,7 @@ def domaineditconfirm(request, fqdn):
   else:
     return HttpResponseRedirect(nexturi)
 
-@cache_control(private=True)
+@cache_control(private=True, max_age=10)
 def domainedit(request, fqdn):
   """Edit domain contacts"""
   # list of shown and editable contact types

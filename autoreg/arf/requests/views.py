@@ -25,6 +25,7 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render
 from django.utils import translation
 from django.utils.translation import ugettext as _
+from django.views.decorators.cache import cache_control
 
 from . import models
 from ..webdns.models import Admins, Zones
@@ -296,6 +297,7 @@ def rqlistdom(request, domain=None):
            'suffix': HANDLESUFFIX }
   return render(request, 'requests/rqlistdom.html', vars)
 
+@cache_control(max_age=10)
 def rqlist(request, page='0'):
   if request.method != "GET":
     raise SuspiciousOperation
@@ -459,6 +461,7 @@ def rqval(request):
   page = render(request, 'requests/rqval.html', vars)
   return page
 
+@cache_control(max_age=10)
 def rqloglist(request):
   if request.method != "GET":
     raise SuspiciousOperation
