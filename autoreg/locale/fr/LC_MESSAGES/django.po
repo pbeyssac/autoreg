@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: autoreg\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-07-05 16:27+0200\n"
+"POT-Creation-Date: 2017-09-29 22:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Pierre Beyssac <translate@eu.org>\n"
 "Language-Team: French <translate@eu.org>\n"
@@ -33,10 +33,6 @@ msgstr "Échec de l'envoi à %(mails)s"
 msgid "creation"
 msgstr "création"
 
-#: autoreg/arf/requests/models.py:160
-msgid "deletion"
-msgstr "destruction"
-
 #: autoreg/arf/requests/models.py:154
 #, python-format
 msgid "Mail to %(mails)s done"
@@ -54,11 +50,6 @@ msgstr "État : committed"
 #: autoreg/arf/requests/models.py:225
 msgid "Status: cancelled"
 msgstr "État : annulé"
-
-#: autoreg/arf/requests/views.py:105 autoreg/arf/requests/views.py:107
-#: autoreg/arf/webdns/views.py:191
-msgid "Domain not found"
-msgstr "Domaine introuvable"
 
 #: autoreg/arf/requests/views.py:134
 msgid "Request not found"
@@ -518,9 +509,9 @@ msgid "Submit"
 msgstr "Valider"
 
 #: autoreg/arf/templates/dns/special.html:3
-#: autoreg/arf/templates/dns/special.html:4
-msgid "Special actions on domain"
-msgstr "Actions spéciales sur le domaine"
+#: autoreg/arf/templates/dns/special.html:6
+msgid "Special actions"
+msgstr "Actions spéciales"
 
 #: autoreg/arf/templates/logs/log.html:7
 #: autoreg/arf/templates/requests/rqloglist.html:7
@@ -549,15 +540,12 @@ msgstr "Affichage de requête"
 msgid "Jump to bottom"
 msgstr "Aller en bas de page"
 
-#: autoreg/arf/templates/requests/rqdisplay.html:11
-msgid "Request"
-msgstr "Requête"
+#: autoreg/arf/templates/requests/rqdisplay.html:10
+#, python-format
+msgid "Request for <span class=\"domain\">%(fqdn)s</span>"
+msgstr "Requête pour <span class=\"domain\">%(fqdn)s</span>"
 
 #: autoreg/arf/templates/requests/rqdisplay.html:14
-msgid "Records to be deleted from zone file"
-msgstr "Enregistrements à supprimer du fichier de zone"
-
-#: autoreg/arf/templates/requests/rqdisplay.html:21
 msgid "Records to be inserted in zone file"
 msgstr "Enregistrements à insérer dans le fichier de zone"
 
@@ -645,15 +633,19 @@ msgstr "Tout sauvegarder"
 msgid "Request List"
 msgstr "Liste des requêtes"
 
-#: autoreg/arf/templates/requests/rqlist.html:9
-msgid "Search by domain:"
-msgstr "Chercher par domaine :"
+#: autoreg/arf/templates/requests/rqlist.html:8
+msgid "Search by domain substring:"
+msgstr "Chercher par sous-chaîne du domaine :"
 
 #: autoreg/arf/templates/requests/rqlist.html:9
 msgid "Search"
 msgstr "Chercher"
 
-#: autoreg/arf/templates/requests/rqlist.html:24
+#: autoreg/arf/templates/requests/rqlist.html:12
+msgid "Remove filters"
+msgstr "Supprimer les filtres"
+
+#: autoreg/arf/templates/requests/rqlist.html:25
 msgid "Default action"
 msgstr "Action par défaut"
 
@@ -944,9 +936,10 @@ msgid "Cancel"
 msgstr "Annulation"
 
 #: autoreg/arf/templates/whois/domainlist.html:3
-#: autoreg/arf/templates/whois/domainlist.html:4 autoreg/arf/webdns/views.py:43
-msgid "Domain List"
-msgstr "Liste des domaines"
+#: autoreg/arf/templates/whois/domainlist.html:10
+#, python-format
+msgid "Domain List for %(handle)s%(suffix)s"
+msgstr "Liste des domaines pour %(handle)s%(suffix)s"
 
 #: autoreg/arf/templates/whois/domainlist.html:6
 msgid "New Domain"
@@ -1160,6 +1153,10 @@ msgstr ""
 "Des instructions de réinitialisation de mot de passe ont été envoyées à "
 "l'adresse courriel de <span class=\"handle\">%(ehandle)s</span>."
 
+#: autoreg/arf/webdns/views.py:44
+msgid "Domain List"
+msgstr "Liste des domaines"
+
 #: autoreg/arf/webdns/views.py:48
 msgid "Lock"
 msgstr "Verrouillage"
@@ -1177,6 +1174,26 @@ msgid "Unhold"
 msgstr "Fin de suspension"
 
 #: autoreg/arf/webdns/views.py:57
+msgid "Contact Handle"
+msgstr "Identifiant de contact"
+
+#: autoreg/arf/webdns/views.py:61
+msgid "Copy contact domain list above"
+msgstr "Copier ci-dessus les domaines de ce contact"
+
+#: autoreg/arf/webdns/views.py:62
+msgid "Go to domain list"
+msgstr "Aller à la liste des domaines"
+
+#: autoreg/arf/webdns/views.py:63
+msgid "Block"
+msgstr "Blocage"
+
+#: autoreg/arf/webdns/views.py:64
+msgid "Unblock"
+msgstr "Déblocage"
+
+#: autoreg/arf/webdns/views.py:98
 msgid "No error, storing for validation...\n"
 msgstr "Pas d'erreur, enregistrement pour validation...\n"
 
@@ -1205,6 +1222,14 @@ msgstr "Enregistré en tant que requête %(rqid)s\n"
 #: autoreg/arf/whois/views.py:953
 msgid "Unauthorized"
 msgstr "Non autorisé"
+
+#: autoreg/arf/webdns/views.py:207
+msgid "Domain not found"
+msgstr "Domaine introuvable"
+
+#: autoreg/arf/webdns/views.py:243
+msgid "Cannot delete DS record"
+msgstr "Impossible de supprimer l'enregistrement DS"
 
 #: autoreg/arf/webdns/views.py:261
 msgid "Requested DS already in zone"
@@ -1237,6 +1262,50 @@ msgstr "Ce contact n'existe pas"
 #: autoreg/arf/webdns/views.py:428
 msgid "NS list is empty"
 msgstr "La liste d'enregistrements NS est vide"
+
+#: autoreg/arf/webdns/views.py:493
+msgid "Cannot delete record"
+msgstr "Impossible de supprimer l'enregistrement"
+
+#: autoreg/arf/webdns/views.py:561 autoreg/arf/whois/views.py:823
+#, python-format
+msgid "Contact %s not found"
+msgstr "Contact %s introuvable"
+
+#: autoreg/arf/webdns/views.py:585
+#, python-format
+msgid "Unheld %d domain(s)"
+msgstr "%d domaine(s) réactivés"
+
+#: autoreg/arf/webdns/views.py:586
+#, python-format
+msgid "Held %d domain(s)"
+msgstr "%d domaine(s) suspendus"
+
+#: autoreg/arf/webdns/views.py:587
+#, python-format
+msgid "Unlocked %d domain(s)"
+msgstr "%d domaine(s) déverrouillés"
+
+#: autoreg/arf/webdns/views.py:588
+#, python-format
+msgid "Locked %d domain(s)"
+msgstr "%d domaine(s) verrouillés"
+
+#: autoreg/arf/webdns/views.py:598
+#, python-format
+msgid "Unblocked %s"
+msgstr "Déblocage %s"
+
+#: autoreg/arf/webdns/views.py:600
+#, python-format
+msgid "Blocked %s"
+msgstr "Blocage %s"
+
+#: autoreg/arf/webdns/views.py:609
+#, python-format
+msgid "Copied %(ndom)d domain(s) from contact %(handle)s"
+msgstr "%(ndom)d copiés depuis le contact %(handle)s"
 
 #: autoreg/arf/whois/views.py:50
 msgid "technical"
@@ -1349,11 +1418,6 @@ msgstr "Désolé, aucun changement d'adresse courriel en attente."
 #: autoreg/arf/whois/views.py:745
 msgid "Invalid token"
 msgstr "Code invalide"
-
-#: autoreg/arf/whois/views.py:846
-#, python-format
-msgid "Contact %s not found"
-msgstr "Contact %s introuvable"
 
 #: autoreg/arf/whois/views.py:841
 msgid "Sorry, must leave at least one contact!"
