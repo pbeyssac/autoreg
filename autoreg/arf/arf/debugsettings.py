@@ -26,6 +26,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'autoreg',
     'autoreg.arf',		# for templates & static web files
     'autoreg.arf.webdns',
     'autoreg.arf.logs',
@@ -127,8 +128,10 @@ ADMINS = (
 
 MANAGERS = ADMINS
 FORCEDEBUGMAIL='pb@eu.org'
+INTERNAL_IPS=['192.168.0.0/24', '::1']
 
 RECAPTCHA_PUBLIC_KEY='6LdLMRkTAAAAACM-hHnNRNq_ptBpeU6W_5AL8-ta'
+RECAPTCHA_PRIVATE_KEY='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 RECAPTCHA_API_URL='https://www.google.com/recaptcha/api/siteverify'
 RECAPTCHA_REQUESTS_MIN=10
 RECAPTCHA_DOMAINS_MIN=10

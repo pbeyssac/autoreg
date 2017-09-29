@@ -5,9 +5,9 @@ package (Python egg, etc).
 
 It currently requires:
 	- Python 2.7; untested with Python 3.*.
-	- Django 1.8.* or 1.9.*
+	- Django 1.8.* or 1.9.* or 1.10.*
 	- WSGI (for Django)
-	- Postgres 9.6
+	- Postgres >= 9.6
 	- Bind 9.10
 	- Postfix 3.2 (or another mail-transfer agent if you convert
           handles.cf)

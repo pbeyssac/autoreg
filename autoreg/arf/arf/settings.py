@@ -28,6 +28,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.messages',
     'django.contrib.sites',
+    'autoreg',
     'autoreg.arf',		# for templates & static web files
     'autoreg.arf.webdns',
     'autoreg.arf.logs',
@@ -90,7 +91,7 @@ LANGUAGES = (
 )
 
 LOCALE_PATHS = (
-	'/home/freenix/pb/autoreg/locale',
+	'/usr/local/autoreg/arf/locale',
 )
 
 #
@@ -118,7 +119,7 @@ RECAPTCHA_PUBLIC_KEY='6LdLMRkTAAAAACM-hHnNRNq_ptBpeU6W_5AL8-ta'
 RECAPTCHA_PRIVATE_KEY='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 RECAPTCHA_API_URL='https://www.google.com/recaptcha/api/siteverify'
 RECAPTCHA_REQUESTS_MIN=10
-RECAPTCHA_DOMAINS_MIN=100
+RECAPTCHA_DOMAINS_MIN=10
 
 LANGUAGE_COOKIE_AGE=1209600
 CSRF_COOKIE_HTTPONLY=True
