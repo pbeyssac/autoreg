@@ -220,7 +220,7 @@ def login(request):
     f = contactlogin_form()
     form = f.as_table()
     request.session.set_test_cookie()
-    vars = { 'form': form, 'posturi': request.path, 'next': next }
+    vars = { 'form': form, 'next': next }
     return render(request, 'whois/login.html', vars)
   elif request.method == "POST":
     next = request.POST.get('next', reverse(domainlist))
@@ -239,7 +239,7 @@ def login(request):
     password = request.POST.get('password', '')
     handle = suffixstrip(handle)
 
-    vars = {'posturi': request.path, 'next': request.path,
+    vars = {'next': request.path,
             'form': contactlogin_form().as_table()}
     user = django.contrib.auth.authenticate(username=handle, password=password)
     if user is not None:
@@ -288,7 +288,7 @@ def makeresettoken(request, handle=None):
     else:
       f = contactbyhandle_form()
     form = f.as_table()
-    vars = { 'form': form, 'posturi': request.path }
+    vars = { 'form': form }
     return render(request, 'whois/resetpass.html', vars)
   elif request.method == "POST":
     handle = request.POST.get('handle', '').upper()
@@ -296,8 +296,7 @@ def makeresettoken(request, handle=None):
     handle = suffixstrip(handle)
     ctl = Contacts.objects.filter(handle=handle)
     if len(ctl) == 0:
-      vars = { 'posturi': request.path,
-               'ehandle': suffixadd(handle),
+      vars = { 'ehandle': suffixadd(handle),
                'next': request.path }
       return render(request, 'whois/contactnotfound.html', vars)
     if len(ctl) != 1:
@@ -329,7 +328,7 @@ def resetpass2(request, handle):
      on the designated contact."""
   f = resetpass_form()
   form = f.as_table()
-  vars = {'form': form, 'posturi': request.path}
+  vars = {'form': form}
   if request.method == "GET":
     return render(request, 'whois/resetpass2.html', vars)
   elif request.method == "POST":
@@ -426,7 +425,7 @@ def contactcreate(request):
                         % {'handle': suffixadd(ehandle), 'email': d['em'][0]}
         return render(request, 'whois/msgnext.html', vars)
       # else: fall through
-  vars.update({'form': form, 'posturi': request.path,
+  vars.update({'form': form,
                'p_errors': p_errors})
   return render(request, 'whois/contactcreate.html', vars)
 
@@ -455,7 +454,7 @@ def contactvalidate(request, handle, valtoken):
   ct = ctl[0]
   if request.method == "GET":
     vars = { 'handle': suffixadd(handle), 'email': ct.email,
-             'valtoken': valtoken, 'posturi': request.path }
+             'valtoken': valtoken }
     return render(request, 'whois/contactvalidate.html', vars)
   elif request.method == "POST":
     ct.validated_on = datetime.datetime.today()
@@ -489,7 +488,7 @@ def chpass(request):
   handle = request.user.username
   f = chpass_form()
   form = f.as_table()
-  vars = {'form': form, 'posturi': request.path}
+  vars = {'form': form}
   if request.method == "GET":
     return render(request, 'whois/chpass.html', vars)
   elif request.method == "POST":
@@ -547,7 +546,7 @@ def domainlist(request, handle=None):
   except EmptyPage:
     dompage = paginator.page(paginator.num_pages)
 
-  vars = { 'posturi': request.path, 'list': dompage,
+  vars = { 'list': dompage,
            'handle': handle }
   return render(request, 'whois/domainlist.html', vars)
 
@@ -578,7 +577,7 @@ def contactchange(request, registrantdomain=None):
   else:
     ehandle = handle
 
-  vars = {'posturi': request.path}
+  vars = {}
   if request.method == "GET":
     c = Contacts.objects.get(handle=ehandle)
     initial = c.initial_form()
@@ -671,7 +670,7 @@ def changemail(request):
   handle = request.user.username
   f = changemail_form()
   form = f.as_table()
-  vars = {'form': form, 'posturi': request.path}
+  vars = {'form': form}
 
   ctl = Contacts.objects.filter(handle=handle)
   if len(ctl) != 1:
@@ -822,7 +821,7 @@ def domainedit(request, fqdn):
       if cthandle == handle:
         posturi = reverse(domaineditconfirm, args=[f.lower()])
       else:
-        posturi = request.path
+        posturi = ''
       formlist.append({'contact_type': ugettext_lazy(ct),
                        'handle': suffixadd(cthandle),
                        'posturi': posturi })
@@ -836,8 +835,7 @@ def domainedit(request, fqdn):
           'whoisdisplay': unicode(dbdom),
           'has_ns': has_ns, 'has_ds': has_ds, 'can_ds': can_ds,
           'registry_hold': registry_hold, 'end_grace_period': end_grace_period,
-          'addform': {'posturi': request.path,
-                      'domcontact_form': domcontact_form()}}
+          'addform': { 'domcontact_form': domcontact_form()} }
   return render(request, 'whois/domainedit.html', vars)
 
 @cache_control(private=True)
