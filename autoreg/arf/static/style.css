@@ -22,7 +22,7 @@ div.error {margin-top: .2em; margin-bottom: .2em;}
 .dslist td:nth-child(5) {text-align: right;}
 .dslist td:nth-child(6) {text-align: right;}
 .domainlist {margin-bottom: 1em; margin-top: 1em;}
-.domainlist td:first-child {font-family: monospace;}
+.domainlist td:first-child {font-family: monospace; background-color:#ddf;}
 .domainlist td {padding-left: .2em; padding-right: .2em;}
 .domainlist tr:nth-child(2n) {background-color:#eef;}
 .whoisdisplay {background-color:#eef;}
@@ -31,6 +31,7 @@ div.error {margin-top: .2em; margin-bottom: .2em;}
 .rqaction label {display: block;}
 .rqlist {border-spacing: 0 2px;}
 .rqlist td:nth-child(3) {font-family: monospace;}
+.rqloglist td:nth-child(2) {font-family: monospace; background-color:#ddf;}
 .filter {background-color:#ddf; margin-top: 1em; margin-bottom: 1em; display: inline-block;}
 
 .nschecks {margin-top: 1em; background-color:#fed;}
@@ -46,9 +47,10 @@ span.handle {
   background-color:#ddf;
   padding-left: .4em;
   padding-right: .4em;
+  white-space: nowrap;
 }
 
-span.domain {font-weight: bold; font-family: monospace; background-color:#eef;}
+span.domain {font-weight: bold; font-family: monospace; background-color:#ddf;}
 span.email {font-weight: bold; font-family: monospace; background-color:#eef;}
 .rrtype {font-weight: bold; font-family: monospace; background-color:#eee;}
 

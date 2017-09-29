@@ -4,9 +4,9 @@
 
 <div class="rqloglist">
 <table>
-<tr><td>{% trans "Date" %}<td>{% trans "Domain" %}<td>{% trans "Errors" %}<td>{% trans "Warnings" %}
+<tr><td>{% trans "Date" %}<td>{% trans "Domain" %}<td>{% trans "Contact" %}<td>{% trans "Errors" %}<td>{% trans "Warnings" %}
 {% for r in list %}
-<tr><td><a href="{% url 'rqlogdisplay' r.id %}">{{ r.date|date:"o-m-d H:i" }}</a><td>{{ r.fqdn }}<td>{{ r.errors }}<td>{{ r.warnings }}
+<tr><td><a href="{% url 'rqlogdisplay' r.id %}">{{ r.date|date:"o-m-d H:i" }}</a><td>{{ r.fqdn }}<td><span class="handle">{{ r.contact.handle }}{{ suffix }}</span><td>{{ r.errors }}<td>{{ r.warnings }}
 {% endfor %}
 </table>
 </div>

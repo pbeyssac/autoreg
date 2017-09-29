@@ -6,7 +6,7 @@
 <table>
 <tr><td>{% trans "Date" %}<td>{% trans "Contact" %}<td>{% trans "Action" %}<td>{% trans "Message" %}
 {% for r in list %}
-<tr><td>{{ r.date|date:"o-m-d H:i" }}<td>{{ r.contact.handle }}{{ suffix }}<td>{{ r.action }}<td>{% if r.message %}{{ r.message }}{% endif %}
+<tr><td>{{ r.date|date:"o-m-d H:i" }}<td><span class="handle">{{ r.contact.handle }}{{ suffix }}</span><td>{{ r.action }}<td>{% if r.message %}{{ r.message }}{% endif %}
 {% endfor %}
 </table>
 </div>

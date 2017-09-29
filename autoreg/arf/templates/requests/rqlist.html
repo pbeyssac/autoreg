@@ -17,7 +17,7 @@
 {% for r in rlist %}<tr{% if r.rclass %} class="{{ r.rclass }}"{% endif %}>
 <td><input type="checkbox" name="{{ r.id }}" value="">
 <input type="hidden" name="h{{ r.id }}">
-<td><a href="{% if r.rclass == 'dup' %}{% url 'rqdom' r.fqdn %}{% elif r.rclass == 'dup2' %}{% url 'rqdom' r.fqdn %}{% else %}{% url 'rq' r.id %}{% endif %}?page={{ cpage }}">{{ r.id|stringformat:".14s" }}</a><td>{{ r.fqdn }}<td><a href="{% url 'rqlist' %}?handle={{ r.contact.handle }}&cpage={{ cpage }}">{{ r.contact.handle }}{{ suffix }}</a><td>{% if r.tags != None %}{{ r.tags }}{% endif %}
+<td><a href="{% if r.rclass == 'dup' %}{% url 'rqdom' r.fqdn %}{% elif r.rclass == 'dup2' %}{% url 'rqdom' r.fqdn %}{% else %}{% url 'rq' r.id %}{% endif %}?page={{ cpage }}">{{ r.id|stringformat:".14s" }}</a><td>{{ r.fqdn.lower }}<td><a href="{% url 'rqlist' %}?handle={{ r.contact.handle }}&cpage={{ cpage }}"><span class="handle">{{ r.contact.handle }}{{ suffix }}</span></a><td>{% if r.tags != None %}{{ r.tags }}{% endif %}
 {% endfor %}
 </table>
 
