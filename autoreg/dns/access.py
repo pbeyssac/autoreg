@@ -14,6 +14,7 @@
         modnods: same as 'modify', but keep existing DS records for the zone.
 	delete: delete the entry for domainname in the parent zone,
 		if already there.
+	undelete: undelete domain.
 	cat:	print the zone file on stdout.
 	soa:	update the SOA serial for domainname in the zonefile of
 		the same name, if any update in the zone occurred.
@@ -70,7 +71,8 @@ logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
 		    format='%(asctime)s %(levelname)-8s %(message)s',
 		    datefmt="%Y%m%d %H:%M:%S")
 
-action_list = ['addrr', 'cat', 'delete', 'delrr', 'lock', 'modify', 'unlock',
+action_list = ['addrr', 'cat', 'delete', 'undelete',
+                'delrr', 'lock', 'modify', 'unlock',
 		'hold', 'unhold',
 		'new', 'show', 'soa', 'list', 'showstubs', 'cmpstubs',
                 'newzone', 'expire']
@@ -198,6 +200,8 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   		replace=False, delete=True)
     elif action == 'delete':
       dd.delete(domain, zone, override_internal=internal)
+    elif action == 'undelete':
+      dd.undelete(domain, zone, override_internal=internal)
     elif action == 'lock':
       for domain in domainlist:
         dd.set_registry_lock(domain, zone, True)
