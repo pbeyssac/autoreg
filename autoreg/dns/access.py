@@ -149,12 +149,11 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   else:
       domain = args[0].upper()
 
-  if action == 'n': action='new'
-  elif action == 'modnods':
+  if action == 'modnods':
     action = 'modify'
     keepds = True
-  elif action.startswith('m'):
-    action='modify'
+  elif action == 'mod':
+    action = 'modify'
 
   if action not in action_list:
       usage()
