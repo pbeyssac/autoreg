@@ -12,8 +12,7 @@
 	modify: modify the entry for domainname in the parent zone,
 		if already there; use resource records on stdin.
         modnods: same as 'modify', but keep existing DS records for the zone.
-	delete: delete the entry for domainname in the parent zone,
-		if already there.
+	delete: delete domain, respecting grace period.
 	undelete: undelete domain.
 	cat:	print the zone file on stdout.
 	soa:	update the SOA serial for domainname in the zonefile of
