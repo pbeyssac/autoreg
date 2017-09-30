@@ -67,7 +67,7 @@ class _Zone:
         self._updateserial = True
         self._dbc.execute('UPDATE zones SET updateserial=TRUE WHERE id=%s',
                           (self.id,))
-    def soa(self, forceincr=False):
+    def soa(self, forceincr=False, dyn=None):
         """Update serial for zone in SOA if necessary or forceincr is True."""
         zid = self.id
         serial = self._soaserial
@@ -83,6 +83,12 @@ class _Zone:
         self._updateserial = False
         self._dbc.execute('UPDATE zones SET soaserial=%s, updateserial=FALSE '
                           'WHERE id=%s', (serial,zid))
+        if dyn:
+          dyn.add('', self.name, self._ttl, 'SOA',
+                  '%s %s %d %d %d %d %d' %
+                  (self._soaprimary, self._soaemail,
+                   self._soaserial, self._soarefresh, self._soaretry,
+                   self._soaexpires, self._soaminimum), self._soaprimary)
         return (True, serial)
     def fetch(self, wlock=True):
         """Fetch zone info from database, using self.name as a key.
@@ -162,12 +168,99 @@ class _Zone:
         self._dbc.execute('SELECT NULL FROM zones WHERE id=%s FOR UPDATE',
                           (self.id,))
 
+
+class DynamicUpdate(object):
+  def __init__(self):
+    self.clear()
+  def clear(self):
+    self.masters = {}
+    self.alist = {}
+  def nxdomain(self, label, zone, master):
+    if master not in self.masters:
+      self.masters[zone] = master
+    if zone not in self.alist:
+      self.alist[zone] = []
+    self.alist[zone].append(('nxdomain', label, None, None, None))
+  def yxdomain(self, label, zone, master):
+    if master not in self.masters:
+      self.masters[zone] = master
+    if zone not in self.alist:
+      self.alist[zone] = []
+    self.alist[zone].append(('yxdomain', label, None, None, None))
+  def add(self, label, zone, ttl, typ, value, master):
+    if master not in self.masters:
+      self.masters[zone] = master
+    if zone not in self.alist:
+      self.alist[zone] = []
+    self.alist[zone].append(('add', label, ttl, typ, value))
+  def delete(self, label, zone, typ, value, master):
+    if master not in self.masters:
+      self.masters[zone] = master
+    if zone not in self.alist:
+      self.alist[zone] = []
+    if label:
+      if ('del', label, None, None, None) in self.alist[zone]:
+        return
+    else:
+      # special case for ('del', '', None, None): need to
+      # explicitly delete NS records as they are
+      # not handled by default by the dynamic update
+      # protocol.
+      if typ is None:
+        if ('del', label, None, 'NS', None) in self.alist[zone]:
+          return
+        self.alist[zone].append(('del', label, None, 'NS', value))
+      # fall through to add the other delete order
+    if ('del', label, None, typ, None) in self.alist[zone]:
+      return
+    if ('del', label, None, typ, value) in self.alist[zone]:
+      return
+    self.alist[zone].append(('del', label, None, typ, value))
+  def log(self):
+    if not self.has_actions():
+      return
+  def zone_has_actions(self, zone):
+    actions = [cmd for cmd, label, ttl, typ, value in self.alist[zone]
+                   if cmd == 'add' or cmd == 'del']
+    if actions:
+      return True
+    return False
+  def has_actions(self):
+    for zone, master in self.masters.items():
+      if self.zone_has_actions(zone):
+        return True
+    return False
+  def print(self, out=sys.stdout):
+    self._print(out)
+  def _print(self, out=sys.stdout):
+    for zone, master in self.masters.items():
+      if not self.zone_has_actions(zone):
+        # skip this list if only nxdomain/yxdomain
+        continue
+      #print("server %s" % master, file=out)
+      print("zone %s" % zone, file=out)
+      for cmd, label, ttl, typ, value in self.alist[zone]:
+        if label:
+          fqdn = label + '.' + zone
+        else:
+          fqdn = zone
+        a = "%s %s" % (cmd, fqdn)
+        if ttl is not None:
+          a += " " + str(ttl)
+        if typ is not None:
+          a += " " + typ
+        if value is not None:
+          a += " " + value
+        print(a, file=out)
+
+
 class _Domain:
-    def __init__(self, dbc, id=None, name=None, zone_name=None):
+    def __init__(self, dbc, id=None, name=None, zone=None):
         self._dbc = dbc
         self.id = id
         self.name = name
-        self._zone_name = zone_name
+        self.zone = zone
+        self._zone_name = zone.name
     def new(self, z, login_id, internal=False):
         self._dbc.execute(
           'INSERT INTO domains '
@@ -185,8 +278,10 @@ class _Domain:
         did = self.id
         if wlock: fud=' FOR UPDATE'
         else: fud=''
-        self._dbc.execute('SELECT domains.name, zones.name, registry_hold, '
-                          'registry_lock, internal, zone_id, registrar_id, '
+        self._dbc.execute('SELECT domains.name, zones.name, zones.ttl, '
+                          'zones.soaprimary, '
+                          'registry_hold, registry_lock, '
+                          'internal, zone_id, registrar_id, '
                           'created_by, created_on, updated_by, updated_on, '
                           'end_grace_period '
                           'FROM domains, zones '
@@ -195,7 +290,8 @@ class _Domain:
         if self._dbc.rowcount == 0:
             raise DomainError('Domain id not found', did)
         assert self._dbc.rowcount == 1
-        (self.name, self._zone_name, self._registry_hold, self._registry_lock,
+        (self.name, self._zone_name, self.zone_ttl, self.zone_master,
+         self._registry_hold, self._registry_lock,
          self._internal, self._zone_id, self._registrar_id,
          idcr, self._created_on, idup, self._updated_on,
          self._end_grace_period) = self._dbc.fetchone()
@@ -210,11 +306,12 @@ class _Domain:
         assert self._dbc.rowcount == 1
         self._created_by, self._updated_by = self._dbc.fetchone()
         return True
-    def mod_rr(self, f, delete=False):
+    def mod_rr(self, f, delete=False, dyn=None):
         """Add/remove resource records to domain from file.
 
         f: resource records in zone file format
         domain_name, zone_name and domain_id should be set.
+        delete: True if records must be added, False if must be deleted.
         """
         dom, zone, did = self.name, self._zone_name, self.id
         assert dom is not None and zone is not None and did is not None
@@ -222,6 +319,9 @@ class _Domain:
         # convenient default label if none provided on first line of file
         label = ''
         rowcount = 0
+        if not delete and dyn:
+            # get self.zone_ttl and self.zone_master
+            self.fetch()
         for l in f:
             t = dp.parseline(l)
             if t is None:
@@ -241,28 +341,42 @@ class _Domain:
                     label = label[:-len(dom)-1]
                 elif label == dom:
                     label = ''
+            # compute label for parent zone
+            if label:
+              parentlabel = label + '.' + self.name
+            else:
+              parentlabel = self.name
             # More tests which do not belong in the parser.
             # Check & "compress" the value field somewhat.
             if typ in _dotted_rr:
                 if not value.endswith('.'):
                     raise DomainError(DomainError.NODOT, value)
-                value = value[:-1]
+                uvalue = value[:-1]
             elif typ in ['A', 'AAAA', 'DLV', 'DNSKEY', 'DS', 'HINFO',
                          'RRSIG', 'SPF', 'SSHFP', 'SRV', 'TLSA', 'TXT']:
-                pass
+                uvalue = value
             else:
                 raise DomainError(DomainError.RRUNSUP, typ)
             if not delete:
               self._dbc.execute('INSERT INTO rrs '
                 '(domain_id,label,ttl,rrtype_id,value) '
                 'VALUES (%s,%s,%s,(SELECT id FROM rrtypes WHERE label=%s),%s)',
-                (did, label, ttl, typ, value))
+                (did, label, ttl, typ, uvalue))
+              if dyn:
+                dyn.add(parentlabel, self._zone_name,
+                        ttl or self.zone_ttl,
+                        typ, value,
+                        self.zone_master)
             else:
               self._dbc.execute('DELETE FROM rrs '
                 'WHERE domain_id=%s AND label=%s '
                 'AND rrtype_id IN (SELECT id FROM rrtypes WHERE label=%s) '
                 'AND value = %s',
-                (did, label, typ, value))
+                (did, label, typ, uvalue))
+              if dyn:
+                dyn.delete(parentlabel, self._zone_name,
+                           typ, value,
+                           self.zone_master)
             rowcount += self._dbc.rowcount
         return rowcount
 
@@ -285,16 +399,22 @@ class _Domain:
                  for rr in self._dbc.fetchall() ]
 
     def existsrr(self, label, rrtype):
-        """Count records of a given label and type"""
-        rrtype = rrtype.upper()
+        """Check whether records matching label and type exist
+        for domain.
+        if label is None, match any label.
+        if rrtype is None, match any type."""
+        if rrtype:
+          rrtype = rrtype.upper()
         self._dbc.execute("SELECT EXISTS (SELECT 1 FROM rrs"
-            " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
-            " AND domain_id=%s AND label=%s)", (rrtype, self.id, label));
+          " WHERE (rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
+                " OR %s IS NULL)"
+          " AND (label=%s OR %s is NULL)"
+          " AND domain_id=%s)", (rrtype, rrtype, label, label, self.id))
         assert self._dbc.rowcount == 1
         n, = self._dbc.fetchone()
         return n
 
-    def addrr(self, label, ttl, rrtype, value):
+    def addrr(self, label, ttl, rrtype, value, dyn=None):
         """Add records of a given label, TTL, type and value"""
         dp = parser.DnsParser()
         label, ttl, rrtype, value = dp.normalizeline(label, ttl, rrtype, value)
@@ -302,9 +422,16 @@ class _Domain:
             " (domain_id, label, ttl, rrtype_id, value) "
             " VALUES (%s, %s, %s, (SELECT id FROM rrtypes WHERE label=%s), %s)",
              (self.id, label, ttl, rrtype, undot_value(rrtype, value)));
+        if dyn:
+          if label:
+            label += '.' + self.name
+          else:
+            label = self.name
+          dyn.add(label, self._zone_name, ttl or self.zone_ttl, rrtype, value,
+                  self.zone_master)
         assert self._dbc.rowcount == 1
 
-    def delrr(self, label, rrtype, value):
+    def delrr(self, label, rrtype, value, dyn=None):
         """Delete at most 1 record of a given label, type and value."""
         rrtype = rrtype.upper()
         # This is like a (non-existing) DELETE ... LIMIT 1,
@@ -313,6 +440,12 @@ class _Domain:
             " WHERE rrtype_id=(SELECT id FROM rrtypes WHERE label=%s)"
             " AND domain_id=%s AND label=%s AND value=%s LIMIT 1)",
              (rrtype, self.id, label, undot_value(rrtype, value)));
+        if dyn:
+          if label:
+            label += '.' + self.name
+          else:
+            label = self.name
+          dyn.delete(label, self._zone_name, rrtype, value, self.zone_master)
         return self._dbc.rowcount
 
     def set_updated_by(self, login_id):
@@ -320,16 +453,33 @@ class _Domain:
         self._dbc.execute('UPDATE domains '
                           'SET updated_by=%s, updated_on=NOW() '
                           'WHERE id=%s', (login_id, self.id))
-    def move_hist(self, login_id, domains=False, keepds=False, onlyds=False):
+    def move_hist(self, login_id, domains=False, keepds=False, onlyds=False,
+                  dyn=None):
         """Move resource records to history tables, as a side effect
         (triggers) of deleting them.
 
         The following flags are exclusive of each other:
           keepds: if set, move all but DS records.
           onlyds: if set, only move DS records.
-          domains: if set, also move domain and associated contact records.
+          domains: if set, also move domain.
         """
         did = self.id
+        if dyn:
+          if self.existsrr('', None):
+            dyn.yxdomain(self.name, self._zone_name, self.zone_master)
+          else:
+            dyn.nxdomain(self.name, self._zone_name, self.zone_master)
+          if keepds and not self.existsrr(None, 'DS'):
+            keepds = False
+          for l, ttl, typ, value in self.gen_rrs(canon=True):
+            if keepds:
+              if typ != 'DS':
+                dyn.delete(l, self._zone_name, typ, None, self.zone_master)
+            elif onlyds:
+              if typ == 'DS':
+                dyn.delete(l, self._zone_name, typ, None, self.zone_master)
+            else:
+              dyn.delete(l, self._zone_name, None, None, self.zone_master)
         if keepds:
           self._dbc.execute("DELETE FROM rrs WHERE domain_id=%s"
             " AND"
@@ -366,6 +516,21 @@ class _Domain:
                    % self._end_grace_period, file=outfile)
     def show_rrs(self, outfile=sys.stdout):
         """List all resource records for domain."""
+        n = 0
+        for l, ttl, typ, value in self.gen_rrs():
+            # tabulate output
+            if len(l) > 15: pass
+            elif len(l) > 7: l += '\t'
+            else: l += "\t\t"
+            if ttl is None: ttl = ''
+            else: ttl = str(ttl)
+
+            print(u"\t".join((l, ttl, typ, value)), file=outfile)
+            n += 1
+        if n == 0:
+            print(u'; (NO RECORD)', file=outfile)
+    def gen_rrs(self, canon=False):
+        """Generate all resource records for domain."""
         self._dbc.execute(
             'SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value '
             'FROM domains,rrs,rrtypes '
@@ -386,20 +551,14 @@ class _Domain:
                 l = label + '.' + dom
             else:
                 l = label + dom
-            if l == lastlabel: l = ''
-            else: lastlabel = l
+            if l == lastlabel and not canon:
+                l = ''
+            else:
+                lastlabel = l
 
-            # tabulate output
-            if len(l) > 15: pass
-            elif len(l) > 7: l += '\t'
-            else: l += "\t\t"
-            if ttl is None: ttl = ''
-            else: ttl = str(ttl)
+            yield l, ttl, typ, value
 
-            print(u"\t".join((l, ttl, typ, value)), file=outfile)
             t = self._dbc.fetchone()
-        if self._dbc.rowcount == 0:
-            print(u'; (NO RECORD)', file=outfile)
     def show(self, rrs_only=False, outfile=sys.stdout):
         """Shorthand to call show_head() then show_rrs()."""
         if not rrs_only:
@@ -410,12 +569,36 @@ class _Domain:
         self._registry_lock = val
         self._dbc.execute('UPDATE domains SET registry_lock=%s WHERE id=%s',
                           (val, self.id))
-    def set_registry_hold(self, val):
+    def set_registry_hold(self, val, dyn=None):
         """Set value of boolean registry_hold."""
         self._registry_hold = val
         self._dbc.execute('UPDATE domains SET registry_hold=%s WHERE id=%s',
                           (val, self.id))
-    def set_end_grace_period(self, val):
+        self.set_dyn_hold(val, dyn)
+    def set_dyn_hold(self, val, dyn=None):
+        if dyn is None:
+          return
+        self.fetch()
+        nxdone = False
+        yxdone = False
+        for l, ttl, typ, value in self.gen_rrs(canon=True):
+          if val:
+            if not yxdone and l == self.name:
+              # add a check that the domain is currently in the zone,
+              # for added safety.
+              dyn.yxdomain(self.name, self._zone_name, self.zone_master)
+              yxdone = True
+            dyn.delete(l, self._zone_name, None, None,
+                       self.zone_master)
+          else:
+            if not nxdone and l == self.name:
+              # add a check that the domain is not currently in the zone,
+              # for added safety.
+              dyn.nxdomain(self.name, self._zone_name, self.zone_master)
+              nxdone = True
+            dyn.add(l, self._zone_name, ttl or self.zone_ttl, typ, value,
+                    self.zone_master)
+    def set_end_grace_period(self, val, dyn=None):
         """Set value of the end time of the grace period and registry_hold,
         or remove if val is None."""
         if val is None:
@@ -430,6 +613,7 @@ class _Domain:
                           ' SET registry_hold=%s, end_grace_period=%s'
                           ' WHERE id=%s',
                           (hold, d, self.id))
+        self.set_dyn_hold(val, dyn)
 
 class _ZoneList:
     """Cache zone list from database."""
@@ -529,11 +713,11 @@ class _ZoneList:
         if self._dbc.rowcount == 0:
             if raise_nf:
                 raise DomainError(DomainError.DNOTFOUND, domain)
-            d = _Domain(self._dbc, id=None, name=dname, zone_name=z.name)
+            d = _Domain(self._dbc, id=None, name=dname, zone=z)
             return (d, z)
         assert self._dbc.rowcount == 1
         did, = self._dbc.fetchone()
-        d = _Domain(self._dbc, id=did, name=dname, zone_name=z.name)
+        d = _Domain(self._dbc, id=did, name=dname, zone=z)
         return (d, z)
 
 class db:
@@ -550,6 +734,7 @@ class db:
         self._nowrite = nowrite
         self._login_id = None
         self._zl = _ZoneList(self._dbc)
+        self.dyn = DynamicUpdate()
     def login(self, login):
         """Login requested user."""
         if login == 'DNSADMIN':
@@ -590,6 +775,7 @@ class db:
         domain: FQDN of domain name
         override_internal: if set, allow modifications to internal domains
         """
+        self.dyn.clear()
         d, z = self._zl.find(domain, zone, wlock=True)
         self._check_login_perm(z.name)
         d.fetch(wlock=True)
@@ -602,10 +788,15 @@ class db:
             raise AccessError(AccessError.DHELD)
         if self._nowrite: return
         if grace_days != 0:
-            d.set_end_grace_period(time.time()+grace_days*86400)
+            d.set_end_grace_period(time.time()+grace_days*86400, dyn=self.dyn)
         else:
-            d.move_hist(login_id=self._login_id, domains=True)
+            if d._registry_hold:
+              # no use of dyn here since the domain is already out of the zone
+              d.move_hist(login_id=self._login_id, domains=True)
+            else:
+              d.move_hist(login_id=self._login_id, domains=True, dyn=self.dyn)
         z.set_updateserial()
+        self.dyn.log()
         if commit and self._dbh:
             self._dbh.commit()
     def undelete(self, domain, zone, override_internal=False, commit=True):
@@ -614,6 +805,7 @@ class db:
         domain: FQDN of domain name
         override_internal: if set, allow modifications to internal domains
         """
+        self.dyn.clear()
         d, z = self._zl.find(domain, zone, wlock=True)
         self._check_login_perm(z.name)
         d.fetch(wlock=True)
@@ -624,8 +816,9 @@ class db:
         if not d._registry_hold or not d._end_grace_period:
             raise AccessError(AccessError.DNOTDELETED)
         if self._nowrite: return
-        d.set_end_grace_period(None)
+        d.set_end_grace_period(None, dyn=self.dyn)
         z.set_updateserial()
+        self.dyn.log()
         if commit and self._dbh:
             self._dbh.commit()
     def modify(self, domain, zone, typ, file, override_internal=False,
@@ -648,11 +841,13 @@ class db:
             raise AccessError(AccessError.DINTERNAL)
         if self._nowrite: return
         if replace and not delete:
-          d.move_hist(login_id=self._login_id, domains=False, keepds=keepds)
+          d.move_hist(login_id=self._login_id,
+                      domains=False, keepds=keepds, dyn=self.dyn)
         # add new resource records
-        d.mod_rr(file, delete=delete)
+        d.mod_rr(file, delete=delete, dyn=self.dyn)
         d.set_updated_by(self._login_id)
         z.set_updateserial()
+        self.dyn.log()
         if _commit and self._dbh:
             self._dbh.commit()
     def modifydeleg(self, domain, file, override_internal=False,
@@ -669,11 +864,15 @@ class db:
             raise DomainError(DomainError.DNOTFOUND)
         label, parent = domain.split('.', 1)
         rrfile = io.StringIO(six.text_type(records))
+        self.dyn.clear()
         self.modify(domain, parent, None, rrfile,
-                    override_internal, replace, delete, _commit=False)
+                    override_internal, replace, delete,
+                   _commit=False)
         rrfile = io.StringIO(six.text_type(records))
+        self.dyn.clear()
         self.modify(domain, domain, None, rrfile,
-                    override_internal, replace, delete, _commit=True)
+                    override_internal, replace, delete,
+                   _commit=True)
     def queryrr(self, domain, zone, label, rrtype):
         """Query within domain for records with rrtype and that label.
         domain: FQDN of domain name
@@ -692,8 +891,9 @@ class db:
         d.fetch()
         if self._nowrite:
             return
-        d.addrr(label, ttl, rrtype, value)
+        d.addrr(label, ttl, rrtype, value, dyn=self.dyn)
         z.set_updateserial()
+        self.dyn.log()
         if _commit and self._dbh:
             self._dbh.commit()
     def delrr(self, domain, zone, label, rrtype, value, _commit=True):
@@ -703,9 +903,10 @@ class db:
         d.fetch()
         if self._nowrite:
             return 0
-        n = d.delrr(label, rrtype, value)
+        n = d.delrr(label, rrtype, value, dyn=self.dyn)
         if n:
             z.set_updateserial()
+        self.dyn.log()
         if _commit and self._dbh:
             self._dbh.commit()
         return n
@@ -737,6 +938,7 @@ class db:
         internal: if set, protect domain from user requests and bypass
                 length checks.
         """
+        self.dyn.clear()
         if internal:
           if not check.checkinternalfqdn(domain):
             raise DomainError(DomainError.DINVALID, domain)
@@ -756,10 +958,16 @@ class db:
             raise AccessError(AccessError.DLENLONG, (z.name, z.maxlen))
         if self._nowrite: return
         d.new(z, self._login_id, internal)
+
+        # for dynamic update, add a pre-check that the domain doesn't
+        # already exist, for added safety.
+        self.dyn.nxdomain(d.name, z.name, z._soaprimary)
+
         # add resource records, if provided
         if file:
-            d.mod_rr(file)
+            d.mod_rr(file, dyn=self.dyn)
         z.set_updateserial()
+        self.dyn.log()
         if commit and self._dbh:
             self._dbh.commit()
     def set_registry_lock(self, domain, zone, val):
@@ -775,15 +983,17 @@ class db:
         d, z = self._zl.find(domain, zone, wlock=True)
         self._check_login_perm(z.name)
         if self._nowrite: return
-        d.set_registry_hold(val)
+        d.set_registry_hold(val, dyn=self.dyn)
         z.set_updateserial()
+        self.dyn.log()
         if self._dbh:
           self._dbh.commit()
     def soa(self, zone, forceincr=False):
         """Update SOA serial for zone if necessary or forceincr is True."""
         z = self._zl.zones[zone.upper()]
         z.fetch()
-        (r, serial) = z.soa(forceincr)
+        (r, serial) = z.soa(forceincr, dyn=self.dyn)
+        self.dyn.log()
         if self._dbh:
           self._dbh.commit()
         return r, serial
@@ -805,6 +1015,7 @@ class db:
                 default_ttl=default_ttl,
                 soaserial=soaserial, soarefresh=soarefresh, soaretry=soaretry,
                 soaexpires=soaexpires, soaminimum=soaminimum)
+        self.dyn.log()
         if commit and self._dbh:
           self._dbh.commit()
     def expired(self, now=False):
