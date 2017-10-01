@@ -367,7 +367,7 @@ def contactcreate(request):
   vars = {}
   p_errors = []
   if request.method == "GET":
-    form = contact_form()
+    form = contact_form(initial={'private': True})
   elif request.method == "POST":
     form = contact_form(request.POST)
 
