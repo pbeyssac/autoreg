@@ -7,10 +7,8 @@ import io
 import random
 import time
 
-import psycopg2
-
 from django.conf import settings
-from django.db import models, transaction, IntegrityError
+from django.db import connection, models, transaction, IntegrityError
 from django.utils.translation import ugettext_lazy, ugettext as _
 
 from .. import util
@@ -82,8 +80,7 @@ class Requests(models.Model):
 
       if err:
         print(_("Error:"), err, file=out)
-        dd._dbh.rollback()
-        return False
+        raise IntegrityError(_("Error:") + " " + err)
 
       print(_("Zone insert done\n"), file=out)
 
@@ -97,9 +94,7 @@ class Requests(models.Model):
       if not whoisdb.parsefile(inwhois, None, outfile=outwhois,
                                intrans=False):
         print(outwhois.getvalue(), file=out)
-        dd._dbh.rollback()
-        return False
-      dd._dbh.commit()
+        raise IntegrityError(_("Whois error, aborting"))
 
       print(outwhois.getvalue(), file=out)
       vars = {'rqid': self.id, 'domain': r.fqdn.upper(), 'to': r.email,
@@ -201,10 +196,9 @@ def rq_list():
 
 def rq_run(out):
   import autoreg.dns.db
-  dbh = psycopg2.connect(autoreg.conf.dbstring)
-  dd = autoreg.dns.db.db(dbh)
+  dd = autoreg.dns.db.db(dbc=connection.cursor())
   dd.login('autoreg')
-  whoisdb = autoreg.whois.db.Main(dbh)
+  whoisdb = autoreg.whois.db.Main(dbc=connection.cursor())
 
   rl = Requests.objects.exclude(pending_state=None).order_by('id')
 
@@ -218,8 +212,6 @@ def rq_run(out):
         print(unicode(e), file=out)
         ok = False
       if ok:
-        #dbh.commit()
         print(_("Status: committed"), file=out)
       else:
-        #dbh.rollback()
         print(_("Status: cancelled"), file=out)
