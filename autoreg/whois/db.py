@@ -5,11 +5,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
+
+import datetime
 import re
 import sys
 
-import mx
-import mx.DateTime
 
 from ..conf import dbstring, HANDLESUFFIX, HANDLEMAILHOST
 
@@ -82,7 +82,7 @@ def parse_changed(changed, outfile=sys.stdout):
       return None, None
   m = int(m)
   d = int(d)
-  return email, mx.DateTime.DateTime(y, m, d)
+  return email, datetime.datetime(y, m, d)
 
 def addrmake(a):
   """Make a newline-separated string from a list."""
