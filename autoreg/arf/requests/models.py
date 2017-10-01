@@ -171,7 +171,7 @@ class Requests(models.Model):
       ok = self.do_pending(out, dd, whoisdb)
       if not ok:
         # raise to force a transaction rollback by Django
-        raise IntegrityError(_("Error executing %(rqid)s" % {'rqid': self.id}))
+        raise IntegrityError(_("Error executing %(rqid)s") % {'rqid': self.id})
 
     def remove(self, state):
       self.state = state

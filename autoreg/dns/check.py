@@ -191,7 +191,7 @@ class MultiResolver(object):
         ip = ip.upper()
 
         if not checkip(ip):
-          errlist.append(_("Error: Invalid IP address %s" % ip))
+          errlist.append(_("Error: Invalid IP address %s") % ip)
           ip = None
 
       if fqdn.endswith('.'+self.domain.upper()) \

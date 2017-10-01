@@ -554,9 +554,9 @@ def special(request):
         u.is_active = (action == 'block0')
         u.save()
       if action == 'block0':
-        msg = _('Unblocked %s' % suffixadd(handle))
+        msg = _('Unblocked %s') % suffixadd(handle)
       elif action == 'block1':
-        msg = _('Blocked %s' % suffixadd(handle))
+        msg = _('Blocked %s') % suffixadd(handle)
       else:
         raise SuspiciousOperation
     elif action == 'fill':
@@ -565,8 +565,8 @@ def special(request):
                         for d in Whoisdomains.objects.filter(
                           domaincontact__contact__handle=handle)
                           .order_by('fqdn').distinct()]
-        msg = _('Copied %(ndom)d domain(s) from contact %(handle)s'
-                % {'ndom': len(domainlist), 'handle': suffixadd(handle)})
+        msg = _('Copied %(ndom)d domain(s) from contact %(handle)s') \
+                % {'ndom': len(domainlist), 'handle': suffixadd(handle)}
         v = {'domains': '\n'.join(domainlist)}
         form = special_form(v)
       else:
