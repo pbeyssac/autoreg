@@ -12,9 +12,9 @@ from autoreg.whois.db import country_from_name
 class Whoisdomains(models.Model):
     id = models.AutoField(primary_key=True)
     fqdn = models.CharField(max_length=255, unique=True)
-    created_on = models.DateTimeField()
+    created_on = models.DateTimeField(default=datetime.datetime.today)
     updated_by = models.CharField(max_length=64)
-    updated_on = models.DateTimeField()
+    updated_on = models.DateTimeField(default=datetime.datetime.today)
     class Meta:
         db_table = 'whoisdomains'
         ordering = ['fqdn']

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block title %}{% trans "Special actions" %}{% endblock %}
-{% block msg %}{{ msg }}{% endblock %}
+{% block msg %}{{ msg }}{% for m in msglist %}{{ m }}<br>{% endfor %}{% endblock %}
 {% block form %}
 <h1>{% trans "Special actions" %}</h1>
 <FORM ACTION="" METHOD="POST">

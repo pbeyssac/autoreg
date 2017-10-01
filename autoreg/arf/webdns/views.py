@@ -18,17 +18,18 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy, ugettext as _
 
 import autoreg.arf.whois.views as whois_views
-from autoreg.conf import dbstring, HANDLESUFFIX
+from autoreg.conf import dbstring, HANDLESUFFIX, PREEMPTHANDLE
 import autoreg.dns.check
 import autoreg.dns.db
 import autoreg.dns.dnssec
 from autoreg.whois.db import check_handle_domain_auth, \
   suffixadd, suffixstrip
 
+
 from ..requests.models import Requests, rq_make_id
 from ..whois.models import Contacts, Whoisdomains, check_is_admin
 from ..whois.views import registrant_form, login
-from .models import Domains, Rrs, Zones
+from .models import Zones, is_orphan, preempt
 
 URILOGIN = reverse_lazy(login)
 
@@ -48,7 +49,10 @@ class special_form(forms.Form):
                                       ('lock1', ugettext_lazy('Lock')),
                                       ('lock0', ugettext_lazy('Unlock')),
                                       ('hold1', ugettext_lazy('Hold')),
-                                      ('hold0', ugettext_lazy('Unhold'))],
+                                      ('hold0', ugettext_lazy('Unhold')),
+                                      ('preempt',
+                             ugettext_lazy('Preempt to %(preempthandle)s')
+                               % {'preempthandle': suffixadd(PREEMPTHANDLE)})],
                              required=True, widget=forms.RadioSelect)
 
 
@@ -308,29 +312,10 @@ def _get_rr_nsip(dd, fqdn):
   nsiplist.sort(key=lambda x: x[0])
   return rrlist, nsiplist
 
-def _is_orphan(fqdn, ddro):
-  """check domain is an orphan
-     1) should not exist in Whois
-     2) should exist in zone
-  """
-  w = Whoisdomains.objects.filter(fqdn=fqdn.upper())
-  if len(w) != 0:
-    return False, _("exists in Whois")
-  outfile = io.StringIO()
-  found = True
-  try:
-    ddro.show(fqdn, None, outfile=outfile)
-  except autoreg.dns.db.DomainError as e:
-    found = False
-  except autoreg.dns.db.AccessError as e:
-    found = False
-  if found:
-    return True, ""
-  return False, _("does not exist in zone")
 
-def _adopt_orphan(request, ddro, dbh, fqdn, form):
+def _adopt_orphan(request, dbh, fqdn, form):
   vars = {'fqdn': fqdn.upper()}
-  ok, errmsg = _is_orphan(fqdn, ddro)
+  ok, errmsg = is_orphan(fqdn)
   if ok:
     inwhois = _whoisrecord_from_form(fqdn, form, request.user.username)
     w = autoreg.whois.db.Main(dbh)
@@ -428,7 +413,7 @@ def domainns(request, fqdn=None):
       ddro.login('autoreg')
 
       if is_admin and form.is_valid() and form.cleaned_data['orphan']:
-        return _adopt_orphan(request, ddro, dbh, fqdn, form)
+        return _adopt_orphan(request, dbh, fqdn, form)
 
       try:
         # don't really create (read-only session)
@@ -519,6 +504,7 @@ def special(request):
     return HttpResponseForbidden(_("Unauthorized"))
 
   msg = ''
+  msglist = []
   contact = None
 
   if request.method == 'POST':
@@ -589,6 +575,15 @@ def special(request):
       if contact:
         return HttpResponseRedirect(reverse(whois_views.domainlist,
                                     args=[handle]))
+    elif action == 'preempt':
+      for domain in domainlist:
+        domain = domain.strip().upper()
+        ok, err = preempt(request.user.username, domain)
+        if ok:
+          msglist.append(_('Domain %s has been preempted') % domain)
+        else:
+          msglist.append(_('Domain %(domain)s has not been preempted: %(err)s')
+                            % {'domain': domain, 'err': err})
     elif action:
       raise SuspiciousOperation
     # no action: do nothing, just redisplay the page
@@ -600,5 +595,6 @@ def special(request):
 
   vars = { 'form': form,
            'form2': form2,
+           'msglist': msglist,
            'msg': msg }
   return render(request, 'dns/special.html', vars)

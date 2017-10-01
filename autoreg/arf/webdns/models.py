@@ -2,9 +2,18 @@
 
 from __future__ import absolute_import
 
-from django.db import models
 
-from ..whois.models import Admins
+import io
+
+import psycopg2
+
+from django.db import models
+from django.utils.translation import ugettext as _
+
+from autoreg.conf import dbstring, PREEMPTHANDLE
+import autoreg.dns.db
+from ..whois.models import Admins, Contacts, ContactTypes, \
+  DomainContact, Whoisdomains
 
 
 class Zones(models.Model):
@@ -125,3 +134,81 @@ class RrsHist(models.Model):
     class Meta:
         db_table = 'rrs_hist'
 
+
+def is_free(fqdn):
+  """check domain availability"""
+  fqdn = fqdn.upper()
+  w = Whoisdomains.objects.filter(fqdn=fqdn).exists()
+  if '.' in fqdn:
+    name, zone = fqdn.split('.', 1)
+  else:
+    name, zone = fqdn, ''
+  z = Domains.objects.filter(name=name, zone__name=zone).exists()
+  return w, z
+
+def is_orphan(fqdn):
+  """check domain is an orphan
+     1) should not exist in Whois
+     2) should exist in zone
+  """
+  w, z = is_free(fqdn)
+  if w:
+    return False, _("exists in Whois")
+  if not z:
+    return False, _("does not exist in zone")
+  return True, None
+
+def is_preemptable(fqdn):
+  """check domain is preemptable
+     1) should not exist in Whois
+     2) should not exist in zone
+  """
+  w, z = is_free(fqdn)
+  if w:
+    return False, _("exists in Whois")
+  if z:
+    return False, _("exists in zone")
+  return True, None
+
+
+def preempt(handle, fqdn):
+  if not is_preemptable(fqdn):
+    return False, _("Domain is not preemptable")
+
+  fqdn = fqdn.upper()
+
+  techtype = ContactTypes.objects.get(name='technical')
+  registranttype = ContactTypes.objects.get(name='registrant')
+
+  c1 = Contacts.objects.get(handle=handle)
+  c2 = Contacts.objects.get(handle=PREEMPTHANDLE)
+
+  wd = Whoisdomains(fqdn=fqdn)
+  wd.save()
+  rc = DomainContact(whoisdomain=wd, contact=c2, contact_type=registranttype)
+  rc.save()
+  tc = DomainContact(whoisdomain=wd, contact=c1, contact_type=techtype)
+  tc.save()
+
+  dbh = psycopg2.connect(dbstring)
+
+  dd = autoreg.dns.db.db(dbh)
+  dd.login('autoreg')
+
+  errors = None
+  try:
+    # create empty
+    dd.new(fqdn, None, 'NS', file=io.StringIO())
+  except autoreg.dns.db.DomainError as e:
+    errors = unicode(e)
+  except autoreg.dns.db.AccessError as e:
+    errors = unicode(e)
+  dbh.commit()
+
+  if errors:
+    wd.delete()
+    rc.delete()
+    tc.delete()
+    return False, errors
+
+  return True, ""

@@ -14,6 +14,8 @@ DEFAULT_GRACE_DAYS=30
 MAILBCC="pb@eu.org"
 # eu.org/FreeDNS handle suffix
 HANDLESUFFIX = '-FREE'
+# contact handle for preempted domains
+PREEMPTHANDLE = 'EOD1'
 # right-hand side domain for anti-spam handles
 HANDLEMAILHOST = 'handles.eu.org'
 SITENAME = 'EU.org'

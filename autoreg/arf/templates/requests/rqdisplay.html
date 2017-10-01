@@ -55,6 +55,9 @@ Tags: {% if r.tags != None %}{{ r.tags }}{% endif %}<br>
    <label for="id_action{{ r.suffix }}_6">
    <input id="id_action{{ r.suffix }}_6" name="action{{ r.suffix }}" type="radio" value="rejectnok"{% if r.default == "rejectnok" %} checked="checked"{% endif %}>{% trans "Already allocated" %}
    </label>
+   <label for="id_action{{ r.suffix }}_8">
+   <input id="id_action{{ r.suffix }}_8" name="action{{ r.suffix }}" type="radio" value="rejectpre"{% if r.default == "rejectpre" %} checked="checked"{% endif %}>{% blocktrans %}Preempt to {{ preempthandle }}{% endblocktrans %}
+   </label>
    <label for="id_action{{ r.suffix }}_7">
    <input id="id_action{{ r.suffix }}_7" name="action{{ r.suffix }}" type="radio" value="rejectcust"{% if r.default == "rejectcust" %} checked="checked"{% endif %}>{% trans "Other" %}
    </label>

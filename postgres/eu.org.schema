@@ -253,9 +253,9 @@ CREATE INDEX whoisdomains_fqdn_index ON whoisdomains(fqdn);
 -- a given contact record to be used as different contact types
 CREATE TABLE domain_contact (
 	id SERIAL PRIMARY KEY,	-- used only for web framework access
-	whoisdomain_id INTEGER REFERENCES whoisdomains(id),
-	contact_id INTEGER REFERENCES contacts(id),
-	contact_type_id INTEGER REFERENCES contact_types(id),
+	whoisdomain_id INTEGER REFERENCES whoisdomains(id) NOT NULL,
+	contact_id INTEGER REFERENCES contacts(id) NOT NULL,
+	contact_type_id INTEGER REFERENCES contact_types(id) NOT NULL,
 	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 CREATE INDEX domain_contact_domain_id ON domain_contact(whoisdomain_id);
@@ -270,9 +270,9 @@ CREATE TABLE iso3166_countries (
 
 -- deleted domain-contact associations
 CREATE TABLE domain_contact_hist (
-	whoisdomain_id INTEGER,
+	whoisdomain_id INTEGER NOT NULL,
 	contact_id INTEGER,
-	contact_type_id INTEGER REFERENCES contact_types(id),
+	contact_type_id INTEGER REFERENCES contact_types(id) NOT NULL,
 	created_on TIMESTAMP(2) WITH TIME ZONE,
 	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
@@ -409,8 +409,7 @@ CREATE TABLE requests (
 	pending_state VARCHAR(10) DEFAULT NULL,
 	reason VARCHAR(80) DEFAULT NULL,
 	reasonfield VARCHAR(1000) DEFAULT NULL,
-	admin_login VARCHAR(16) DEFAULT NULL,
-	admin_email VARCHAR(80) DEFAULT NULL
+	admin_contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL
 );
 CREATE INDEX requests_fqdn_index ON requests(fqdn);
 
@@ -429,8 +428,7 @@ CREATE TABLE requests_hist (
 	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL,
 	reason VARCHAR(80) DEFAULT NULL,
 	reasonfield VARCHAR(1000) DEFAULT NULL,
-	admin_login VARCHAR(16) DEFAULT NULL,
-	admin_email VARCHAR(80) DEFAULT NULL
+	admin_contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL
 );
 
 CREATE TABLE requests_log (
@@ -453,13 +451,13 @@ CREATE OR REPLACE FUNCTION trig_del_requests()
 		language,
 		state, zonerecord, whoisrecord, tags,
 		contact_id, reason, reasonfield,
-		admin_login, admin_email)
+		admin_contact_id)
 	    VALUES (
 		OLD.id, OLD.email, OLD.action, OLD.fqdn, OLD.zone_id,
 		OLD.language,
 		OLD.state, OLD.zonerecord, OLD.whoisrecord, OLD.tags,
 		OLD.contact_id, OLD.reason, OLD.reasonfield,
-		OLD.admin_login, OLD.admin_email);
+		OLD.admin_contact_id);
 	RETURN OLD;
     END;
 $trig_del_requests$ LANGUAGE plpgsql;

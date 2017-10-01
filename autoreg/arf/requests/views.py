@@ -30,6 +30,7 @@ from django.views.decorators.cache import cache_control
 from . import models
 from ..webdns.models import Admins, Zones
 from ..whois import views as whois_views
+from ..whois.models import Contacts
 
 
 URILOGIN = reverse_lazy(whois_views.login)
@@ -342,7 +343,7 @@ def rqlist(request, page='0'):
 
   return render(request, 'requests/rqlist.html', v)
 
-def _rqexec(rq, out, za, login, email, action, reasonfield):
+def _rqexec(rq, out, za, admin_contact, login, action, reasonfield):
   if not models.Requests.objects.filter(id=rq).exists():
     print(_("Request not found: %(rqid)s") % {'rqid': rq}, file=out)
     return
@@ -352,30 +353,35 @@ def _rqexec(rq, out, za, login, email, action, reasonfield):
     return
 
   if action == 'rejectcust':
-    ok = r.reject(login, '', reasonfield)
+    ok = r.reject(admin_contact, '', reasonfield)
     print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectdup':
     with translation.override(r.language):
       reason = _('Duplicate request')
-    ok = r.reject(login, reason, reasonfield)
+    ok = r.reject(admin_contact, reason, reasonfield)
     print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectbog':
     with translation.override(r.language):
       reason = _('Bogus address information')
-    ok = r.reject(login, reason, reasonfield)
+    ok = r.reject(admin_contact, reason, reasonfield)
     print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectful':
     with translation.override(r.language):
       reason = _('Please provide a full name')
-    ok = r.reject(login, reason, reasonfield)
+    ok = r.reject(admin_contact, reason, reasonfield)
     print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'rejectnok':
     with translation.override(r.language):
       reason = _('Sorry, this domain is already allocated')
-    ok = r.reject(login, reason, reasonfield)
+    ok = r.reject(admin_contact, reason, reasonfield)
+    print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
+  elif action == 'rejectpre':
+    with translation.override(r.language):
+      reason = _('Sorry, this domain is preempted')
+    ok = r.reject_preempt(admin_contact, reason, reasonfield)
     print(_("Rejected %(rqid)s (queued)") % {'rqid': rq}, file=out)
   elif action == 'accept':
-    ok = r.accept(login, email, reasonfield)
+    ok = r.accept(admin_contact, reasonfield)
     print(_("Accepted %(rqid)s (queued)") % {'rqid': rq}, file=out)
   else:
     if action == 'delete':
@@ -394,10 +400,11 @@ def rqval(request):
     raise SuspiciousOperation
   if not request.user.is_authenticated() or not request.user.is_active:
     raise PermissionDenied
-  login, email = admin_login(connection.cursor(), request.user.username,
-                             get_email=True)
+  login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
+
+  admin_contact = Contacts.objects.get(handle=request.user.username)
 
   za = autoreg.zauth.ZAuth(connection.cursor())
   out = io.StringIO()
@@ -412,7 +419,7 @@ def rqval(request):
 
     with transaction.atomic():
       try:
-        _rqexec(rq, out, za, login, email, action, reason)
+        _rqexec(rq, out, za, admin_contact, login, action, reason)
       except IntegrityError as e:
         print(unicode(e), file=out)
         allok = False

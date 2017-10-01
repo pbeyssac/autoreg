@@ -12,7 +12,7 @@ from django.db import connection, models, transaction, IntegrityError
 from django.utils.translation import ugettext_lazy, ugettext as _
 
 from .. import util
-from ..webdns.models import Zones
+from ..webdns.models import Zones, preempt
 from ..whois.models import Contacts
 import autoreg.common
 import autoreg.conf
@@ -34,8 +34,7 @@ class Requests(models.Model):
     pending_state = models.CharField(max_length=10, default=None)
     reason = models.CharField(max_length=80, default=None)
     reasonfield = models.CharField(max_length=1000, default=None)
-    admin_login = models.CharField(max_length=16, default=None)
-    admin_email = models.CharField(max_length=80, default=None)
+    admin_contact = models.ForeignKey(Contacts, related_name='admin')
     class Meta:
         db_table = 'requests'
         ordering = ['id']
@@ -44,19 +43,28 @@ class Requests(models.Model):
     class Admin:
         pass
 
-    def accept(self, login, email, reasonfield=None):
-      self.pending_state = 'Acc'
+    def _set_pending(self, pending, admin_contact, reason, reasonfield):
+      self.pending_state = pending
+      self.admin_contact = admin_contact
+      if reason:
+        self.reason = reason
       self.reasonfield = reasonfield
-      self.admin_login = login
-      self.admin_email = email
       self.save()
       return True
+
+    def accept(self, admin_contact, reasonfield=None):
+      return self._set_pending('Acc', admin_contact, None, reasonfield)
+
+    def reject(self, admin_contact, reason, reasonfield):
+      return self._set_pending('Rej', admin_contact, reason, reasonfield)
+
+    def reject_preempt(self, admin_contact, reason, reasonfield):
+      return self._set_pending('Pre', admin_contact, reason, reasonfield)
 
     def accept2(self, out, dd=None, whoisdb=None):
       r = self
       reasonfield = r.reasonfield
-      login = r.admin_login
-      email = r.admin_email
+      email = r.admin_contact.email
 
       if settings.FORCEDEBUGMAIL:
         mailto = [settings.FORCEDEBUGMAIL]
@@ -114,14 +122,6 @@ class Requests(models.Model):
       r.delete()
       return True
 
-    def reject(self, login, reason, reasonfield):
-      self.pending_state = 'Rej'
-      self.admin_login = login
-      self.reason = reason
-      self.reasonfield = reasonfield
-      self.save()
-      return True
-
     def reject2(self, out):
       r = self
       reason = r.reason
@@ -148,7 +148,14 @@ class Requests(models.Model):
 
       print(_("Mail to %(mails)s done") % {'mails': ' '.join(mailto)}, file=out)
 
-      r.state = 'Rej'
+      if r.pending_state == 'Pre':
+        ok, err = preempt(r.admin_contact.handle, r.fqdn)
+        if ok:
+          print(_("Domain %s has been preempted") % r.fqdn, file=out)
+        else:
+          print(_("Domain %(fqdn)s has not been preempted: %(err)s") % {'fqdn': r.fqdn, 'err': err}, file=out)
+
+      r.state = r.pending_state
       r.save()
       r.delete()
       return True
@@ -156,7 +163,7 @@ class Requests(models.Model):
     def do_pending(self, out, dd, whoisdb):
       if self.pending_state == 'Acc':
         return self.accept2(out, dd, whoisdb)
-      elif self.pending_state == 'Rej':
+      elif self.pending_state in ['Rej', 'Pre']:
         return self.reject2(out)
       return False
 
