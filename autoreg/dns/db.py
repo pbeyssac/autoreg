@@ -537,12 +537,15 @@ class _ZoneList:
 	return (d, z)
 
 class db:
-    def __init__(self, dbhandle, nowrite=False):
+    def __init__(self, dbhandle=None, dbc=None, nowrite=False):
         # At once, set transaction isolation level to READ COMMITTED.
         # (see autoreg.whois.db for details)
-        dbhandle.set_isolation_level(1)
 	self._dbh = dbhandle
-	self._dbc = dbhandle.cursor()
+        if dbhandle:
+          dbhandle.set_isolation_level(1)
+	  self._dbc = dbhandle.cursor()
+        else:
+	  self._dbc = dbc
 	self._za = zauth.ZAuth(self._dbc)
 	self._nowrite = nowrite
 	self._login_id = None
@@ -603,7 +606,7 @@ class db:
         else:
 	    d.move_hist(login_id=self._login_id, domains=True)
 	z.set_updateserial()
-        if commit:
+        if commit and self._dbh:
 	    self._dbh.commit()
     def undelete(self, domain, zone, override_internal=False, commit=True):
 	"""Undelete domain.
@@ -623,7 +626,7 @@ class db:
 	if self._nowrite: return
 	d.set_end_grace_period(None)
 	z.set_updateserial()
-        if commit:
+        if commit and self._dbh:
 	    self._dbh.commit()
     def modify(self, domain, zone, typ, file, override_internal=False,
 	       replace=True, delete=False, keepds=True, _commit=True):
@@ -650,7 +653,7 @@ class db:
 	d.mod_rr(file, delete=delete)
 	d.set_updated_by(self._login_id)
 	z.set_updateserial()
-	if _commit:
+        if _commit and self._dbh:
 	    self._dbh.commit()
     def modifydeleg(self, domain, file, override_internal=False,
 		    replace=True, delete=False):
@@ -691,7 +694,7 @@ class db:
 	    return
         d.addrr(label, ttl, rrtype, value)
 	z.set_updateserial()
-	if _commit:
+        if _commit and self._dbh:
 	    self._dbh.commit()
     def delrr(self, domain, zone, label, rrtype, value, _commit=True):
         """Delete records of a given label, type and value"""
@@ -703,7 +706,7 @@ class db:
         n = d.delrr(label, rrtype, value)
         if n:
 	    z.set_updateserial()
-	if _commit:
+        if _commit and self._dbh:
 	    self._dbh.commit()
         return n
     def checkds(self, domain, zone):
@@ -723,7 +726,8 @@ class db:
         return False, "No NS records for domain"
     def commit(self):
         """Commit pending transaction."""
-	self._dbh.commit()
+        if self._dbh:
+	  self._dbh.commit()
     def new(self, domain, zone, typ, file=None, internal=False, commit=True):
 	"""Create domain.
 
@@ -756,7 +760,7 @@ class db:
 	if file:
 	    d.mod_rr(file)
 	z.set_updateserial()
-        if commit:
+        if commit and self._dbh:
 	    self._dbh.commit()
     def set_registry_lock(self, domain, zone, val):
 	"""Set registry_lock flag for domain."""
@@ -764,7 +768,8 @@ class db:
 	self._check_login_perm(z.name)
 	if self._nowrite: return
 	d.set_registry_lock(val)
-	self._dbh.commit()
+        if self._dbh:
+	  self._dbh.commit()
     def set_registry_hold(self, domain, zone, val):
 	"""Set registry_hold flag for domain."""
 	d, z = self._zl.find(domain, zone, wlock=True)
@@ -772,13 +777,15 @@ class db:
 	if self._nowrite: return
 	d.set_registry_hold(val)
 	z.set_updateserial()
-	self._dbh.commit()
+        if self._dbh:
+	  self._dbh.commit()
     def soa(self, zone, forceincr=False):
 	"""Update SOA serial for zone if necessary or forceincr is True."""
 	z = self._zl.zones[zone.upper()]
 	z.fetch()
 	(r, serial) = z.soa(forceincr)
-	self._dbh.commit()
+        if self._dbh:
+	  self._dbh.commit()
         return r, serial
     def cat(self, zone, outfile=sys.stdout):
 	"""Output zone file."""
@@ -798,7 +805,7 @@ class db:
                 default_ttl=default_ttl,
                 soaserial=soaserial, soarefresh=soarefresh, soaretry=soaretry,
                 soaexpires=soaexpires, soaminimum=soaminimum)
-        if commit:
+        if commit and self._dbh:
 	  self._dbh.commit()
     def expired(self, now=False):
         """List domains in grace period."""

@@ -887,7 +887,7 @@ class Main:
     self.nperson = 0
     self.ambig = 0
     self.inval = 0
-  def __init__(self, dbh):
+  def __init__(self, dbh=None, dbc=None):
     self._dbh = dbh
 
     # At once, set transaction isolation level to READ COMMITTED.
@@ -902,9 +902,13 @@ class Main:
     #    Psycopg's author, from a 2004 post in the psycopg mailing list:
     #    http://lists.initd.org/pipermail/psycopg/2004-February/002577.html
     #
-    dbh.set_isolation_level(1)
+    if dbh:
+      dbh.set_isolation_level(1)
 
-    self._dbc = dbh.cursor()
+    if dbc:
+      self._dbc = dbc
+    else:
+      self._dbc = dbh.cursor()
     fetch_dbencoding(self._dbc)
     self._lookup = Lookup(self._dbc)
     self._reset()
@@ -1146,7 +1150,8 @@ class Main:
 
     if intrans:
       # set transaction isolation level to READ COMMITTED.
-      self._dbh.set_isolation_level(1)
+      if self._dbh:
+        self._dbh.set_isolation_level(1)
       #self._dbc.execute('START TRANSACTION')
 
     # Get transaction date
@@ -1221,7 +1226,7 @@ class Main:
                           outfile=outfile):
         err += 1
 
-    if intrans:
+    if intrans and self._dbh:
       if commit and err == 0:
         self._dbh.commit()
       else:
