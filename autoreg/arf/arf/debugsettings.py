@@ -7,7 +7,6 @@ import os
 from .settings import *
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 LOCALE_PATHS = ( '/home/freenix/pb/autoreg/locale',)
 SESSION_COOKIE_NAME = 'dsession_id'
 INTERNAL_IPS=['192.168.0.0/24', '::1']

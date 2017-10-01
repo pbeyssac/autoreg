@@ -12,7 +12,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = open('/usr/local/autoreg/arf/SECRET_KEY').read()[:-1]
 
 DEBUG = False
-TEMPLATE_DEBUG = DEBUG
 
 ALLOWED_HOSTS = [
   'eu.org', 'www.eu.org', 'nic.eu.org'
@@ -34,12 +33,6 @@ INSTALLED_APPS = (
     'autoreg.arf.logs',
     'autoreg.arf.requests',
     'autoreg.arf.whois'
-)
-
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
 )
 
 MIDDLEWARE_CLASSES = (
