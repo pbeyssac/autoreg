@@ -48,7 +48,7 @@ def main():
     dbc.execute("SELECT id, email, action, state, zonerecord, whoisrecord FROM requests WHERE fqdn=%s ORDER BY id", (fqdn,))
     rq = dbc.fetchall()
     oemail, oaction, ostate, ozonerecord, owhoisrecord \
-	= None, None, None, None, None
+        = None, None, None, None, None
     rqdel = []
     rqtuples = []
     for id, email, action, state, zonerecord, whoisrecord in rq:

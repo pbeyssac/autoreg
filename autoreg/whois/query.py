@@ -43,7 +43,7 @@ class socketwrapper:
     while buf:
       r = self.s.send(buf)
       if r < 0:
-	raise SocketError('send')
+        raise SocketError('send')
       buf = buf[r:]
 
 class server:
@@ -123,7 +123,7 @@ class server:
             bkpipe = True
           if bkpipe:
             self.log("WARNING: EPIPE on process %d (%s)" % (pid, ip))
-  	  # crude rate control
+          # crude rate control
           time.sleep(self.delay)
           sys.exit(0)
         elif f > 0:
@@ -145,23 +145,23 @@ class server:
       q += r
       i = q.find('\r\n')
       if i >= 0:
-	q = q[:i]
+        q = q[:i]
         if ip.startswith('::ffff:'):
               ip = ip[7:]
-	self.log("%s %s" % (ip, q))
+        self.log("%s %s" % (ip, q))
         # XXX: the 192.168.0.* check is a terrible hack until the
         # Perl query interface is rewritten.
-	query(q, self.dbstring, w,
+        query(q, self.dbstring, w,
               remote = (ip != '127.0.0.1' and ip != '::1'
                         and not ip.startswith('192.168.0.')))
-	c.shutdown(socket.SHUT_WR)
-	break
+        c.shutdown(socket.SHUT_WR)
+        break
       r = c.recv(256)
     c.close()
   def log(self, msg):
     (year, month, day, hh, mm, ss, d1, d2, d3) = time.localtime(time.time())
     print("%04d%02d%02d %02d%02d%02d %s"
-	  % (year, month, day, hh, mm, ss, msg), file=self.logf)
+          % (year, month, day, hh, mm, ss, msg), file=self.logf)
     self.logf.flush()
 
 def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):

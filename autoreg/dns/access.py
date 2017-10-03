@@ -3,34 +3,34 @@
 #
 
 """Usage:
-	access-zone [-cdi] [-t type] [-z zone] [-u user] -a action [domainname]
+        access-zone [-cdi] [-t type] [-z zone] [-u user] -a action [domainname]
 
 -c: check only, don't update any file (used for request check)
 -a: action, one of:
-	new:	create the entry for domainname in the parent zone,
-		if not already there; use resource records on stdin.
-	modify: modify the entry for domainname in the parent zone,
-		if already there; use resource records on stdin.
+        new:	create the entry for domainname in the parent zone,
+                if not already there; use resource records on stdin.
+        modify: modify the entry for domainname in the parent zone,
+                if already there; use resource records on stdin.
         modnods: same as 'modify', but keep existing DS records for the zone.
-	delete: delete domain, respecting grace period.
-	undelete: undelete domain.
-	cat:	print the zone file on stdout.
-	soa:	update the SOA serial for domainname in the zonefile of
-		the same name, if any update in the zone occurred.
-		Print the serial in any case.
-	show:	display entry for domainname.
-	showstubs:	display delegation data for all zones.
-	cmpstubs:	check consistency of delegation data for all zones.
+        delete: delete domain, respecting grace period.
+        undelete: undelete domain.
+        cat:	print the zone file on stdout.
+        soa:	update the SOA serial for domainname in the zonefile of
+                the same name, if any update in the zone occurred.
+                Print the serial in any case.
+        show:	display entry for domainname.
+        showstubs:	display delegation data for all zones.
+        cmpstubs:	check consistency of delegation data for all zones.
         hold:	put domain(s) on hold.
         unhold:	unhold domain(s).
         lock:	protect domain(s) from 'modify' or 'delete'
                 unless forced with -i.
         unlock:	unprotect domain(s).
-	list:	show list of known zones.
-	newzone:	create a new zone.
-	addrr:	add resource records
-	delrr:	delete resource records
-	expire:	list expired domains
+        list:	show list of known zones.
+        newzone:	create a new zone.
+        addrr:	add resource records
+        delrr:	delete resource records
+        expire:	list expired domains
 
 'hold', 'unhold', 'lock', 'unlock' can work on a stdin-provided
 domain list for better performance.
@@ -67,13 +67,13 @@ import autoreg.dns
 import autoreg.dns.db as dnsdb
 
 logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
-		    format='%(asctime)s %(levelname)-8s %(message)s',
-		    datefmt="%Y%m%d %H:%M:%S")
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt="%Y%m%d %H:%M:%S")
 
 action_list = ['addrr', 'cat', 'delete', 'undelete',
                 'delrr', 'lock', 'modify', 'unlock',
-		'hold', 'unhold',
-		'new', 'show', 'soa', 'list', 'showstubs', 'cmpstubs',
+                'hold', 'unhold',
+                'new', 'show', 'soa', 'list', 'showstubs', 'cmpstubs',
                 'newzone', 'expire']
 
 MSG_ALLOC="Error: domain %s is already allocated."
@@ -108,22 +108,22 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
 
   for o, a in opts:
       if o == "-a":
-  	action = a.lower()
+        action = a.lower()
       elif o == "-c":
-  	nowrite = True
-  	user = 'DNSADMIN'
+        nowrite = True
+        user = 'DNSADMIN'
       elif o == "-i":
-  	internal = True
+        internal = True
       elif o == "-t":
-  	type = a.upper()
+        type = a.upper()
       elif o == "-u":
-  	user = a
+        user = a
       elif o == "-z":
-  	zone = a.upper()
+        zone = a.upper()
       elif o == "-d":
-  	deleg = True
+        deleg = True
       elif o == "-s":
-  	forceincr = True
+        forceincr = True
 
   if action == None or user == None:
       usage()
@@ -185,17 +185,17 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
     elif action == 'addrr':
       if deleg:
         dd.modifydeleg(domain, file=sys.stdin, override_internal=internal,
-  		     replace=False)
+                    replace=False)
       else:
         dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal,
-  		replace=False)
+                replace=False)
     elif action == 'delrr':
       if deleg:
         dd.modifydeleg(domain, file=sys.stdin, override_internal=internal,
-  		     replace=False, delete=True)
+                     replace=False, delete=True)
       else:
         dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal,
-  		replace=False, delete=True)
+                replace=False, delete=True)
     elif action == 'delete':
       dd.delete(domain, zone, override_internal=internal)
     elif action == 'undelete':
@@ -217,7 +217,7 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
     elif action == 'soa':
       (updated, serial) = dd.soa(domain, forceincr)
       if not updated:
-  	r = 1
+        r = 1
       print(serial, file=outfile)
     elif action == 'list':
       for zone in dd.zonelist():
@@ -242,7 +242,7 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
         p_out = parent_out.getvalue().split('\n')
 
         # drop initial label in parent zone
-	if not p_out[0].startswith('\t'):
+        if not p_out[0].startswith('\t'):
           p_out[0] = '\t' + p_out[0].split('\t', 1)[1]
 
         # drop DS records in parent zone
