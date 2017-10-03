@@ -60,6 +60,10 @@ import os
 import psycopg2
 import sys
 
+
+import six
+
+
 # local modules
 import autoreg
 import autoreg.conf as conf
@@ -237,8 +241,8 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
           continue
         parent_out = io.StringIO()
         zone_out = io.StringIO()
-        dd.show(domain, unicode(zone), rrs_only=True, outfile=parent_out)
-        dd.show(domain, unicode(domain), rrs_only=True, outfile=zone_out)
+        dd.show(domain, six.text_type(zone), rrs_only=True, outfile=parent_out)
+        dd.show(domain, six.text_type(domain), rrs_only=True, outfile=zone_out)
         p_out = parent_out.getvalue().split('\n')
 
         # drop initial label in parent zone

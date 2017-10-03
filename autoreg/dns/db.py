@@ -200,8 +200,8 @@ class _Domain:
          idcr, self._created_on, idup, self._updated_on,
          self._end_grace_period) = self._dbc.fetchone()
         if six.PY2:
-          self._zone_name = unicode(self._zone_name)
-          self.name = unicode(self.name)
+          self._zone_name = six.text_type(self._zone_name)
+          self.name = six.text_type(self.name)
         # "GRANT SELECT" perms do not allow "SELECT ... FOR UPDATE",
         # hence the request below is done separately from the request above.
         self._dbc.execute('SELECT ad1.login, ad2.login '
@@ -441,7 +441,7 @@ class _ZoneList:
         while t:
             name, zid = t
             if six.PY2:
-              name = unicode(name)
+              name = six.text_type(name)
             self.zones[name] = _Zone(dbc, id=zid, name=name)
             t = self._dbc.fetchone()
     def newzone(self, name, soamaster, soaemail,
@@ -472,7 +472,7 @@ class _ZoneList:
         return self.zones[name]
     def get(self):
         """Return list of all known zones except root."""
-        zonelist = self.zones.keys()
+        zonelist = list(self.zones.keys())
         zonelist.remove('')
         zonelist.sort()
         return zonelist
@@ -668,10 +668,10 @@ class db:
         if '.' not in domain:
             raise DomainError(DomainError.DNOTFOUND)
         label, parent = domain.split('.', 1)
-        rrfile = io.StringIO(unicode(records))
+        rrfile = io.StringIO(six.text_type(records))
         self.modify(domain, parent, None, rrfile,
                     override_internal, replace, delete, _commit=False)
-        rrfile = io.StringIO(unicode(records))
+        rrfile = io.StringIO(six.text_type(records))
         self.modify(domain, domain, None, rrfile,
                     override_internal, replace, delete, _commit=True)
     def queryrr(self, domain, zone, label, rrtype):

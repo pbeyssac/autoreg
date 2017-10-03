@@ -1,12 +1,17 @@
 # $Id$
 
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
+
 from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import render
 from django.utils.translation import ugettext_lazy, ugettext as _
 
 
-from models import Log
+from .models import Log
 from ..whois.models import check_is_admin
 
 

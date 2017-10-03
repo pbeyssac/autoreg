@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import io
 
 import psycopg2
+import six
 
 from django.db import models
 from django.utils.translation import ugettext as _
@@ -200,9 +201,9 @@ def preempt(handle, fqdn):
     # create empty
     dd.new(fqdn, None, 'NS', file=io.StringIO())
   except autoreg.dns.db.DomainError as e:
-    errors = unicode(e)
+    errors = six.text_type(e)
   except autoreg.dns.db.AccessError as e:
-    errors = unicode(e)
+    errors = six.text_type(e)
   dbh.commit()
 
   if errors:

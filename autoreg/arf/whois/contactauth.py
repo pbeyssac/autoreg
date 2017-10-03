@@ -1,12 +1,17 @@
 # $Id$
 # Authentication backend using passwords from the whois contact database
 
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import crypt
 
 from autoreg.whois.db import HANDLESUFFIX,suffixadd,suffixstrip
 
 from django.contrib.auth.models import User
-from models import Contacts
+
+from .models import Contacts
 
 class AuthBackend:
   def authenticate(self, username=None, password=None):

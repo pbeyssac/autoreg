@@ -11,6 +11,9 @@ import re
 import sys
 
 
+import six
+
+
 from ..conf import dbstring, HANDLESUFFIX, HANDLEMAILHOST
 
 _tv68 = re.compile('^(\S+)\s*(?:(\d\d))?(\d\d)(\d\d)(\d\d)$')
@@ -32,23 +35,10 @@ def fetch_dbencoding(dbc):
       DBENCODING = 'ASCII'
   return DBENCODING
 
-def _todb(atuple):
-  """Convert Unicode strings in the tuple for use in a database request."""
-  newlist = []
-  for i in atuple:
-    if type(i) == unicode:
-      i = i.encode(DBENCODING)
-    newlist.append(i)
-  return tuple(newlist)
 
-def _fromdb(atuple):
-  """Convert to Unicode any strings returned by the database."""
-  newlist = []
-  for i in atuple:
-    if type(i) == str:
-      i = unicode(i, DBENCODING)
-    newlist.append(i)
-  return tuple(newlist)
+_todb = lambda x: x
+_fromdb = lambda x: x
+
 
 def parse_changed(changed, outfile=sys.stdout):
   """Parse a RIPE-style changed: line."""
@@ -154,7 +144,7 @@ ripe_ltos = { 'person': 'pn', 'address': 'ad', 'tech-c': 'tc', 'zone-c': 'zc',
               'upd-to': 'dt', 'auth': 'at', 'mntner': 'mt',
               'domain': 'dn', 'ext-hdl': 'eh',
               'delete': 'delete', 'private': 'pr' }
-ripe_stol = dict((v, k) for k, v in ripe_ltos.iteritems())
+ripe_stol = dict((v, k) for k, v in ripe_ltos.items())
 
 domainattrs = {'dn': (1, 1), 'ad': (0,7), 'pr': (0,1),
                'tc': (0,3), 'ac': (1,3), 'zc': (0,3), 'ch': (1,1) }
@@ -176,7 +166,7 @@ personattrs = {'pn': (1,1), 'ad': (0,6),
 
 contact_map = { 'technical': 'tc', 'administrative': 'ac', 'zone': 'zc',
                 'registrant': 'rc' }
-contact_map_rev = dict((v, k) for k, v in contact_map.iteritems())
+contact_map_rev = dict((v, k) for k, v in contact_map.items())
 
 _skipalnum = re.compile('^[a-zA-Z0-9]+\s*(.*)')
 _skipword = re.compile('^\S+\s+(.*)')
@@ -321,11 +311,8 @@ class _whoisobject(object):
         continue
       r = []
       for s in o[k]:
-        if type(s) == str:
-          if encoding is not None:
-            s = unicode(s, encoding)
-          else:
-            s = unicode(s)
+        if isinstance(s, six.binary_type):
+          s = six.text_type(s, encoding or 'ascii')
         r.append(s)
       o[k] = r
     # move foreign NIC handle out of the way
@@ -343,7 +330,7 @@ class _whoisobject(object):
         for l in o[k]:
           if l is None:
             continue
-          if not isinstance(l, unicode):
+          if not isinstance(l, six.text_type):
             continue
           if len(l) > maxlen:
             err.append([k + str(i), "value too long"])
@@ -360,7 +347,7 @@ class _whoisobject(object):
     #if 'ad' in o and len(addrmake(o['ad'])) < 20:
     #  err.append(['ad', "Address too short"])
     # check attribute constraints
-    for k, mm in attrlist.iteritems():
+    for k, mm in attrlist.items():
       minl, maxl = mm
       if k not in o:
         if minl > 0:
@@ -553,7 +540,7 @@ class Person(_whoisobject):
      addr, d['co'],
      d['ph'], d['fx'], d['cr'], chb, cho, d['pr'],
      d['cn']) = _fromdb(self._dbc.fetchone())
-    for k in d.iterkeys():
+    for k in d.keys():
       d[k] = [ d[k] ]
     d['ad'] = addrsplit(addr)
     d['ch'] = [ (chb, cho) ]
@@ -1117,7 +1104,7 @@ class Main:
       pass
     else:
       print(u"ERROR: Unknown object type", file=outfile)
-      print(unicode(o), file=outfile)
+      print(six.text_type(o, 'ascii'), file=outfile)
       return False
     return True
 
@@ -1193,7 +1180,7 @@ class Main:
       else:
         m = self.longattr_re.search(l)
         if not m:
-          print(u"ERROR: Unrecognized line:", unicode(l), file=outfile)
+          print(u"ERROR: Unrecognized line:", sys.text_type(l), file=outfile)
           err += 1
           continue
         a, v = m.groups()

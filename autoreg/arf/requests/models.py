@@ -7,6 +7,10 @@ import io
 import random
 import time
 
+
+import six
+
+
 from django.conf import settings
 from django.db import connection, models, transaction, IntegrityError
 from django.utils.translation import ugettext_lazy, ugettext as _
@@ -82,9 +86,9 @@ class Requests(models.Model):
       try:
         dd.new(r.fqdn, None, 'NS', file=rrfile, commit=False)
       except autoreg.dns.db.AccessError as e:
-        err = unicode(e)
+        err = six.text_type(e)
       except autoreg.dns.db.DomainError as e:
-        err = unicode(e)
+        err = six.text_type(e)
 
       if err:
         print(_("Error:"), err, file=out)
@@ -216,7 +220,7 @@ def rq_run(out):
         r2.do_pending_exc(out, dd, whoisdb)
         ok = True
       except IntegrityError as e:
-        print(unicode(e), file=out)
+        print(six.text_type(e), file=out)
         ok = False
       if ok:
         print(_("Status: committed"), file=out)

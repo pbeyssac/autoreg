@@ -1,6 +1,9 @@
 # $Id$
 
 from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
 
 import crypt
 import datetime
@@ -10,7 +13,10 @@ import re
 import socket
 import time
 
+
 import psycopg2
+import six
+
 
 from django.utils.translation import ugettext_lazy, ugettext as _
 
@@ -96,7 +102,7 @@ def _token_set(contact_id, action, args=None, ttl=3600):
 def _to_idna(fqdn):
   fqdn = fqdn.lower()
   try:
-    idna = fqdn.decode('idna')
+    idna = fqdn.encode('ascii').decode('idna')
   except UnicodeDecodeError:
     idna = fqdn
   except UnicodeError:
@@ -832,7 +838,7 @@ def domainedit(request, fqdn):
           'fqdn': fqdn, 'idna': idna,
           'msg': msg,
           'formlist': formlist,
-          'whoisdisplay': unicode(dbdom),
+          'whoisdisplay': six.text_type(dbdom),
           'has_ns': has_ns, 'has_ds': has_ds, 'can_ds': can_ds,
           'registry_hold': registry_hold, 'end_grace_period': end_grace_period,
           'addform': { 'domcontact_form': domcontact_form()} }
@@ -860,9 +866,9 @@ def domaindelete(request, fqdn):
   try:
     ok = domain_delete(dd, fqdn, out, None)
   except autoreg.dns.db.AccessError as e:
-    err = unicode(e)
+    err = six.text_type(e)
   except autoreg.dns.db.DomainError as e:
-    err = unicode(e)
+    err = six.text_type(e)
 
   # release the write lock on the zone record.
   dbh.commit()

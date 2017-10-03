@@ -9,6 +9,9 @@ import subprocess
 import sys
 
 
+import six
+
+
 from ..whois.models import check_is_admin
 from autoreg.conf import dbstring
 import autoreg.dns.db
@@ -421,7 +424,7 @@ def rqval(request):
       try:
         _rqexec(rq, out, za, admin_contact, login, action, reason)
       except IntegrityError as e:
-        print(unicode(e), file=out)
+        print(six.text_type(e), file=out)
         allok = False
 
     i += 1

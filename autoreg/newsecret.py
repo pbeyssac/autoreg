@@ -22,7 +22,7 @@ def new_handle_secret():
   # use default expiration date for this table.
 
   # yields 32 ASCII bytes
-  val = base64.b64encode(os.urandom(24))
+  val = base64.b64encode(os.urandom(24)).decode('ascii')
 
   dbc.execute("INSERT INTO handle_secrets VALUES (%s)", (val,))
   assert dbc.rowcount == 1

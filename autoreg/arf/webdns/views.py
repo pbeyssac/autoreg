@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import io
 
 import psycopg2
+import six
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -303,7 +304,7 @@ def _get_rr_nsip(dd, fqdn):
       if hfqdn in nsdict:
         nsdict[hfqdn].append(value.lower())
 
-  for ns, iplist in nsdict.iteritems():
+  for ns, iplist in nsdict.items():
     if iplist:
       for ip in iplist:
         nsiplist.append((ns, ip))
@@ -419,9 +420,9 @@ def domainns(request, fqdn=None):
         # don't really create (read-only session)
         ddro.new(fqdn, None, 'NS', file=io.StringIO())
       except autoreg.dns.db.DomainError as e:
-        errors['fqdn'] = [unicode(e)]
+        errors['fqdn'] = [six.text_type(e)]
       except autoreg.dns.db.AccessError as e:
-        errors['fqdn'] = [unicode(e)]
+        errors['fqdn'] = [six.text_type(e)]
 
       # release the write lock on the zone record
       dbh2.rollback()

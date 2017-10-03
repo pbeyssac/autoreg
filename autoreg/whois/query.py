@@ -24,6 +24,7 @@ import sys
 import time
 
 import psycopg2
+import six
 
 import autoreg.conf
 import autoreg.whois.db as whoisdb
@@ -184,7 +185,7 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
       encoding = 'utf-8'
 
   a = ' '.join(args)
-  if not isinstance(a, unicode):
+  if not isinstance(a, six.text_type):
     a = a.decode(encoding)
 
   if a[0] == '/' and not remote:
