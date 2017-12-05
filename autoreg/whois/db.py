@@ -35,9 +35,28 @@ def fetch_dbencoding(dbc):
       DBENCODING = 'ASCII'
   return DBENCODING
 
+if six.PY2:
+  def _todb(atuple):
+    """Convert Unicode strings in the tuple for use in a database request."""
+    newlist = []
+    for i in atuple:
+      if type(i) == unicode:
+        i = i.encode(DBENCODING)
+      newlist.append(i)
+    return tuple(newlist)
 
-_todb = lambda x: x
-_fromdb = lambda x: x
+  def _fromdb(atuple):
+    """Convert to Unicode any strings returned by the database."""
+    newlist = []
+    for i in atuple:
+      if type(i) == str:
+        i = unicode(i, DBENCODING)
+      newlist.append(i)
+    return tuple(newlist)
+
+else:
+  _todb = lambda x: x
+  _fromdb = lambda x: x
 
 
 def parse_changed(changed, outfile=sys.stdout):
