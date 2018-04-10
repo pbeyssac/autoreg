@@ -7,11 +7,14 @@ from __future__ import unicode_literals
 
 import crypt
 
+import six
+
 from autoreg.whois.db import HANDLESUFFIX,suffixadd,suffixstrip
 
 from django.contrib.auth.models import User
 
 from .models import Contacts
+
 
 class AuthBackend:
   def authenticate(self, username=None, password=None):
@@ -21,7 +24,9 @@ class AuthBackend:
     if login_valid:
       ct = ctlist[0]
       cryptpass = ct.passwd
-      pwd_valid = cryptpass and crypt.crypt(password.encode('UTF-8'),
+      if six.PY2:
+        password = password.encode('UTF-8')
+      pwd_valid = cryptpass and crypt.crypt(password,
                                             cryptpass) == cryptpass
     else:
       pwd_valid = False

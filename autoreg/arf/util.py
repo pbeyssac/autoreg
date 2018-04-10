@@ -1,3 +1,4 @@
+import codecs
 import errno
 import smtplib
 
@@ -7,6 +8,7 @@ from django.utils import translation
 
 import autoreg.conf
 
+import six
 
 def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
                    language=None):
@@ -41,7 +43,7 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
       if line[0] not in ' \n\t' and ':' in line:
         key, val = line.split(':', 1)
         val = '=?utf-8?Q?%s?=' \
-            % val.strip().encode('utf-8').encode('quoted-printable')
+            % six.text_type(codecs.encode(val.strip().encode('utf-8'), 'quoted-printable'), 'ascii')
         # quoted-printable encoding can add '\n' which is an absolute no-no
         # in mail headers!
         val = val.replace('=\n', '').replace('=\r', '') \
@@ -52,7 +54,7 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
     else:
       outh.append(line)
   msg = '\n'.join(outh) + '\n\n' \
-        + body.encode('utf-8').encode('quoted-printable')
+        + six.text_type(codecs.encode(body.encode('utf-8'), 'quoted-printable'), 'ascii')
 
   try:
     server = smtplib.SMTP()
