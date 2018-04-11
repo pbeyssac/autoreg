@@ -182,7 +182,7 @@ def rq(request, rqid=None):
     rqidlist = [rqid]
   else:
     rqidlist = []
-    for c in request.POST.iterkeys():
+    for c in request.POST.keys():
       m = _rq.match(c)
       if m:
         rqidlist.append(m.group(1))

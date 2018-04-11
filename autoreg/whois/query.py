@@ -46,6 +46,9 @@ class socketwrapper:
       if r < 0:
         raise SocketError('send')
       buf = buf[r:]
+  def flush(self):
+    return
+
 
 class server:
   maxforks = 5
@@ -119,7 +122,7 @@ class server:
           try:
             self.handleclient(c, a)
           except socket.error as se:
-            if len(se) != 2 or se.args[0] != errno.EPIPE:
+            if se.errno != errno.EPIPE:
               raise
             bkpipe = True
           if bkpipe:
@@ -136,12 +139,15 @@ class server:
             self.log("WARNING: maxforks (%d) reached" % self.maxforks)
 
   def handleclient(self, c, a):
+    encoding = 'iso8859-15'
     w = socketwrapper(c)
     sys.stdout = w
     ip, cport, flowinfo, scopeid = a
     c.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     q = ''
     r = c.recv(256)
+    if six.PY3:
+      r = str(r, encoding)
     while r:
       q += r
       i = q.find('\r\n')
@@ -152,12 +158,14 @@ class server:
         self.log("%s %s" % (ip, q))
         # XXX: the 192.168.0.* check is a terrible hack until the
         # Perl query interface is rewritten.
-        query(q, self.dbstring, w,
+        query(q, self.dbstring, w, encoding=encoding,
               remote = (ip != '127.0.0.1' and ip != '::1'
                         and not ip.startswith('192.168.0.')))
         c.shutdown(socket.SHUT_WR)
         break
       r = c.recv(256)
+      if six.PY3:
+        r = str(r, encoding)
     c.close()
   def log(self, msg):
     (year, month, day, hh, mm, ss, d1, d2, d3) = time.localtime(time.time())
@@ -165,7 +173,7 @@ class server:
           % (year, month, day, hh, mm, ss, msg), file=self.logf)
     self.logf.flush()
 
-def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
+def query(a, dbstring, out, encoding='iso8859-15', remote=True):
   dbh = psycopg2.connect(dbstring)
   l = whoisdb.Lookup(dbh.cursor())
 
@@ -196,9 +204,9 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
       else:
         d.fetch_obfuscated()
       if encoding is not None:
-        print(d.__str__().encode(encoding, 'xmlcharrefreplace'), file=out)
+        out.write(str(d).encode(encoding, 'xmlcharrefreplace')+b'\n')
       else:
-        print(d.__str__(), file=out)
+        print(d, file=out)
     return
 
   d = l.domain_by_name(a)
@@ -209,9 +217,9 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
     else:
       d.fetch_obfuscated()
     if encoding is not None:
-      print(d.__str__().encode(encoding, 'xmlcharrefreplace'), file=out)
+      out.write(str(d).encode(encoding, 'xmlcharrefreplace')+b'\n')
     else:
-      print(d.__str__(), file=out)
+      print(d, file=out)
     pdone = []
     for k in ['technical', 'administrative', 'zone']:
       if k not in dc:
@@ -223,9 +231,9 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
           p.fetch_obfuscated()
         if p.key not in pdone:
           if encoding is not None:
-            print(p.__str__().encode(encoding, 'xmlcharrefreplace'), file=out)
+            out.write(str(p).encode(encoding, 'xmlcharrefreplace')+b'\n')
           else:
-            print(p.__str__(), file=out)
+            print(p, file=out)
           pdone.append(p.key)
     return
 
@@ -243,9 +251,9 @@ def query(a, dbstring, out, encoding='ISO-8859-1', remote=True):
     else:
       p.fetch_obfuscated()
     if encoding is not None:
-      print(p.__str__().encode(encoding, 'xmlcharrefreplace'), file=out)
+      out.write(str(p).encode(encoding, 'xmlcharrefreplace')+b'\n')
     else:
-      print(p.__str__(), file=out)
+      print(p, file=out)
 
 def usage():
   print(__doc__, file=sys.stderr)

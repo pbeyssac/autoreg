@@ -396,7 +396,7 @@ def domainns(request, fqdn=None):
       if fqdn.endswith('.'):
         fqdn = fqdn[:-1]
 
-      fqdn = fqdn.lower().encode('idna')
+      fqdn = fqdn.lower().encode('idna').decode('ascii')
 
       th = request.POST.get('th').strip().upper()
 

@@ -74,7 +74,9 @@ def _pwcrypt(passwd):
   salt_chars = '0123456789abcdefghijklmnopqstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/.'
   t = ''.join(random.SystemRandom().choice(salt_chars) \
               for i in range(CRYPT_SALT_LEN))
-  return crypt.crypt(passwd.encode('UTF-8'), CRYPT_ALGO + t + '$')
+  if six.PY2:
+    passwd = passwd.encode('UTF-8')
+  return crypt.crypt(passwd, CRYPT_ALGO + t + '$')
 
 def _token_find(contact_id, action):
   """Find existing token(s)"""
@@ -513,7 +515,9 @@ def chpass(request):
       raise SuspiciousOperation
 
     ct = ctlist[0]
-    if ct.passwd != crypt.crypt(pass0.encode('UTF-8'), ct.passwd):
+    if six.PY2:
+      pass0 = pass0.encode('UTF-8')
+    if ct.passwd != crypt.crypt(pass0, ct.passwd):
       vars['msg'] = _("Current password is not correct")
       return render(request, 'whois/chpass.html', vars)
     ct.passwd = _pwcrypt(pass1)

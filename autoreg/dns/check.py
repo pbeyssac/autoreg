@@ -350,7 +350,7 @@ class SOAChecker(MultiResolver):
         yield True, _("SOA from %(fqdn)s at %(ip)s: serial %(serial)s (%(t).3f ms)") \
                      % {'fqdn': fqdn, 'ip': i, 'serial': r[1], 't' :t}
     if serials and len(serials) > 1:
-      serialsk = serials.keys()
+      serialsk = list(serials.keys())
       serialsk.sort()
       if serialsk[-1] - serialsk[0] < (1<<31):
         del serials[serialsk[-1]]
