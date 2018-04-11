@@ -3,7 +3,6 @@ import errno
 import smtplib
 
 from django.template.loader import get_template
-from django.template import Context
 from django.utils import translation
 
 import autoreg.conf
@@ -30,9 +29,9 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
 
   if language is not None:
     with translation.override(language):
-      msg = t.render(Context(context), request)
+      msg = t.render(context, request)
   else:
-    msg = t.render(Context(context), request)
+    msg = t.render(context, request)
 
   headers, body = msg.split('\n\n', 1)
   outh = []
