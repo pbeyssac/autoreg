@@ -103,7 +103,7 @@ class Requests(models.Model):
             and not line.startswith('mnt-by:')
             and not line.startswith('source:')
             and not line.startswith('changed:')]
-      inwhois.append(u'changed: ' + email)
+      inwhois.append('changed: ' + email)
 
       if not whoisdb.parsefile(inwhois, None, outfile=outwhois,
                                intrans=False):

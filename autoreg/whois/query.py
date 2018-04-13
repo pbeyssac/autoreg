@@ -243,7 +243,7 @@ def query(a, dbstring, out, encoding='iso8859-15', remote=True):
   if not lp and not remote and a.find('@') >= 0:
     lp = l.persons_by_email(a)
   if not lp:
-    print(u"Key not found", file=out)
+    print("Key not found", file=out)
     return
   for p in lp:
     if real_info:

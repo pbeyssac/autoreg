@@ -496,23 +496,23 @@ class _Domain:
             self._dbc.execute('DELETE FROM domains WHERE id=%s', (did,))
     def show_head(self, outfile=sys.stdout):
         """Show administrative data for domain."""
-        print(u"; zone", self._zone_name, file=outfile)
+        print("; zone", self._zone_name, file=outfile)
         if self.name == '':
-            print(u"; domain", self._zone_name, file=outfile)
+            print("; domain", self._zone_name, file=outfile)
         else:
-            print(u"; domain", '.'.join((self.name,self._zone_name)),
+            print("; domain", '.'.join((self.name,self._zone_name)),
                   file=outfile)
         if self._created_on:
-            print(u"; created: by %s, %s"
+            print("; created: by %s, %s"
                    % (self._created_by, self._created_on), file=outfile)
         if self._updated_on:
-            print(u"; updated: by %s, %s"
+            print("; updated: by %s, %s"
                    % (self._updated_by, self._updated_on), file=outfile)
-        if self._registry_lock: print(u"; registry_lock", file=outfile)
-        if self._registry_hold: print(u"; registry_hold", file=outfile)
-        if self._internal: print(u"; internal", file=outfile)
+        if self._registry_lock: print("; registry_lock", file=outfile)
+        if self._registry_hold: print("; registry_hold", file=outfile)
+        if self._internal: print("; internal", file=outfile)
         if self._end_grace_period:
-            print(u"; end_grace_period: %s"
+            print("; end_grace_period: %s"
                    % self._end_grace_period, file=outfile)
     def show_rrs(self, outfile=sys.stdout):
         """List all resource records for domain."""
@@ -525,10 +525,10 @@ class _Domain:
             if ttl is None: ttl = ''
             else: ttl = str(ttl)
 
-            print(u"\t".join((l, ttl, typ, value)), file=outfile)
+            print("\t".join((l, ttl, typ, value)), file=outfile)
             n += 1
         if n == 0:
-            print(u'; (NO RECORD)', file=outfile)
+            print('; (NO RECORD)', file=outfile)
     def gen_rrs(self, canon=False):
         """Generate all resource records for domain."""
         self._dbc.execute(

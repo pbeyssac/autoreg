@@ -87,7 +87,7 @@ def parse_changed(changed, outfile=sys.stdout):
       y = int(y)
       email = None
     else:
-      print(u"ERROR: Cannot parse_changed:", changed, file=outfile)
+      print("ERROR: Cannot parse_changed:", changed, file=outfile)
       return None, None
   m = int(m)
   d = int(d)
@@ -408,7 +408,7 @@ class _whoisobject(object):
     return self.d.get('err', []), self.d.get('warn', [])
   def format_msgs(self):
     o = self.d
-    text = u''
+    text = ''
     for i in ('err', 'warn'):
       if i in o:
         for j in o[i]:
@@ -588,7 +588,7 @@ class Person(_whoisobject):
     """Convert to string, RIPE-style.
        embed selects display within domain for a registrant contact.
     """
-    s = u''
+    s = ''
     d = self.d
     for i in ['pn', 'nh', 'ad', 'cn', 'ph', 'fx', 'em', 'ch']:
       if i == 'pn':
@@ -811,7 +811,7 @@ class Domain(_whoisobject):
       dc[typ] = [ Person(self._dbc, cid) for cid in self.d[k] ]
     return dc
   def __str__(self):
-    s = u"%-12s %s\n" % ('domain:', self.d['dn'][0])
+    s = "%-12s %s\n" % ('domain:', self.d['dn'][0])
     reg = self.ct
     s += reg.__str__('address', embed=True)
     for t, l in [('tc','tech-c'),
@@ -951,7 +951,7 @@ class Main:
         if ld is not None:
           ld.fetch()
           ld.delete()
-          print(u"Object deleted:", file=outfile)
+          print("Object deleted:", file=outfile)
           if encoding is not None:
             print(ld.__str__().encode(encoding), file=outfile)
           else:
@@ -959,7 +959,7 @@ class Main:
           self.ndom += 1
           return True
         else:
-          print(u"ERROR: Cannot delete: not found", file=outfile)
+          print("ERROR: Cannot delete: not found", file=outfile)
           return False
       self.ndom += 1
       ld = self._lookup.domain_by_name(i)
@@ -969,9 +969,9 @@ class Main:
         newdom = Domain(self._dbc, ld.did)
         r = newdom.from_ripe(o, persons)
         if encoding is not None:
-          print(newdom.format_msgs().encode(encoding), file=outfile, end=u'')
+          print(newdom.format_msgs().encode(encoding), file=outfile, end='')
         else:
-          print(newdom.format_msgs(), file=outfile, end=u'')
+          print(newdom.format_msgs(), file=outfile, end='')
         if r is None:
           # something incorrect in provided attributes
           return False
@@ -981,14 +981,14 @@ class Main:
         # compare with new object
         if ld != newdom or ld.ct.d['ad'] != newdom.ct.d['ad']:
           # they differ, update database
-          print(u"Object updated from:", file=outfile)
+          print("Object updated from:", file=outfile)
           if encoding is not None:
             print(ld.__str__().encode(encoding), file=outfile)
           else:
             print(ld.__str__(), file=outfile)
           newdom.ct.cid = ld.ct.cid
           newdom.update()
-          print(u"Object updated to:", file=outfile)
+          print("Object updated to:", file=outfile)
           if encoding is not None:
             print(newdom.__str__().encode(encoding), file=outfile)
           else:
@@ -996,7 +996,7 @@ class Main:
           self.ambig += ambig
           self.inval += inval
         else:
-          print(u"Object already exists:", file=outfile)
+          print("Object already exists:", file=outfile)
           if encoding is not None:
             print(ld.__str__().encode(encoding), file=outfile)
           else:
@@ -1006,9 +1006,9 @@ class Main:
         ld = Domain(self._dbc)
         r = ld.from_ripe(o, persons)
         if encoding is not None:
-          print(ld.format_msgs().encode(encoding), file=outfile, end=u'')
+          print(ld.format_msgs().encode(encoding), file=outfile, end='')
         else:
-          print(ld.format_msgs(), file=outfile, end=u'')
+          print(ld.format_msgs(), file=outfile, end='')
         if r is None:
           # something incorrect in provided attributes
           return False
@@ -1017,7 +1017,7 @@ class Main:
           return False
         # store to database
         ld.insert()
-        print(u"Object created:", file=outfile)
+        print("Object created:", file=outfile)
         if encoding is not None:
           print(ld.__str__().encode(encoding), file=outfile)
         else:
@@ -1030,9 +1030,9 @@ class Main:
       ct = Person(self._dbc)
       r = ct.from_ripe(o)
       if encoding is not None:
-        print(ct.format_msgs().encode(encoding), file=outfile, end=u'')
+        print(ct.format_msgs().encode(encoding), file=outfile, end='')
       else:
-        print(ct.format_msgs(), file=outfile, end=u'')
+        print(ct.format_msgs(), file=outfile, end='')
       if not r:
         return False
       name = o['pn'][0].lower()
@@ -1050,7 +1050,7 @@ class Main:
           # found, compare
           c.fetch()
           if dodel:
-            print(u"Object deleted:", file=outfile)
+            print("Object deleted:", file=outfile)
             if encoding is not None:
               print(c.__str__().encode(encoding), file=outfile)
             else:
@@ -1058,25 +1058,25 @@ class Main:
             c.delete()
           else:
             if ct != c:
-              print(u"Object updated from:", file=outfile)
+              print("Object updated from:", file=outfile)
               if encoding is not None:
                 print(c.__str__().encode(encoding), file=outfile)
               else:
                 print(c.__str__(), file=outfile)
-              print(u"Object updated to:", file=outfile)
+              print("Object updated to:", file=outfile)
               ct.cid = c.cid
               ct.update()
             else:
               ct = c
-              print(u"Object already exists:", file=outfile)
+              print("Object already exists:", file=outfile)
         else:
           # not found
           if dodel:
-            print(u"ERROR: Cannot delete: not found", file=outfile)
+            print("ERROR: Cannot delete: not found", file=outfile)
             return False
           else:
             ct.insert()
-            print(u"Object created:", file=outfile)
+            print("Object created:", file=outfile)
         if not dodel:
           if encoding is not None:
             print(ct.__str__().encode(encoding), file=outfile)
@@ -1087,7 +1087,7 @@ class Main:
           persons.setdefault(name, []).append(ct)
           persons.setdefault(ehandle, []).append(ct)
       elif dodel:
-        print(u"ERROR: Cannot delete: no handle provided", file=outfile)
+        print("ERROR: Cannot delete: no handle provided", file=outfile)
         return False
       else:
         # no handle, try to find by name
@@ -1100,14 +1100,14 @@ class Main:
             if ct == c:
               # found, stop
               ct = c
-              print(u"Object already exists:", file=outfile)
+              print("Object already exists:", file=outfile)
               break
             # clear copied handle
             o['nh'] = [ None ];
         else:
             # not found, insert
             ct.insert()
-            print(u"Object created:", file=outfile)
+            print("Object created:", file=outfile)
         if encoding is not None:
           print(ct.__str__().encode(encoding), file=outfile)
         else:
@@ -1122,7 +1122,7 @@ class Main:
       # deleted object, ignore
       pass
     else:
-      print(u"ERROR: Unknown object type", file=outfile)
+      print("ERROR: Unknown object type", file=outfile)
       print(six.text_type(o, 'ascii'), file=outfile)
       return False
     return True
@@ -1199,12 +1199,12 @@ class Main:
       else:
         m = self.longattr_re.search(l)
         if not m:
-          print(u"ERROR: Unrecognized line:", sys.text_type(l), file=outfile)
+          print("ERROR: Unrecognized line:", sys.text_type(l), file=outfile)
           err += 1
           continue
         a, v = m.groups()
         if a not in ripe_ltos:
-          print(u"ERROR: Unrecognized attribute \"%s\"" % a, file=outfile)
+          print("ERROR: Unrecognized attribute \"%s\"" % a, file=outfile)
           err += 1
           continue
         a = ripe_ltos[a]
@@ -1238,15 +1238,15 @@ class Main:
       else:
         self._dbh.rollback()
 
-    print(u"Domains: %d" % self.ndom, file=outfile)
-    print(u"Persons: %d" % self.nperson, file=outfile)
+    print("Domains: %d" % self.ndom, file=outfile)
+    print("Persons: %d" % self.nperson, file=outfile)
     if self.ambig:
-      print(u"Ambiguous contacts: %d" % self.ambig, file=outfile)
+      print("Ambiguous contacts: %d" % self.ambig, file=outfile)
     if self.inval:
-      print(u"Invalid contacts: %d" % self.inval, file=outfile)
+      print("Invalid contacts: %d" % self.inval, file=outfile)
     self._reset()
     if err:
-      print(u"%d error(s), aborting" % err, file=outfile)
+      print("%d error(s), aborting" % err, file=outfile)
     return err == 0
 
 

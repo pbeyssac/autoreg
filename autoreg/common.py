@@ -19,7 +19,7 @@ def domain_delete(dd, fqdn, whoisdb, out,
 
   dd.delete(fqdn, None, commit=not allnow, grace_days=grace_days)
 
-  print(u"Delete done\n", file=out)
+  print("Delete done\n", file=out)
 
   if allnow:
     inwhois = ['domain: '+fqdn, 'delete: autoreg']

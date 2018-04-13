@@ -82,7 +82,7 @@ def _whoisrecord_from_form(domain, form, handle):
                       "tech-c:  " + suffixadd(form.cleaned_data['th'])])
 
   if form.cleaned_data['private']:
-    whoisrecord.append(u"private: true")
+    whoisrecord.append("private: true")
   return whoisrecord
 
 
@@ -321,7 +321,7 @@ def _adopt_orphan(request, dbh, fqdn, form):
     inwhois = _whoisrecord_from_form(fqdn, form, request.user.username)
     w = autoreg.whois.db.Main(dbh)
     whoisout = io.StringIO()
-    inwhois.append(u'changed: ' + suffixadd(request.user.username))
+    inwhois.append('changed: ' + suffixadd(request.user.username))
     w.parsefile(inwhois, None, commit=True, outfile=whoisout)
     vars['whoisin'] = inwhois
     vars['whoisout'] = whoisout.getvalue()
