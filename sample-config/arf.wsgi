@@ -7,7 +7,7 @@ import os
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'autoreg.arf.arf.settings'
 os.environ['ARF_BASE'] = '/arf/'
-os.environ['AUTOREG_DBSTRING'] = 'dbname=eu.org'
+os.environ['AUTOREG_DBSTRING'] = 'dbname=autoreg'
 
 # This application object is used by the development server
 # as well as any WSGI server configured to use this file.

@@ -4,11 +4,11 @@
 # delete development database and recreate from a copy of production database
 #
 psql template1 << EOF
-drop database eudevel;
-create database eudevel with template=template0 encoding='UNICODE';
+drop database autoreg_dev;
+create database autoreg_dev with template=template0 encoding='UNICODE';
 EOF
 
-pg_dump eu.org | psql eudevel
-psql eudevel << EOF
+pg_dump autoreg | psql autoreg_dev
+psql autoreg_dev << EOF
 DELETE from requests_log WHERE date < NOW() - INTERVAL '1 month';
 EOF

@@ -68,8 +68,8 @@ NS2.TESTGL			AAAA	::FFFF:10.1.2.3
     dbh.set_isolation_level(0)
     dbc = dbh.cursor()
     try:
-      dbc.execute("DROP DATABASE eutest")
-    #except psycopg2.ProgrammingError('database "eutest" does not exist'):
+      dbc.execute("DROP DATABASE autoreg_test")
+    #except psycopg2.ProgrammingError('database "autoreg_test" does not exist'):
     except psycopg2.ProgrammingError:
       pass
   def setUp(self):
@@ -77,11 +77,11 @@ NS2.TESTGL			AAAA	::FFFF:10.1.2.3
     dbh = psycopg2.connect('dbname=template1')
     dbh.set_isolation_level(0)
     dbc = dbh.cursor()
-    dbc.execute("CREATE DATABASE eutest WITH ENCODING='UTF-8'")
+    dbc.execute("CREATE DATABASE autoreg_test WITH TEMPLATE = template0 ENCODING='UTF-8'")
     del dbc
     del dbh
-    os.system("psql eutest < ../eu.org.schema >/dev/null 2>&1")
-    self.dbh = psycopg2.connect('dbname=eutest')
+    os.system("psql autoreg_test < ../postgres/autoreg.schema >/dev/null 2>&1")
+    self.dbh = psycopg2.connect('dbname=autoreg_test')
     dbc = self.dbh.cursor()
     dbc.execute("INSERT INTO zones (name, soaprimary, soaemail, soaserial)"
                 " VALUES ('EU.ORG', 'NS.EU.ORG', 'hostmaster.eu.org',"

@@ -25,7 +25,7 @@ SOA_MASTER='NS.EU.ORG'
 SOA_EMAIL='hostmaster.eu.org'
 ZONEFILES_DIR='/etc/namedb/autoreg'
 
-dbstring=os.getenv('AUTOREG_DBSTRING') or 'dbname=eu.org'
+dbstring=os.getenv('AUTOREG_DBSTRING') or 'dbname=autoreg'
 
 # export database name in a form suitable for Django
 if dbstring.startswith('dbname='):

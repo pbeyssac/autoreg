@@ -50,7 +50,7 @@ fi
 
 ${RNDC} -k ${RNDCKEY} reconfig
 
-echo "INSERT INTO allowed_rr VALUES ((SELECT id FROM zones WHERE name='${ZONE}'),(SELECT id FROM rrtypes WHERE label='DS'));" | psql eu.org
+echo "INSERT INTO allowed_rr VALUES ((SELECT id FROM zones WHERE name='${ZONE}'),(SELECT id FROM rrtypes WHERE label='DS'));" | psql autoreg
 
 echo "After all servers are up to date, run this:"
 echo "${AZ} -uautoreg -aaddrr -i -z ${PARENTZONE} ${ZONE} << EOF"

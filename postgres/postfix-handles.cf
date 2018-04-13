@@ -6,6 +6,6 @@ query = SELECT email
 domain = handles.eu.org
 expansion_limit = 1
 
-dbname = eu.org
+dbname = autoreg
 user = postfix
 hosts = unix:

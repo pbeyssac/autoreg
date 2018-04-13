@@ -12,7 +12,7 @@ if [ "$1" == "stop" -o "$1" == "restart" ]; then
 fi
 if [ "$1" == "start" -o "$1" == "restart" -o "$1" == "faststart" -o "$1" == "quietstart" ]; then
   # Next generation whois on production database
-  /usr/local/autoreg/bin/$CMD -D dbname=eu.org -p 43 -u whois
+  /usr/local/autoreg/bin/$CMD -D dbname=autoreg -p 43 -u whois
   # Next generation whois on development database
-  /usr/local/autoreg/bin/$CMD -l /var/log/whoisd-devel.log -e /var/log/whoisd-devel.err -D dbname=eudevel -p 4343 -u whois
+  /usr/local/autoreg/bin/$CMD -l /var/log/whoisd-devel.log -e /var/log/whoisd-devel.err -D dbname=autoreg_dev -p 4343 -u whois
 fi
