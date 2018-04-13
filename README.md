@@ -5,6 +5,7 @@ Autoreg (formerly known as AutoReg 4.1, short name AR41, now retired),
 is the software that's been running most of *eu.org* since 1996.
 
 The current version requires:
+
 	* Python 3.6 (preferably) or 2.7
 	* Django >= 1.10
 	* BIND 9.10
@@ -21,7 +22,7 @@ package (Python egg, etc).
 
 Required Python modules are listed in `setup.py`
 
-1. Install the Python package, then the additional shell scripts in `bin/``
+1. Install the Python package, then the additional shell scripts in `bin/`
 
 2. Create Unix userids for *autoreg* and *whois*
 
