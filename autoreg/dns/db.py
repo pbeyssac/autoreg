@@ -342,10 +342,10 @@ class _Domain:
                 elif label == dom:
                     label = ''
             # compute label for parent zone
-            if label:
+            if label and self.name:
               parentlabel = label + '.' + self.name
             else:
-              parentlabel = self.name
+              parentlabel = label or self.name
             # More tests which do not belong in the parser.
             # Check & "compress" the value field somewhat.
             if typ in _dotted_rr:
@@ -423,10 +423,10 @@ class _Domain:
             " VALUES (%s, %s, %s, (SELECT id FROM rrtypes WHERE label=%s), %s)",
              (self.id, label, ttl, rrtype, undot_value(rrtype, value)));
         if dyn:
-          if label:
+          if label and self.name:
             label += '.' + self.name
           else:
-            label = self.name
+            label = label or self.name
           dyn.add(label, self._zone_name, ttl or self.zone_ttl, rrtype, value,
                   self.zone_master)
         assert self._dbc.rowcount == 1
@@ -441,10 +441,10 @@ class _Domain:
             " AND domain_id=%s AND label=%s AND value=%s LIMIT 1)",
              (rrtype, self.id, label, undot_value(rrtype, value)));
         if dyn:
-          if label:
+          if label and self.name:
             label += '.' + self.name
           else:
-            label = self.name
+            label = label or self.name
           dyn.delete(label, self._zone_name, rrtype, value, self.zone_master)
         return self._dbc.rowcount
 
