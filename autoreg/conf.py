@@ -1,5 +1,4 @@
 #
-# $Id$
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -25,11 +24,19 @@ SOA_MASTER='NS.EU.ORG'
 SOA_EMAIL='hostmaster.eu.org'
 ZONEFILES_DIR='/etc/namedb/autoreg'
 
-dbstring=os.getenv('AUTOREG_DBSTRING') or 'dbname=autoreg'
+# Postgres connect string
+dbstring=os.getenv('AUTOREG_DBSTRING') or \
+  'dbname=autoreg_dev host=192.168.0.4 user=autoreg password='
 
-# export database name in a form suitable for Django
-if dbstring.startswith('dbname='):
-  DATABASE_NAME=dbstring[7:]
-else:
-  # let's try that in case it works by pure chance...
-  DATABASE_NAME=dbstring
+for kv in dbstring.split():
+  k, v = kv.split('=', 1)
+  if k == 'dbname':
+    DATABASE_NAME=v
+  elif k == 'host':
+    DATABASE_HOST=v
+  elif k == 'user':
+    DATABASE_USER=v
+  elif k == 'password':
+    DATABASE_PASSWORD=v
+  elif k == 'port':
+    DATABASE_PORT=v

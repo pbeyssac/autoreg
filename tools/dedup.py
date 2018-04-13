@@ -10,7 +10,6 @@ import psycopg2
 
 import autoreg.conf
 
-#dbstring = 'dbname=eudevel'
 dbstring = autoreg.conf.dbstring
 
 def usage(argv):

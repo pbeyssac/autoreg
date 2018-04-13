@@ -85,20 +85,18 @@ LANGUAGES = (
 )
 
 LOCALE_PATHS = (
-	'/usr/local/autoreg/arf/locale',
+        '/usr/local/autoreg/arf/locale',
 )
 
-#
-# Application-specific settings
-#
-
-from autoreg.conf import DATABASE_NAME
+from autoreg.conf import DATABASE_NAME, DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD
 
 DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': DATABASE_NAME,
-    'USER': 'www'
+    'USER': DATABASE_USER,
+    'HOST': DATABASE_HOST,
+    'PASSWORD': DATABASE_PASSWORD
   }
 }
 
@@ -107,13 +105,6 @@ ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
 MANAGERS = ADMINS
-FORCEDEBUGMAIL=''
-
-RECAPTCHA_PUBLIC_KEY='6LdLMRkTAAAAACM-hHnNRNq_ptBpeU6W_5AL8-ta'
-RECAPTCHA_PRIVATE_KEY='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-RECAPTCHA_API_URL='https://www.google.com/recaptcha/api/siteverify'
-RECAPTCHA_REQUESTS_MIN=10
-RECAPTCHA_DOMAINS_MIN=10
 
 LANGUAGE_COOKIE_AGE=1209600
 CSRF_COOKIE_HTTPONLY=True
@@ -123,3 +114,15 @@ SESSION_COOKIE_HTTPONLY=True
 SESSION_COOKIE_SECURE=True
 SITE_ID=1
 STATIC_URL='/arf/en/admin/static/'
+
+#
+# Application-specific settings
+#
+
+FORCEDEBUGMAIL=''
+
+RECAPTCHA_PUBLIC_KEY='6LdLMRkTAAAAACM-hHnNRNq_ptBpeU6W_5AL8-ta'
+RECAPTCHA_PRIVATE_KEY='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+RECAPTCHA_API_URL='https://www.google.com/recaptcha/api/siteverify'
+RECAPTCHA_REQUESTS_MIN=10
+RECAPTCHA_DOMAINS_MIN=10
