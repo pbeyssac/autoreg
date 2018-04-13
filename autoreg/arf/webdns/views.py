@@ -106,7 +106,7 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
     rec = []
     for ns in soac.nslist:
       rec.append("\tNS\t%s." % ns)
-    gluelist = soac.manualip.keys()
+    gluelist = list(soac.manualip.keys())
     gluelist.sort()
     for ns in gluelist:
       iplist = soac.manualip[ns]
