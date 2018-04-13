@@ -30,17 +30,17 @@ class Requests(models.Model):
     email = models.CharField(max_length=80)
     action = models.CharField(max_length=8)
     fqdn = models.CharField(max_length=200)
-    zone = models.ForeignKey(Zones)
+    zone = models.ForeignKey(Zones, on_delete=models.CASCADE)
     language = models.CharField(max_length=2)
     state = models.CharField(max_length=10)
     zonerecord = models.CharField(max_length=500)
     whoisrecord = models.CharField(max_length=2000)
     tags = models.CharField(max_length=50)
-    contact = models.ForeignKey(Contacts)
+    contact = models.ForeignKey(Contacts, on_delete=models.CASCADE)
     pending_state = models.CharField(max_length=10, default=None)
     reason = models.CharField(max_length=80, default=None)
     reasonfield = models.CharField(max_length=1000, default=None)
-    admin_contact = models.ForeignKey(Contacts, related_name='admin')
+    admin_contact = models.ForeignKey(Contacts, related_name='admin', on_delete=models.CASCADE)
     class Meta:
         db_table = 'requests'
         ordering = ['id']
@@ -188,7 +188,7 @@ class Requests(models.Model):
 class RequestsLog(models.Model):
     id = models.AutoField(primary_key=True)
     fqdn = models.CharField(max_length=255)
-    contact = models.ForeignKey(Contacts)
+    contact = models.ForeignKey(Contacts, on_delete=models.CASCADE)
     date = models.DateTimeField()
     output = models.CharField(max_length=20000)
     errors = models.IntegerField()

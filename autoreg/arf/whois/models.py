@@ -85,9 +85,9 @@ class Contacts(models.Model):
 
 class DomainContact(models.Model):
     id = models.AutoField(primary_key=True)
-    whoisdomain = models.ForeignKey(Whoisdomains)
-    contact = models.ForeignKey(Contacts)
-    contact_type = models.ForeignKey(ContactTypes)
+    whoisdomain = models.ForeignKey(Whoisdomains, on_delete=models.CASCADE)
+    contact = models.ForeignKey(Contacts, on_delete=models.CASCADE)
+    contact_type = models.ForeignKey(ContactTypes, on_delete=models.CASCADE)
     created_on = models.DateTimeField()
     class Meta:
         db_table = 'domain_contact'
@@ -130,7 +130,7 @@ class DomainContactHist(models.Model):
     id = models.AutoField(primary_key=True)
     whoisdomain_id = models.IntegerField()
     contact_id = models.IntegerField()
-    contact_type = models.ForeignKey(ContactTypes)
+    contact_type = models.ForeignKey(ContactTypes, on_delete=models.CASCADE)
     created_on = models.DateTimeField()
     deleted_on = models.DateTimeField()
     class Meta:
@@ -151,7 +151,7 @@ class Tokens(models.Model):
 class Admins(models.Model):
     id = models.AutoField(primary_key=True)
     login = models.CharField(max_length=16, unique=True)
-    contact = models.ForeignKey(Contacts)
+    contact = models.ForeignKey(Contacts, on_delete=models.CASCADE)
     class Meta:
         db_table = 'admins'
         ordering = ['login']

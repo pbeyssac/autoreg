@@ -42,8 +42,8 @@ class Zones(models.Model):
 
 class AdminZone(models.Model):
     id = models.IntegerField(primary_key=True)
-    zone_id = models.ForeignKey(Zones, db_column='zone_id')
-    admin_id = models.ForeignKey(Admins, db_column='admin_id')
+    zone_id = models.ForeignKey(Zones, on_delete=models.CASCADE, db_column='zone_id')
+    admin_id = models.ForeignKey(Admins, on_delete=models.CASCADE, db_column='admin_id')
     class Meta:
         db_table = 'admin_zone'
         ordering = ['id']
@@ -57,11 +57,11 @@ class Domains(models.Model):
     registry_hold = models.BooleanField()
     registry_lock = models.BooleanField()
     internal = models.BooleanField()
-    zone = models.ForeignKey(Zones)
+    zone = models.ForeignKey(Zones, on_delete=models.CASCADE)
     registrar_id = models.IntegerField()
-    created_by = models.ForeignKey(Admins, db_column='created_by', related_name='domains_created')
+    created_by = models.ForeignKey(Admins, on_delete=models.CASCADE, db_column='created_by', related_name='domains_created')
     created_on = models.DateTimeField()
-    updated_by = models.ForeignKey(Admins, db_column='updated_by')
+    updated_by = models.ForeignKey(Admins, on_delete=models.CASCADE, db_column='updated_by')
     updated_on = models.DateTimeField()
     def fqdn(self):
         return self.name + '.' + self.zone.name
@@ -86,9 +86,9 @@ class Rrtypes(models.Model):
 
 class Rrs(models.Model):
     id = models.IntegerField(primary_key=True)
-    domain = models.ForeignKey(Domains) # edit_inline=models.TABULAR
+    domain = models.ForeignKey(Domains, on_delete=models.CASCADE) # edit_inline=models.TABULAR
     ttl = models.IntegerField() # core=True
-    rrtype = models.ForeignKey(Rrtypes) # core=True
+    rrtype = models.ForeignKey(Rrtypes, on_delete=models.CASCADE) # core=True
     created_on = models.DateTimeField() # core=True
     label = models.CharField(max_length=64) # core=True
     value = models.CharField(max_length=255) # core=True
@@ -104,8 +104,8 @@ class Rrs(models.Model):
 
 class AllowedRr(models.Model):
     id = models.IntegerField(primary_key=True)
-    zone = models.ForeignKey(Zones) # edit_inline=models.TABULAR
-    rrtype = models.ForeignKey(Rrtypes) # core=True
+    zone = models.ForeignKey(Zones, on_delete=models.CASCADE) # edit_inline=models.TABULAR
+    rrtype = models.ForeignKey(Rrtypes, on_delete=models.CASCADE) # core=True
     class Meta:
         db_table = 'allowed_rr'
     def __str__(self):
@@ -114,11 +114,11 @@ class AllowedRr(models.Model):
 class DomainsHist(models.Model):
     id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=64)
-    zone = models.ForeignKey(Zones)
+    zone = models.ForeignKey(Zones, on_delete=models.CASCADE)
     registrar_id = models.IntegerField()
-    created_by = models.ForeignKey(Admins, db_column='created_by', related_name='domainshist_created')
+    created_by = models.ForeignKey(Admins, on_delete=models.CASCADE, db_column='created_by', related_name='domainshist_created')
     created_on = models.DateTimeField()
-    deleted_by = models.ForeignKey(Admins, db_column='deleted_by')
+    deleted_by = models.ForeignKey(Admins, on_delete=models.CASCADE, db_column='deleted_by')
     deleted_on = models.DateTimeField()
     class Meta:
         db_table = 'domains_hist'
@@ -127,7 +127,7 @@ class RrsHist(models.Model):
     id = models.IntegerField(primary_key=True)
     domain_id = models.IntegerField()
     ttl = models.IntegerField()
-    rrtype = models.ForeignKey(Rrtypes)
+    rrtype = models.ForeignKey(Rrtypes, on_delete=models.CASCADE)
     created_on = models.DateTimeField()
     label = models.CharField(max_length=64)
     value = models.CharField(max_length=255)

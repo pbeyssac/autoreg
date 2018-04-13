@@ -32,7 +32,7 @@ import autoreg.dns.db
 import django.contrib.auth
 from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponse, \
   HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render

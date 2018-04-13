@@ -13,7 +13,7 @@ from ..whois.models import Contacts
 class Log(models.Model):
     id = models.AutoField(primary_key=True)
     date = models.DateTimeField(default=datetime.datetime.today)
-    contact = models.ForeignKey(Contacts)
+    contact = models.ForeignKey(Contacts, on_delete=models.CASCADE)
     action = models.CharField(max_length=10)
     message = models.CharField(max_length=300, null=True)
     class Meta:
