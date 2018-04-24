@@ -14,8 +14,10 @@ CREATE TABLE rrtypes (
 -- id lookup table for admins
 CREATE TABLE admins (
 	id SERIAL PRIMARY KEY,
-	login VARCHAR(16) UNIQUE,
-	contact_id INTEGER REFERENCES contacts(id)
+	login VARCHAR(16) UNIQUE
+
+	-- XXX: following line moved to ALTER TABLE to fix circular reference
+	-- contact_id INTEGER REFERENCES contacts(id)
 );
 
 -- zone table
@@ -219,6 +221,9 @@ CREATE TABLE contacts (
 CREATE INDEX contacts_handle_index ON contacts(handle);
 CREATE INDEX contacts_name_index ON contacts(lower(name));
 CREATE INDEX contacts_exthandle_index ON contacts(exthandle);
+
+-- moved here from CREATE TABLE admins to fix circular reference
+ALTER TABLE admins ADD COLUMN contact_id INTEGER REFERENCES contacts(id);
 
 -- mostly static table for mapping contact type integer to a string
 -- see example rows below
