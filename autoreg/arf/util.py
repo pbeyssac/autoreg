@@ -63,8 +63,8 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
   try:
     server = smtplib.SMTP()
     server.connect()
-  except socket.error as msg:
-    if msg[0] != errno.ECONNREFUSED:
+  except socket.error as e:
+    if e.errno != errno.ECONNREFUSED:
       raise
     failed = True
   if failed:
