@@ -4,9 +4,9 @@
 
 Your contact record has been successfully created with the following
 data. You still need to activate it, by going to the following page:
-{{ absurl }}
+{{ absurl|safe }}
 
-{{ whoisdata }}
+{{ whoisdata|safe }}
 
 {% endblocktrans %}
 {% endblock %}

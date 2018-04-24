@@ -6,13 +6,13 @@ Your request [{{ rqid }}] for creation of domain {{ domain }}
 has been accepted.
 
 The following records will be inserted in the zone file:
-{{ zonerecord }}
+{{ zonerecord|safe }}
 
 The following records will be inserted in the WHOIS base:
-{{ whoisrecord }}{% endblocktrans %}
+{{ whoisrecord|safe }}{% endblocktrans %}
 {% if reasonfield %}{% trans "Additional comment:" %}
 
-{{ reasonfield }}
+{{ reasonfield|safe }}
 {% endif %}
 {% blocktrans %}Please allow about half a day for propagation.
 {% endblocktrans %}

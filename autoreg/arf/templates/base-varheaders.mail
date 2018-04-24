@@ -1,4 +1,4 @@
 {% extends "base.mail" %}
-{% block from %}{{ from }}{% endblock %}
-{% block to %}{{ to }}{% endblock %}
-{% block subject %}{{ subject }}{% endblock %}
+{% block from %}{{ from|safe }}{% endblock %}
+{% block to %}{{ to|safe }}{% endblock %}
+{% block subject %}{{ subject|safe }}{% endblock %}

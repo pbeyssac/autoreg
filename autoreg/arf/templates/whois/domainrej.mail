@@ -6,8 +6,8 @@ Sorry, your request [{{ rqid }}] for {{ action }}
 of domain {{ domain }} has been rejected
 for the following reason:
 
-{{ reason }}
-{{ reasonfield }}
+{{ reason|safe }}
+{{ reasonfield|safe }}
 {% endblocktrans %}
 
 {% endblock %}
