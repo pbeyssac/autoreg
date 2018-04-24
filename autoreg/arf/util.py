@@ -14,12 +14,12 @@ import autoreg.conf
 
 import six
 
-def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
+
+def _render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
                    language=None):
   """Expand provided templatename and context, send the result
      by email to the indicated addresses."""
 
-  failed = False
   t = get_template(templatename)
 
   # add possibly forgotten 'from' to generate valid mail headers
@@ -59,6 +59,13 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
       outh.append(line)
   msg = '\n'.join(outh) + '\n\n' \
         + six.text_type(codecs.encode(body.encode('utf-8'), 'quoted-printable'), 'ascii')
+  return msg
+
+
+def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
+                   language=None):
+  msg = _render_to_mail(templatename, context, fromaddr, toaddrs, request, language)
+  failed = False
 
   try:
     server = smtplib.SMTP()
