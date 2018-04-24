@@ -111,6 +111,18 @@ def _to_idna(fqdn):
     idna = fqdn
   return idna
 
+
+class Country(object):
+  def __iter__(self):
+    self.c = countries_get(connection.cursor())
+    return self.c.__iter__()
+
+
+def countries_get_lazy():
+  """Lazy evaluation for the country list, so it is not run at module import."""
+  return Country
+
+
 #
 # Forms
 #
@@ -139,7 +151,7 @@ class contactchange_form(forms.Form):
   ad5 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 4)"),
                         required=False)
   ad6 = forms.ChoiceField(initial='', label=ugettext_lazy("Country"),
-                          choices=countries_get(connection.cursor()))
+                          choices=countries_get_lazy())
   ph1 = forms.RegexField(max_length=30, label=ugettext_lazy("Phone"),
                          regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   fx1 = forms.RegexField(max_length=30, label=ugettext_lazy("Fax"),
@@ -168,7 +180,7 @@ class registrant_form(forms.Form):
   ad5 = forms.CharField(max_length=80, label=ugettext_lazy("Address (line 4)"),
                         required=False)
   ad6 = forms.ChoiceField(initial='', label=ugettext_lazy("Country"),
-                          choices=countries_get(connection.cursor()))
+                          choices=countries_get_lazy())
   ph1 = forms.RegexField(max_length=30, label=ugettext_lazy("Phone"),
                          regex='^\+?[\d\s#\-\(\)\[\]\.]+$', required=False)
   fx1 = forms.RegexField(max_length=30, label=ugettext_lazy("Fax"),

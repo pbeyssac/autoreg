@@ -37,10 +37,10 @@ class Requests(models.Model):
     whoisrecord = models.CharField(max_length=2000)
     tags = models.CharField(max_length=50)
     contact = models.ForeignKey(Contacts, on_delete=models.CASCADE)
-    pending_state = models.CharField(max_length=10, default=None)
-    reason = models.CharField(max_length=80, default=None)
-    reasonfield = models.CharField(max_length=1000, default=None)
-    admin_contact = models.ForeignKey(Contacts, related_name='admin', on_delete=models.CASCADE)
+    pending_state = models.CharField(max_length=10, default=None, null=True)
+    reason = models.CharField(max_length=80, default=None, null=True)
+    reasonfield = models.CharField(max_length=1000, default=None, null=True)
+    admin_contact = models.ForeignKey(Contacts, related_name='admin', on_delete=models.CASCADE, null=True)
     class Meta:
         db_table = 'requests'
         ordering = ['id']

@@ -43,10 +43,10 @@ class Contacts(models.Model):
     phone = models.CharField(max_length=40)
     fax = models.CharField(max_length=40)
     passwd = models.CharField(max_length=34)
-    created_on = models.DateTimeField()
+    created_on = models.DateTimeField(default=datetime.datetime.today)
     updated_by = models.CharField(max_length=64)
-    validated_on = models.DateTimeField()
-    updated_on = models.DateTimeField()
+    validated_on = models.DateTimeField(default=datetime.datetime.today)
+    updated_on = models.DateTimeField(default=datetime.datetime.today)
     private = models.BooleanField(default=False)
     class Meta:
         db_table = 'contacts'
