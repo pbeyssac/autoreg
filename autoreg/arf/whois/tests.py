@@ -46,3 +46,6 @@ class AccountTest(TestCase):
 
     r = c.post('/en/logout/')
     self.assertEqual(302, r.status_code)
+
+    r = c.post('/en/logout/')
+    self.assertEqual(302, r.status_code)

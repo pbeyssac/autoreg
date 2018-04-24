@@ -922,6 +922,6 @@ def domainundelete(request, fqdn):
 def logout(request):
   """Logout page"""
   if not request.user.is_authenticated() or not request.user.is_active:
-    log(request.user.username, action='logout')
+    return HttpResponseRedirect(reverse(login))
   django.contrib.auth.logout(request)
   return HttpResponseRedirect(reverse(login))
