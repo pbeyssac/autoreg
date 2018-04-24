@@ -24,7 +24,7 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
 
   # add possibly forgotten 'from' to generate valid mail headers
   if 'from' not in context:
-    context['from'] = autoreg.conf.FROMADDR
+    context['from'] = fromaddr
 
   # Possibly activate another language just during the mail rendering,
   # instead of the current language, to get the mail
