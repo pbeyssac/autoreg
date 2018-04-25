@@ -1,15 +1,15 @@
 {% extends "base-varheaders.mail" %}{% load i18n %}
-{% block subject %}{% blocktrans %}email change for {{ sitename|safe }} contact {{ handle }}{% endblocktrans %}{% endblock %}
-{% block content %}{% blocktrans %}Hello,
+{% block subject %}{% autoescape off %}{% blocktrans %}email change for {{ sitename }} contact {{ handle }}{% endblocktrans %}{% endautoescape %}{% endblock %}
+{% block content %}{% autoescape off %}{% blocktrans %}Hello,
 
 Following a request on our web site (possibly by you), here is how
 to validate this email address on your {{ sitename|safe }} contact record
 identified as {{ handle }}:
 
-- Connect to {{ absurl|safe }}
+- Connect to {{ absurl }}
 - Login using your handle and password, if necessary
 - Enter the following validation token: {{ token }}
 - Then validate to set the email address to
-  {{ newemail|safe }}
-{% endblocktrans %}
+  {{ newemail }}
+{% endblocktrans %}{% endautoescape %}
 {% endblock %}

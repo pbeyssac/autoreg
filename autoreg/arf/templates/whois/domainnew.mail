@@ -1,19 +1,19 @@
 {% extends "base-varheaders.mail" %}{% load i18n %}
-{% block subject %}{% blocktrans %}request [{{ rqid }}] (domain {{ domain }}) accepted{% endblocktrans %}{% endblock %}
-{% block content %}{% blocktrans %}Hello,
+{% block subject %}{% autoescape off %}{% blocktrans %}request [{{ rqid }}] (domain {{ domain }}) accepted{% endblocktrans %}{% endautoescape %}{% endblock %}
+{% block content %}{% autoescape off %}{% blocktrans %}Hello,
 
 Your request [{{ rqid }}] for creation of domain {{ domain }}
 has been accepted.
 
 The following records will be inserted in the zone file:
-{{ zonerecord|safe }}
+{{ zonerecord }}
 
 The following records will be inserted in the WHOIS base:
-{{ whoisrecord|safe }}{% endblocktrans %}
+{{ whoisrecord }}{% endblocktrans %}
 {% if reasonfield %}{% trans "Additional comment:" %}
 
-{{ reasonfield|safe }}
+{{ reasonfield }}
 {% endif %}
 {% blocktrans %}Please allow about half a day for propagation.
-{% endblocktrans %}
+{% endblocktrans %}{% endautoescape %}
 {% endblock %}

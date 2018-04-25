@@ -1,13 +1,13 @@
 {% extends "base-varheaders.mail" %}{% load i18n %}
-{% block subject %}{% blocktrans %}request [{{ rqid }}] ({{ action }} of domain {{ domain }}) rejected{% endblocktrans %}{% endblock %}
-{% block content %}{% blocktrans %}Hello,
+{% block subject %}{% autoescape off %}{% blocktrans %}request [{{ rqid }}] ({{ action }} of domain {{ domain }}) rejected{% endblocktrans %}{% endautoescape %}{% endblock %}
+{% block content %}{% autoescape off %}{% blocktrans %}Hello,
 
 Sorry, your request [{{ rqid }}] for {{ action }}
 of domain {{ domain }} has been rejected
 for the following reason:
 
-{{ reason|safe }}
-{{ reasonfield|safe }}
-{% endblocktrans %}
+{{ reason }}
+{{ reasonfield }}
+{% endblocktrans %}{% endautoescape %}
 
 {% endblock %}

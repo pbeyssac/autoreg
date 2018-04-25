@@ -1,17 +1,17 @@
 {% extends "base-varheaders.mail" %}{% load i18n %}
-{% block subject %}{% blocktrans %}password reset for {{ sitename|safe }} contact {{ handle }}{% endblocktrans %}{% endblock %}
-{% block content %}{% blocktrans %}Hello,
+{% block subject %}{% autoescape off %}{% blocktrans %}password reset for {{ sitename }} contact {{ handle }}{% endblocktrans %}{% endautoescape %}{% endblock %}
+{% block content %}{% autoescape off %}{% blocktrans %}Hello,
 
 Please ignore this request if you didn't initiate it.
 Someone may be trying to steal your account.
 
 Following a request on our web site from {{ remoteip }},
-here is how to set a new password on your {{ sitename|safe }} contact
+here is how to set a new password on your {{ sitename }} contact
 record identified as {{ handle }}:
 
-- Connect to {{ absurl|safe }}
+- Connect to {{ absurl }}
 - Enter the following reset code: {{ token }}
 - Enter the desired new password
 - Then validate.
-{% endblocktrans %}
+{% endblocktrans %}{% endautoescape %}
 {% endblock %}

@@ -1,12 +1,12 @@
 {% extends "base-varheaders.mail" %}{% load i18n %}
-{% block subject %}{% blocktrans %}new {{ sitename }} contact {{ handle }}{% endblocktrans %}{% endblock %}
-{% block content %}{% blocktrans %}Hello,
+{% block subject %}{% autoescape off %}{% blocktrans %}new {{ sitename }} contact {{ handle }}{% endblocktrans %}{% endautoescape %}{% endblock %}
+{% block content %}{% autoescape off %}{% blocktrans %}Hello,
 
 Your contact record has been successfully created with the following
 data. You still need to activate it, by going to the following page:
-{{ absurl|safe }}
+{{ absurl }}
 
-{{ whoisdata|safe }}
+{{ whoisdata }}
 
-{% endblocktrans %}
+{% endblocktrans %}{% endautoescape %}
 {% endblock %}
