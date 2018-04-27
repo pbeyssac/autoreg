@@ -282,15 +282,15 @@ def login(request):
   else:
     raise SuspiciousOperation
 
-def contactbydomain(request):
+def contactbydomain(request, fqdn=None):
   is_admin = check_is_admin(request.user.username)
-  if request.method == "GET":
+  if request.method == "GET" and fqdn is None:
     f = contactbydomain_form()
     form = f.as_table()
     vars = { 'form': form }
     return render(request, 'whois/contactdomainform.html', vars)
-  elif request.method == "POST":
-    fqdn = request.POST.get('domain', '')
+  elif request.method == "POST" or fqdn is not None:
+    fqdn = fqdn or request.POST.get('domain', '')
     handles = DomainContact.objects \
                .filter(whoisdomain_id__fqdn=fqdn.upper(),
                        contact_id__email__isnull=False) \
