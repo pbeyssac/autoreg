@@ -8,5 +8,5 @@ Content-Disposition: inline
 Content-Transfer-Encoding: {% block encoding %}quoted-printable{% endblock %}
 
 {% block content %}{% endblock %}
-{% load i18n %}{% block regards %}{% blocktrans %}Best Regards,
-The {{ sitename|safe }} team{% endblocktrans %}{% endblock %}
+{% load i18n %}{% block regards %}{% autoescape off %}{% blocktrans %}Best Regards,
+The {{ sitename }} team{% endblocktrans %}{% endautoescape %}{% endblock %}

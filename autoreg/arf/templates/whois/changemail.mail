@@ -3,7 +3,7 @@
 {% block content %}{% autoescape off %}{% blocktrans %}Hello,
 
 Following a request on our web site (possibly by you), here is how
-to validate this email address on your {{ sitename|safe }} contact record
+to validate this email address on your {{ sitename }} contact record
 identified as {{ handle }}:
 
 - Connect to {{ absurl }}
