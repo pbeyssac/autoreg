@@ -7,6 +7,7 @@ import codecs
 import errno
 import smtplib
 
+from django.core import mail
 from django.template.loader import get_template
 from django.utils import translation
 
@@ -64,6 +65,40 @@ def _render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
 
 def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
                    language=None):
+  """Send mail through Django, allowing mail capture during tests."""
+
+  # Render the full message
+  msg = _render_to_mail(templatename, context, fromaddr, toaddrs, request, language)
+
+  # Extract fields for EmailMessage constructor
+  headers, body = msg.split('\n\n', 1)
+  header_dict = {}
+  subject = None
+  for hv in headers.split('\n'):
+    h, v = hv.split(None, 1)
+    assert(len(h))
+    assert(h[-1] == ':')
+    h = h[:-1]
+    if h.lower() == 'subject':
+      subject = v
+    header_dict[h] = v
+
+  ret = True
+  emsg = mail.EmailMessage(subject, body, from_email=fromaddr, to=toaddrs, bcc=[autoreg.conf.MAILBCC])
+  try:
+    emsg.send()
+  except smtplib.SMTPRecipientsRefused as e:
+    ret = False
+  except socket.error as e:
+    ret = False
+    if e.errno != errno.ECONNREFUSED:
+      raise
+
+  return ret
+
+
+def render_to_mail_direct(templatename, context, fromaddr, toaddrs, request=None,
+                          language=None):
   msg = _render_to_mail(templatename, context, fromaddr, toaddrs, request, language)
   failed = False
 
