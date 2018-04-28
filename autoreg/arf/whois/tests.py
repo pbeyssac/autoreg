@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 from __future__ import print_function
 
+from django.core import mail
 from django.db import connection
 from django.test import TestCase, Client
 
@@ -119,8 +120,18 @@ class AccountTest(TestCase):
     r = self.c.get('/en/contact/validate/' + suffixstrip(self.handle) + '/aaaaa')
     self.assertEqual(301, r.status_code)
 
+  def test_contact_reset_contact(self):
+    r = self.c.get('/en/contact/reset/' + suffixstrip(self.handle))
+    self.assertEqual(200, r.status_code)
+    r = self.c.post('/en/contact/reset/', {'handle': self.handle})
+    self.assertEqual(len(mail.outbox), 1)
+    print(mail.outbox[0].message())
+    self.assertEqual(len(str(mail.outbox[0].message())), 734)
+
   def test_contact_reset_registrant(self):
     r = self.c.get('/en/contact/reset/' + suffixstrip(self.handle_registrant))
     self.assertEqual(200, r.status_code)
+    self.assertEqual(len(mail.outbox), 0)
     r = self.c.post('/en/contact/reset/', {'handle': self.handle_registrant})
     self.assertEqual(200, r.status_code)
+    self.assertEqual(len(mail.outbox), 0)
