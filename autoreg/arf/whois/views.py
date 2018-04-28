@@ -329,6 +329,9 @@ def makeresettoken(request, handle=None):
 
     absurl = request.build_absolute_uri(reverse(resetpass2,
                                                 args=[handle]))
+    if not ct.email:
+       vars = { 'msg': _("Sorry, this is an internal handle, it has no associated e-mail.") }
+       return render(request, 'whois/msgnext.html', vars)
     if not render_to_mail('whois/resetpass.mail',
                            { 'to': ct.email,
                              'absurl': absurl,

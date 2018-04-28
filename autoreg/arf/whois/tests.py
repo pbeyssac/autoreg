@@ -21,15 +21,23 @@ class AccountTest(TestCase):
     p = Person(connection.cursor(), passwd=views._pwcrypt(self.pw),
                validate=True)
     pr = p.from_ripe(d)
-
-    #print(p.get_msgs())
-
     self.assertTrue(pr)
-
     p.insert()
     self.handle = p.gethandle()
 
     self.domain = 'foobar.eu.org'
+
+    # Registrant
+    d = {'pn': ['Test Registrant'], 'em': [None],
+         'ad': ['test address', 'line2', 'line3'],
+         'co': ['FR'], 'cn': ('France',),
+         'pr': [True], 'ch': [('::1', None)]}
+    p2 = Person(connection.cursor(), validate=True)
+    pr2 = p2.from_ripe(d)
+    self.assertTrue(pr2)
+    p2.insert()
+    self.handle_registrant = p2.gethandle()
+
     self.c = Client()
 
   def test_login_logout(self):
@@ -110,3 +118,9 @@ class AccountTest(TestCase):
     self.assertEqual(301, r.status_code)
     r = self.c.get('/en/contact/validate/' + suffixstrip(self.handle) + '/aaaaa')
     self.assertEqual(301, r.status_code)
+
+  def test_contact_reset_registrant(self):
+    r = self.c.get('/en/contact/reset/' + suffixstrip(self.handle_registrant))
+    self.assertEqual(200, r.status_code)
+    r = self.c.post('/en/contact/reset/', {'handle': self.handle_registrant})
+    self.assertEqual(200, r.status_code)
