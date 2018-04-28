@@ -4,6 +4,7 @@ from __future__ import print_function
 
 
 import codecs
+import collections
 import errno
 import smtplib
 
@@ -17,7 +18,7 @@ import six
 
 
 def _render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
-                   language=None):
+                   language=None, encoding='quoted-printable'):
   """Expand provided templatename and context, send the result
      by email to the indicated addresses."""
 
@@ -58,8 +59,12 @@ def _render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
         outh.append(line)
     else:
       outh.append(line)
-  msg = '\n'.join(outh) + '\n\n' \
-        + six.text_type(codecs.encode(body.encode('utf-8'), 'quoted-printable'), 'ascii')
+  if encoding is not None:
+    msg = '\n'.join(outh) + '\n\n' \
+          + six.text_type(codecs.encode(body.encode('utf-8'), encoding), 'ascii')
+  else:
+    msg = '\n'.join(outh) + '\n\n' \
+          + six.text_type(body.encode('utf-8'), 'ascii')
   return msg
 
 
@@ -68,11 +73,11 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
   """Send mail through Django, allowing mail capture during tests."""
 
   # Render the full message
-  msg = _render_to_mail(templatename, context, fromaddr, toaddrs, request, language)
+  msg = _render_to_mail(templatename, context, fromaddr, toaddrs, request, language, encoding=None)
 
   # Extract fields for EmailMessage constructor
   headers, body = msg.split('\n\n', 1)
-  header_dict = {}
+  header_dict = collections.OrderedDict()
   subject = None
   for hv in headers.split('\n'):
     h, v = hv.split(None, 1)
@@ -81,7 +86,8 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
     h = h[:-1]
     if h.lower() == 'subject':
       subject = v
-    header_dict[h] = v
+    if h.lower() != 'content-transfer-encoding':
+      header_dict[h] = v
 
   ret = True
   emsg = mail.EmailMessage(subject, body, from_email=fromaddr, to=toaddrs, bcc=[autoreg.conf.MAILBCC])
@@ -99,7 +105,8 @@ def render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
 
 def render_to_mail_direct(templatename, context, fromaddr, toaddrs, request=None,
                           language=None):
-  msg = _render_to_mail(templatename, context, fromaddr, toaddrs, request, language)
+  msg = _render_to_mail(templatename, context, fromaddr, toaddrs, request, language,
+                        encoding='quoted-printable')
   failed = False
 
   try:
