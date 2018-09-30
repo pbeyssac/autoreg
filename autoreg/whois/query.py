@@ -243,7 +243,11 @@ def query(a, dbstring, out, encoding='iso8859-15', remote=True):
   if not lp and not remote and a.find('@') >= 0:
     lp = l.persons_by_email(a)
   if not lp:
-    print("Key not found", file=out)
+    d = "Key not found"
+    if encoding is not None:
+      out.write(str(d).encode(encoding, 'xmlcharrefreplace')+b'\n')
+    else:
+      print(d, file=out)
     return
   for p in lp:
     if real_info:
