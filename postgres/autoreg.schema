@@ -261,6 +261,7 @@ CREATE TABLE domain_contact (
 	whoisdomain_id INTEGER REFERENCES whoisdomains(id) NOT NULL,
 	contact_id INTEGER REFERENCES contacts(id) NOT NULL,
 	contact_type_id INTEGER REFERENCES contact_types(id) NOT NULL,
+	UNIQUE (whoisdomain_id, contact_id, contact_type_id),
 	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
 );
 CREATE INDEX domain_contact_domain_id ON domain_contact(whoisdomain_id);
