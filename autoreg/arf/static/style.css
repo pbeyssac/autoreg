@@ -59,6 +59,7 @@ span.email {font-weight: bold; font-family: monospace; background-color:#eef;}
   margin-bottom: 1em;
   border: dotted 1px;
 }
+.domainedits td {vertical-align: baseline;}
 .deldom { color: #f66 }
 
 .pagination {margin-top: 1em;}
