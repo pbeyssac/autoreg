@@ -563,7 +563,7 @@ GRANT SELECT,UPDATE ON TABLE allowed_rr_id_seq TO autoreg;
 -- read-only
 GRANT SELECT ON TABLE admins,allowed_rr,rrtypes TO root, www, nobody;
 GRANT SELECT ON TABLE contact_types TO whois;
-GRANT SELECT ON TABLE admin_zone TO www;
+GRANT SELECT ON TABLE admin_zone TO www, autoreg;
 
 -- Permissions on Whois database
 -- read-write
@@ -578,7 +578,7 @@ GRANT INSERT,SELECT,DELETE ON TABLE handle_secrets to www, autoreg;
 GRANT INSERT,SELECT ON TABLE contacts_hist TO www, autoreg;
 GRANT INSERT,SELECT ON TABLE whoisdomains_hist TO www, autoreg;
 GRANT INSERT,SELECT ON TABLE domain_contact_hist TO www, autoreg;
-GRANT INSERT,SELECT ON TABLE requests_log TO www;
+GRANT INSERT,SELECT ON TABLE requests_log TO www, autoreg;
 GRANT SELECT,UPDATE ON TABLE requests_log_id_seq TO www;
 GRANT INSERT ON TABLE admin_zone TO autoreg;
 -- read-only
