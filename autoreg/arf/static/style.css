@@ -63,7 +63,7 @@ span.email {font-weight: bold; font-family: monospace; background-color:#eef;}
 
 .pagination {margin-top: 1em;}
 
-// table alignment for .contactarray forms
+/* table alignment for .contactarray forms */
 .contactarray {border-collapse: collapse;}
 .contactarray form {display: table-row}
 .contactarray span.descr, .contactarray input[type="submit"] {display: table-cell; margin: .2em;}
@@ -109,13 +109,13 @@ input.action {padding: 3px}
 div.loginhelp {margin-top: 2em}
 
 @media (min-width: 500px) {
-  // table alignment for fields in .form
+  /* table alignment for fields in .form */
   .form fieldset {border-collapse: collapse;}
   .form div.fieldWrapper {display: table-row}
   .form.input, .form label, .form select, .form area,
   .form div span.domaincell {display: table-cell}
 
-  .nslist input:firstchild {margin-right: 2em}
+  .nslist input:first-child {margin-right: 2em}
   .nslist input + label {padding-left: 2em;}
   .form div.addendum {display: block}
   .addendum input, .addendum label {display: inline}
