@@ -517,29 +517,31 @@ CREATE TRIGGER trig_del_log BEFORE DELETE ON log
 -- for which we store only whois data
 INSERT INTO zones (name, minlen, maxlen, soaserial, soaprimary, soaemail) VALUES ('', 1, 255, 2005113000, 'DUMMY', 'DUMMY');
 
-INSERT INTO rrtypes values (1, 'NS');
-INSERT INTO rrtypes values (2, 'MX');
-INSERT INTO rrtypes values (3, 'A');
-INSERT INTO rrtypes values (4, 'CNAME');
-INSERT INTO rrtypes values (5, 'AAAA');
-INSERT INTO rrtypes values (6, 'TXT');
-INSERT INTO rrtypes values (7, 'SRV');
-INSERT INTO rrtypes values (8, 'HINFO');
-INSERT INTO rrtypes values (10, 'SSHFP');
-INSERT INTO rrtypes values (11, 'PTR');
-INSERT INTO rrtypes values (12, 'DNSKEY');
-INSERT INTO rrtypes values (13, 'RRSIG');
-INSERT INTO rrtypes values (14, 'DLV');
-INSERT INTO rrtypes values (15, 'DS');
-INSERT INTO rrtypes values (16, 'TLSA');
--- numbers shared with DNS type
+-- same as RFC (wire) RR type
+INSERT INTO rrtypes values (1, 'A');
+INSERT INTO rrtypes values (2, 'NS');
+INSERT INTO rrtypes values (5, 'CNAME');
+INSERT INTO rrtypes values (12, 'PTR');
+INSERT INTO rrtypes values (13, 'HINFO');
+INSERT INTO rrtypes values (15, 'MX');
+INSERT INTO rrtypes values (16, 'TXT');
+INSERT INTO rrtypes values (28, 'AAAA');
+INSERT INTO rrtypes values (33, 'SRV');
 INSERT INTO rrtypes values (37, 'CERT');
 INSERT INTO rrtypes values (39, 'DNAME');
+INSERT INTO rrtypes values (43, 'DS');
+INSERT INTO rrtypes values (44, 'SSHFP');
+INSERT INTO rrtypes values (46, 'RRSIG');
+INSERT INTO rrtypes values (48, 'DNSKEY');
+INSERT INTO rrtypes values (52, 'TLSA');
 INSERT INTO rrtypes values (59, 'CDS');
 INSERT INTO rrtypes values (60, 'CDNSKEY');
 INSERT INTO rrtypes values (99, 'SPF');
 INSERT INTO rrtypes values (257, 'CAA');
-INSERT INTO rrtypes values (1000, 'WMX');
+INSERT INTO rrtypes values (32769, 'DLV');
+-- private range
+INSERT INTO rrtypes values (65280, 'WMX');
+
 
 INSERT INTO contact_types VALUES (1,'technical');
 INSERT INTO contact_types VALUES (2,'administrative');
