@@ -148,6 +148,8 @@ class server:
     r = c.recv(256)
     if six.PY3:
       r = str(r, encoding)
+    dbh = psycopg2.connect(self.dbstring)
+    dbc = dbh.cursor()
     while r:
       q += r
       i = q.find('\r\n')
@@ -158,7 +160,7 @@ class server:
         self.log("%s %s" % (ip, q))
         # XXX: the 192.168.0.* check is a terrible hack until the
         # Perl query interface is rewritten.
-        query(q, self.dbstring, w, encoding=encoding,
+        query(q, dbc, w, encoding=encoding,
               remote = (ip != '127.0.0.1' and ip != '::1'
                         and not ip.startswith('192.168.0.')))
         c.shutdown(socket.SHUT_WR)
@@ -173,9 +175,8 @@ class server:
           % (year, month, day, hh, mm, ss, msg), file=self.logf)
     self.logf.flush()
 
-def query(a, dbstring, out, encoding='iso8859-15', remote=True):
-  dbh = psycopg2.connect(dbstring)
-  l = whoisdb.Lookup(dbh.cursor())
+def query(a, dbc, out, encoding='iso8859-15', remote=True):
+  l = whoisdb.Lookup(dbc)
 
   if not a:
     return
@@ -264,7 +265,7 @@ def usage():
 
 def command(argv):
   whoiserrlog, whoisrqlog, runas, port = ERRLOG, RQLOG, USERID, PORT
-  dbstring = autoreg.conf.dbstring
+  dbstr = autoreg.conf.dbstring
   detach = True
 
   try:
@@ -277,7 +278,7 @@ def command(argv):
     if o == '-d':
       detach = False
     elif o == '-D':
-      dbstring = a
+      dbstr = a
     elif o == '-e':
       whoiserrlog = a
     elif o == '-l':
@@ -293,17 +294,19 @@ def command(argv):
 
   if len(args) == 0:
     if not detach:
-      server(dbstring, whoisrqlog, whoiserrlog, port, runas)
+      server(dbstr, whoisrqlog, whoiserrlog, port, runas)
     r = os.fork()
     if r == 0:
-      server(dbstring, whoisrqlog, whoiserrlog, port, runas)
+      server(dbstr, whoisrqlog, whoiserrlog, port, runas)
     elif r == -1:
       print("Daemon start failed", file=sys.stderr)
       return 1
     else:
       print("Daemon started", file=sys.stderr)
   else:
-    query(args[0], dbstring, sys.stdout, remote=False)
+    dbh = psycopg2.connect(dbstr)
+    dbc = dbh.cursor()
+    query(args[0], dbc, sys.stdout, remote=False)
   return 0
 
 def whoisdbmain():

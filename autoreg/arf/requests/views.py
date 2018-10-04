@@ -13,7 +13,6 @@ import six
 
 
 from ..whois.models import check_is_admin
-from autoreg.conf import dbstring
 import autoreg.dns.db
 from autoreg.whois.db import admin_login, country_from_iso
 import autoreg.whois.query as query
@@ -29,6 +28,7 @@ from django.shortcuts import render
 from django.utils import translation
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import cache_control
+
 
 from . import models
 from ..webdns.models import Admins, Zones
@@ -86,6 +86,7 @@ def _rq_decorate(r):
   r.rclass = rclass
 
 def _rq1(request, r):
+  dbc = connection.cursor()
   wlist = []
 
   w = []
@@ -108,7 +109,7 @@ def _rq1(request, r):
       else:
         w.append(line)
     if lastaddr is not None:
-      c = country_from_iso(countryaddr, connection.cursor())
+      c = country_from_iso(countryaddr, dbc)
       if c is not None:
         w[lastaddr] = 'address: ' + c
   w = '\n'.join(w)
@@ -116,8 +117,8 @@ def _rq1(request, r):
   wlistout = []
   for k in wlist:
     wout = io.StringIO()
-    query.query('-R ' + k, dbstring,
-                wout, encoding=None, remote=False)
+    query.query('-R ' + k, None,
+                wout, encoding=None, remote=False, dbc=dbc)
     wlistout.append((k, wout.getvalue().encode('UTF-8', 'xmlcharrefreplace')))
   r.whoisfiltered = w
   r.wlistout = wlistout

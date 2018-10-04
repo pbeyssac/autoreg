@@ -5,13 +5,13 @@ from __future__ import absolute_import
 
 import io
 
-import psycopg2
 import six
 
-from django.db import models
+from django.db import connection, models
+
 from django.utils.translation import ugettext as _
 
-from autoreg.conf import dbstring, PREEMPTHANDLE
+from autoreg.conf import PREEMPTHANDLE
 import autoreg.dns.db
 from ..whois.models import Admins, Contacts, ContactTypes, \
   DomainContact, Whoisdomains
@@ -191,9 +191,7 @@ def preempt(handle, fqdn):
   tc = DomainContact(whoisdomain=wd, contact=c1, contact_type=techtype)
   tc.save()
 
-  dbh = psycopg2.connect(dbstring)
-
-  dd = autoreg.dns.db.db(dbh)
+  dd = autoreg.dns.db.db(dbc=connection.cursor())
   dd.login('autoreg')
 
   errors = None
@@ -204,7 +202,6 @@ def preempt(handle, fqdn):
     errors = six.text_type(e)
   except autoreg.dns.db.AccessError as e:
     errors = six.text_type(e)
-  dbh.commit()
 
   if errors:
     wd.delete()

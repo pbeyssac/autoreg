@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import io
 
-import psycopg2
 import six
 
 from django.conf import settings
@@ -19,7 +18,9 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy, ugettext as _
 
 import autoreg.arf.whois.views as whois_views
-from autoreg.conf import dbstring, HANDLESUFFIX, PREEMPTHANDLE
+from autoreg.conf import HANDLESUFFIX, PREEMPTHANDLE
+
+
 import autoreg.dns.check
 import autoreg.dns.db
 import autoreg.dns.dnssec
@@ -159,14 +160,13 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
     else:
       yield "\nDone\n"
 
-def _gen_checksoa_log(domain, handle, nsiplist=None, doit=False,
+def _gen_checksoa_log(dbc, domain, handle, nsiplist=None, doit=False,
                       newdomain=False, form=None, dnsdb=None,
                       level=autoreg.dns.check.LEVEL_NS):
   """Same as _gen_checksoa(), and keep a log of the output."""
   soac = autoreg.dns.check.SOAChecker(domain, {}, {})
   soac.set_level(level)
   rec = []
-  dbc = connection.cursor()
   contact = Contacts.objects.get(handle=handle.upper())
   for line in _gen_checksoa(domain, nsiplist, doit, dnsdb, soac, contact,
                             newdomain, form):
@@ -193,15 +193,14 @@ def domainds(request, fqdn):
   if not request.user.is_authenticated() or not request.user.is_active:
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   is_admin = check_is_admin(request.user.username)
-  if not check_handle_domain_auth(connection.cursor(),
-                                  request.user.username, fqdn) \
+  dbc = connection.cursor()
+  if not check_handle_domain_auth(dbc, request.user.username, fqdn) \
       and not is_admin:
     return HttpResponseForbidden(_("Unauthorized"))
   handle = request.user.username.upper()
   verbose = False
 
-  dbh = psycopg2.connect(dbstring)
-  dd = autoreg.dns.db.db(dbh)
+  dd = autoreg.dns.db.db(dbc=dbc)
   dd.login('autoreg')
 
   fqdn = fqdn.upper()
@@ -268,10 +267,8 @@ def domainds(request, fqdn):
         dserrs.append(_("Requested DS does not match any published DNSKEY in zone"))
       if dsok and not dserrs:
         for ds in dsnew:
-          dd.addrr(fqdn, None, '', None, 'DS', '%d %d %d %s' % ds,
-                   _commit=False)
+          dd.addrr(fqdn, None, '', None, 'DS', '%d %d %d %s' % ds)
           dscur.append(ds)
-        dd.commit()
         rr = ""
         dscur.sort()
 
@@ -314,15 +311,15 @@ def _get_rr_nsip(dd, fqdn):
   return rrlist, nsiplist
 
 
-def _adopt_orphan(request, dbh, fqdn, form):
+def _adopt_orphan(request, dbc, fqdn, form):
   vars = {'fqdn': fqdn.upper()}
   ok, errmsg = is_orphan(fqdn)
   if ok:
     inwhois = _whoisrecord_from_form(fqdn, form, request.user.username)
-    w = autoreg.whois.db.Main(dbh)
+    w = autoreg.whois.db.Main(dbc=dbc)
     whoisout = io.StringIO()
     inwhois.append('changed: ' + suffixadd(request.user.username))
-    w.parsefile(inwhois, None, commit=True, outfile=whoisout)
+    w.parsefile(inwhois, None, outfile=whoisout)
     vars['whoisin'] = inwhois
     vars['whoisout'] = whoisout.getvalue()
   else:
@@ -337,8 +334,8 @@ def domainns(request, fqdn=None):
     return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   handle = request.user.username.upper()
   is_admin = check_is_admin(request.user.username)
-  if fqdn and not check_handle_domain_auth(connection.cursor(),
-                                  handle, fqdn) \
+  dbc = connection.cursor()
+  if fqdn and not check_handle_domain_auth(dbc, handle, fqdn) \
       and not is_admin:
     return HttpResponseForbidden(_("Unauthorized"))
 
@@ -352,8 +349,7 @@ def domainns(request, fqdn=None):
                              action='N', state='Open').count()
                              > settings.RECAPTCHA_REQUESTS_MIN)
 
-  dbh = psycopg2.connect(dbstring)
-  dd = autoreg.dns.db.db(dbh)
+  dd = autoreg.dns.db.db(dbc=dbc)
   dd.login('autoreg')
 
   errors = {}
@@ -409,23 +405,20 @@ def domainns(request, fqdn=None):
         errors['th'] = [_('Contact does not exist')]
       if not nsiplist:
         errors['nsip1'] = [_('NS list is empty')]
-      dbh2 = psycopg2.connect(dbstring)
-      ddro = autoreg.dns.db.db(dbh2, nowrite=True)
-      ddro.login('autoreg')
+      dd.set_nowrite(True)
 
       if is_admin and form.is_valid() and form.cleaned_data['orphan']:
-        return _adopt_orphan(request, dbh, fqdn, form)
+        return _adopt_orphan(request, dbc, fqdn, form)
 
       try:
-        # don't really create (read-only session)
-        ddro.new(fqdn, None, 'NS', file=io.StringIO())
+        # don't really create (in read-only mode)
+        dd.new(fqdn, None, 'NS', file=io.StringIO())
       except autoreg.dns.db.DomainError as e:
         errors['fqdn'] = [six.text_type(e)]
       except autoreg.dns.db.AccessError as e:
         errors['fqdn'] = [six.text_type(e)]
 
-      # release the write lock on the zone record
-      dbh2.rollback()
+      dd.set_nowrite(False)
       rrlist = []
     else:
       th, ah, form = None, None, None
@@ -455,7 +448,7 @@ def domainns(request, fqdn=None):
       # in the form.
       nsiplist = [ (f, i) for f, i in nsiplist if f ]
 
-      return StreamingHttpResponse(_gen_checksoa_log(fqdn, handle,
+      return StreamingHttpResponse(_gen_checksoa_log(dbc, fqdn, handle,
                                      nsiplist, doit=True,
                                      newdomain=newdomain, form=form, dnsdb=dd,
                                      level=level),
@@ -533,8 +526,8 @@ def special(request):
       raise SuspiciousOperation
 
     if action.startswith('hold') or action.startswith('lock'):
-      dbh = psycopg2.connect(dbstring)
-      dd = autoreg.dns.db.db(dbh)
+      dbc = connection.cursor()
+      dd = autoreg.dns.db.db(dbc=dbc)
       dd.login('autoreg')
       for domain in domainlist:
         domain = domain.strip().upper()

@@ -722,19 +722,14 @@ class _ZoneList:
 
 class db:
     def __init__(self, dbhandle=None, dbc=None, nowrite=False):
-        # At once, set transaction isolation level to READ COMMITTED.
-        # (see autoreg.whois.db for details)
-        self._dbh = dbhandle
-        if dbhandle:
-          dbhandle.set_isolation_level(1)
-          self._dbc = dbhandle.cursor()
-        else:
-          self._dbc = dbc
+        self._dbc = dbc
         self._za = zauth.ZAuth(self._dbc)
         self._nowrite = nowrite
         self._login_id = None
         self._zl = _ZoneList(self._dbc)
         self.dyn = DynamicUpdate()
+    def set_nowrite(self, nowrite):
+        self._nowrite = nowrite
     def login(self, login):
         """Login requested user."""
         if login == 'DNSADMIN':
@@ -768,8 +763,7 @@ class db:
         d.fetch()
         d.show(rrs_only=rrs_only, outfile=outfile)
     def delete(self, domain, zone, override_internal=False,
-               grace_days=DEFAULT_GRACE_DAYS,
-               commit=True):
+               grace_days=DEFAULT_GRACE_DAYS):
         """Delete domain.
 
         domain: FQDN of domain name
@@ -797,9 +791,7 @@ class db:
               d.move_hist(login_id=self._login_id, domains=True, dyn=self.dyn)
         z.set_updateserial()
         self.dyn.log()
-        if commit and self._dbh:
-            self._dbh.commit()
-    def undelete(self, domain, zone, override_internal=False, commit=True):
+    def undelete(self, domain, zone, override_internal=False):
         """Undelete domain.
 
         domain: FQDN of domain name
@@ -819,17 +811,14 @@ class db:
         d.set_end_grace_period(None, dyn=self.dyn)
         z.set_updateserial()
         self.dyn.log()
-        if commit and self._dbh:
-            self._dbh.commit()
     def modify(self, domain, zone, typ, file, override_internal=False,
-               replace=True, delete=False, keepds=True, _commit=True):
+               replace=True, delete=False, keepds=True):
         """Modify domain.
 
         domain: FQDN of domain name
         file: RR records in zone file format
         typ: string; if set, check zone allows this resource-record type
         override_internal: if set, allow modifications to internal domains
-        _commit: default True, can be set to False to skip the DB commit
         """
         d, z = self._zl.find(domain, zone, wlock=True)
         self._check_login_perm(z.name)
@@ -848,8 +837,6 @@ class db:
         d.set_updated_by(self._login_id)
         z.set_updateserial()
         self.dyn.log()
-        if _commit and self._dbh:
-            self._dbh.commit()
     def modifydeleg(self, domain, file, override_internal=False,
                     replace=True, delete=False):
         """Modify a domain delegation in the child and the parent at the
@@ -866,13 +853,11 @@ class db:
         rrfile = io.StringIO(six.text_type(records))
         self.dyn.clear()
         self.modify(domain, parent, None, rrfile,
-                    override_internal, replace, delete,
-                   _commit=False)
+                    override_internal, replace, delete)
         rrfile = io.StringIO(six.text_type(records))
         self.dyn.clear()
         self.modify(domain, domain, None, rrfile,
-                    override_internal, replace, delete,
-                   _commit=True)
+                    override_internal, replace, delete)
     def queryrr(self, domain, zone, label, rrtype):
         """Query within domain for records with rrtype and that label.
         domain: FQDN of domain name
@@ -884,7 +869,7 @@ class db:
         self._check_login_perm(z.name)
         d.fetch()
         return d.queryrr(label, rrtype)
-    def addrr(self, domain, zone, label, ttl, rrtype, value, _commit=True):
+    def addrr(self, domain, zone, label, ttl, rrtype, value):
         """Add records of a given label, TTL, type and value"""
         d, z = self._zl.find(domain, zone)
         self._check_login_perm(z.name)
@@ -894,9 +879,7 @@ class db:
         d.addrr(label, ttl, rrtype, value, dyn=self.dyn)
         z.set_updateserial()
         self.dyn.log()
-        if _commit and self._dbh:
-            self._dbh.commit()
-    def delrr(self, domain, zone, label, rrtype, value, _commit=True):
+    def delrr(self, domain, zone, label, rrtype, value):
         """Delete records of a given label, type and value"""
         d, z = self._zl.find(domain, zone)
         self._check_login_perm(z.name)
@@ -907,8 +890,6 @@ class db:
         if n:
             z.set_updateserial()
         self.dyn.log()
-        if _commit and self._dbh:
-            self._dbh.commit()
         return n
     def checkds(self, domain, zone):
         """Check whether domain is eligible for DS records
@@ -925,11 +906,7 @@ class db:
         if nns:
             return True, None
         return False, "No NS records for domain"
-    def commit(self):
-        """Commit pending transaction."""
-        if self._dbh:
-          self._dbh.commit()
-    def new(self, domain, zone, typ, file=None, internal=False, commit=True):
+    def new(self, domain, zone, typ, file=None, internal=False):
         """Create domain.
 
         domain: full domain name
@@ -968,16 +945,12 @@ class db:
             d.mod_rr(file, dyn=self.dyn)
         z.set_updateserial()
         self.dyn.log()
-        if commit and self._dbh:
-            self._dbh.commit()
     def set_registry_lock(self, domain, zone, val):
         """Set registry_lock flag for domain."""
         d, z = self._zl.find(domain, zone, wlock=True)
         self._check_login_perm(z.name)
         if self._nowrite: return
         d.set_registry_lock(val)
-        if self._dbh:
-          self._dbh.commit()
     def set_registry_hold(self, domain, zone, val):
         """Set registry_hold flag for domain."""
         d, z = self._zl.find(domain, zone, wlock=True)
@@ -986,16 +959,12 @@ class db:
         d.set_registry_hold(val, dyn=self.dyn)
         z.set_updateserial()
         self.dyn.log()
-        if self._dbh:
-          self._dbh.commit()
     def soa(self, zone, forceincr=False):
         """Update SOA serial for zone if necessary or forceincr is True."""
         z = self._zl.zones[zone.upper()]
         z.fetch()
         (r, serial) = z.soa(forceincr, dyn=self.dyn)
         self.dyn.log()
-        if self._dbh:
-          self._dbh.commit()
         return r, serial
     def cat(self, zone, outfile=sys.stdout):
         """Output zone file."""
@@ -1008,16 +977,13 @@ class db:
     def newzone(self, zone, soamaster=SOA_MASTER, soaemail=SOA_EMAIL,
                 default_ttl=259200,
                 soaserial=1, soarefresh=3600, soaretry=1800,
-                soaexpires=12096000, soaminimum=259200,
-                commit=True):
+                soaexpires=12096000, soaminimum=259200):
         """Create a new zone."""
         z = self._zl.newzone(zone.upper(), soamaster, soaemail,
                 default_ttl=default_ttl,
                 soaserial=soaserial, soarefresh=soarefresh, soaretry=soaretry,
                 soaexpires=soaexpires, soaminimum=soaminimum)
         self.dyn.log()
-        if commit and self._dbh:
-          self._dbh.commit()
     def expired(self, now=False):
         """List domains in grace period."""
         if not now:

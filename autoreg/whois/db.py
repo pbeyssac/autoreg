@@ -1144,7 +1144,6 @@ class Main:
     return True
 
   def parsefile(self, file, encoding=DEFAULTENCODING,
-                intrans=True, commit=True,
                 forcechangedemail=None, outfile=sys.stdout):
     """Parse file and reorder objects before calling process()."""
     o = { 'encoding': encoding }
@@ -1153,12 +1152,6 @@ class Main:
     domains = {}
     dodel = False
     err = 0
-
-    if intrans:
-      # set transaction isolation level to READ COMMITTED.
-      if self._dbh:
-        self._dbh.set_isolation_level(1)
-      #self._dbc.execute('START TRANSACTION')
 
     # Get transaction date
     self._dbc.execute("SELECT NOW()")
@@ -1232,12 +1225,6 @@ class Main:
                           outfile=outfile):
         err += 1
 
-    if intrans and self._dbh:
-      if commit and err == 0:
-        self._dbh.commit()
-      else:
-        self._dbh.rollback()
-
     print("Domains: %d" % self.ndom, file=outfile)
     print("Persons: %d" % self.nperson, file=outfile)
     if self.ambig:
@@ -1283,10 +1270,13 @@ def main():
   # to avoid deadlock, read everything on input first
   lines = sys.stdin.readlines()
 
-  if w.parsefile(lines, encoding, commit):
+  if w.parsefile(lines, encoding):
     print("STATUS OK")
   else:
     print("STATUS ERR")
+  if commit:
+    dbh.commit()
+
 
 if __name__ == "__main__":
   main()

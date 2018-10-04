@@ -8,6 +8,8 @@ import collections
 import errno
 import smtplib
 
+
+from django.conf import settings
 from django.core import mail
 from django.template.loader import get_template
 from django.utils import translation

@@ -14,7 +14,6 @@ import socket
 import time
 
 
-import psycopg2
 import six
 
 
@@ -875,8 +874,7 @@ def domaindelete(request, fqdn):
                                   request.user.username, fqdn):
     return HttpResponseForbidden("Unauthorized")
 
-  dbh = psycopg2.connect(autoreg.conf.dbstring)
-  dd = autoreg.dns.db.db(dbh)
+  dd = autoreg.dns.db.db(dbc=connection.cursor())
   dd.login('autoreg')
 
   out = io.StringIO()
@@ -888,9 +886,6 @@ def domaindelete(request, fqdn):
     err = six.text_type(e)
   except autoreg.dns.db.DomainError as e:
     err = six.text_type(e)
-
-  # release the write lock on the zone record.
-  dbh.commit()
 
   if not ok or err:
     if err:
@@ -914,8 +909,7 @@ def domainundelete(request, fqdn):
                                   request.user.username, fqdn):
     return HttpResponseForbidden(_("Unauthorized"))
 
-  dbh = psycopg2.connect(autoreg.conf.dbstring)
-  dd = autoreg.dns.db.db(dbh)
+  dd = autoreg.dns.db.db(dbc=connection.cursor())
   dd.login('autoreg')
 
   dd.undelete(fqdn, None)

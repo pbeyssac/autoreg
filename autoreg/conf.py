@@ -25,6 +25,8 @@ SOA_EMAIL='hostmaster.eu.org'
 ZONEFILES_DIR='/etc/namedb/autoreg'
 
 # Postgres connect string
+# Don't use this in Django modules, use autoreg.arf.util.dbstring instead,
+# for compatibility with the test environment.
 dbstring=os.getenv('AUTOREG_DBSTRING') or \
   'dbname=autoreg_dev host=192.168.0.4 user=autoreg password='
 

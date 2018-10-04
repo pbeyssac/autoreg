@@ -50,7 +50,7 @@ def axfr(nameserver, domain, default_ttl, dry_run=True):
   dbh = psycopg2.connect(autoreg.conf.dbstring)
   print("autocommit", dbh.autocommit)
   dbh.autocommit = False
-  dd = autoreg.dns.db.db(dbh, nowrite=False)
+  dd = autoreg.dns.db.db(dbc=dbh.cursor(), nowrite=False)
 
   dd.login('autoreg')
 
@@ -93,10 +93,10 @@ def axfr(nameserver, domain, default_ttl, dry_run=True):
           if lastdom is None:
             # records at the apex of the domain, except for the SOA.
             dd.new(domain[:-1], domain[:-1], typ=None,
-                   file=rrs, internal=True, commit=False)
+                   file=rrs, internal=True)
           else:
             dd.new(lastdom+'.'+domain[:-1], domain[:-1], typ=None,
-                   file=rrs, internal=False, commit=False)
+                   file=rrs, internal=False)
           lastdom = curdom
           rrs = io.StringIO()
 
@@ -118,8 +118,7 @@ def axfr(nameserver, domain, default_ttl, dry_run=True):
           dd.newzone(domain[:-1], master[:-1], email[:-1],
                      soaserial=serial, soarefresh=refresh,
                      soaretry=retry, soaexpires=expire,
-                     soaminimum=minimum,
-                     commit=False)
+                     soaminimum=minimum)
 
   if lasttype != dns.rdatatype.SOA:
     print("AXFR is incomplete, aborting")
@@ -130,11 +129,11 @@ def axfr(nameserver, domain, default_ttl, dry_run=True):
   print(rrs.getvalue(), end='')
   rrs.seek(0)
   dd.new(curdom+'.'+domain[:-1], domain[:-1], typ=None,
-         file=rrs, internal=False, commit=False)
+         file=rrs, internal=False)
 
   records = io.StringIO('\tTXT\t"end mark"')
   dd.new('_END-MARK.'+domain[:-1], domain[:-1], typ=None,
-         file=records, internal=True, commit=False)
+         file=records, internal=True)
 
   if not dry_run:
     dbh.commit()

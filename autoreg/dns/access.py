@@ -167,7 +167,9 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
       return 1
 
   dbh = psycopg2.connect(conf.dbstring)
-  dd = dnsdb.db(dbh, nowrite)
+  # set to READ COMMITTED
+  dbh.set_isolation_level(1)
+  dd = dnsdb.db(nowrite, dbc=dbh.cursor())
 
   dd.login(user)
 
@@ -348,6 +350,7 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
     logging.error("variables:\n%s", str(locals()))
     raise
   else:
+    dbh.commit()
     return r
 
 if __name__ == "__main__":

@@ -86,7 +86,7 @@ class Requests(models.Model):
       err = None
       rrfile = io.StringIO(r.zonerecord)
       try:
-        dd.new(r.fqdn, None, 'NS', file=rrfile, commit=False)
+        dd.new(r.fqdn, None, 'NS', file=rrfile)
       except autoreg.dns.db.AccessError as e:
         err = six.text_type(e)
       except autoreg.dns.db.DomainError as e:
@@ -105,8 +105,7 @@ class Requests(models.Model):
             and not line.startswith('changed:')]
       inwhois.append('changed: ' + email)
 
-      if not whoisdb.parsefile(inwhois, None, outfile=outwhois,
-                               intrans=False):
+      if not whoisdb.parsefile(inwhois, None, outfile=outwhois):
         print(outwhois.getvalue(), file=out)
         raise IntegrityError(_("Whois error, aborting"))
 

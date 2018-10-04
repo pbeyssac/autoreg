@@ -24,7 +24,7 @@ def domain_delete(dd, fqdn, whoisdb, out,
   if allnow:
     inwhois = ['domain: '+fqdn, 'delete: autoreg']
     outwhois = io.StringIO()
-    if not whoisdb.parsefile(inwhois, None, commit=True, outfile=outwhois):
+    if not whoisdb.parsefile(inwhois, None, outfile=outwhois):
       print(outwhois.getvalue(), file=out)
       return False
 
@@ -42,15 +42,22 @@ def expiremain():
 
 
   dbh = psycopg2.connect(autoreg.conf.dbstring)
-  dd = autoreg.dns.db.db(dbh)
+  dbh.set_isolation_level(1)
+
+  dbc = dbh.cursor()
+  dd = autoreg.dns.db.db(dbc=dbc)
   dd.login('autoreg')
 
-  whoisdb = autoreg.whois.db.Main(dbh)
+  whoisdb = autoreg.whois.db.Main(dbc=dbc)
 
   for dom, zone, dateexp in dd.expired(now=True):
     print('%s %s.%s' % (dateexp, dom, zone))
     fqdn = dom + '.' + zone
-    domain_delete(dd, fqdn, whoisdb, out=sys.stdout, grace_days=0)
+    r = domain_delete(dd, fqdn, whoisdb, out=sys.stdout, grace_days=0)
+    if r:
+      dbh.commit()
+    else:
+      dbh.rollback()
 
 
 if __name__ == "__main__":
