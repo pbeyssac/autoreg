@@ -2,6 +2,10 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 from __future__ import print_function
 
+
+import re
+
+
 from django.core import mail
 from django.db import connection
 from django.test import TestCase, Client
@@ -125,8 +129,37 @@ class AccountTest(TestCase):
     self.assertEqual(200, r.status_code)
     r = self.c.post('/en/contact/reset/', {'handle': self.handle})
     self.assertEqual(len(mail.outbox), 1)
-    print(mail.outbox[0].message())
-    self.assertEqual(len(str(mail.outbox[0].message())), 734)
+    msg = str(mail.outbox[0].message())
+    regex = """^Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: password reset for EU.org contact TP1-FREE
+From: noreply@eu.org
+To: foobaremail@email.bla
+Date: .*
+Message-ID: <[^>]+@[^>]+>
+
+Hello,
+
+Please ignore this request if you didn't initiate it.
+Someone may be trying to steal your account.
+
+Following a request on our web site from 127.0.0.1,
+here is how to set a new password on your EU.org contact
+record identified as TP1-FREE:
+
+- Connect to http://testserver/en/contact/doreset/TP1/
+- Enter the following reset code: [a-zA-Z0-9]{16,16}
+- Enter the desired new password
+- Then validate.
+
+
+Best Regards,
+The EU.org team
+$"""
+
+    mailre = re.compile(regex)
+    self.assertNotEqual(None, mailre.match(msg))
 
   def test_contact_reset_registrant(self):
     r = self.c.get('/en/contact/reset/' + suffixstrip(self.handle_registrant))
