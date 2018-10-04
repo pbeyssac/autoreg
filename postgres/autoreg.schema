@@ -547,6 +547,7 @@ INSERT INTO contact_types VALUES (3,'zone');
 INSERT INTO contact_types VALUES (4,'registrant');
 
 INSERT INTO admins (id,login) VALUES (0,'*unknown*');
+INSERT INTO admins (id,login) VALUES (35,'autoreg');
 
 -- Permissions on DNS database
 -- read-write
