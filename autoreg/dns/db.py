@@ -605,7 +605,7 @@ class _Domain:
           d = None
           hold = False
         else:
-          d = datetime.datetime.fromtimestamp(val)
+          d = datetime.datetime.fromtimestamp(val, datetime.timezone.utc)
           hold = True
         self._end_grace_period = d
         # do it in one update to avoid generating two lines in domains_hist

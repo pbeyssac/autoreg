@@ -2,17 +2,17 @@
 
 from __future__ import absolute_import
 
-import datetime
-
 
 from django.db import models
+from django.utils import timezone
+
 
 from ..whois.models import Contacts
 
 
 class Log(models.Model):
     id = models.AutoField(primary_key=True)
-    date = models.DateTimeField(default=datetime.datetime.today)
+    date = models.DateTimeField(default=timezone.now)
     contact = models.ForeignKey(Contacts, on_delete=models.CASCADE)
     action = models.CharField(max_length=10)
     message = models.CharField(max_length=300, null=True)

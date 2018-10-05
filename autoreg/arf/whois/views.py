@@ -17,7 +17,9 @@ import time
 import six
 
 
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy, ugettext as _
+
 
 from autoreg.conf import HANDLESUFFIX
 from autoreg.whois.db import \
@@ -93,8 +95,8 @@ def _token_set(contact_id, action, args=None, ttl=3600):
   sr = random.SystemRandom()
   token = ''.join(sr.choice(allowed_chars) for i in range(16))
   t = time.time()
-  now = datetime.datetime.fromtimestamp(t)
-  expires = datetime.datetime.fromtimestamp(t + ttl)
+  now = datetime.datetime.fromtimestamp(t, datetime.timezone.utc)
+  expires = datetime.datetime.fromtimestamp(t + ttl, datetime.timezone.utc)
   tk = Tokens(contact_id=contact_id, date=now, expires=expires,
               token=token, action=action, args=args)
   tk.save()
@@ -479,7 +481,7 @@ def contactvalidate(request, handle, valtoken):
              'valtoken': valtoken }
     return render(request, 'whois/contactvalidate.html', vars)
   elif request.method == "POST":
-    ct.validated_on = datetime.datetime.today()
+    ct.validated_on = timezone.now()
     ct.save()
     tkl[0].delete()
     vars = { 'msg': _("Your contact handle is now valid.") }

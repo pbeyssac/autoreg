@@ -2,9 +2,10 @@
 
 from __future__ import absolute_import
 
-import datetime
 
 from django.db import models
+from django.utils import timezone
+
 
 from autoreg.whois.db import country_from_name
 
@@ -12,9 +13,9 @@ from autoreg.whois.db import country_from_name
 class Whoisdomains(models.Model):
     id = models.AutoField(primary_key=True)
     fqdn = models.CharField(max_length=255, unique=True)
-    created_on = models.DateTimeField(default=datetime.datetime.today)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_by = models.CharField(max_length=64)
-    updated_on = models.DateTimeField(default=datetime.datetime.today)
+    updated_on = models.DateTimeField(default=timezone.now)
     class Meta:
         db_table = 'whoisdomains'
         ordering = ['fqdn']
@@ -43,10 +44,10 @@ class Contacts(models.Model):
     phone = models.CharField(max_length=40, null=True)
     fax = models.CharField(max_length=40, null=True)
     passwd = models.CharField(max_length=106)
-    created_on = models.DateTimeField(default=datetime.datetime.today)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_by = models.CharField(max_length=64)
-    validated_on = models.DateTimeField(default=datetime.datetime.today, null=True)
-    updated_on = models.DateTimeField(default=datetime.datetime.today)
+    validated_on = models.DateTimeField(default=timezone.now, null=True)
+    updated_on = models.DateTimeField(default=timezone.now)
     private = models.BooleanField(default=False)
     class Meta:
         db_table = 'contacts'
@@ -140,7 +141,7 @@ class Tokens(models.Model):
     id = models.AutoField(primary_key=True)
     contact_id = models.IntegerField()
     token = models.CharField(max_length=16, null=True)
-    date = models.DateTimeField(default=datetime.datetime.today)
+    date = models.DateTimeField(default=timezone.now)
     expires = models.DateTimeField()
     action = models.CharField(max_length=10, null=True)
     args = models.CharField(max_length=200, null=True)
