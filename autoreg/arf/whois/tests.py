@@ -11,11 +11,14 @@ from django.db import connection
 from django.test import TestCase, Client
 
 from autoreg.whois.db import Person, suffixadd, suffixstrip
+from ..webdns.models import Domains, Zones
+from .models import Admins, Contacts, DomainContact, Whoisdomains
 from . import views
 
 
 class AccountTest(TestCase):
   def setUp(self):
+    cursor = connection.cursor()
     # Minimal test account
     d = {'pn': ['Test Person'], 'em': ['foobaremail@email.bla'],
          'ad': ['test address', 'line2', 'line3'],
@@ -23,25 +26,66 @@ class AccountTest(TestCase):
          'pr': [True], 'ch': [('::1', None)]}
 
     self.pw = 'aaabbbcccddd'
-    p = Person(connection.cursor(), passwd=views._pwcrypt(self.pw),
+    p = Person(cursor, passwd=views._pwcrypt(self.pw),
                validate=True)
     pr = p.from_ripe(d)
     self.assertTrue(pr)
     p.insert()
     self.handle = p.gethandle()
 
-    self.domain = 'foobar.eu.org'
+    # Test account with a long handle
+    d2 = {'nh': [suffixadd('ZZ1111')],
+          'pn': ['Test Person2'], 'em': ['foobaremail2@email.bla'],
+          'ad': ['test address 2', 'line2', 'line3'],
+          'co': ['FR'], 'cn': ('France',),
+          'pr': [True], 'ch': [('::1', None)]}
+    self.pw2 = 'aaabbbcccddd2'
+    p2 = Person(cursor, passwd=views._pwcrypt(self.pw2),
+                validate=True)
+    pr = p2.from_ripe(d2)
+    self.assertTrue(pr)
+    p2.insert()
+    self.assertEqual(suffixadd('ZZ1111'), p2.gethandle())
+
+    # Admin account
+    d3 = {'pn': ['Admin Account'], 'em': ['foobaremail3@email.bla'],
+          'ad': ['test address 3', 'line2', 'line3'],
+          'co': ['FR'], 'cn': ('France',),
+          'pr': [True], 'ch': [('::1', None)]}
+    self.pw3 = 'aaabbbcccddd3'
+    p3 = Person(cursor, passwd=views._pwcrypt(self.pw3),
+                validate=True)
+    pr = p3.from_ripe(d3)
+    self.assertTrue(pr)
+    p3.insert()
+    self.assertEqual(suffixadd('AA1'), p3.gethandle())
+    a = Admins(login='AA1', contact=Contacts.objects.get(handle='AA1'))
+    a.save()
+    self.admin_handle = p3.gethandle()
 
     # Registrant
     d = {'pn': ['Test Registrant'], 'em': [None],
          'ad': ['test address', 'line2', 'line3'],
          'co': ['FR'], 'cn': ('France',),
          'pr': [True], 'ch': [('::1', None)]}
-    p2 = Person(connection.cursor(), validate=True)
-    pr2 = p2.from_ripe(d)
-    self.assertTrue(pr2)
-    p2.insert()
-    self.handle_registrant = p2.gethandle()
+    p4 = Person(cursor, validate=True)
+    pr4 = p4.from_ripe(d)
+    self.assertTrue(pr4)
+    p4.insert()
+    self.handle_registrant = p4.gethandle()
+
+    self.domain = 'foobar.eu.org'
+    w = Whoisdomains(fqdn=self.domain.upper())
+    w.save()
+    DomainContact(whoisdomain=w, contact=Contacts.objects.get(handle='TP1'), contact_type_id=1).save()
+    DomainContact(whoisdomain=w, contact=Contacts.objects.get(handle=suffixstrip(self.handle_registrant)), contact_type_id=4).save()
+
+    z = Zones(name='EU.ORG', minlen=2, maxlen=64, ttl=3600,
+              updateserial=False, soaserial=1, soarefresh=3600,
+              soaretry=3600, soaexpires=3600, soaminimum=3600,
+              soaprimary=3600, soaemail='nobody.eu.org')
+    z.save()
+    Domains(name='FOOBAR', zone=z).save()
 
     self.c = Client()
 
@@ -168,3 +212,18 @@ $"""
     r = self.c.post('/en/contact/reset/', {'handle': self.handle_registrant})
     self.assertEqual(200, r.status_code)
     self.assertEqual(len(mail.outbox), 0)
+
+  def test_domainedit_handle_len(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = { 'contact_type': 'technical',
+               'handle': suffixadd('TP1'),
+               'submita': '' }
+    r = self.c.post('/en/domain/edit/' + self.domain + '/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('TP1' in str(r.content))
+    self.assertFalse('ZZ1111' in str(r.content))
+
+    fields['handle'] = suffixadd('ZZ1111')
+    r = self.c.post('/en/domain/edit/' + self.domain + '/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('ZZ1111' in str(r.content))

@@ -37,7 +37,7 @@ URILOGIN = reverse_lazy(login)
 
 
 class newdomain_form(registrant_form):
-  th = forms.CharField(max_length=10, initial=HANDLESUFFIX,
+  th = forms.CharField(max_length=20, initial=HANDLESUFFIX,
                        help_text='Technical Contact', required=True)
   orphan = forms.BooleanField(required=False)
 
@@ -59,7 +59,7 @@ class special_form(forms.Form):
 
 
 class special2_form(forms.Form):
-  handle = forms.CharField(max_length=10, initial=HANDLESUFFIX,
+  handle = forms.CharField(max_length=20, initial=HANDLESUFFIX,
                             help_text=ugettext_lazy('Contact Handle'),
                             required=True)
   action = forms.ChoiceField(choices=[

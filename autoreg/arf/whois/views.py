@@ -130,7 +130,7 @@ class contactbyemail_form(forms.Form):
   email = forms.EmailField(max_length=100)
 
 class contactbyhandle_form(forms.Form):
-  handle = forms.CharField(max_length=15, initial=HANDLESUFFIX,
+  handle = forms.CharField(max_length=20, initial=HANDLESUFFIX,
                            help_text=ugettext_lazy('Your handle'))
 
 class contactbydomain_form(forms.Form):
@@ -189,10 +189,10 @@ class registrant_form(forms.Form):
 class domcontact_form(forms.Form):
   contact_type = forms.ChoiceField(choices=domcontact_choices,
                                    label=ugettext_lazy("type"))
-  handle = forms.CharField(max_length=10, initial=HANDLESUFFIX)
+  handle = forms.CharField(max_length=20, initial=HANDLESUFFIX)
 
 class contactlogin_form(forms.Form):
-  handle = forms.CharField(max_length=15, initial=HANDLESUFFIX,
+  handle = forms.CharField(max_length=20, initial=HANDLESUFFIX,
                            help_text=ugettext_lazy('Your handle'))
   password = forms.CharField(max_length=64,
                              help_text=ugettext_lazy('Your password'),
