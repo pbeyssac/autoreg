@@ -87,6 +87,10 @@ class AccountTest(TestCase):
     z.save()
     Domains(name='FOOBAR', zone=z).save()
 
+    w2 = Whoisdomains(fqdn='FOOBAR2.EU.ORG')
+    w2.save()
+    Domains(name='FOOBAR2', zone=z).save()
+
     self.c = Client()
 
   def test_login_logout(self):
@@ -134,6 +138,8 @@ class AccountTest(TestCase):
 
     r = self.c.get('/en/domain/edit/' + self.domain)
     self.assertEqual(301, r.status_code)
+    self.assertEqual('/en/domain/edit/' + self.domain + '/', r['Location'])
+
     r = self.c.get('/en/domain/edit/' + self.domain + '/')
     self.assertEqual(200, r.status_code)
     #r = self.c.get('/en/domain/edit/confirm/' + self.domain)
@@ -227,3 +233,13 @@ $"""
     r = self.c.post('/en/domain/edit/' + self.domain + '/', fields)
     self.assertEqual(200, r.status_code)
     self.assertTrue('ZZ1111' in str(r.content))
+
+  def test_domainedit_nologin(self):
+    r = self.c.post('/en/domain/edit/' + self.domain + '/', {})
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/login/?next=/en/domain/edit/'+self.domain+'/', r['Location'])
+
+  def test_domainedit_403(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.post('/en/domain/edit/foobar2.eu.org/', {})
+    self.assertEqual(403, r.status_code)
