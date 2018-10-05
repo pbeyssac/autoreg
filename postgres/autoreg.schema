@@ -599,5 +599,6 @@ GRANT INSERT ON TABLE requests_hist TO autoreg, www;
 
 -- Permissions on logs
 -- append-only
-GRANT INSERT, SELECT ON TABLE log, log_hist TO www;
-GRANT SELECT, UPDATE ON TABLE log_id_seq TO www;
+GRANT INSERT, SELECT ON TABLE log TO www, autoreg;
+GRANT INSERT, SELECT ON TABLE log_hist TO www;
+GRANT SELECT, UPDATE ON TABLE log_id_seq TO www, autoreg;
