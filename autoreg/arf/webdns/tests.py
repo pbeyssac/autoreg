@@ -134,3 +134,13 @@ class DomainNewTest(TestCase):
     r = self.c.post('/en/special/', fields)
     self.assertEqual(302, r.status_code)
     self.assertEqual('/en/domain/list/TP1', r['Location'])
+
+  def test_special_400(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    r = self.c.post('/en/special/', {})
+    self.assertEqual(400, r.status_code)
+
+  def test_special_403(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.post('/en/special/', {})
+    self.assertEqual(403, r.status_code)
