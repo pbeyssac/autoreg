@@ -118,3 +118,19 @@ class DomainNewTest(TestCase):
     r = self.c.post('/en/special/', fields)
     self.assertEqual(302, r.status_code)
     self.assertEqual('/en/domain/list/ZZ1111', r['Location'])
+
+  def test_special_showdom(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'handle': 'TP1-FREE',
+      'action': 'showdom',
+      'submit2': 'xxx'
+    }
+    r = self.c.post('/en/special/', fields)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/domain/list/TP1', r['Location'])
+
+    fields['handle'] = 'tp1-free'
+    r = self.c.post('/en/special/', fields)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/domain/list/TP1', r['Location'])
