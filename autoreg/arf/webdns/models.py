@@ -18,7 +18,7 @@ from ..whois.models import Admins, Contacts, ContactTypes, \
 
 
 class Zones(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     name = models.CharField(unique=True, max_length=255)
     minlen = models.IntegerField()
     maxlen = models.IntegerField()
@@ -41,7 +41,7 @@ class Zones(models.Model):
 
 
 class AdminZone(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     zone_id = models.ForeignKey(Zones, on_delete=models.CASCADE, db_column='zone_id')
     admin_id = models.ForeignKey(Admins, on_delete=models.CASCADE, db_column='admin_id')
     class Meta:
@@ -52,7 +52,7 @@ class AdminZone(models.Model):
 
 
 class Domains(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=64)
     registry_hold = models.BooleanField()
     registry_lock = models.BooleanField()
@@ -85,7 +85,7 @@ class Rrtypes(models.Model):
         return self.label
 
 class Rrs(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     domain = models.ForeignKey(Domains, on_delete=models.CASCADE) # edit_inline=models.TABULAR
     ttl = models.IntegerField() # core=True
     rrtype = models.ForeignKey(Rrtypes, on_delete=models.CASCADE) # core=True
@@ -103,7 +103,7 @@ class Rrs(models.Model):
         return "%s %s%s %s" % (self.label, ttl, self.rrtype.label, self.value)
 
 class AllowedRr(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     zone = models.ForeignKey(Zones, on_delete=models.CASCADE) # edit_inline=models.TABULAR
     rrtype = models.ForeignKey(Rrtypes, on_delete=models.CASCADE) # core=True
     class Meta:
