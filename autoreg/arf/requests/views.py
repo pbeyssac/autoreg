@@ -117,8 +117,7 @@ def _rq1(request, r):
   wlistout = []
   for k in wlist:
     wout = io.StringIO()
-    query.query('-R ' + k, None,
-                wout, encoding=None, remote=False, dbc=dbc)
+    query.query('-R ' + k, dbc, wout, encoding=None, remote=False)
     wlistout.append((k, wout.getvalue().encode('UTF-8', 'xmlcharrefreplace')))
   r.whoisfiltered = w
   r.wlistout = wlistout
