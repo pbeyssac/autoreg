@@ -22,6 +22,7 @@ from django.utils.translation import ugettext_lazy, ugettext as _
 
 
 from autoreg.conf import HANDLESUFFIX
+from autoreg.util import pwcrypt
 from autoreg.whois.db import \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
   countries_get
@@ -64,20 +65,6 @@ allowed_chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 #
 # Helper functions
 #
-
-# parameters for SHA512 hashed passwords
-CRYPT_SALT_LEN=16
-CRYPT_ALGO='$6$'
-
-def _pwcrypt(passwd):
-  """Compute a crypt(3) hash suitable for user authentication"""
-  # Make a salt
-  salt_chars = '0123456789abcdefghijklmnopqstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/.'
-  t = ''.join(random.SystemRandom().choice(salt_chars) \
-              for i in range(CRYPT_SALT_LEN))
-  if six.PY2:
-    passwd = passwd.encode('UTF-8')
-  return crypt.crypt(passwd, CRYPT_ALGO + t + '$')
 
 def _token_find(contact_id, action):
   """Find existing token(s)"""
@@ -376,7 +363,7 @@ def resetpass2(request, handle):
       vars['msg'] = _("Invalid reset token")
       return render(request, 'whois/resetpass2.html', vars)
     tk = tkl[0]
-    ct.passwd = _pwcrypt(pass1)
+    ct.passwd = pwcrypt(pass1)
     ct.save()
     tk.delete()
     vars = { 'ehandle': suffixadd(handle) }
@@ -426,7 +413,7 @@ def contactcreate(request):
 
       from autoreg.whois.db import Person
 
-      p = Person(connection.cursor(), passwd=_pwcrypt(p1),
+      p = Person(connection.cursor(), passwd=pwcrypt(p1),
                  validate=False)
       if p.from_ripe(d):
         p.insert()
@@ -536,7 +523,7 @@ def chpass(request):
     if ct.passwd != crypt.crypt(pass0, ct.passwd):
       vars['msg'] = _("Current password is not correct")
       return render(request, 'whois/chpass.html', vars)
-    ct.passwd = _pwcrypt(pass1)
+    ct.passwd = pwcrypt(pass1)
     ct.save()
     del vars['form']
     vars['ehandle'] = suffixadd(handle)

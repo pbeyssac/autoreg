@@ -10,6 +10,7 @@ from django.core import mail
 from django.db import connection
 from django.test import TestCase, Client
 
+from autoreg.util import pwcrypt
 from autoreg.whois.db import Person, suffixadd, suffixstrip
 from ..webdns.models import Domains, Zones
 from .models import Admins, Contacts, DomainContact, Whoisdomains
@@ -26,7 +27,7 @@ class AccountTest(TestCase):
          'pr': [True], 'ch': [('::1', None)]}
 
     self.pw = 'aaabbbcccddd'
-    p = Person(cursor, passwd=views._pwcrypt(self.pw),
+    p = Person(cursor, passwd=pwcrypt(self.pw),
                validate=True)
     pr = p.from_ripe(d)
     self.assertTrue(pr)
@@ -40,7 +41,7 @@ class AccountTest(TestCase):
           'co': ['FR'], 'cn': ('France',),
           'pr': [True], 'ch': [('::1', None)]}
     self.pw2 = 'aaabbbcccddd2'
-    p2 = Person(cursor, passwd=views._pwcrypt(self.pw2),
+    p2 = Person(cursor, passwd=pwcrypt(self.pw2),
                 validate=True)
     pr = p2.from_ripe(d2)
     self.assertTrue(pr)
@@ -53,7 +54,7 @@ class AccountTest(TestCase):
           'co': ['FR'], 'cn': ('France',),
           'pr': [True], 'ch': [('::1', None)]}
     self.pw3 = 'aaabbbcccddd3'
-    p3 = Person(cursor, passwd=views._pwcrypt(self.pw3),
+    p3 = Person(cursor, passwd=pwcrypt(self.pw3),
                 validate=True)
     pr = p3.from_ripe(d3)
     self.assertTrue(pr)
