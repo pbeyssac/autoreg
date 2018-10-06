@@ -12,7 +12,7 @@ install-templates:
 preparedb:
 	echo "drop database test_autoreg_dev;" | psql -h 192.168.0.4 --user autoreg postgres
 	echo "create database test_autoreg_dev;" | psql -h 192.168.0.4 --user autoreg postgres
-	(cat postgres/autoreg.schema; ./tools/mkiso.py) | psql -h 192.168.0.4 --user autoreg test_autoreg_dev
+	(cat postgres/autoreg.schema postgres/init.sql; ./tools/mkiso.py) | psql -h 192.168.0.4 --user autoreg test_autoreg_dev
 
 test:	preparedb
 	./autoreg/arf/manage.py test -k --settings autoreg.arf.arf.debugsettings
