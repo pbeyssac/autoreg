@@ -94,7 +94,7 @@ class AccountTest(TestCase):
 
     self.c = Client()
 
-  def test_login_logout(self):
+  def test_login(self):
     # Test login form
     r = self.c.get('/login/')
     self.assertEqual(302, r.status_code)
@@ -105,6 +105,7 @@ class AccountTest(TestCase):
     r = self.c.post('/en/login/', {'handle': self.handle, 'password': self.pw})
     self.assertEqual(302, r.status_code)
 
+  def test_login_logout(self):
     # Do a Django login
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
 
@@ -158,20 +159,27 @@ class AccountTest(TestCase):
   def test_contact_bydom(self):
     r = self.c.get('/en/contact/bydom')
     self.assertEqual(200, r.status_code)
+  def test_contact_bydom_domain(self):
     r = self.c.get('/en/contact/bydom/' + self.domain)
     self.assertEqual(200, r.status_code)
 
-  def test_public(self):
+  def test_public_logout(self):
     r = self.c.post('/en/logout/')
     self.assertEqual(302, r.status_code)
+  def test_public_contact_create(self):
     r = self.c.get('/en/contact/create/')
     self.assertEqual(200, r.status_code)
+  def test_public_contact_reset(self):
     r = self.c.get('/en/contact/reset/')
     self.assertEqual(200, r.status_code)
+  def test_public_contact_reset_handle(self):
     r = self.c.get('/en/contact/reset/' + suffixstrip(self.handle))
     self.assertEqual(200, r.status_code)
+  def test_public_contact_doreset_handle(self):
     r = self.c.get('/en/contact/doreset/' + suffixstrip(self.handle))
     self.assertEqual(301, r.status_code)
+    self.assertEqual('/en/contact/doreset/TP1/', r['Location'])
+  def test_public_contact_validate_handle(self):
     r = self.c.get('/en/contact/validate/' + suffixstrip(self.handle) + '/aaaaa')
     self.assertEqual(301, r.status_code)
 
