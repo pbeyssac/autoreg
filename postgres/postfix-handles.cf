@@ -1,3 +1,6 @@
+#
+# Postfix configuration for ephemeral mail adresses
+#
 query = SELECT email
           FROM contacts, handle_secrets
           WHERE handle = substring (upper('%u') FROM '^([A-Z]+[0-9]+)-')
