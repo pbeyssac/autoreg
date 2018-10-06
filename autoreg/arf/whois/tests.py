@@ -208,7 +208,7 @@ here is how to set a new password on your EU.org contact
 record identified as TP1-FREE:
 
 - Connect to http://testserver/en/contact/doreset/TP1/
-- Enter the following reset code: [a-zA-Z0-9]{16,16}
+- Enter the following reset code: ([a-zA-Z0-9]{16,16})
 - Enter the desired new password
 - Then validate.
 
@@ -218,7 +218,32 @@ The EU.org team
 $"""
 
     mailre = re.compile(regex)
-    self.assertNotEqual(None, mailre.match(msg))
+    m = mailre.match(msg)
+    self.assertNotEqual(None, m)
+    token = m.groups()[0]
+
+    fields = {'pass1': 'AAAAAAA1', 'pass2': 'AAAAAAA2', 'resettoken': token}
+    r = self.c.post('/en/contact/doreset/' + suffixstrip(self.handle) + '/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertFalse('Password changed' in str(r.content))
+
+    fields = {'pass1': 'A', 'pass2': 'A', 'resettoken': token}
+    r = self.c.post('/en/contact/doreset/' + suffixstrip(self.handle) + '/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertFalse('Password changed' in str(r.content))
+
+    fields = {'pass1': 'AAAAAAAA', 'pass2': 'AAAAAAAA', 'resettoken': 'wrongtoken'}
+    r = self.c.post('/en/contact/doreset/' + suffixstrip(self.handle) + '/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertFalse('Password changed' in str(r.content))
+
+    fields = {'pass1': 'AAAAAAAA', 'pass2': 'AAAAAAAA', 'resettoken': token}
+    r = self.c.post('/en/contact/doreset/' + suffixstrip(self.handle) + '/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Password changed' in str(r.content))
+
+    # Test Django login with the new password
+    self.assertTrue(self.c.login(username=self.handle, password='AAAAAAAA'))
 
   def test_contact_reset_registrant(self):
     r = self.c.get('/en/contact/reset/' + suffixstrip(self.handle_registrant))
@@ -227,6 +252,66 @@ $"""
     r = self.c.post('/en/contact/reset/', {'handle': self.handle_registrant})
     self.assertEqual(200, r.status_code)
     self.assertEqual(len(mail.outbox), 0)
+
+  def test_contact_create(self):
+    fields = {
+      'p1': 'BBBBBBBB', 'p2': 'BBBBBBBB',
+      'pn1': 'Test Contact Create',
+      'em1': 'newaddr@foo.bar',
+      'ad1': 'My address line 1',
+      'ad2': 'My address line 2',
+      'ad6': 'FR',
+      'private': 'A' }
+
+    r = self.c.post('/en/contact/create/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('error">\\n    <label for="id_policy">I have read' in str(r.content))
+
+    fields['policy'] = 'A'
+    r = self.c.post('/en/contact/create/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Contact successfully created as TCC1' in str(r.content))
+
+    self.assertEqual(len(mail.outbox), 1)
+    msg = str(mail.outbox[0].message())
+
+    token_re = re.compile('/validate/TCC1/([A-Za-z0-9]+)/')
+    m = token_re.search(msg)
+    self.assertTrue(True, m != None)
+    token = m.groups()[0]
+
+    c = Contacts.objects.get(handle='TCC1')
+    self.assertEqual(None, c.validated_on)
+
+    r = self.c.get('/en/contact/validate/TCC1/' + token + '/')
+    self.assertEqual(200, r.status_code)
+
+    # Validate via POST
+    fields = {'handle': suffixadd('TCC1'), 'valtoken': token}
+    r = self.c.post('/en/contact/validate/TCC1/' + token + '/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Your contact handle is now valid' in str(r.content))
+
+    c = Contacts.objects.get(handle='TCC1')
+    self.assertNotEqual(None, c.validated_on)
+
+    # Test Django login with the new password
+    self.assertTrue(self.c.login(username='TCC1', password='BBBBBBBB'))
+
+  def test_contact_validate_post_bad(self):
+    r = self.c.post('/en/contact/validate/TP1/wrong/', {})
+    self.assertEqual(200, r.status_code)
+    self.assertFalse('Your contact handle is now valid' in str(r.content))
+  def test_contact_validate_post_bad2(self):
+    r = self.c.post('/en/contact/validate/TCC1/wrong/', {})
+    self.assertEqual(200, r.status_code)
+    self.assertFalse('Your contact handle is now valid' in str(r.content))
+  def test_contact_validate_get_bad(self):
+    r = self.c.get('/en/contact/validate/TP1/wrong/')
+    self.assertEqual(200, r.status_code)
+  def test_contact_validate_get_bad2(self):
+    r = self.c.get('/en/contact/validate/TCC1/wrong/')
+    self.assertEqual(200, r.status_code)
 
   def test_domainedit_handle_len(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
@@ -252,3 +337,47 @@ $"""
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     r = self.c.post('/en/domain/edit/foobar2.eu.org/', {})
     self.assertEqual(403, r.status_code)
+
+  def test_contact_chpass_302(self):
+    r = self.c.get('/en/contact/chpass/')
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/login/?next=/en/contact/chpass/', r['Location'])
+
+  def test_contact_chpass_get(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/contact/chpass/')
+    self.assertEqual(200, r.status_code)
+
+  def test_contact_chpass_post_badpw0(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = {'pass0': 'AAAA', 'pass1': 'CCCCCCCC', 'pass2': 'CCCCCCCC'}
+    r = self.c.post('/en/contact/chpass/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertFalse('Password changed' in str(r.content))
+
+  def test_contact_chpass_post_badpw1(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = {'pass0': 'AAAA', 'pass1': 'CCCCCCCC', 'pass2': 'CCCCCCCD'}
+    r = self.c.post('/en/contact/chpass/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertFalse('Password changed' in str(r.content))
+
+  def test_contact_chpass_post_badpw2(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = {'pass0': 'AAAA', 'pass1': 'CCCCCC', 'pass2': 'CCCCCC'}
+    r = self.c.post('/en/contact/chpass/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertFalse('Password changed' in str(r.content))
+
+  def test_contact_chpass_post_ok(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = {'pass0': self.pw, 'pass1': 'CCCCCCCC', 'pass2': 'CCCCCCCC'}
+    r = self.c.post('/en/contact/chpass/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Password changed' in str(r.content))
+
+    self.c.logout()
+    # Test login fails with the old password
+    self.assertFalse(self.c.login(username=self.handle, password=self.pw))
+    # Test login works with the new password
+    self.assertTrue(self.c.login(username=self.handle, password='CCCCCCCC'))
