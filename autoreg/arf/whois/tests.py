@@ -86,7 +86,9 @@ class AccountTest(TestCase):
               soaretry=3600, soaexpires=3600, soaminimum=3600,
               soaprimary=3600, soaemail='nobody.eu.org')
     z.save()
-    Domains(name='FOOBAR', zone=z).save()
+    self.zone_id = z.id
+
+    Domains(name='FOOBAR', zone=z, created_by=a, updated_by=a).save()
 
     w2 = Whoisdomains(fqdn='FOOBAR2.EU.ORG')
     w2.save()
@@ -182,6 +184,19 @@ class AccountTest(TestCase):
     r = self.c.post('/en/domain/undel/' + self.domain)
     self.assertEqual(301, r.status_code)
     self.assertEqual('/en/domain/undel/' + self.domain + '/', r['Location'])
+
+  def test_del_undel(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.post('/en/domain/del/' + self.domain + '/')
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/domain/edit/' + self.domain + '/', r['Location'])
+    dl = Domains.objects.filter(name=self.domain.split('.')[0], zone_id=self.zone_id)
+    self.assertEqual(0, len(dl))
+    wdl = Whoisdomains.objects.filter(fqdn=self.domain.upper())
+    self.assertEqual(1, len(wdl))
+    r = self.c.post('/en/domain/undel/' + self.domain + '/')
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/domain/edit/' + self.domain + '/', r['Location'])
 
   def test_registrant(self):
     r = self.c.get('/en/registrant/edit/' + self.domain.lower() + '/')

@@ -17,7 +17,7 @@ def domain_delete(dd, fqdn, whoisdb, out,
   allnow = (grace_days == 0)
   fqdn = fqdn.upper()
 
-  dd.delete(fqdn, None, commit=not allnow, grace_days=grace_days)
+  dd.delete(fqdn, None, grace_days=grace_days)
 
   print("Delete done\n", file=out)
 
