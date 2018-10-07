@@ -89,7 +89,7 @@ CREATE INDEX rrs_domain_id_index ON rrs(domain_id);
 -- no UNIQUE (name, zone_id) constraint here:
 -- a same domain can be created/deleted several times
 CREATE TABLE domains_hist (
-	id INTEGER PRIMARY KEY,
+	id INTEGER,
 	name VARCHAR(64),
 	registry_hold BOOLEAN DEFAULT FALSE,
 	registry_lock BOOLEAN DEFAULT FALSE,
