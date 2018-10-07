@@ -128,6 +128,7 @@ class DomainNewTest(TestCase):
     r = self.c.post('/en/domain/new/', fields)
     self.assertEqual(200, r.status_code)
     self.assertTrue('Object created:' in str(r.content))
+    self.assertTrue('Whois input:\\n<pre>\\ndomain:' in str(r.content))
     self.assertEqual(1, len(Whoisdomains.objects.filter(fqdn='ORPHAN.EU.ORG')))
 
   def test_domainns_orphan_forbidden(self):

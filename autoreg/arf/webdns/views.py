@@ -331,7 +331,7 @@ def _adopt_orphan(request, dbc, fqdn, form):
       w.parsefile(inwhois, None, outfile=whoisout)
 
 
-    vars['whoisin'] = inwhois
+    vars['whoisin'] = '\n'.join(inwhois)
     vars['whoisout'] = whoisout.getvalue()
   else:
     vars['msg'] = errmsg
