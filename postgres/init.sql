@@ -39,4 +39,5 @@ INSERT INTO contact_types VALUES (4,'registrant');
 
 
 INSERT INTO admins (id,login) VALUES (0,'*unknown*');
-INSERT INTO admins (id,login) VALUES (35,'autoreg');
+INSERT INTO admins (id,login) VALUES (1,'autoreg');
+ALTER SEQUENCE admins_id_seq RESTART with 2;
