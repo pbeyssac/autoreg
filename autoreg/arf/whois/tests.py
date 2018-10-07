@@ -146,13 +146,43 @@ class AccountTest(TestCase):
     self.assertEqual(200, r.status_code)
     #r = self.c.get('/en/domain/edit/confirm/' + self.domain)
     #self.assertEqual(200, r.status_code)
-  def test_del_undel(self):
-    #r = self.c.get('/en/domain/del/' + self.domain + '/')
-    #self.assertEqual(200, r.status_code)
-    r = self.c.get('/en/domain/undel/' + self.domain)
+
+  def test_del_400_anon(self):
+    r = self.c.get('/en/domain/del/' + self.domain + '/')
+    self.assertEqual(400, r.status_code)
+  def test_del_400_logged(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/domain/del/' + self.domain + '/')
+    self.assertEqual(400, r.status_code)
+  def test_del_upper(self):
+    r = self.c.get('/en/domain/del/' + self.domain.upper() + '/')
+    self.assertEqual(404, r.status_code)
+  def test_del_anon(self):
+    r = self.c.post('/en/domain/del/' + self.domain + '/')
+    self.assertEqual(403, r.status_code)
+  def test_del_301(self):
+    r = self.c.post('/en/domain/del/' + self.domain)
     self.assertEqual(301, r.status_code)
-    r = self.c.get('/en/domain/undel/' + self.domain.lower())
+    self.assertEqual('/en/domain/del/' + self.domain + '/', r['Location'])
+
+  def test_undel_400_anon(self):
+    r = self.c.get('/en/domain/undel/' + self.domain + '/')
+    self.assertEqual(400, r.status_code)
+  def test_undel_400_logged(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/domain/undel/' + self.domain + '/')
+    self.assertEqual(400, r.status_code)
+  def test_undel_upper(self):
+    r = self.c.get('/en/domain/undel/' + self.domain.upper() + '/')
+    self.assertEqual(404, r.status_code)
+  def test_undel_anon(self):
+    r = self.c.post('/en/domain/undel/' + self.domain + '/')
+    self.assertEqual(403, r.status_code)
+  def test_undel_301(self):
+    r = self.c.post('/en/domain/undel/' + self.domain)
     self.assertEqual(301, r.status_code)
+    self.assertEqual('/en/domain/undel/' + self.domain + '/', r['Location'])
+
   def test_registrant(self):
     r = self.c.get('/en/registrant/edit/' + self.domain.lower() + '/')
     self.assertEqual(302, r.status_code)
