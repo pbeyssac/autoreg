@@ -9,8 +9,8 @@ from django.test import TestCase, Client
 
 from autoreg.util import pwcrypt
 from autoreg.whois.db import Person, suffixadd
-from ..whois.models import Admins, Contacts
-from .models import AllowedRr, Zones
+from ..whois.models import Admins, Contacts, Whoisdomains
+from .models import AllowedRr, Domains, Zones
 
 
 class DomainNewTest(TestCase):
@@ -65,6 +65,9 @@ class DomainNewTest(TestCase):
               soaretry=3600, soaexpires=3600, soaminimum=3600,
               soaprimary=3600, soaemail='nobody.eu.org')
     z.save()
+    self.zone_id = z.id
+
+    Domains(name='ORPHAN', zone=z, created_by=a, updated_by=a).save()
 
     ar = AllowedRr(zone=z, rrtype_id=2)
     ar.save()
@@ -107,6 +110,44 @@ class DomainNewTest(TestCase):
     r = self.c.post('/en/domain/new/', fields)
     self.assertEqual(200, r.status_code)
     self.assertTrue(hasattr(r, 'streaming_content'))
+
+  def test_domainns_orphan_ok(self):
+    self.assertTrue(self.c.login(username='AA1', password=self.pw3))
+
+    fields = {
+      'fqdn': 'ORPHAN.EU.ORG',
+      'pn1': 'John Snow',
+      'ad1': 'The North',
+      'ad2': '59000 Lenord',
+      'ad6': 'FR',
+      'private': 'on',
+      'orphan': '1',
+      'th': suffixadd('TP1'),
+      'level': '1'
+    }
+    r = self.c.post('/en/domain/new/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Object created:' in str(r.content))
+    self.assertEqual(1, len(Whoisdomains.objects.filter(fqdn='ORPHAN.EU.ORG')))
+
+  def test_domainns_orphan_forbidden(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+
+    fields = {
+      'fqdn': 'ORPHAN.EU.ORG',
+      'pn1': 'John Snow',
+      'ad1': 'The North',
+      'ad2': '59000 Lenord',
+      'ad6': 'FR',
+      'private': 'on',
+      'orphan': '1',
+      'th': suffixadd('TP1'),
+      'level': '1'
+    }
+    r = self.c.post('/en/domain/new/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertFalse('Object created:' in str(r.content))
+    self.assertEqual(0, len(Whoisdomains.objects.filter(fqdn='ORPHAN.EU.ORG')))
 
   def test_special_handle_len(self):
     self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))

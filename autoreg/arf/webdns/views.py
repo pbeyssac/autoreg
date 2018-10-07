@@ -8,6 +8,7 @@ import six
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import SuspiciousOperation
+from django.db import IntegrityError, transaction
 from django.urls import reverse, reverse_lazy
 from django.db import connection
 import django.forms as forms
@@ -316,10 +317,20 @@ def _adopt_orphan(request, dbc, fqdn, form):
   ok, errmsg = is_orphan(fqdn)
   if ok:
     inwhois = _whoisrecord_from_form(fqdn, form, request.user.username)
-    w = autoreg.whois.db.Main(dbc=dbc)
-    whoisout = io.StringIO()
     inwhois.append('changed: ' + suffixadd(request.user.username))
-    w.parsefile(inwhois, None, outfile=whoisout)
+    whoisout = io.StringIO()
+
+    #
+    # This block has to be in a transaction because
+    # an underlying LOCK TABLE requires it.
+    # It is difficult to test for it, as tests run
+    # in a transaction themselves.
+    #
+    with transaction.atomic():
+      w = autoreg.whois.db.Main(dbc=dbc)
+      w.parsefile(inwhois, None, outfile=whoisout)
+
+
     vars['whoisin'] = inwhois
     vars['whoisout'] = whoisout.getvalue()
   else:
