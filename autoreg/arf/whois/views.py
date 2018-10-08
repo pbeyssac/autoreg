@@ -44,6 +44,7 @@ from django.views.decorators.cache import cache_control
 from django.db import connection
 
 from .models import Whoisdomains,Contacts,Tokens,DomainContact, check_is_admin
+from . import token
 
 from ..logs.models import log, Log
 
@@ -59,35 +60,10 @@ domcontact_choices = [('technical', ugettext_lazy('technical')),
                       ('administrative', ugettext_lazy('administrative')),
                       ('zone', ugettext_lazy('zone'))]
 
-# chars allowed in passwords or reset/validation tokens
-allowed_chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 #
 # Helper functions
 #
-
-def _token_find(contact_id, action):
-  """Find existing token(s)"""
-  # Expire old tokens beforehand
-  dbc = connection.cursor()
-  dbc.execute('DELETE FROM arf_tokens WHERE expires < NOW()')
-  return Tokens.objects.filter(contact_id=contact_id, action=action)
-
-def _token_clear(contact_id, action):
-  """Cleanup pre-existing token(s)"""
-  _token_find(contact_id, action).delete()
-
-def _token_set(contact_id, action, args=None, ttl=3600):
-  """Create a token for the indicated action on the indicated contact"""
-  sr = random.SystemRandom()
-  token = ''.join(sr.choice(allowed_chars) for i in range(16))
-  t = time.time()
-  now = datetime.datetime.fromtimestamp(t, datetime.timezone.utc)
-  expires = datetime.datetime.fromtimestamp(t + ttl, datetime.timezone.utc)
-  tk = Tokens(contact_id=contact_id, date=now, expires=expires,
-              token=token, action=action, args=args)
-  tk.save()
-  return token
 
 def _to_idna(fqdn):
   fqdn = fqdn.lower()
@@ -312,8 +288,8 @@ def makeresettoken(request, handle=None):
     ct = ctl[0]
 
     # create new token
-    _token_clear(ct.id, action="pwreset")
-    token = _token_set(ct.id, action="pwreset", ttl=RESET_TOKEN_TTL)
+    token.token_clear(ct.id, action="pwreset")
+    mytoken = token.token_set(ct.id, action="pwreset", ttl=RESET_TOKEN_TTL)
 
     absurl = request.build_absolute_uri(reverse(resetpass2,
                                                 args=[handle]))
@@ -325,7 +301,7 @@ def makeresettoken(request, handle=None):
                              'absurl': absurl,
                              'remoteip': request.META.get('REMOTE_ADDR', None),
                              'handle': fullhandle,
-                             'token': token }, FROMADDR, [ ct.email ],
+                             'token': mytoken }, FROMADDR, [ ct.email ],
                           request):
        vars = { 'msg': _("Sorry, error while sending mail."
                          " Please try again later.") }
@@ -355,11 +331,11 @@ def resetpass2(request, handle):
     if len(pass1) < 8:
       vars['msg'] = _("Password should be at least 8 chars")
       return render(request, 'whois/resetpass2.html', vars)
-    token = request.POST.get('resettoken', 'C')
-    tkl = _token_find(ct.id, "pwreset")
+    mytoken = request.POST.get('resettoken', 'C')
+    tkl = token.token_find(ct.id, "pwreset")
     if len(tkl) > 1:
       raise SuspiciousOperation
-    if len(tkl) == 0 or token != tkl[0].token:
+    if len(tkl) == 0 or mytoken != tkl[0].token:
       vars['msg'] = _("Invalid reset token")
       return render(request, 'whois/resetpass2.html', vars)
     tk = tkl[0]
@@ -417,7 +393,7 @@ def contactcreate(request):
                  validate=False)
       if p.from_ripe(d):
         p.insert()
-        valtoken = _token_set(p.cid, "contactval", ttl=VAL_TOKEN_TTL)
+        valtoken = token.token_set(p.cid, "contactval", ttl=VAL_TOKEN_TTL)
         ehandle = suffixstrip(p.gethandle())
         absurl = request.build_absolute_uri(reverse(contactvalidate,
                                                     args=[ehandle.upper(),
@@ -456,7 +432,7 @@ def contactvalidate(request, handle, valtoken):
   if len(ctl) != 1:
     msg = _("Sorry, contact handle or validation token is not valid.")
   else:
-    tkl = _token_find(ctl[0].id, "contactval")
+    tkl = token.token_find(ctl[0].id, "contactval")
     if len(tkl) != 1 or tkl[0].token != valtoken:
       msg = _("Sorry, contact handle or validation token is not valid.")
   if msg:
@@ -649,15 +625,15 @@ def contactchange(request, registrantdomain=None):
         c.updated_by = suffixadd(request.user.username)
         c.save()
       if emailchanged:
-        _token_clear(c.id, "changemail")
-        token = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
+        token.token_clear(c.id, "changemail")
+        mytoken = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
         absurl = request.build_absolute_uri(reverse(changemail))
         if not render_to_mail('whois/changemail.mail',
                                {'to': newemail,
                                 'absurl': absurl,
                                 'handle': suffixadd(ehandle),
                                 'newemail': newemail,
-                                'token': token }, FROMADDR, [ newemail ],
+                                'token': mytoken }, FROMADDR, [ newemail ],
                                request):
           vars = { 'msg': _("Sorry, error while sending mail."
                             " Please try again later.") }
@@ -689,7 +665,7 @@ def changemail(request):
   if len(ctl) != 1:
     raise SuspiciousOperation
   ct = ctl[0]
-  tkl = _token_find(ct.id, "changemail")
+  tkl = token.token_find(ct.id, "changemail")
   if len(tkl) > 1:
     raise SuspiciousOperation
   if len(tkl) == 0:
@@ -702,8 +678,8 @@ def changemail(request):
   if request.method == "GET":
     return render(request, 'whois/changemail.html', vars)
   elif request.method == "POST":
-    token = request.POST.get('token', 'C')
-    if token != tk.token:
+    mytoken = request.POST.get('token', 'C')
+    if mytoken != tk.token:
       vars['msg'] = _("Invalid token")
       return render(request, 'whois/changemail.html', vars)
     newemail = tk.args
