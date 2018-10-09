@@ -114,6 +114,7 @@ SESSION_COOKIE_HTTPONLY=True
 SESSION_COOKIE_SECURE=True
 SITE_ID=1
 STATIC_URL='/arf/en/admin/static/'
+LOGIN_URL='login'
 
 #
 # Application-specific settings

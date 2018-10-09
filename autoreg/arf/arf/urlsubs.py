@@ -11,7 +11,7 @@ import autoreg.arf.whois.views as whois_views
 
 urlpatterns = [
   url(r'^$', whois_views.domainlist, name='domainlist'),
-  url(r'^login/$', whois_views.login),
+  url(r'^login/$', whois_views.login, name='login'),
   url(r'^logout/$', whois_views.logout, name='logout'),
   url(r'^contact/change/$', whois_views.contactchange, name='contactchange'),
   url(r'^contact/changemail/$', whois_views.changemail),

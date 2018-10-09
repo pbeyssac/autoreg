@@ -6,6 +6,7 @@ import io
 import six
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError, transaction
@@ -31,10 +32,8 @@ from autoreg.whois.db import check_handle_domain_auth, \
 
 from ..requests.models import Requests, rq_make_id
 from ..whois.models import Contacts, Whoisdomains, check_is_admin
-from ..whois.views import registrant_form, login
+from ..whois.views import registrant_form
 from .models import Zones, is_orphan, preempt
-
-URILOGIN = reverse_lazy(login)
 
 
 class newdomain_form(registrant_form):
@@ -187,12 +186,11 @@ def checksoa(request, domain):
   return StreamingHttpResponse(_gen_checksoa(domain),
                                content_type="text/plain")
 
+@login_required
 def domainds(request, fqdn):
   """Show/edit DNSSEC DS record(s) for domain"""
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domainds, args=[fqdn.lower()]))
-  if not request.user.is_authenticated() or not request.user.is_active:
-    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   is_admin = check_is_admin(request.user.username)
   dbc = connection.cursor()
   if not check_handle_domain_auth(dbc, request.user.username, fqdn) \
@@ -337,12 +335,11 @@ def _adopt_orphan(request, dbc, fqdn, form):
     vars['msg'] = errmsg
   return render(request, "dns/orphan.html", vars)
 
+@login_required
 def domainns(request, fqdn=None):
   """Show/edit record(s) for domain"""
   if fqdn and fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domainns, args=[fqdn.lower()]))
-  if not request.user.is_authenticated() or not request.user.is_active:
-    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   handle = request.user.username.upper()
   is_admin = check_is_admin(request.user.username)
   dbc = connection.cursor()
@@ -499,10 +496,9 @@ def domainns(request, fqdn=None):
   return render(request, 'dns/nsedit.html', vars)
 
 
+@login_required
 def special(request):
   """Special actions on domain"""
-  if not request.user.is_authenticated() or not request.user.is_active:
-    return HttpResponseRedirect(URILOGIN + '?next=%s' % request.path)
   handle = request.user.username.upper()
   is_admin = check_is_admin(request.user.username)
   if not is_admin:

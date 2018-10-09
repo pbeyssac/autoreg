@@ -149,9 +149,9 @@ class AccountTest(TestCase):
     #r = self.c.get('/en/domain/edit/confirm/' + self.domain)
     #self.assertEqual(200, r.status_code)
 
-  def test_del_400_anon(self):
+  def test_get_del_302_anon(self):
     r = self.c.get('/en/domain/del/' + self.domain + '/')
-    self.assertEqual(400, r.status_code)
+    self.assertEqual(302, r.status_code)
   def test_del_400_logged(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     r = self.c.get('/en/domain/del/' + self.domain + '/')
@@ -159,27 +159,27 @@ class AccountTest(TestCase):
   def test_del_upper(self):
     r = self.c.get('/en/domain/del/' + self.domain.upper() + '/')
     self.assertEqual(404, r.status_code)
-  def test_del_anon(self):
+  def test_post_del_anon(self):
     r = self.c.post('/en/domain/del/' + self.domain + '/')
-    self.assertEqual(403, r.status_code)
+    self.assertEqual(302, r.status_code)
   def test_del_301(self):
     r = self.c.post('/en/domain/del/' + self.domain)
     self.assertEqual(301, r.status_code)
     self.assertEqual('/en/domain/del/' + self.domain + '/', r['Location'])
 
-  def test_undel_400_anon(self):
+  def test_get_undel_anon_(self):
     r = self.c.get('/en/domain/undel/' + self.domain + '/')
-    self.assertEqual(400, r.status_code)
-  def test_undel_400_logged(self):
+    self.assertEqual(302, r.status_code)
+  def test_get_undel_400_logged(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     r = self.c.get('/en/domain/undel/' + self.domain + '/')
     self.assertEqual(400, r.status_code)
-  def test_undel_upper(self):
+  def test_get_undel_upper(self):
     r = self.c.get('/en/domain/undel/' + self.domain.upper() + '/')
     self.assertEqual(404, r.status_code)
   def test_undel_anon(self):
     r = self.c.post('/en/domain/undel/' + self.domain + '/')
-    self.assertEqual(403, r.status_code)
+    self.assertEqual(302, r.status_code)
   def test_undel_301(self):
     r = self.c.post('/en/domain/undel/' + self.domain)
     self.assertEqual(301, r.status_code)

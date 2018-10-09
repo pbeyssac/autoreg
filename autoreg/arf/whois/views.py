@@ -17,6 +17,7 @@ import time
 import six
 
 
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy, ugettext as _
 
@@ -467,11 +468,10 @@ def domain(request, fqdn):
 
 # private pages
 
+@login_required
 @cache_control(private=True)
 def chpass(request):
   """Contact password change"""
-  if not request.user.is_authenticated() or not request.user.is_active:
-    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
   f = chpass_form()
   form = f.as_table()
@@ -505,13 +505,12 @@ def chpass(request):
     vars['ehandle'] = suffixadd(handle)
     return render(request, 'whois/passchanged.html', vars)
 
+@login_required
 @cache_control(private=True, max_age=10)
 def domainlist(request, handle=None):
   """Display domain list for a contact"""
   if request.method != "GET":
     raise SuspiciousOperation
-  if not request.user.is_authenticated() or not request.user.is_active:
-    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
 
   if handle is not None:
     if not check_is_admin(request.user.username):
@@ -539,13 +538,12 @@ def domainlist(request, handle=None):
            'handle': handle }
   return render(request, 'whois/domainlist.html', vars)
 
+@login_required
 @cache_control(private=True)
 def contactchange(request, registrantdomain=None):
   """Contact or registrant modification page.
      If registrant, registrantdomain contains the associated domain FQDN.
   """
-  if not request.user.is_authenticated() or not request.user.is_active:
-    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   if registrantdomain and registrantdomain != registrantdomain.lower():
     return HttpResponseRedirect(reverse(contactchange,
                                         args=[registrantdomain.lower()]))
@@ -649,13 +647,12 @@ def contactchange(request, registrantdomain=None):
       vars['form'] = form
       return render(request, 'whois/contactchange.html', vars)
 
+@login_required
 @cache_control(private=True)
 def changemail(request):
   """Email change step 2:
      check provided change email token and force indicated email
      on the designated contact."""
-  if not request.user.is_authenticated() or not request.user.is_active:
-    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
   f = changemail_form()
   form = f.as_table()
@@ -688,11 +685,10 @@ def changemail(request):
     tk.delete()
     return render(request, 'whois/emailchanged.html', vars)
 
+@login_required
 @cache_control(private=True)
 def domaineditconfirm(request, fqdn):
   """Request confirmation for self-deletion of a contact"""
-  if not request.user.is_authenticated() or not request.user.is_active:
-    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaineditconfirm, args=[fqdn.lower()]))
   nexturi = reverse(domainedit, args=[fqdn])
@@ -705,14 +701,13 @@ def domaineditconfirm(request, fqdn):
   else:
     return HttpResponseRedirect(nexturi)
 
+@login_required
 @cache_control(private=True, max_age=10)
 def domainedit(request, fqdn):
   """Edit domain contacts"""
   # list of shown and editable contact types
   typelist = ["administrative", "technical", "zone"]
 
-  if not request.user.is_authenticated() or not request.user.is_active:
-    return HttpResponseRedirect(reverse(login) + '?next=%s' % request.path)
   handle = request.user.username
 
   if fqdn != fqdn.lower():
@@ -827,12 +822,11 @@ def domainedit(request, fqdn):
           'addform': { 'domcontact_form': domcontact_form()} }
   return render(request, 'whois/domainedit.html', vars)
 
+@login_required
 @cache_control(private=True)
 def domaindelete(request, fqdn):
   if request.method != "POST":
     raise SuspiciousOperation
-  if not request.user.is_authenticated() or not request.user.is_active:
-    raise PermissionDenied
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaindelete, args=[fqdn.lower()]))
   if not check_handle_domain_auth(connection.cursor(),
@@ -862,12 +856,11 @@ def domaindelete(request, fqdn):
 
   return HttpResponseRedirect(reverse(domainedit, args=[fqdn.lower()]))
 
+@login_required
 @cache_control(private=True)
 def domainundelete(request, fqdn):
   if request.method != "POST":
     raise SuspiciousOperation
-  if not request.user.is_authenticated() or not request.user.is_active:
-    raise PermissionDenied
   if fqdn != fqdn.lower():
     raise PermissionDenied
   if not check_handle_domain_auth(connection.cursor(),
@@ -881,9 +874,8 @@ def domainundelete(request, fqdn):
 
   return HttpResponseRedirect(reverse(domainedit, args=[fqdn]))
 
+@login_required
 def logout(request):
   """Logout page"""
-  if not request.user.is_authenticated() or not request.user.is_active:
-    return HttpResponseRedirect(reverse(login))
   django.contrib.auth.logout(request)
   return HttpResponseRedirect(reverse(login))
