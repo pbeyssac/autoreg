@@ -9,7 +9,7 @@ import crypt
 
 import six
 
-from autoreg.whois.db import HANDLESUFFIX,suffixadd,suffixstrip
+from autoreg.whois.db import suffixstrip
 
 from django.contrib.auth.models import User
 
