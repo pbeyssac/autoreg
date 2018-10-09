@@ -215,15 +215,17 @@ def rq_run(out):
   rl = Requests.objects.exclude(pending_state=None).order_by('id')
 
   for r in rl:
-    with transaction.atomic():
-      r2 = Requests.objects.select_for_update().get(id=r.id)
-      try:
+    try:
+      with transaction.atomic():
+        r2 = Requests.objects.select_for_update().get(id=r.id)
         r2.do_pending_exc(out, dd, whoisdb)
         ok = True
-      except IntegrityError as e:
-        print(six.text_type(e), file=out)
-        ok = False
-      if ok:
-        print(_("Status: committed"), file=out)
-      else:
-        print(_("Status: cancelled"), file=out)
+    # check outside of the transaction, to let Django see this
+    # exception.
+    except IntegrityError as e:
+      print(six.text_type(e), file=out)
+      ok = False
+    if ok:
+      print(_("Status: committed"), file=out)
+    else:
+      print(_("Status: cancelled"), file=out)
