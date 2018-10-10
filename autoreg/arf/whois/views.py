@@ -17,38 +17,36 @@ import time
 import six
 
 
+import django.contrib.auth
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import SuspiciousOperation, PermissionDenied
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db import connection
+from django import forms
+from django.forms.widgets import PasswordInput
+from django.http import HttpResponseRedirect, HttpResponseForbidden
+from django.shortcuts import render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy, ugettext as _
+from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_http_methods
 
 
+from autoreg.common import domain_delete
 from autoreg.conf import HANDLESUFFIX
+import autoreg.dns.db
 from autoreg.util import pwcrypt
 from autoreg.whois.db import \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
   countries_get
-from ..util import render_to_mail
-from autoreg.common import domain_delete
 from autoreg.conf import FROMADDR
-import autoreg.dns.db
 
-import django.contrib.auth
-from django.core.exceptions import SuspiciousOperation, PermissionDenied
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.urls import reverse
-from django.http import HttpResponse, \
-  HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import render
-from django import forms
-from django.forms.widgets import PasswordInput
-from django.views.decorators.cache import cache_control
-from django.db import connection
 
+from ..util import render_to_mail
+from ..logs.models import log, Log
 from .models import Whoisdomains,Contacts,Tokens,DomainContact, check_is_admin
 from . import token
-
-from ..logs.models import log, Log
 
 
 RESET_TOKEN_HOURS_TTL = 24
