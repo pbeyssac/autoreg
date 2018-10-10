@@ -556,7 +556,7 @@ def contactchange(request, registrantdomain=None):
   if registrantdomain:
     # check handle is authorized on domain
     if not check_handle_domain_auth(connection.cursor(),
-                                    handle + HANDLESUFFIX, registrantdomain) \
+                                    suffixadd(handle), registrantdomain) \
      and not is_admin:
       return HttpResponseForbidden("Unauthorized")
     dom = Whoisdomains.objects.get(fqdn=registrantdomain.upper())
@@ -735,7 +735,7 @@ def domainedit(request, fqdn):
   is_admin = check_is_admin(handle)
 
   # check handle is authorized on domain
-  if not check_handle_domain_auth(connection.cursor(), handle + HANDLESUFFIX, f) \
+  if not check_handle_domain_auth(connection.cursor(), suffixadd(handle), f) \
      and not is_admin:
     return HttpResponseForbidden(_("Unauthorized"))
 
@@ -773,7 +773,7 @@ def domainedit(request, fqdn):
               msg = _("Sorry, must leave at least one contact!")
             else:
               log(handle, action='contactdel',
-                  message=fqdn + ' ' + chandle + HANDLESUFFIX)
+                  message=fqdn + ' ' + suffixadd(chandle))
               dbdom.d[code].remove(cid)
               dbdom.update()
           else:
@@ -783,7 +783,7 @@ def domainedit(request, fqdn):
             or 'submita' in request.POST:
           if cid not in dbdom.d[code]:
             log(handle, action='contactadd',
-                message=fqdn + ' ' + chandle + HANDLESUFFIX)
+                message=fqdn + ' ' + suffixadd(chandle))
             dbdom.d[code].append(cid)
             dbdom.update()
           else:
