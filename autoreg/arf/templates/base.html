@@ -35,7 +35,7 @@
 {% endif %}
 </nav>
 <HR>
-{% block msg %}{% endblock %}
+{% block msg %}{% if msg %}{{ msg }}{% endif %}{% endblock %}
 {% block pagination %}{% endblock %}
 {% block form %}{% endblock %}
 {% block content %}{% endblock %}
