@@ -197,6 +197,7 @@ class chpass_form(forms.Form):
 # public pages
 #
 
+@require_http_methods(["GET", "POST"])
 def login(request):
   """Login page"""
   if request.method == "GET":
@@ -245,9 +246,8 @@ def login(request):
     else:
       vars['msg'] = _("Your username and/or password is incorrect")
     return render(request, 'whois/login.html', vars)
-  else:
-    raise SuspiciousOperation
 
+@require_http_methods(["GET", "POST"])
 def contactbydomain(request, fqdn=None):
   is_admin = check_is_admin(request.user.username)
   if request.method == "GET" and fqdn is None:
@@ -266,6 +266,7 @@ def contactbydomain(request, fqdn=None):
   else:
     raise SuspiciousOperation
 
+@require_http_methods(["GET", "POST"])
 def makeresettoken(request, handle=None):
   """Password reset step 1: send a reset token to the contact email address"""
   if request.method == "GET":
@@ -276,41 +277,42 @@ def makeresettoken(request, handle=None):
     form = f.as_table()
     vars = { 'form': form }
     return render(request, 'whois/resetpass.html', vars)
-  elif request.method == "POST":
-    handle = request.POST.get('handle', '').upper()
-    fullhandle = handle
-    handle = suffixstrip(handle)
-    ctl = Contacts.objects.filter(handle=handle)
-    if len(ctl) == 0:
-      vars = { 'ehandle': suffixadd(handle),
-               'next': request.path }
-      return render(request, 'whois/contactnotfound.html', vars)
-    if len(ctl) != 1:
-      raise SuspiciousOperation
-    ct = ctl[0]
 
-    # create new token
-    token.token_clear(ct.id, action="pwreset")
-    mytoken = token.token_set(ct.id, action="pwreset", ttl=RESET_TOKEN_TTL)
+  handle = request.POST.get('handle', '').upper()
+  fullhandle = handle
+  handle = suffixstrip(handle)
+  ctl = Contacts.objects.filter(handle=handle)
+  if len(ctl) == 0:
+    vars = { 'ehandle': suffixadd(handle),
+             'next': request.path }
+    return render(request, 'whois/contactnotfound.html', vars)
+  if len(ctl) != 1:
+    raise SuspiciousOperation
+  ct = ctl[0]
 
-    absurl = request.build_absolute_uri(reverse(resetpass2,
-                                                args=[handle]))
-    if not ct.email:
-       vars = { 'msg': _("Sorry, this is an internal handle, it has no associated e-mail.") }
-       return render(request, 'whois/msgnext.html', vars)
-    if not render_to_mail('whois/resetpass.mail',
-                           { 'to': ct.email,
-                             'absurl': absurl,
-                             'remoteip': request.META.get('REMOTE_ADDR', None),
-                             'handle': fullhandle,
-                             'token': mytoken }, FROMADDR, [ ct.email ],
-                          request):
-       vars = { 'msg': _("Sorry, error while sending mail."
-                         " Please try again later.") }
-       return render(request, 'whois/msgnext.html', vars)
-    vars = { 'ehandle': suffixadd(handle) }
-    return render(request, 'whois/tokensent.html', vars)
+  # create new token
+  token.token_clear(ct.id, action="pwreset")
+  mytoken = token.token_set(ct.id, action="pwreset", ttl=RESET_TOKEN_TTL)
 
+  absurl = request.build_absolute_uri(reverse(resetpass2,
+                                              args=[handle]))
+  if not ct.email:
+     vars = { 'msg': _("Sorry, this is an internal handle, it has no associated e-mail.") }
+     return render(request, 'whois/msgnext.html', vars)
+  if not render_to_mail('whois/resetpass.mail',
+                         { 'to': ct.email,
+                           'absurl': absurl,
+                           'remoteip': request.META.get('REMOTE_ADDR', None),
+                           'handle': fullhandle,
+                           'token': mytoken }, FROMADDR, [ ct.email ],
+                        request):
+     vars = { 'msg': _("Sorry, error while sending mail."
+                       " Please try again later.") }
+     return render(request, 'whois/msgnext.html', vars)
+  vars = { 'ehandle': suffixadd(handle) }
+  return render(request, 'whois/tokensent.html', vars)
+
+@require_http_methods(["GET", "POST"])
 def resetpass2(request, handle):
   """Password reset step 2:
      check provided reset token and force indicated password
@@ -320,33 +322,34 @@ def resetpass2(request, handle):
   vars = {'form': form}
   if request.method == "GET":
     return render(request, 'whois/resetpass2.html', vars)
-  elif request.method == "POST":
-    ctl = Contacts.objects.filter(handle=handle)
-    if len(ctl) < 1:
-      return render(request, 'whois/resetpass2.html', vars)
-    ct = ctl[0]
-    pass1 = request.POST.get('pass1', 'A')
-    pass2 = request.POST.get('pass2', 'B')
-    if pass1 != pass2:
-      vars['msg'] = _("They don't match, try again")
-      return render(request, 'whois/resetpass2.html', vars)
-    if len(pass1) < 8:
-      vars['msg'] = _("Password should be at least 8 chars")
-      return render(request, 'whois/resetpass2.html', vars)
-    mytoken = request.POST.get('resettoken', 'C')
-    tkl = token.token_find(ct.id, "pwreset")
-    if len(tkl) > 1:
-      raise SuspiciousOperation
-    if len(tkl) == 0 or mytoken != tkl[0].token:
-      vars['msg'] = _("Invalid reset token")
-      return render(request, 'whois/resetpass2.html', vars)
-    tk = tkl[0]
-    ct.passwd = pwcrypt(pass1)
-    ct.save()
-    tk.delete()
-    vars = { 'ehandle': suffixadd(handle) }
-    return render(request, 'whois/passchanged.html', vars)
 
+  ctl = Contacts.objects.filter(handle=handle)
+  if len(ctl) < 1:
+    return render(request, 'whois/resetpass2.html', vars)
+  ct = ctl[0]
+  pass1 = request.POST.get('pass1', 'A')
+  pass2 = request.POST.get('pass2', 'B')
+  if pass1 != pass2:
+    vars['msg'] = _("They don't match, try again")
+    return render(request, 'whois/resetpass2.html', vars)
+  if len(pass1) < 8:
+    vars['msg'] = _("Password should be at least 8 chars")
+    return render(request, 'whois/resetpass2.html', vars)
+  mytoken = request.POST.get('resettoken', 'C')
+  tkl = token.token_find(ct.id, "pwreset")
+  if len(tkl) > 1:
+    raise SuspiciousOperation
+  if len(tkl) == 0 or mytoken != tkl[0].token:
+    vars['msg'] = _("Invalid reset token")
+    return render(request, 'whois/resetpass2.html', vars)
+  tk = tkl[0]
+  ct.passwd = pwcrypt(pass1)
+  ct.save()
+  tk.delete()
+  vars = { 'ehandle': suffixadd(handle) }
+  return render(request, 'whois/passchanged.html', vars)
+
+@require_http_methods(["GET", "POST"])
 def contactcreate(request):
   """Contact creation page"""
   if request.user.is_authenticated() and request.user.is_active:
@@ -357,7 +360,7 @@ def contactcreate(request):
   p_errors = []
   if request.method == "GET":
     form = contact_form(initial={'private': True})
-  elif request.method == "POST":
+  else:
     form = contact_form(request.POST)
 
     # validate password field by hand
@@ -418,6 +421,7 @@ def contactcreate(request):
                'p_errors': p_errors})
   return render(request, 'whois/contactcreate.html', vars)
 
+@require_http_methods(["GET", "POST"])
 def contactvalidate(request, handle, valtoken):
   """Contact validation page"""
   if request.user.is_authenticated():
@@ -451,8 +455,8 @@ def contactvalidate(request, handle, valtoken):
     tkl[0].delete()
     vars = { 'msg': _("Your contact handle is now valid.") }
     return render(request, 'whois/msgnext.html', vars)
-  raise SuspiciousOperation
 
+@require_http_methods(["GET"])
 def domain(request, fqdn):
   """Whois from domain FQDN"""
   f = fqdn.upper()
@@ -469,6 +473,7 @@ def domain(request, fqdn):
 
 # private pages
 
+@require_http_methods(["GET", "POST"])
 @login_required
 @cache_control(private=True)
 def chpass(request):
@@ -479,40 +484,38 @@ def chpass(request):
   vars = {'form': form}
   if request.method == "GET":
     return render(request, 'whois/chpass.html', vars)
-  elif request.method == "POST":
-    pass0 = request.POST.get('pass0', '')
-    pass1 = request.POST.get('pass1', '')
-    pass2 = request.POST.get('pass2', '')
-    if pass1 != pass2:
-      vars['msg'] = _("They don't match, try again")
-      return render(request, 'whois/chpass.html', vars)
-    if len(pass1) < 8:
-      vars['msg'] = _("Password should be at least 8 chars")
-      return render(request, 'whois/chpass.html', vars)
 
-    ctlist = Contacts.objects.filter(handle=handle)
-    if len(ctlist) != 1:
-      raise SuspiciousOperation
+  pass0 = request.POST.get('pass0', '')
+  pass1 = request.POST.get('pass1', '')
+  pass2 = request.POST.get('pass2', '')
+  if pass1 != pass2:
+    vars['msg'] = _("They don't match, try again")
+    return render(request, 'whois/chpass.html', vars)
+  if len(pass1) < 8:
+    vars['msg'] = _("Password should be at least 8 chars")
+    return render(request, 'whois/chpass.html', vars)
 
-    ct = ctlist[0]
-    if six.PY2:
-      pass0 = pass0.encode('UTF-8')
-    if ct.passwd != crypt.crypt(pass0, ct.passwd):
-      vars['msg'] = _("Current password is not correct")
-      return render(request, 'whois/chpass.html', vars)
-    ct.passwd = pwcrypt(pass1)
-    ct.save()
-    del vars['form']
-    vars['ehandle'] = suffixadd(handle)
-    return render(request, 'whois/passchanged.html', vars)
+  ctlist = Contacts.objects.filter(handle=handle)
+  if len(ctlist) != 1:
+    raise SuspiciousOperation
 
+  ct = ctlist[0]
+  if six.PY2:
+    pass0 = pass0.encode('UTF-8')
+  if ct.passwd != crypt.crypt(pass0, ct.passwd):
+    vars['msg'] = _("Current password is not correct")
+    return render(request, 'whois/chpass.html', vars)
+  ct.passwd = pwcrypt(pass1)
+  ct.save()
+  del vars['form']
+  vars['ehandle'] = suffixadd(handle)
+  return render(request, 'whois/passchanged.html', vars)
+
+@require_http_methods(["GET"])
 @login_required
 @cache_control(private=True, max_age=10)
 def domainlist(request, handle=None):
   """Display domain list for a contact"""
-  if request.method != "GET":
-    raise SuspiciousOperation
-
   if handle is not None:
     if not check_is_admin(request.user.username):
       raise PermissionDenied
@@ -539,6 +542,7 @@ def domainlist(request, handle=None):
            'handle': handle }
   return render(request, 'whois/domainlist.html', vars)
 
+@require_http_methods(["GET", "POST"])
 @login_required
 @cache_control(private=True)
 def contactchange(request, registrantdomain=None):
@@ -579,75 +583,76 @@ def contactchange(request, registrantdomain=None):
       vars['ehandle'] = suffixadd(ehandle)
       vars['form'] = contactchange_form(initial=initial)
     return render(request, 'whois/contactchange.html', vars)
-  elif request.method == "POST":
-    if registrantdomain:
-      form = registrant_form(request.POST)
-    else:
-      form = contactchange_form(request.POST)
-    if form.is_valid():
-      c = Contacts.objects.get(handle=ehandle)
-      ad = []
-      for i in '12345':
-        k = 'ad%c' % i
-        if form.cleaned_data[k] != '':
-          ad.append(form.cleaned_data[k])
-      changed = False
-      emailchanged = False
-      if c.name != form.cleaned_data['pn1']:
-        c.name = form.cleaned_data['pn1']
-        changed = True
-      if ('em1' in form.cleaned_data
-          and form.cleaned_data['em1'] != ''
-          and c.email != form.cleaned_data['em1']):
-        newemail = form.cleaned_data['em1']
-        emailchanged = True
-      for i in ['fx1', 'ph1']:
-        if form.cleaned_data[i] == '':
-          form.cleaned_data[i] = None
-      if c.phone != form.cleaned_data['ph1']:
-        c.phone = form.cleaned_data['ph1']
-        changed = True
-      if c.fax != form.cleaned_data['fx1']:
-        c.fax = form.cleaned_data['fx1']
-        changed = True
-      if c.country != form.cleaned_data['ad6']:
-        c.country = form.cleaned_data['ad6']
-        changed = True
-      if c.addr != '\n'.join(ad):
-        c.addr = '\n'.join(ad)
-        changed = True
-      if c.private != form.cleaned_data['private']:
-        c.private = form.cleaned_data['private']
-        changed = True
-      if changed:
-        c.updated_on = None	# set to NOW() by the database
-        c.updated_by = suffixadd(request.user.username)
-        c.save()
-      if emailchanged:
-        token.token_clear(c.id, "changemail")
-        mytoken = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
-        absurl = request.build_absolute_uri(reverse(changemail))
-        if not render_to_mail('whois/changemail.mail',
-                               {'to': newemail,
-                                'absurl': absurl,
-                                'handle': suffixadd(ehandle),
-                                'newemail': newemail,
-                                'token': mytoken }, FROMADDR, [ newemail ],
-                               request):
-          vars = { 'msg': _("Sorry, error while sending mail."
-                            " Please try again later.") }
-          return render(request, 'whois/msgnext.html', vars)
-        return HttpResponseRedirect(reverse(changemail))
-      if registrantdomain:
-        return HttpResponseRedirect(reverse(domainedit,
-                                            args=[registrantdomain]))
-      else:
-        vars['msg'] = _("Contact information changed successfully")
-        return render(request, 'whois/msgnext.html', vars)
-    else:
-      vars['form'] = form
-      return render(request, 'whois/contactchange.html', vars)
 
+  if registrantdomain:
+    form = registrant_form(request.POST)
+  else:
+    form = contactchange_form(request.POST)
+  if form.is_valid():
+    c = Contacts.objects.get(handle=ehandle)
+    ad = []
+    for i in '12345':
+      k = 'ad%c' % i
+      if form.cleaned_data[k] != '':
+        ad.append(form.cleaned_data[k])
+    changed = False
+    emailchanged = False
+    if c.name != form.cleaned_data['pn1']:
+      c.name = form.cleaned_data['pn1']
+      changed = True
+    if ('em1' in form.cleaned_data
+        and form.cleaned_data['em1'] != ''
+        and c.email != form.cleaned_data['em1']):
+      newemail = form.cleaned_data['em1']
+      emailchanged = True
+    for i in ['fx1', 'ph1']:
+      if form.cleaned_data[i] == '':
+        form.cleaned_data[i] = None
+    if c.phone != form.cleaned_data['ph1']:
+      c.phone = form.cleaned_data['ph1']
+      changed = True
+    if c.fax != form.cleaned_data['fx1']:
+      c.fax = form.cleaned_data['fx1']
+      changed = True
+    if c.country != form.cleaned_data['ad6']:
+      c.country = form.cleaned_data['ad6']
+      changed = True
+    if c.addr != '\n'.join(ad):
+      c.addr = '\n'.join(ad)
+      changed = True
+    if c.private != form.cleaned_data['private']:
+      c.private = form.cleaned_data['private']
+      changed = True
+    if changed:
+      c.updated_on = None	# set to NOW() by the database
+      c.updated_by = suffixadd(request.user.username)
+      c.save()
+    if emailchanged:
+      token.token_clear(c.id, "changemail")
+      mytoken = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
+      absurl = request.build_absolute_uri(reverse(changemail))
+      if not render_to_mail('whois/changemail.mail',
+                             {'to': newemail,
+                              'absurl': absurl,
+                              'handle': suffixadd(ehandle),
+                              'newemail': newemail,
+                              'token': mytoken }, FROMADDR, [ newemail ],
+                             request):
+        vars = { 'msg': _("Sorry, error while sending mail."
+                          " Please try again later.") }
+        return render(request, 'whois/msgnext.html', vars)
+      return HttpResponseRedirect(reverse(changemail))
+    if registrantdomain:
+      return HttpResponseRedirect(reverse(domainedit,
+                                          args=[registrantdomain]))
+    else:
+      vars['msg'] = _("Contact information changed successfully")
+      return render(request, 'whois/msgnext.html', vars)
+  else:
+    vars['form'] = form
+    return render(request, 'whois/contactchange.html', vars)
+
+@require_http_methods(["GET", "POST"])
 @login_required
 @cache_control(private=True)
 def changemail(request):
@@ -675,23 +680,22 @@ def changemail(request):
 
   if request.method == "GET":
     return render(request, 'whois/changemail.html', vars)
-  elif request.method == "POST":
-    mytoken = request.POST.get('token', 'C')
-    if mytoken != tk.token:
-      vars['msg'] = _("Invalid token")
-      return render(request, 'whois/changemail.html', vars)
-    newemail = tk.args
-    ct.email = newemail
-    ct.save()
-    tk.delete()
-    return render(request, 'whois/emailchanged.html', vars)
 
+  mytoken = request.POST.get('token', 'C')
+  if mytoken != tk.token:
+    vars['msg'] = _("Invalid token")
+    return render(request, 'whois/changemail.html', vars)
+  newemail = tk.args
+  ct.email = newemail
+  ct.save()
+  tk.delete()
+  return render(request, 'whois/emailchanged.html', vars)
+
+@require_http_methods(["POST"])
 @login_required
 @cache_control(private=True)
 def domaineditconfirm(request, fqdn):
   """Request confirmation for self-deletion of a contact"""
-  if fqdn != fqdn.lower():
-    return HttpResponseRedirect(reverse(domaineditconfirm, args=[fqdn.lower()]))
   nexturi = reverse(domainedit, args=[fqdn])
   vars = {'fqdn': fqdn, 'posturi': nexturi}
   contact_type = request.POST.get('contact_type', None)
@@ -702,6 +706,7 @@ def domaineditconfirm(request, fqdn):
   else:
     return HttpResponseRedirect(nexturi)
 
+@require_http_methods(["GET", "POST"])
 @login_required
 @cache_control(private=True, max_age=10)
 def domainedit(request, fqdn):
@@ -791,8 +796,6 @@ def domainedit(request, fqdn):
           pass
     else:
       raise SuspiciousOperation
-  elif request.method != "GET":
-    raise SuspiciousOperation
 
   # handle GET or end of POST
 
@@ -823,11 +826,10 @@ def domainedit(request, fqdn):
           'addform': { 'domcontact_form': domcontact_form()} }
   return render(request, 'whois/domainedit.html', vars)
 
+@require_http_methods(["POST"])
 @login_required
 @cache_control(private=True)
 def domaindelete(request, fqdn):
-  if request.method != "POST":
-    raise SuspiciousOperation
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaindelete, args=[fqdn.lower()]))
   if not check_handle_domain_auth(connection.cursor(),
@@ -857,11 +859,10 @@ def domaindelete(request, fqdn):
 
   return HttpResponseRedirect(reverse(domainedit, args=[fqdn.lower()]))
 
+@require_http_methods(["POST"])
 @login_required
 @cache_control(private=True)
 def domainundelete(request, fqdn):
-  if request.method != "POST":
-    raise SuspiciousOperation
   if fqdn != fqdn.lower():
     raise PermissionDenied
   if not check_handle_domain_auth(connection.cursor(),

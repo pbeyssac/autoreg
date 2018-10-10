@@ -149,13 +149,13 @@ class AccountTest(TestCase):
     #r = self.c.get('/en/domain/edit/confirm/' + self.domain)
     #self.assertEqual(200, r.status_code)
 
-  def test_get_del_302_anon(self):
+  def test_get_del_405_anon(self):
     r = self.c.get('/en/domain/del/' + self.domain + '/')
-    self.assertEqual(302, r.status_code)
-  def test_del_400_logged(self):
+    self.assertEqual(405, r.status_code)
+  def test_del_405_logged(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     r = self.c.get('/en/domain/del/' + self.domain + '/')
-    self.assertEqual(400, r.status_code)
+    self.assertEqual(405, r.status_code)
   def test_del_upper(self):
     r = self.c.get('/en/domain/del/' + self.domain.upper() + '/')
     self.assertEqual(404, r.status_code)
@@ -169,11 +169,11 @@ class AccountTest(TestCase):
 
   def test_get_undel_anon_(self):
     r = self.c.get('/en/domain/undel/' + self.domain + '/')
-    self.assertEqual(302, r.status_code)
-  def test_get_undel_400_logged(self):
+    self.assertEqual(405, r.status_code)
+  def test_get_undel_405_logged(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     r = self.c.get('/en/domain/undel/' + self.domain + '/')
-    self.assertEqual(400, r.status_code)
+    self.assertEqual(405, r.status_code)
   def test_get_undel_upper(self):
     r = self.c.get('/en/domain/undel/' + self.domain.upper() + '/')
     self.assertEqual(404, r.status_code)
