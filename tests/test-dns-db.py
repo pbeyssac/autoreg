@@ -1,7 +1,6 @@
-#!/usr/local/bin/python
-# $Id$
+#!/usr/local/bin/python3.6
 
-import cStringIO
+import io as cStringIO
 import re
 import os
 import sys
@@ -28,13 +27,11 @@ class TestDnsDb(unittest.TestCase):
   glue12 = """				NS	NS1.TESTGL.EU.ORG.
 				NS	NS2.TESTGL.EU.ORG.
 NS1.TESTGL			A	1.2.3.4
-NS2.TESTGL			AAAA	::FFFF:10.1.2.3
+NS2.TESTGL			AAAA	::ffff:10.1.2.3
 """
   def _parseout(self, d, z):
-    oldstdout = sys.stdout
     fout = cStringIO.StringIO()
-    sys.stdout = fout
-    self.dd.show(d, z)
+    self.dd.show(d, z, outfile=fout)
     flags = []
     dom, zone, crby, upby = None, None, None, None
     rest = ''
@@ -61,40 +58,23 @@ NS2.TESTGL			AAAA	::FFFF:10.1.2.3
         upby = m.groups()[0]
         continue
       rest += l + '\n'
-    sys.stdout = oldstdout
     return dom, zone, crby, upby, flags, rest
   def _dropdb(self):
-    dbh = psycopg2.connect('dbname=template1')
-    dbh.set_isolation_level(0)
-    dbc = dbh.cursor()
-    try:
-      dbc.execute("DROP DATABASE autoreg_test")
-    #except psycopg2.ProgrammingError('database "autoreg_test" does not exist'):
-    except psycopg2.ProgrammingError:
-      pass
+    self.dbc.execute("ABORT")
   def setUp(self):
-    self._dropdb()
-    dbh = psycopg2.connect('dbname=template1')
-    dbh.set_isolation_level(0)
-    dbc = dbh.cursor()
-    dbc.execute("CREATE DATABASE autoreg_test WITH TEMPLATE = template0 ENCODING='UTF-8'")
-    del dbc
-    del dbh
-    os.system("psql autoreg_test < ../postgres/autoreg.schema >/dev/null 2>&1")
-    self.dbh = psycopg2.connect('dbname=autoreg_test')
+    self.dbh = psycopg2.connect('dbname=test_autoreg_dev user=autoreg host=192.168.0.4 password=')
     dbc = self.dbh.cursor()
-    dbc.execute("INSERT INTO zones (name, soaprimary, soaemail, soaserial)"
-                " VALUES ('EU.ORG', 'NS.EU.ORG', 'hostmaster.eu.org',"
-                "2007110600)")
-    dbc.execute("INSERT INTO allowed_rr (zone_id, rrtype_id)"
-                " VALUES ((SELECT id FROM zones WHERE name='EU.ORG'),"
-                "(SELECT id FROM rrtypes WHERE label='NS'))")
-    self.dd = autoreg.dns.db.db(self.dbh)
+    self.dbh.set_isolation_level(0)
+    dbc.execute("BEGIN")
+    self.dd = autoreg.dns.db.db(dbc=dbc)
     self.dd.login('DNSADMIN')
+    self.dbc = dbc
+
   def tearDown(self):
     del self.dd
     del self.dbh
     self._dropdb()
+    del self.dbc
   def _test_base(self, dom, zone, internal, val1, val2):
     zone = 'EU.ORG'
     fqdn = dom + '.' + zone
@@ -160,14 +140,28 @@ NS2.TESTGL			AAAA	::FFFF:10.1.2.3
                        (fqdn, zone,
                         '*unknown*', '*unknown*',
                         ['registry_hold'] + expect_flags, of2))
-      self.dd.delete(fqdn, zone, override_internal=True)
+      # "Domain is held" exceptions
+      self.assertRaises(autoreg.dns.db.AccessError,
+                        self.dd.delete, fqdn, zone, override_internal=True)
+      self.assertRaises(autoreg.dns.db.AccessError,
+                        self.dd.delete, fqdn, zone, override_internal=True,
+                        grace_days=0)
+      self.dd.set_registry_hold(fqdn, zone, False)
+      self.dd.delete(fqdn, zone, override_internal=True, grace_days=0)
     else:
       self.dd.modify(fqdn, zone, 'NS', file=cStringIO.StringIO(f2))
       self.assertEqual(self._parseout(fqdn, zone),
                        (fqdn, zone,
                         '*unknown*', '*unknown*',
                         ['registry_hold'] + expect_flags, of2))
-      self.dd.delete(fqdn, zone)
+      # "Domain is held" exceptions
+      self.assertRaises(autoreg.dns.db.AccessError,
+                        self.dd.delete, fqdn, zone)
+      self.assertRaises(autoreg.dns.db.AccessError,
+                        self.dd.delete, fqdn, zone,
+                        grace_days=0)
+      self.dd.set_registry_hold(fqdn, zone, False)
+      self.dd.delete(fqdn, zone, grace_days=0)
     self.assertRaises(autoreg.dns.db.DomainError,
                       self.dd.delete, fqdn, zone)
   def test1(self):

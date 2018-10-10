@@ -779,6 +779,7 @@ class db:
             raise AccessError(AccessError.DINTERNAL)
         if d._registry_hold \
           and (d._end_grace_period is None or grace_days != 0):
+            # Can't delete a held domain, unless it's already pending deletion
             raise AccessError(AccessError.DHELD)
         if self._nowrite: return
         if grace_days != 0:

@@ -81,11 +81,7 @@ class AccountTest(TestCase):
     DomainContact(whoisdomain=w, contact=Contacts.objects.get(handle='TP1'), contact_type_id=1).save()
     DomainContact(whoisdomain=w, contact=Contacts.objects.get(handle=suffixstrip(self.handle_registrant)), contact_type_id=4).save()
 
-    z = Zones(name='EU.ORG', minlen=2, maxlen=64, ttl=3600,
-              updateserial=False, soaserial=1, soarefresh=3600,
-              soaretry=3600, soaexpires=3600, soaminimum=3600,
-              soaprimary=3600, soaemail='nobody.eu.org')
-    z.save()
+    z = Zones.objects.get(name='EU.ORG')
     self.zone_id = z.id
 
     Domains(name='FOOBAR', zone=z, created_by=a, updated_by=a).save()

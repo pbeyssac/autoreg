@@ -19,12 +19,7 @@ class RqTest(TestCase):
     self.assertEqual(True, r.match(models.rq_make_id()) != None)
   def test_rq(self):
     rqid = models.rq_make_id()
-    zone = webmodels.Zones(id=1, name='EU.ORG', minlen=2, maxlen=4, ttl=3600,
-                           updateserial=False,
-                           soaserial=2018042201, soarefresh=3600, soaretry=1800,
-                           soaexpires=8640000, soaminimum=3600,
-                           soaprimary='foo.bar', soaemail='foobar@local')
-    zone.save()
+    zone = webmodels.Zones.objects.get(name='EU.ORG')
 
     c = whoismodels.Contacts(handle='PB1', name='Python Monthy', email='pm@local', addr='',
                              country='FR', private=True)

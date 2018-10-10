@@ -10,7 +10,7 @@ from django.test import TestCase, Client
 from autoreg.util import pwcrypt
 from autoreg.whois.db import Person, suffixadd
 from ..whois.models import Admins, Contacts, Whoisdomains
-from .models import AllowedRr, Domains, Zones
+from .models import Domains, Zones
 
 
 class DomainNewTest(TestCase):
@@ -60,17 +60,11 @@ class DomainNewTest(TestCase):
     a.save()
     self.admin_handle = p3.gethandle()
 
-    z = Zones(name='EU.ORG', minlen=2, maxlen=64, ttl=3600,
-              updateserial=False, soaserial=1, soarefresh=3600,
-              soaretry=3600, soaexpires=3600, soaminimum=3600,
-              soaprimary=3600, soaemail='nobody.eu.org')
-    z.save()
+    z = Zones.objects.get(name='EU.ORG')
     self.zone_id = z.id
 
     Domains(name='ORPHAN', zone=z, created_by=a, updated_by=a).save()
-
-    ar = AllowedRr(zone=z, rrtype_id=2)
-    ar.save()
+    Domains(name='FOOBAR', zone=z, created_by=a, updated_by=a).save()
 
     self.c = Client()
 
