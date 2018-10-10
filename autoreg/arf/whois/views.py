@@ -20,6 +20,7 @@ import six
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy, ugettext as _
+from django.views.decorators.http import require_http_methods
 
 
 from autoreg.conf import HANDLESUFFIX
@@ -874,6 +875,7 @@ def domainundelete(request, fqdn):
 
   return HttpResponseRedirect(reverse(domainedit, args=[fqdn]))
 
+@require_http_methods(["POST"])
 @login_required
 def logout(request):
   """Logout page"""

@@ -39,6 +39,7 @@ div.error {margin-top: .2em; margin-bottom: .2em;}
 
 nav.profile, nav.main {display: inline-block}
 nav.profile {background-color: #ddf}
+#id_logoutform {display: inline}
 .admin {background-color: #fdd}
 
 span.handle {
