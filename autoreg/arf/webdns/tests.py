@@ -7,6 +7,7 @@ from django.db import connection
 from django.test import TestCase, Client
 
 
+import autoreg.dns.db
 from autoreg.util import pwcrypt
 from autoreg.whois.db import Person, suffixadd
 from ..whois.models import Admins, Contacts, Whoisdomains
@@ -143,6 +144,83 @@ class DomainNewTest(TestCase):
     self.assertEqual(200, r.status_code)
     self.assertFalse('Object created:' in str(r.content))
     self.assertEqual(0, len(Whoisdomains.objects.filter(fqdn='ORPHAN.EU.ORG')))
+
+  def test_special_unlockdom_nx(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'domains': 'nxdomain.eu.org', 'action': 'lock0', 'submit': 'xxx'
+    }
+    self.assertRaises(autoreg.dns.db.DomainError, self.c.post, '/en/special/', fields)
+
+  def test_special_unlockdom(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'domains': 'foobar.eu.org', 'action': 'lock0', 'submit': 'xxx'
+    }
+    r = self.c.post('/en/special/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Unlocked 1 domain' in str(r.content))
+
+  def test_special_lockdom_nx(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'domains': 'nxdomain.eu.org', 'action': 'lock1', 'submit': 'xxx'
+    }
+    self.assertRaises(autoreg.dns.db.DomainError, self.c.post, '/en/special/', fields)
+
+  def test_special_lockdom(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'domains': 'foobar.eu.org', 'action': 'lock1', 'submit': 'xxx'
+    }
+    r = self.c.post('/en/special/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Locked 1 domain' in str(r.content))
+
+  def test_special_unholddom_nx(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'domains': 'nxdomain.eu.org', 'action': 'hold0', 'submit': 'xxx'
+    }
+    self.assertRaises(autoreg.dns.db.DomainError, self.c.post, '/en/special/', fields)
+
+  def test_special_unholddom(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'domains': 'foobar.eu.org', 'action': 'hold0', 'submit': 'xxx'
+    }
+    r = self.c.post('/en/special/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Unheld 1 domain' in str(r.content))
+    self.assertFalse(Domains.objects.get(name='FOOBAR', zone_id=self.zone_id).registry_lock)
+
+  def test_special_holddom_nx(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'domains': 'nxdomain.eu.org', 'action': 'hold1', 'submit': 'xxx'
+    }
+    self.assertRaises(autoreg.dns.db.DomainError, self.c.post, '/en/special/', fields)
+
+  def test_special_hold_unhold_dom(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    self.assertEqual(None, Domains.objects.get(name='FOOBAR', zone_id=self.zone_id).registry_lock)
+    self.assertEqual(None, Domains.objects.get(name='FOOBAR', zone_id=self.zone_id).registry_hold)
+    fields = {
+      'domains': 'foobar.eu.org', 'action': 'hold1', 'submit': 'xxx'
+    }
+    r = self.c.post('/en/special/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Held 1 domain' in str(r.content))
+    self.assertEqual(None, Domains.objects.get(name='FOOBAR', zone_id=self.zone_id).registry_lock)
+    self.assertTrue(Domains.objects.get(name='FOOBAR', zone_id=self.zone_id).registry_hold)
+
+    fields['action'] = 'hold0'
+    r = self.c.post('/en/special/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Unheld 1 domain' in str(r.content))
+    self.assertEqual(None, Domains.objects.get(name='FOOBAR', zone_id=self.zone_id).registry_lock)
+    self.assertFalse(Domains.objects.get(name='FOOBAR', zone_id=self.zone_id).registry_hold)
+
 
   def test_special_handle_len(self):
     self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
