@@ -10,7 +10,7 @@ DEBUG = True
 
 LOCALE_PATHS = ( '/home/pb/autoreg/locale',)
 
-ALLOWED_HOSTS = [ 'devel3.eu.org' ]
+ALLOWED_HOSTS = [ 'devel.eu.org' ]
 
 SESSION_COOKIE_NAME = 'dsession_id'
 INTERNAL_IPS=['192.168.0.0/22', '2a02:8428:46c:5800::/56']
