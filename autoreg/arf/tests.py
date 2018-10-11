@@ -72,3 +72,47 @@ Please=20allow=20about=20half=20a=20day=20for=20propagation.
 Best=20Regards,
 The=20=20team
 """)
+
+  def test_render_to_mail_encoding_none(self):
+    self.maxDiff = None
+    subject = "with dømains"
+    c = {'to': 'foobar2@local', 'subject': subject,
+         'rqid': '20181011160000-test-éééé',
+         'domain': 'TEST.EU.ORG',
+         'reasonfield': "<REASØNFIELD> ""\'\'\n",
+         'whoisrecord': "<WHØISRECORD> \"\"''", 'zonerecord': "<ZØNERECORD \"\"''>\n"}
+    msg = util._render_to_mail("whois/domainnew.mail",
+                               c, 'foobar@local',
+                               ['foobar2@local'], request=None, language=None,
+                               encoding=None)
+    self.assertEqual(msg, """From: foobar@local
+To: foobar2@local
+Subject: =?utf-8?Q?request=20[20181011160000-test-=C3=A9=C3=A9=C3=A9=C3=A9]=20(domain=20TEST.EU.ORG)=20accepted?=
+X-Origin: arf
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+Hello,
+
+Your request [20181011160000-test-éééé] for creation of domain TEST.EU.ORG
+has been accepted.
+
+The following records will be inserted in the zone file:
+<ZØNERECORD ""''>
+
+
+The following records will be inserted in the WHOIS base:
+<WHØISRECORD> ""''
+Additional comment:
+
+<REASØNFIELD> ''
+
+
+Please allow about half a day for propagation.
+
+
+Best Regards,
+The  team
+""")

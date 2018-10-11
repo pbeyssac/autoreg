@@ -65,8 +65,7 @@ def _render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
     msg = '\n'.join(outh) + '\n\n' \
           + six.text_type(codecs.encode(body.encode('utf-8'), encoding), 'ascii')
   else:
-    msg = '\n'.join(outh) + '\n\n' \
-          + six.text_type(body.encode('utf-8'), 'ascii')
+    msg = '\n'.join(outh) + '\n\n' + six.text_type(body)
   return msg
 
 
