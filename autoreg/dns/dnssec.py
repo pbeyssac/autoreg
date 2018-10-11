@@ -32,7 +32,7 @@ def compute_keytag(flags, protocol, algorithm, key):
 
 def compute_ds(domain, flags, protocol, algorithm, key, digesttypelist=[1, 2, 4]):
   """Compute DS/DLV records from DNSKEY data"""
-  domain = str(domain.lower())
+  domain = domain.lower().encode('ascii')
   if domain[-1] != b'.':
     domain += b'.'
   wire = b''
