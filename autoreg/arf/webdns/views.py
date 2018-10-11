@@ -18,6 +18,8 @@ from django.http import HttpResponseRedirect, HttpResponseNotFound, \
 from django.shortcuts import render
 from django.utils import translation
 from django.utils.translation import ugettext_lazy, ugettext as _
+from django.views.decorators.http import require_http_methods
+
 
 import autoreg.arf.whois.views as whois_views
 from autoreg.conf import HANDLESUFFIX, PREEMPTHANDLE
@@ -186,6 +188,7 @@ def checksoa(request, domain):
   return StreamingHttpResponse(_gen_checksoa(domain),
                                content_type="text/plain")
 
+@require_http_methods(["GET", "POST"])
 @login_required
 def domainds(request, fqdn):
   """Show/edit DNSSEC DS record(s) for domain"""
@@ -271,9 +274,6 @@ def domainds(request, fqdn):
         rr = ""
         dscur.sort()
 
-  elif request.method != "GET":
-    raise SuspiciousOperation
-
   vars = { 'domain': fqdn, 'dserrs': dserrs, 'rr': rr,
            'verbose': verbose,
            'dscur': dscur, 'dsserved': dsserved, 'dsok': dsok, 'elerr': elerr }
@@ -335,6 +335,7 @@ def _adopt_orphan(request, dbc, fqdn, form):
     vars['msg'] = errmsg
   return render(request, "dns/orphan.html", vars)
 
+@require_http_methods(["GET", "POST"])
 @login_required
 def domainns(request, fqdn=None):
   """Show/edit record(s) for domain"""
@@ -464,9 +465,6 @@ def domainns(request, fqdn=None):
 
     # Fall through to GET handling
 
-  elif request.method != "GET":
-    raise SuspiciousOperation
-
 
   if newdomain:
     rrlist = []
@@ -496,6 +494,7 @@ def domainns(request, fqdn=None):
   return render(request, 'dns/nsedit.html', vars)
 
 
+@require_http_methods(["GET", "POST"])
 @login_required
 def special(request):
   """Special actions on domain"""
@@ -588,11 +587,9 @@ def special(request):
     elif action:
       raise SuspiciousOperation
     # no action: do nothing, just redisplay the page
-  elif request.method == "GET":
+  else:
     form = special_form()
     form2 = special2_form()
-  else:
-    raise SuspiciousOperation
 
   vars = { 'form': form,
            'form2': form2,
