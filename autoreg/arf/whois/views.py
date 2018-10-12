@@ -627,7 +627,7 @@ def contactchange(request, registrantdomain=None):
       c.save()
     if emailchanged:
       token.token_clear(c.id, "changemail")
-      mytoken = _token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
+      mytoken = token.token_set(c.id, "changemail", newemail, EMAIL_TOKEN_TTL)
       absurl = request.build_absolute_uri(reverse(changemail))
       if not render_to_mail('whois/changemail.mail',
                              {'to': newemail,

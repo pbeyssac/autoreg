@@ -14,7 +14,7 @@ from autoreg.util import pwcrypt
 from autoreg.whois.db import Person, suffixadd, suffixstrip
 from ..webdns.models import Domains, Zones
 from .models import Admins, Contacts, DomainContact, Whoisdomains
-from . import views
+from . import token
 
 
 class AccountTest(TestCase):
@@ -144,6 +144,53 @@ class AccountTest(TestCase):
     self.assertEqual(200, r.status_code)
     #r = self.c.get('/en/domain/edit/confirm/' + self.domain)
     #self.assertEqual(200, r.status_code)
+
+  def test_contact_change_post(self):
+    """Test full email change procedure"""
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = { 'pn1': 'New Name',
+               'em1': 'newemail@foobar.eu.org',
+               'ad1': 'New address',
+               'ad2': 'New city',
+               'ad6': 'ES',
+               'private': True }
+    r = self.c.post('/en/contact/change/', fields)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual(b'', r.content)
+    self.assertEqual('/en/contact/changemail/', r['Location'])
+    self.assertEqual(len(mail.outbox), 1)
+    msg = str(mail.outbox[0].message())
+    re_token = re.compile('Enter the following validation token: ([a-zA-Z0-9]{16,16})$',
+                          re.MULTILINE)
+    m = re_token.search(msg)
+    self.assertNotEqual(None, m)
+    mtoken = m.groups()[0]
+
+    r = self.c.get('/en/contact/changemail/')
+    self.assertEqual(200, r.status_code)
+    re_email = re.compile('Please look for email sent to <strong>([^<]+@[^<]+)<')
+    m = re_email.search(str(r.content))
+    self.assertNotEqual(None, m)
+    self.assertEqual('newemail@foobar.eu.org', m.groups()[0])
+
+    fields = {'token': 'badtoken'}
+    r = self.c.post('/en/contact/changemail/', fields)
+    self.assertTrue('Invalid token' in str(r.content))
+    self.assertEqual(200, r.status_code)
+
+    fields = {'token': mtoken}
+    r = self.c.post('/en/contact/changemail/', fields)
+    self.assertFalse('Invalid token' in str(r.content))
+    self.assertEqual(200, r.status_code)
+
+    re_ok = re.compile('set to <span class="email">([^<]+@[^<]+)<')
+    m = re_ok.search(str(r.content))
+    self.assertNotEqual(None, m)
+    self.assertEqual('newemail@foobar.eu.org', m.groups()[0])
+
+    ct = Contacts.objects.get(handle=suffixstrip(self.handle))
+    self.assertEqual('newemail@foobar.eu.org', ct.email)
+    self.assertEqual(0, len(token.token_find(ct.id, "changemail")))
 
   def test_get_del_405_anon(self):
     r = self.c.get('/en/domain/del/' + self.domain + '/')
