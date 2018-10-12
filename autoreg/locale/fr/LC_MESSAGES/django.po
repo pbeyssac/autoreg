@@ -24,7 +24,11 @@ msgstr "Erreur :"
 msgid "Zone insert done\n"
 msgstr "Insertion dans la zone réalisée\n"
 
-#: autoreg/arf/requests/models.py:113 autoreg/arf/requests/models.py:150
+#: autoreg/arf/requests/models.py:110
+msgid "Whois error, aborting"
+msgstr "Erreur Whois, abandon"
+
+#: autoreg/arf/requests/models.py:121 autoreg/arf/requests/models.py:150
 #, python-format
 msgid "Mail to %(mails)s failed"
 msgstr "Échec de l'envoi à %(mails)s"
@@ -1441,11 +1445,7 @@ msgstr "Ce contact n'existe pas"
 msgid "NS list is empty"
 msgstr "La liste d'enregistrements NS est vide"
 
-#: autoreg/arf/webdns/views.py:493
-msgid "Cannot delete record"
-msgstr "Impossible de supprimer l'enregistrement"
-
-#: autoreg/arf/webdns/views.py:561 autoreg/arf/whois/views.py:823
+#: autoreg/arf/webdns/views.py:520 autoreg/arf/whois/views.py:761
 #, python-format
 msgid "Contact %s not found"
 msgstr "Contact %s introuvable"
@@ -1485,10 +1485,10 @@ msgstr "Blocage %s"
 msgid "Copied %(ndom)d domain(s) from contact %(handle)s"
 msgstr "%(ndom)d copiés depuis le contact %(handle)s"
 
-#: autoreg/arf/webdns/views.py:606
+#: autoreg/arf/webdns/views.py:585
 #, python-format
 msgid "Domain %(domain)s has not been preempted: %(err)s"
-msgstr ""
+msgstr "Le domain %(domain)s n'a pas été preempté : %(err)s"
 
 #: autoreg/arf/whois/otp_views.py:36
 msgid "Two-factor Authentication code"
@@ -1562,8 +1562,12 @@ msgstr "Désolé, votre compte est désactivé"
 msgid "Your username and/or password is incorrect"
 msgstr "Votre identifiant et/ou mot de passe est incorrect"
 
-#: autoreg/arf/whois/views.py:331 autoreg/arf/whois/views.py:443
-#: autoreg/arf/whois/views.py:695
+#: autoreg/arf/whois/views.py:305
+msgid "Sorry, this is an internal handle, it has no associated e-mail."
+msgstr "Désolé, cet identifiant est interne, il n'a pas de courriel associé."
+
+#: autoreg/arf/whois/views.py:314 autoreg/arf/whois/views.py:418
+#: autoreg/arf/whois/views.py:646
 msgid "Sorry, error while sending mail. Please try again later."
 msgstr "Erreur pendant l'envoi de courriel. Désolé, réessayez plus tard."
 
