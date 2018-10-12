@@ -698,11 +698,10 @@ def domaineditconfirm(request, fqdn):
   vars = {'fqdn': fqdn, 'posturi': nexturi}
   contact_type = request.POST.get('contact_type', None)
   handle = request.POST.get('handle', None)
-  if request.method == "POST" and contact_type and handle:
-    vars.update({'contact_type': contact_type})
+  if contact_type and handle:
+    vars['contact_type'] = contact_type
     return render(request, 'whois/domaineditconfirm.html', vars)
-  else:
-    return HttpResponseRedirect(nexturi)
+  return HttpResponseRedirect(nexturi)
 
 @require_http_methods(["GET", "POST"])
 @login_required
