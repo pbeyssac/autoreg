@@ -18,7 +18,6 @@ from autoreg.whois.db import admin_login, country_from_iso
 import autoreg.whois.query as query
 import autoreg.zauth
 
-
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -29,6 +28,7 @@ from django.shortcuts import render
 from django.utils import translation
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import cache_control
+from django.views.decorators.http import require_http_methods
 
 
 from . import models
@@ -125,6 +125,7 @@ def _rq1(request, r):
 # public pages
 #
 
+@require_http_methods(["GET", "POST"])
 @login_required
 def rqedit(request, rqid):
   login = admin_login(connection.cursor(), request.user.username)
@@ -140,7 +141,7 @@ def rqedit(request, rqid):
   if request.method == "GET":
     vars = { 'r': r }
     return render(request, 'requests/rqedit.html', vars)
-  elif request.method == 'POST':
+  else:
     whoisrecord = request.POST.get('whois', '').strip('\n')
     r.tags = request.POST.get('tags', '').strip()
     if r.tags == '':
@@ -150,13 +151,10 @@ def rqedit(request, rqid):
       r.whoisrecord = whoisrecord
     r.save()
     return HttpResponseRedirect(reverse(rq, args=[rqid]))
-  else:
-    raise SuspiciousOperation
 
+@require_http_methods(["POST"])
 @login_required
 def rq(request, rqid=None):
-  if request.method != "GET" and request.method != "POST":
-    raise SuspiciousOperation
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -211,10 +209,9 @@ def rq(request, rqid=None):
            'reason': reason }
   return render(request, 'requests/rqdisplay.html', vars)
 
+@require_http_methods(["GET"])
 @login_required
 def rqdom(request, domain):
-  if request.method != "GET":
-    raise SuspiciousOperation
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -231,10 +228,9 @@ def rqdom(request, domain):
            'goto': request.GET.get('page', '') }
   return render(request, 'requests/rqdisplay.html', vars)
 
+@require_http_methods(["GET"])
 @login_required
 def rqdisplaychecked(request):
-  if request.method != "GET":
-    raise SuspiciousOperation
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -249,10 +245,9 @@ def rqdisplaychecked(request):
            'goto': request.GET.get('page', '') }
   return render(request, 'requests/rqdisplay.html', vars)
 
+@require_http_methods(["GET"])
 @login_required
 def rqlistdom(request, domain=None):
-  if request.method != "GET":
-    raise SuspiciousOperation
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -274,11 +269,10 @@ def rqlistdom(request, domain=None):
            'goto': request.GET.get('page', '') }
   return render(request, 'requests/rqlistdom.html', vars)
 
+@require_http_methods(["GET"])
 @login_required
 @cache_control(max_age=10)
 def rqlist(request, page='0'):
-  if request.method != "GET":
-    raise SuspiciousOperation
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -389,11 +383,10 @@ def _rqexec(rq, out, za, admin_contact, login, action, reasonfield):
               % (rq, action, reason),
             file=out)
 
+@require_http_methods(["POST"])
 @login_required
 @transaction.non_atomic_requests
 def rqval(request):
-  if request.method != "POST":
-    raise SuspiciousOperation
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
     raise PermissionDenied
@@ -432,11 +425,10 @@ def rqval(request):
   page = render(request, 'requests/rqval.html', vars)
   return page
 
+@require_http_methods(["GET"])
 @login_required
 @cache_control(max_age=10)
 def rqloglist(request):
-  if request.method != "GET":
-    raise SuspiciousOperation
   is_admin = check_is_admin(request.user.username)
   if not is_admin:
     raise PermissionDenied
@@ -454,10 +446,9 @@ def rqloglist(request):
   vars = { 'list': logpage }
   return render(request, 'requests/rqloglist.html', vars)
 
+@require_http_methods(["GET"])
 @login_required
 def rqlogdisplay(request, id):
-  if request.method != "GET":
-    raise SuspiciousOperation
   is_admin = check_is_admin(request.user.username)
   if not is_admin:
     raise PermissionDenied
