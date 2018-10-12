@@ -901,7 +901,7 @@ class db:
         try:
             z.checktype('DS')
         except AccessError as e:
-            return False, e[0]
+            return False, e.args[0]
         d.fetch()
         nns = d.existsrr('', 'NS')
         if nns:

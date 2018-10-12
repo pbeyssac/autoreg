@@ -16,6 +16,7 @@ from .models import Domains, Zones
 
 class DomainNewTest(TestCase):
   def setUp(self):
+    self.pwtu1 = 'abcdefgh'
     cursor = connection.cursor()
     # Minimal test account
     d = {'pn': ['Test Person'], 'em': ['foobaremail@email.bla'],
@@ -145,6 +146,46 @@ class DomainNewTest(TestCase):
     self.assertFalse('Object created:' in str(r.content))
     self.assertEqual(0, len(Whoisdomains.objects.filter(fqdn='ORPHAN.EU.ORG')))
 
+  def test_domainds_get_ko(self):
+    r = self.c.get('/en/ds/eu.org/', {})
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/login/?next=/en/ds/eu.org/', r['Location'])
+  def test_domainds_post_ko_1(self):
+    r = self.c.post('/en/ds/eu.org/', {})
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/login/?next=/en/ds/eu.org/', r['Location'])
+  def test_domainds_post_ko_2(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.post('/en/ds/foobar.eu.org/', {})
+    self.assertEqual(403, r.status_code)
+  def test_domainds_post_ko_3(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      # old expired EU.ORG key
+      'rr': 'EU.ORG. DNSKEY 256 3 8 AwEAAaD28FYK/09FqyUtDaG0ZnkoB7rarNe5I70Ll1/ZDRlcSCDBffa6 Pr/Za1/MCkTa1DN8ZbGKlk1oXKde081tuRmdmIUpibvLg6hPGQ516Z91 zENIP0S5PovnoRA1WpPPdcCQcZ+mpgPt/in74KVJggGHQiklL2F2Dt4Y pLxcTlXD'
+    }
+    r = self.c.post('/en/ds/foobar.eu.org/', fields)
+    self.assertTrue('Illegal record type in zone' in str(r.content))
+    self.assertEqual(200, r.status_code)
+  def test_domainds_post_ko_4(self):
+    self.assertTrue(self.c.login(username='TU1', password=self.pwtu1))
+    fields = {
+      # old expired EU.ORG key
+      'rr': 'EU.ORG. DNSKEY 256 3 8 AwEAAaD28FYK/09FqyUtDaG0ZnkoB7rarNe5I70Ll1/ZDRlcSCDBffa6 Pr/Za1/MCkTa1DN8ZbGKlk1oXKde081tuRmdmIUpibvLg6hPGQ516Z91 zENIP0S5PovnoRA1WpPPdcCQcZ+mpgPt/in74KVJggGHQiklL2F2Dt4Y pLxcTlXD'
+    }
+    r = self.c.post('/en/ds/nons.dnssec.tests.eu.org/', fields)
+    self.assertTrue('No NS records for domain' in str(r.content))
+    self.assertEqual(200, r.status_code)
+  def test_domainds_post_ko_5(self):
+    self.assertTrue(self.c.login(username='TU1', password=self.pwtu1))
+    fields = {
+      # old expired EU.ORG key
+      'rr': 'EU.ORG. DNSKEY 256 3 8 AwEAAaD28FYK/09FqyUtDaG0ZnkoB7rarNe5I70Ll1/ZDRlcSCDBffa6 Pr/Za1/MCkTa1DN8ZbGKlk1oXKde081tuRmdmIUpibvLg6hPGQ516Z91 zENIP0S5PovnoRA1WpPPdcCQcZ+mpgPt/in74KVJggGHQiklL2F2Dt4Y pLxcTlXD'
+    }
+    r = self.c.post('/en/ds/ns.dnssec.tests.eu.org/', fields)
+    self.assertTrue('Domain doesn&#39;t match record' in str(r.content))
+    self.assertEqual(200, r.status_code)
+
   def test_special_unlockdom_nx(self):
     self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
     fields = {
@@ -258,3 +299,29 @@ class DomainNewTest(TestCase):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     r = self.c.post('/en/special/', {})
     self.assertEqual(403, r.status_code)
+
+  def test_checksoa_ko(self):
+    r = self.c.get('/en/soa/AzE.Aze')
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/soa/aze.aze', r['Location'])
+
+  def test_checksoa_1(self):
+    r = self.c.get('/en/soa/')
+    self.assertEqual(200, r.status_code)
+    # need to get all the lines to run the code
+    for line in r.streaming_content:
+      pass
+
+  def test_checksoa_2(self):
+    r = self.c.get('/en/soa/aze.aze')
+    self.assertEqual(200, r.status_code)
+    # need to get all the lines to run the code
+    for line in r.streaming_content:
+      pass
+
+  def test_checksoa_3(self):
+    r = self.c.get('/en/soa/.')
+    self.assertEqual(200, r.status_code)
+    # need to get all the lines to run the code
+    for line in r.streaming_content:
+      pass

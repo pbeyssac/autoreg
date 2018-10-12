@@ -112,7 +112,9 @@ class MultiResolver(object):
     self.mastername = None
     self.manualip = manualip
     self.nat = nat
-    qns = dns.message.make_query(domain+'.', 'NS')
+    if not domain.endswith('.'):
+      domain += '.'
+    qns = dns.message.make_query(domain, 'NS')
     qns.flags = 0
     self.qns = qns
     if nslist:
@@ -283,7 +285,9 @@ LEVEL_NS = 3
 class SOAChecker(MultiResolver):
   def __init__(self, domain, nslist=[], manualip={}, nat={}):
     super(self.__class__, self).__init__(domain, nslist, manualip, nat)
-    qsoa = dns.message.make_query(domain+'.', 'SOA')
+    if not domain.endswith('.'):
+      domain += '.'
+    qsoa = dns.message.make_query(domain, 'SOA')
     qsoa.flags = 0
     self.qsoa = qsoa
     self.level = LEVEL_NS
@@ -471,7 +475,9 @@ class SOAChecker(MultiResolver):
 class DNSKEYChecker(MultiResolver):
   def __init__(self, domain, nslist=[], manualip={}, nat={}):
     super(self.__class__, self).__init__(domain, nslist, manualip, nat)
-    qdnskey = dns.message.make_query(domain+'.', 'DNSKEY')
+    if not domain.endswith('.'):
+      domain += '.'
+    qdnskey = dns.message.make_query(domain, 'DNSKEY')
 
     # CD: accept replies even if domain is broken, so we can obtain
     # the records anyway

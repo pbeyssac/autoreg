@@ -72,6 +72,7 @@ urlpatterns += [
   url(r'^val$', requests_views.rqval, name='rqval')
 ]
 urlpatterns += [
+  # first line for empty domain (root zone)
   url(r'^soa/(?P<domain>)$', webdns_views.checksoa),
   url(r'^soa/(?P<domain>[a-z0-9\.A-Z-]+)$', webdns_views.checksoa),
   url(r'^ds/(?P<fqdn>[a-z0-9\.A-Z-]+)/$', webdns_views.domainds,

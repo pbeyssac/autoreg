@@ -41,7 +41,9 @@ class TestDnsParser(unittest.TestCase):
     self.assertEqual(
       (False, 'Protocol field should be 3'),
       autoreg.dns.dnssec.make_ds('eu.org. 12190 IN DNSKEY 257 9 8 AwEAAbD16qAm2QsVzE6pELckbjHvCx2UPmQ6qXGPTsq0PNPxVpbMWX/U n49Kqg//+9BSOomQIEiX80B4on22cw0nfpzabW5eImKeoeuNq178vCV9 xebc0UhF9huRWRntEzVs1wZ90DZABcPGhgpKv/6x7zYItYeLpd+cmAB6 MmigxEhP', 'eu.org'))
-
+  def test_make_ds_dnskeys_ns(self):
+      keylist = autoreg.dns.dnssec.make_ds_dnskeys_ns('.', ['a.root-servers.net', 'b.root-servers.net'])
+      self.assertNotEqual(0, len(keylist))
 
 if __name__ == '__main__':
   unittest.main()
