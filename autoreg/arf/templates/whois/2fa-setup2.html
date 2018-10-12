@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Two-factor Authentication" %}{% endblock %}
+{% block form %}
+
+<div id="id_otpcode">
+  <div id="id_code">{% trans "New code:" %} <span id="id_otpsecret">{{ secret }}</span></div>
+  <img id="id_qrcode" src="data:image/png;base64,{{ qrcode }}">
+</div>
+</div>
+
+<FORM id="id_otpform" class="form" ACTION="{{ posturi }}" METHOD="POST">
+{% csrf_token %}
+<label for="id_otp"></label>{% trans "Code to check and confirm setup:" %} <input type="text" name="otp" maxlength="8" autocomplete="off" required id="id_otp" /><span class="helptext">{% trans "One-Time Password" %}</span><br>
+<INPUT class="action" TYPE="submit" NAME="totpset" VALUE="{% trans "Activate New Code" %}">
+</FORM>
+{% endblock %}

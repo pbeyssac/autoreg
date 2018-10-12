@@ -22,3 +22,4 @@ CSRF_COOKIE_SECURE=False
 #
 
 FORCEDEBUGMAIL='pb@eu.org'
+TOTP_ISSUER='eu.org devel'

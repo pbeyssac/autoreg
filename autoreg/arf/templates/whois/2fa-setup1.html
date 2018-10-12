@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Recovery Codes" %}{% endblock %}
+{% block form %}
+
+<div id="id_recovery">
+  <div id="id_recoverytitle">{% trans "Please store the following recovery codes in a safe place." %}</div>
+  <ul id="id_recoverylist">{% for c in codes %}<li>{{ c }}</li> {% endfor %}</ul>
+</div>
+
+<a class="action" href="{% url nexturl %}">{{ nextlabel }}</a>
+{% endblock %}

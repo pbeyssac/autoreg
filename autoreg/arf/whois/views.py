@@ -46,6 +46,7 @@ from autoreg.conf import FROMADDR
 from ..util import render_to_mail
 from ..logs.models import log, Log
 from .models import Whoisdomains,Contacts,Tokens,DomainContact, check_is_admin
+from . import otp
 from . import token
 
 
@@ -235,12 +236,17 @@ def login(request):
       if not v:
         vars['msg'] = _("You need to validate your account. " \
                       "Please check your e-mail for the validation link.")
-      elif user.is_active:
+      elif not user.is_active:
+        vars['msg'] = _("Sorry, your account has been disabled")
+      elif otp.totp_is_active(handle):
+        # send the user to a 2nd page for two-factor authentication
+        request.session['1fa'] = handle
+        return HttpResponseRedirect(reverse('login2fa'))
+      else:
+        # no OTP to process, login complete
         log(handle, action='login')
         django.contrib.auth.login(request, user)
         return HttpResponseRedirect(next)
-      else:
-        vars['msg'] = _("Sorry, your account has been disabled")
     else:
       vars['msg'] = _("Your username and/or password is incorrect")
     return render(request, 'whois/login.html', vars)

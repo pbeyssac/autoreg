@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Two-factor Authentication" %}{% endblock %}
+{% block form %}
+
+<div id="id_otpmain">
+  <div>
+  {% trans "Two-factor Authentication is not set." %}
+  </div>
+
+  <a class="action" href="{% url '2fa-setup1' %}">{% trans "Begin setup" %}</A>
+</div>
+{% endblock %}

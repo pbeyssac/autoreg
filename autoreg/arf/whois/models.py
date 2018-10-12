@@ -84,6 +84,15 @@ class Contacts(models.Model):
         search_fields = ['handle']
         list_display = ('handle', 'name')
 
+class Otp(models.Model):
+    id = models.AutoField(primary_key=True)
+    contact = models.ForeignKey(Contacts, on_delete=models.CASCADE)
+    secret = models.CharField(max_length=16, null=True)
+    codes = models.CharField(max_length=90, null=True)
+    active = models.NullBooleanField(default=False, null=True)
+    class Meta:
+        db_table = 'otp'
+
 class DomainContact(models.Model):
     id = models.AutoField(primary_key=True)
     whoisdomain = models.ForeignKey(Whoisdomains, on_delete=models.CASCADE)

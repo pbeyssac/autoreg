@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Two-factor Authentication" %}{% endblock %}
+{% block form %}
+
+<div>
+{% trans "Two-factor Authentication is set." %}
+</div>
+<div id="id_otpmain">
+  <form id="id_otpform" class="form" action="{% url '2fa-clear' %}" METHOD="POST">
+  {% csrf_token %}
+  <label for="id_otp"></label>{% trans "Enter code to deactivate" %}: <input type="text" name="otp" maxlength="8" autocomplete="off" required id="id_otp" /><span class="helptext">{% trans "One-Time Password" %}</span><br>
+  <input class="action" type="submit" name="deactivate" value="{% trans "Deactivate" %}">
+  </form>
+
+  <div>{% blocktrans %}You currently have {{ ncodes }} recovery codes remaining. You can regenerate new codes, cancelling the current ones.{% endblocktrans %}</div>
+  <form id="id_otpnewrecoveryform" class="form" action="{% url '2fa-newrecovery' %}" METHOD="POST">
+  {% csrf_token %}
+  <input class="action" type="submit" name="newrecovery" value="{% trans "Generate new recovery codes" %}">
+  </form>
+</div>
+{% endblock %}

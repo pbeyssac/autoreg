@@ -11,6 +11,15 @@ ul.errorlist {margin: 3px 0 0 0; padding: 0; list-style: none;}
   margin: 4px 0 3px 0;
   padding: 4px 0 3px 0;
 }
+
+
+/* Two-column recovery code list */
+/* #id_qrcode {margin: auto; display: block;} */
+#id_recovery {margin-bottom:2em;}
+#id_recoverytitle {margin-bottom:.4em;}
+#id_recoverylist li {display: inline;}
+#id_recoverylist li:nth-child(2n):after {content:"\A"; display: block;}
+
 .error,.fieldWrappererror {background-color: #f88;}
 div.error {margin-top: .2em; margin-bottom: .2em;}
 .rrlist td:first-child {min-width: 5em;}
@@ -82,6 +91,9 @@ span.email {font-weight: bold; font-family: monospace; background-color:#eef;}
   border-style: solid;
   border-spacing: .5em;
   display: inline;
+}
+#id_otpmain .action, #id_otpmain .miniaction {
+  display: inline-block;
 }
 .action {
   padding: .2em;

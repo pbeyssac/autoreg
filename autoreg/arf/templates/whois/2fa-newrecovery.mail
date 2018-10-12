@@ -1,0 +1,17 @@
+{% extends "base-varheaders.mail" %}{% load i18n %}
+{% block subject %}{% autoescape off %}{% blocktrans %}new two-factor recovery codes generated on {{ sitename }} for contact {{ handle }}{% endblocktrans %}{% endautoescape %}{% endblock %}
+{% block content %}{% autoescape off %}{% blocktrans %}Hello,
+
+New recovery codes for your two-factor authentication on {{handle }}
+have just been generated, following a request from {{ remoteip }}.
+
+This operation cancels your previous recovery codes.
+
+If you didn't regenerate the codes yourself, your account has been
+compromised! Please connect and fully reconfigure your two-factor
+authentication at {{ absurl }}
+
+It may be a good idea to also change your password.
+
+{% endblocktrans %}{% endautoescape %}
+{% endblock %}

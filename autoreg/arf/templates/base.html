@@ -15,6 +15,7 @@
 <nav class="profile">
  <span class="handle">{{ user.username }}{{ suffix }}</span>:
  <A HREF="{% url 'chpass' %}">{% trans "Password" %}</A>
+ <A HREF="{% url '2fa' %}">{% trans "Two-Factor Authentication" %}</A>
  <A HREF="{% url 'contactchange' %}">{% trans "Information" %}</A>
 <FORM class="form" id="id_logoutform" ACTION="{% url 'logout' %}" METHOD="POST">
 {% csrf_token %}

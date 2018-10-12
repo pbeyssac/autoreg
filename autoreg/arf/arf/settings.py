@@ -127,3 +127,5 @@ RECAPTCHA_PRIVATE_KEY='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 RECAPTCHA_API_URL='https://www.google.com/recaptcha/api/siteverify'
 RECAPTCHA_REQUESTS_MIN=10
 RECAPTCHA_DOMAINS_MIN=10
+
+TOTP_ISSUER='eu.org'

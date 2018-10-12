@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{{ sitename }}{% endblock %}
+{% block msg %}{% if msg %}{{ msg }}
+{% endif %}{% endblock %}
+{% block form %}
+<FORM class="form" id="id_loginform" ACTION="{{ posturi }}" METHOD="POST">
+{% csrf_token %}
+<div>
+<label for="id_otp">{% trans "One-Time Password" %}</label><input id="id_otp" maxlength="30" size="30" autocomplete="off" name="otp" placeholder="{% trans "One-Time Password" %}" type="text" />
+<span class="helptext">{% trans "Your one-time password" %}</span>
+</div>
+{% if next %}<INPUT TYPE="hidden" NAME="next" VALUE="{{ next }}">
+{% endif %}
+<INPUT class="action" TYPE="submit" NAME="login" VALUE="{% trans "Login" %}">
+</FORM>
+{% endblock %}

@@ -6,6 +6,7 @@ from django.contrib import admin
 import autoreg.arf.logs.views as logs_views
 import autoreg.arf.requests.views as requests_views
 import autoreg.arf.webdns.views as webdns_views
+import autoreg.arf.whois.otp_views as otp_views
 import autoreg.arf.whois.views as whois_views
 
 
@@ -16,6 +17,12 @@ urlpatterns = [
   url(r'^contact/change/$', whois_views.contactchange, name='contactchange'),
   url(r'^contact/changemail/$', whois_views.changemail),
   url(r'^contact/chpass/$', whois_views.chpass, name='chpass'),
+  url(r'^2fa/login/$', otp_views.totplogin, name='login2fa'),
+  url(r'^2fa/$', otp_views.totp, name='2fa'),
+  url(r'^2fa/set/1$', otp_views.totpsetup1, name='2fa-setup1'),
+  url(r'^2fa/set/2$', otp_views.totpsetup2, name='2fa-setup2'),
+  url(r'^2fa/clear$', otp_views.totpclear, name='2fa-clear'),
+  url(r'^2fa/newrecovery$', otp_views.totpnewrecovery, name='2fa-newrecovery'),
   url(r'^domain/list/(?P<handle>[A-Z0-9]+)$', whois_views.domainlist,
         name='domainlist'),
   url(r'^domain/edit/(?P<fqdn>[a-zA-Z0-9\.-]+)/$', whois_views.domainedit,

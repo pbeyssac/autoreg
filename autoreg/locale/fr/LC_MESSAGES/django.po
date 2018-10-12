@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: autoreg\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-10-01 14:51+0200\n"
+"POT-Creation-Date: 2018-10-12 13:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Pierre Beyssac <translate@eu.org>\n"
 "Language-Team: French <translate@eu.org>\n"
@@ -133,39 +133,44 @@ msgstr "Domaines"
 
 #: autoreg/arf/templates/base.html:17
 #: autoreg/arf/templates/whois/contactcreate.html:75
-#: autoreg/arf/templates/whois/login.html:15 autoreg/arf/whois/views.py:142
+#: autoreg/arf/templates/whois/login.html:15 autoreg/arf/whois/views.py:127
 msgid "Password"
 msgstr "Mot de passe"
 
 #: autoreg/arf/templates/base.html:18
+msgid "Two-Factor Authentication"
+msgstr "Authentification à 2 facteurs"
+
+#: autoreg/arf/templates/base.html:19
 msgid "Information"
 msgstr ""
 
-#: autoreg/arf/templates/base.html:19
+#: autoreg/arf/templates/base.html:22
 msgid "Logout"
 msgstr "Déconnexion"
 
-#: autoreg/arf/templates/base.html:23
+#: autoreg/arf/templates/base.html:27
 msgid "Requests"
 msgstr "Requêtes"
 
-#: autoreg/arf/templates/base.html:24
+#: autoreg/arf/templates/base.html:28
 msgid "Log"
 msgstr "Journal"
 
-#: autoreg/arf/templates/base.html:25
+#: autoreg/arf/templates/base.html:29
 msgid "Action log"
 msgstr "Actions"
 
-#: autoreg/arf/templates/base.html:26
+#: autoreg/arf/templates/base.html:30
 msgid "Special"
 msgstr "Spécial"
 
-#: autoreg/arf/templates/base.html:27
+#: autoreg/arf/templates/base.html:31
 msgid "domains"
 msgstr "domaines"
 
-#: autoreg/arf/templates/base.html:30 autoreg/arf/templates/whois/login.html:20
+#: autoreg/arf/templates/base.html:34 autoreg/arf/templates/whois/login.html:20
+#: autoreg/arf/templates/whois/login2fa.html:15
 msgid "Login"
 msgstr "Connexion"
 
@@ -712,6 +717,147 @@ msgstr "Avertissements"
 msgid "Back to request list"
 msgstr "Retour à la liste des requêtes"
 
+#: autoreg/arf/templates/whois/2fa-newrecovery.mail:2
+#, python-format
+msgid ""
+"new two-factor recovery codes generated on %(sitename)s for contact "
+"%(handle)s"
+msgstr ""
+"génération de codes de secours sur %(sitename)s pour le contact %(handle)s"
+
+#: autoreg/arf/templates/whois/2fa-newrecovery.mail:3
+#, python-format
+msgid ""
+"Hello,\n"
+"\n"
+"New recovery codes for your two-factor authentication on %(handle)s\n"
+"have just been generated, following a request from %(remoteip)s.\n"
+"\n"
+"This operation cancels your previous recovery codes.\n"
+"\n"
+"If you didn't regenerate the codes yourself, your account has been\n"
+"compromised! Please connect and fully reconfigure your two-factor\n"
+"authentication at %(absurl)s\n"
+"\n"
+"It may be a good idea to also change your password.\n"
+"\n"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"De nouveaux codes de secours pour votre authentification à 2 facteurs sur "
+"%(handle)s\n"
+"viennent d'être générés, suite à une requête depuis %(remoteip)s.\n"
+"\n"
+"Cette opération annule vos codes de secours antérieurs.\n"
+"\n"
+"Si vous n'êtes pas à l'origine de cette demande, votre compte est\n"
+"compromis ! Veuillez vous connecter pour reconfigurer entièrement votre\n"
+"authentification à 2 facteurs sur %(absurl)s\n"
+"\n"
+"Il peut être nécessaire également de changer votre mot de passe.\n"
+"\n"
+
+#: autoreg/arf/templates/whois/2fa-recovery.mail:2
+#, python-format
+msgid "two-factor recovery code used on %(sitename)s for contact %(handle)s"
+msgstr ""
+"utilisation d'un code de secours sur %(sitename)s pour le contact %(handle)s"
+
+#: autoreg/arf/templates/whois/2fa-recovery.mail:3
+#, python-format
+msgid ""
+"Hello,\n"
+"\n"
+"Your account was just accessed using one of your two-factor recovery\n"
+"codes, from %(remoteip)s.\n"
+"\n"
+"You now have %(ncodes)s recovery codes left.\n"
+"\n"
+"If you are in doubt about who tried to access your account,\n"
+"you can generate new recovery codes at any time at:\n"
+"%(absurl)s\n"
+"This will cancel current recovery codes.\n"
+"\n"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"Une connexion sur votre compte a été effectuée avec un de vos codes\n"
+"de secours, depuis %(remoteip)s.\n"
+"\n"
+"Il vous reste %(ncodes)s codes de secours.\n"
+"\n"
+"Si vous n'êtes pas à l'origine de cet accès, vous pouvez générer\n"
+"de nouveaux codes à tout moment sur:\n"
+"%(absurl)s\n"
+"Cela annulera vos codes de secours actuels.\n"
+"\n"
+
+#: autoreg/arf/templates/whois/2fa-set.html:3
+#: autoreg/arf/templates/whois/2fa-setup.html:3
+#: autoreg/arf/templates/whois/2fa-setup2.html:3
+msgid "Two-factor Authentication"
+msgstr "Authentification à 2 facteurs"
+
+#: autoreg/arf/templates/whois/2fa-set.html:7
+msgid "Two-factor Authentication is set."
+msgstr "Authentification à 2 facteurs configurée"
+
+#: autoreg/arf/templates/whois/2fa-set.html:12
+msgid "Enter code to deactivate"
+msgstr "Saisir le code pour désactiver"
+
+#: autoreg/arf/templates/whois/2fa-set.html:12
+#: autoreg/arf/templates/whois/2fa-setup2.html:14
+#: autoreg/arf/templates/whois/login2fa.html:10
+#: autoreg/arf/whois/otp_views.py:37
+msgid "One-Time Password"
+msgstr "Mot de passe à usage unique"
+
+#: autoreg/arf/templates/whois/2fa-set.html:13
+msgid "Deactivate"
+msgstr "Désactiver"
+
+#: autoreg/arf/templates/whois/2fa-set.html:16
+#, python-format
+msgid ""
+"You currently have %(ncodes)s recovery codes remaining. You can regenerate "
+"new codes, cancelling the current ones."
+msgstr ""
+"Il vous reste %(ncodes)s codes de secours. Vous pouvez générer de nouveaux "
+"codes, ce qui annulera les codes actuels."
+
+#: autoreg/arf/templates/whois/2fa-set.html:19
+msgid "Generate new recovery codes"
+msgstr "Générer de nouveaux codes de secours"
+
+#: autoreg/arf/templates/whois/2fa-setup.html:8
+msgid "Two-factor Authentication is not set."
+msgstr "Authentification à 2 facteurs désactivée"
+
+#: autoreg/arf/templates/whois/2fa-setup.html:11
+msgid "Begin setup"
+msgstr "Commencer la configuration"
+
+#: autoreg/arf/templates/whois/2fa-setup1.html:3
+msgid "Recovery Codes"
+msgstr "Codes de secours"
+
+#: autoreg/arf/templates/whois/2fa-setup1.html:7
+msgid "Please store the following recovery codes in a safe place."
+msgstr "Copiez absolument ces codes en lieu sûr"
+
+#: autoreg/arf/templates/whois/2fa-setup2.html:7
+msgid "New code:"
+msgstr "Nouveau code :"
+
+#: autoreg/arf/templates/whois/2fa-setup2.html:14
+msgid "Code to check and confirm setup:"
+msgstr "Code pour vérifier et activer la configuration :"
+
+#: autoreg/arf/templates/whois/2fa-setup2.html:15
+msgid "Activate New Code"
+msgstr "Activer le nouveau code"
+
 #: autoreg/arf/templates/whois/changemail.html:3
 #: autoreg/arf/templates/whois/changemail.html:5
 msgid "Email address change"
@@ -1110,6 +1256,10 @@ msgstr ""
 "Si vous vous rappelez de votre nom de domaine, vous pouvez <a href="
 "\"%(urlbydom)s\">retrouver votre identifiant</a>."
 
+#: autoreg/arf/templates/whois/login2fa.html:11
+msgid "Your one-time password"
+msgstr "Votre mot de passe à usage unique"
+
 #: autoreg/arf/templates/whois/passchanged.html:3
 msgid "Password changed"
 msgstr "Mot de passe modifié"
@@ -1173,7 +1323,7 @@ msgstr ""
 "Des instructions de réinitialisation de mot de passe ont été envoyées à "
 "l'adresse courriel de <span class=\"handle\">%(ehandle)s</span>."
 
-#: autoreg/arf/webdns/models.py:156 autoreg/arf/webdns/models.py:168
+#: autoreg/arf/webdns/models.py:157 autoreg/arf/webdns/models.py:169
 msgid "exists in Whois"
 msgstr "existe dans Whois"
 
@@ -1340,7 +1490,27 @@ msgstr "%(ndom)d copiés depuis le contact %(handle)s"
 msgid "Domain %(domain)s has not been preempted: %(err)s"
 msgstr ""
 
-#: autoreg/arf/whois/views.py:53
+#: autoreg/arf/whois/otp_views.py:36
+msgid "Two-factor Authentication code"
+msgstr "Code d'authentification à 2 facteurs"
+
+#: autoreg/arf/whois/otp_views.py:75
+msgid "Sorry, your one-time password is incorrect"
+msgstr "Désolé, votre code à usage unique est incorrect"
+
+#: autoreg/arf/whois/otp_views.py:148
+msgid "Noted, continue"
+msgstr "Noté, continuer"
+
+#: autoreg/arf/whois/otp_views.py:175
+msgid "Noted, done"
+msgstr "Noté, terminé"
+
+#: autoreg/arf/whois/otp_views.py:216 autoreg/arf/whois/otp_views.py:246
+msgid "Wrong code, please try again"
+msgstr "Code incorrect, veuillez recommencer"
+
+#: autoreg/arf/whois/views.py:60
 msgid "technical"
 msgstr "technique"
 

@@ -1,0 +1,16 @@
+{% extends "base-varheaders.mail" %}{% load i18n %}
+{% block subject %}{% autoescape off %}{% blocktrans %}two-factor recovery code used on {{ sitename }} for contact {{ handle }}{% endblocktrans %}{% endautoescape %}{% endblock %}
+{% block content %}{% autoescape off %}{% blocktrans %}Hello,
+
+Your account was just accessed using one of your two-factor recovery
+codes, from {{ remoteip }}.
+
+You now have {{ ncodes }} recovery codes left.
+
+If you are in doubt about who tried to access your account,
+you can generate new recovery codes at any time at:
+{{ absurl }}
+This will cancel current recovery codes.
+
+{% endblocktrans %}{% endautoescape %}
+{% endblock %}
