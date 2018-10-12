@@ -254,6 +254,8 @@ def rqlistdom(request, domain=None):
   if domain is None:
     # domain not in URL, provided by "?domain=..." argument (search form)
     domain = request.GET.get('domain', '').upper()
+    if not domain:
+      raise SuspiciousOperation
   elif domain.upper() != domain:
     return HttpResponseRedirect(reverse(rqlistdom, args=[domain.upper()]))
 
