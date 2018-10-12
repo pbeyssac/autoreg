@@ -113,37 +113,83 @@ class AccountTest(TestCase):
     r = self.c.post('/en/logout/')
     self.assertEqual(302, r.status_code)
 
-  def test_access_ko(self):
-    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+  def test_contactchange_ko(self):
     r = self.c.get('/en/contact/change/')
-    self.assertEqual(200, r.status_code)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual(b'', r.content)
+    self.assertEqual('/en/login/?next=/en/contact/change/', r['Location'])
+  def test_contactchangemail_ko(self):
     r = self.c.get('/en/contact/changemail/')
-    self.assertEqual(200, r.status_code)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual(b'', r.content)
+    self.assertEqual('/en/login/?next=/en/contact/changemail/', r['Location'])
+  def test_contactchpass_ko(self):
     r = self.c.get('/en/contact/chpass/')
-    self.assertEqual(200, r.status_code)
-    r = self.c.get('/en/')
-    self.assertEqual(200, r.status_code)
-  def test_access_ok(self):
-    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
-    r = self.c.get('/en/contact/change/')
-    self.assertEqual(200, r.status_code)
-    r = self.c.get('/en/contact/changemail/')
-    self.assertEqual(200, r.status_code)
-    r = self.c.get('/en/contact/chpass/')
-    self.assertEqual(200, r.status_code)
-    r = self.c.get('/en/')
-    self.assertEqual(200, r.status_code)
-    # r = self.c.get('/en/domain/list/' + self.handle)
-    # self.assertEqual(200, r.status_code)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual(b'', r.content)
+    self.assertEqual('/en/login/?next=/en/contact/chpass/', r['Location'])
+  def test_domainlist_ko(self):
+    r = self.c.get('/en/domain/list/' + suffixstrip(self.handle))
+    self.assertEqual(302, r.status_code)
+    self.assertEqual(b'', r.content)
+    self.assertEqual('/en/login/?next=/en/domain/list/' + suffixstrip(self.handle), r['Location'])
+  def test_domain_edit_confirm_ko_1(self):
+    r = self.c.get('/en/domain/edit/confirm/' + self.domain)
+    self.assertEqual(301, r.status_code)
+    self.assertEqual(b'', r.content)
+    self.assertEqual('/en/domain/edit/confirm/' + self.domain + '/', r['Location'])
+  def test_domain_edit_confirm_ko_2(self):
+    r = self.c.get('/en/domain/edit/confirm/' + self.domain + '/')
+    self.assertEqual(405, r.status_code)
+    self.assertEqual(b'', r.content)
+  def test_domain_edit_confirm_ko_3(self):
+    r = self.c.post('/en/domain/edit/confirm/' + self.domain)
+    self.assertEqual(301, r.status_code)
+    self.assertEqual(b'', r.content)
+    self.assertEqual('/en/domain/edit/confirm/' + self.domain + '/', r['Location'])
 
+  def test_contactchange_ok(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/contact/change/')
+    self.assertEqual(200, r.status_code)
+  def test_contactchangemail_ok(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/contact/changemail/')
+    self.assertEqual(200, r.status_code)
+  def test_contactchpass_ok(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/contact/chpass/')
+    self.assertEqual(200, r.status_code)
+  def test_home_ok(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/')
+    self.assertEqual(200, r.status_code)
+
+  def test_domainlist_perm(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/domain/list/' + suffixstrip(self.handle))
+    self.assertEqual(403, r.status_code)
+
+  def test_domain_edit_1(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     r = self.c.get('/en/domain/edit/' + self.domain)
     self.assertEqual(301, r.status_code)
     self.assertEqual('/en/domain/edit/' + self.domain + '/', r['Location'])
-
+  def test_domain_edit_2(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     r = self.c.get('/en/domain/edit/' + self.domain + '/')
     self.assertEqual(200, r.status_code)
-    #r = self.c.get('/en/domain/edit/confirm/' + self.domain)
-    #self.assertEqual(200, r.status_code)
+  def test_domain_edit_confirm_ok(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+
+    fields = {'contact_type': 'technical'}
+    r = self.c.post('/en/domain/edit/confirm/' + self.domain + '/', fields)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/domain/edit/' + self.domain + '/', r['Location'])
+
+    fields = {'contact_type': 'technical', 'handle': self.handle}
+    r = self.c.post('/en/domain/edit/confirm/' + self.domain + '/', fields)
+    self.assertEqual(200, r.status_code)
 
   def test_contact_change_post(self):
     """Test full email change procedure"""
@@ -333,10 +379,11 @@ $"""
     # Test Django login with the new password
     self.assertTrue(self.c.login(username=self.handle, password='AAAAAAAA'))
 
-  def test_contact_reset_registrant(self):
+  def test_contact_reset_registrant_1(self):
     r = self.c.get('/en/contact/reset/' + suffixstrip(self.handle_registrant))
     self.assertEqual(200, r.status_code)
     self.assertEqual(len(mail.outbox), 0)
+  def test_contact_reset_registrant_2(self):
     r = self.c.post('/en/contact/reset/', {'handle': self.handle_registrant})
     self.assertEqual(200, r.status_code)
     self.assertEqual(len(mail.outbox), 0)
