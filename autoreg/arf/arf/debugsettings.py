@@ -21,5 +21,5 @@ CSRF_COOKIE_SECURE=False
 # Application-specific settings
 #
 
-FORCEDEBUGMAIL='pb@eu.org'
+FORCEDEBUGMAIL='debug@eu.org'
 TOTP_ISSUER='eu.org devel'

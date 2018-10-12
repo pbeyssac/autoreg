@@ -10,7 +10,7 @@ FROMADDR='noreply@eu.org'
 # number of grace days for domain restoration
 DEFAULT_GRACE_DAYS=30
 # for debug purposes
-MAILBCC="pb@eu.org"
+MAILBCC="debug@eu.org"
 # eu.org/FreeDNS handle suffix
 HANDLESUFFIX = '-FREE'
 # contact handle for preempted domains

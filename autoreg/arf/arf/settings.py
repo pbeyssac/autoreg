@@ -101,7 +101,7 @@ DATABASES = {
 }
 
 ADMINS = (
-    ('Pierre', 'pb@eu.org'),
+    ('Pierre', 'admin@eu.org'),
     # ('Your Name', 'your_email@domain.com'),
 )
 MANAGERS = ADMINS
