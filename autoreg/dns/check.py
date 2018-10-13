@@ -569,7 +569,7 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   return 0
 
 
-def main_checkallsoa():
+def main_checkallsoa(file=sys.stdout):
   import io
   import os
   import re
@@ -581,7 +581,7 @@ def main_checkallsoa():
 
   re_ns = re.compile('^\t+(?:\d+)?\t+NS\t+(\S+)\.')
   dbh = psycopg2.connect(autoreg.conf.dbstring)
-  dd = autoreg.dns.db.db(dbh, nowrite=True)
+  dd = autoreg.dns.db.db(dbc=dbh.cursor(), nowrite=True)
   user = os.getenv('USER', None)
   dd.login(user)
 
@@ -600,8 +600,8 @@ def main_checkallsoa():
     outfile = io.StringIO()
     r = main(argv=['check-ns', '-g', zone], infile=infile, outfile=outfile)
     if r:
-      print('****', zone, 'FAILED ****')
-      print(outfile.getvalue(), end='')
+      print('****', zone, 'FAILED ****', file=file)
+      print(outfile.getvalue(), end='', file=file)
       exitcode = 1
   return exitcode
 

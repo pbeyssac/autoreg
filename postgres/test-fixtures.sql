@@ -16,8 +16,15 @@ INSERT INTO contacts (handle, name, email, addr, country, passwd, private)
 		'$6$1R/p0g2ie3yxya27$ARZEbafeY1J./mbUbOUN1CCf0UsGwsrtq7vTUIGweDuVinXYNpAhUfCvjk2VPM2jSyU4dTpHYtICfFrkyxuYP.',
 		true);
 
+-- zone apex
+INSERT INTO domains (name, zone_id)
+	VALUES ('', (SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG'));
+INSERT INTO domains (name, zone_id)
+	VALUES ('', (SELECT id FROM zones WHERE name='EU.ORG'));
+
 INSERT INTO domains (name, zone_id)
 	VALUES ('NS', (SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG'));
+
 INSERT INTO rrs (domain_id, rrtype_id, label, value)
 	VALUES ((SELECT id FROM domains WHERE name='NS'),
 		(SELECT id FROM rrtypes WHERE label='NS'), '', 'NS.EU.ORG');
