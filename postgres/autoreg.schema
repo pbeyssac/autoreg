@@ -55,10 +55,10 @@ CREATE TABLE domains (
 	zone_id INTEGER REFERENCES zones(id),
 	registrar_id INTEGER,
 	created_by INTEGER REFERENCES admins(id) DEFAULT 0,
-	created_on TIMESTAMP(2) WITH TIME ZONE,
+	created_on TIMESTAMP WITH TIME ZONE,
 	updated_by INTEGER REFERENCES admins(id) DEFAULT 0,
-	updated_on TIMESTAMP(2) WITH TIME ZONE,
-	end_grace_period TIMESTAMP(2) WITH TIME ZONE,
+	updated_on TIMESTAMP WITH TIME ZONE,
+	end_grace_period TIMESTAMP WITH TIME ZONE,
 	UNIQUE (name, zone_id)
 );
 CREATE INDEX domains_name_index ON domains(name,zone_id);
@@ -77,7 +77,7 @@ CREATE TABLE rrs (
 	domain_id INTEGER REFERENCES domains(id),
 	ttl INTEGER,
 	rrtype_id INTEGER REFERENCES rrtypes(id),
-	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	created_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	label VARCHAR(64),
 	value VARCHAR(2048)
 );
@@ -97,10 +97,10 @@ CREATE TABLE domains_hist (
 	zone_id INTEGER REFERENCES zones(id),
 	registrar_id INTEGER,
 	created_by INTEGER REFERENCES admins(id),
-	created_on TIMESTAMP(2) WITH TIME ZONE,
+	created_on TIMESTAMP WITH TIME ZONE,
 	deleted_by INTEGER REFERENCES admins(id),
-	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
-	end_grace_period TIMESTAMP(2) WITH TIME ZONE
+	deleted_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+	end_grace_period TIMESTAMP WITH TIME ZONE
 );
 
 -- deleted RRs
@@ -108,10 +108,10 @@ CREATE TABLE rrs_hist (
 	domain_id INTEGER,
 	ttl INTEGER,
 	rrtype_id INTEGER REFERENCES rrtypes(id),
-	created_on TIMESTAMP(2) WITH TIME ZONE NOT NULL,
+	created_on TIMESTAMP WITH TIME ZONE NOT NULL,
 	label VARCHAR(64),
 	value VARCHAR(2048),
-	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+	deleted_on TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Functions
@@ -212,10 +212,10 @@ CREATE TABLE contacts (
 	phone varchar(40),
 	fax varchar(40),
 	passwd varchar(106),
-	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
-	validated_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	created_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+	validated_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	updated_by varchar(64),
-	updated_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	updated_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	private boolean DEFAULT FALSE
 );
 CREATE INDEX contacts_handle_index ON contacts(handle);
@@ -245,7 +245,7 @@ CREATE TABLE contact_types (
 
 CREATE TABLE handle_secrets (
 	secret varchar(32),
-	expires TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW() + '1 week'
+	expires TIMESTAMP WITH TIME ZONE DEFAULT NOW() + '1 week'
 );
 
 CREATE VIEW contacts_email AS
@@ -256,9 +256,9 @@ CREATE VIEW contacts_email AS
 CREATE TABLE whoisdomains (
 	id SERIAL PRIMARY KEY,
 	fqdn VARCHAR(255) UNIQUE,
-	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	created_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	updated_by varchar(64),
-	updated_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+	updated_on TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 CREATE INDEX whoisdomains_fqdn_index ON whoisdomains(fqdn);
 
@@ -271,7 +271,7 @@ CREATE TABLE domain_contact (
 	contact_id INTEGER REFERENCES contacts(id) NOT NULL,
 	contact_type_id INTEGER REFERENCES contact_types(id) NOT NULL,
 	UNIQUE (whoisdomain_id, contact_id, contact_type_id),
-	created_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+	created_on TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 CREATE INDEX domain_contact_domain_id ON domain_contact(whoisdomain_id);
 
@@ -288,8 +288,8 @@ CREATE TABLE domain_contact_hist (
 	whoisdomain_id INTEGER NOT NULL,
 	contact_id INTEGER,
 	contact_type_id INTEGER REFERENCES contact_types(id) NOT NULL,
-	created_on TIMESTAMP(2) WITH TIME ZONE,
-	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+	created_on TIMESTAMP WITH TIME ZONE,
+	deleted_on TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 CREATE TABLE contacts_hist (
 	contact_id INTEGER,
@@ -302,21 +302,21 @@ CREATE TABLE contacts_hist (
 	phone varchar(40),
 	fax varchar(40),
 	passwd varchar(106),
-	created_on TIMESTAMP(2) WITH TIME ZONE,
-	validated_on TIMESTAMP(2) WITH TIME ZONE,
+	created_on TIMESTAMP WITH TIME ZONE,
+	validated_on TIMESTAMP WITH TIME ZONE,
 	updated_by varchar(64),
-	updated_on TIMESTAMP(2) WITH TIME ZONE,
-	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	updated_on TIMESTAMP WITH TIME ZONE,
+	deleted_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	private boolean DEFAULT FALSE
 );
 CREATE TABLE whoisdomains_hist (
 	whoisdomain_id INTEGER,
 	fqdn VARCHAR(255),
 	-- this is the only place we can keep created_on for deleted domains
-	created_on TIMESTAMP(2) WITH TIME ZONE,
+	created_on TIMESTAMP WITH TIME ZONE,
 	updated_by varchar(64),
-	updated_on TIMESTAMP(2) WITH TIME ZONE,
-	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW()
+	updated_on TIMESTAMP WITH TIME ZONE,
+	deleted_on TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Triggers
@@ -439,7 +439,7 @@ CREATE TABLE requests_hist (
 	zonerecord VARCHAR(500),
 	whoisrecord VARCHAR(2000),
 	tags VARCHAR(50),
-	deleted_on TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	deleted_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL,
 	reason VARCHAR(80) DEFAULT NULL,
 	reasonfield VARCHAR(1000) DEFAULT NULL,
@@ -450,7 +450,7 @@ CREATE TABLE requests_log (
 	id SERIAL PRIMARY KEY,
 	fqdn VARCHAR(255),
 	contact_id INTEGER,
-	date TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	output VARCHAR(20000),
 	errors INTEGER,
 	warnings INTEGER
@@ -488,7 +488,7 @@ CREATE TRIGGER trig_del_requests BEFORE DELETE ON requests
 
 CREATE TABLE log (
 	id SERIAL PRIMARY KEY,
-	date TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	contact_id INTEGER REFERENCES contacts(id) DEFAULT NULL,
 	action VARCHAR(10),
 	message VARCHAR(300) DEFAULT NULL
@@ -496,7 +496,7 @@ CREATE TABLE log (
 
 CREATE TABLE log_hist (
 	id INTEGER PRIMARY KEY,
-	date TIMESTAMP(2) WITH TIME ZONE DEFAULT NOW(),
+	date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	contact_id INTEGER,
 	action VARCHAR(10),
 	message VARCHAR(300) DEFAULT NULL
