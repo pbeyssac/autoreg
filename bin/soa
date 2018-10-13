@@ -86,7 +86,7 @@ do
 			cd $DEST
 			rm -f $i.signed.old
 			ln $i.signed $i.signed.old
-			if $SIGNZONE -QR -DS -3 fadaf001 -l dlv.isc.org -O full -j432000 -o $i -f $i.signed $i.DNSSEC; then
+			if $SIGNZONE -QR -DS -3 fadaf001 -O full -j432000 -o $i -f $i.signed $i.DNSSEC; then
 			    grep -v '^;' $i.signed | sort > $i.signed.sorted
 			    mv $i.signed.sorted $i.signed
 			    diff -u $i.signed.old $i.signed
