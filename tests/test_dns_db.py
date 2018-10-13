@@ -7,6 +7,7 @@ import sys
 
 import psycopg2
 
+import autoreg.conf
 import autoreg.dns.db
 
 import unittest
@@ -62,7 +63,7 @@ NS2.TESTGL			AAAA	::ffff:10.1.2.3
   def _dropdb(self):
     self.dbc.execute("ABORT")
   def setUp(self):
-    self.dbh = psycopg2.connect('dbname=test_autoreg_dev user=autoreg host=192.168.0.4 password=')
+    self.dbh = psycopg2.connect(autoreg.conf.dbstring)
     dbc = self.dbh.cursor()
     self.dbh.set_isolation_level(0)
     dbc.execute("BEGIN")

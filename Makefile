@@ -22,6 +22,7 @@ preparedb:
 
 test:	preparedb
 	PYTHONPATH=$(HOME)/autoreg coverage-3.6 run --source='.' ./autoreg/arf/manage.py test -k --settings autoreg.arf.arf.debugsettings
-	PYTHONPATH=$(HOME)/autoreg coverage-3.6 run --source='.' -a -m unittest discover tests
+	PYTHONPATH=$(HOME)/autoreg AUTOREG_DBSTRING="dbname=$(DBNAME) host=$(DBHOST) user=autoreg password=" \
+		coverage-3.6 run --source='.' -a -m unittest discover tests
 	coverage-3.6 report
 	coverage-3.6 html
