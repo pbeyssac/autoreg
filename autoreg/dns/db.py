@@ -121,7 +121,7 @@ class _Zone:
         raise AccessError(AccessError.ILLRR, rrtype, zid)
     def cat(self, outfile=sys.stdout):
         """Output zone file."""
-        print("; zone name=%s id=%d" % (self.name, self.id), file=outfile)
+        print("; zone name=%s" % (self.name,), file=outfile)
         if self._ttl is not None: print('$TTL', self._ttl, file=outfile)
         print("@\tSOA\t%s %s %d %d %d %d %d" %
             (self._soaprimary, self._soaemail, self._soaserial,
