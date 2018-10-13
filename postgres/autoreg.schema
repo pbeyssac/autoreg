@@ -558,8 +558,8 @@ GRANT SELECT ON TABLE iso3166_countries TO www, autoreg, whois;
 GRANT SELECT ON TABLE contacts, handle_secrets TO postfix;
 
 -- Permissions on OTP
-GRANT INSERT, UPDATE, DELETE ON otp TO autoreg;
-GRANT SELECT, UPDATE ON otp_id_seq TO autoreg;
+GRANT INSERT, SELECT, UPDATE, DELETE ON otp TO autoreg, www;
+GRANT SELECT, UPDATE ON otp_id_seq TO autoreg, www;
 
 -- Permissions on requests database
 -- read-write
