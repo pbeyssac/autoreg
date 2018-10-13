@@ -21,8 +21,9 @@ preparedb:
 	| psql -h $(DBHOST) --user autoreg postgres
 
 test:	preparedb
-	PYTHONPATH=$(HOME)/autoreg coverage-3.6 run --source='.' ./autoreg/arf/manage.py test -k --settings autoreg.arf.arf.debugsettings
-	PYTHONPATH=$(HOME)/autoreg AUTOREG_DBSTRING="dbname=$(DBNAME) host=$(DBHOST) user=autoreg password=" \
+	coverage-3.6 erase
+	-PYTHONPATH=$(HOME)/autoreg coverage-3.6 run --source='.' ./autoreg/arf/manage.py test -k --settings autoreg.arf.arf.debugsettings
+	-PYTHONPATH=$(HOME)/autoreg AUTOREG_DBSTRING="dbname=$(DBNAME) host=$(DBHOST) user=autoreg password=" \
 		coverage-3.6 run --source='.' -a -m unittest discover tests
 	coverage-3.6 report
 	coverage-3.6 html
