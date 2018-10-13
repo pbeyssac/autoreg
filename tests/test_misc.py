@@ -13,11 +13,15 @@ import autoreg.newsecret
 class TestHandles(unittest.TestCase):
   def test1(self):
     autoreg.newsecret.new_handle_secret()
-  def test2(self):
+
+class TestCheckAllSoa(unittest.TestCase):
+  def test1(self):
     os.environ['USER'] = 'autoreg'
     out = io.StringIO()
     autoreg.dns.check.main_checkallsoa(file=out)
-  def test3(self):
+
+class TestNewZone(unittest.TestCase):
+  def test1(self):
     out = io.StringIO()
     zone = io.StringIO()
     autoreg.dns.newzones.create(['newzone', 'newtest.tests.eu.org'],
