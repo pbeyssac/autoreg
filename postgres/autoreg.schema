@@ -227,6 +227,7 @@ CREATE TABLE otp (
 	contact_id INTEGER REFERENCES contacts(id) NOT NULL,
 	secret varchar(16),
 	codes varchar(100),
+	created_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	active BOOLEAN DEFAULT FALSE
 );
 
