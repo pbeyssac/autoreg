@@ -10,6 +10,7 @@ from django.test import TestCase, Client
 import autoreg.dns.db
 from autoreg.util import pwcrypt
 from autoreg.whois.db import Person, suffixadd
+from ..requests.models import Requests
 from ..whois.models import Admins, Contacts, Whoisdomains
 from .models import Domains, Zones
 
@@ -102,10 +103,56 @@ class DomainNewTest(TestCase):
     self.assertEqual(200, r.status_code)
     self.assertTrue(hasattr(r, 'streaming_content'))
 
-    fields['th'] = suffixadd('TP1')
+  def test_domainns_request_1(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = {
+      'fqdn': 'BLABLA.EU.ORG',
+      'pn1': 'John Snow',
+      'ad1': 'The North',
+      'ad2': '59000 Lenord',
+      'ad6': 'FR',
+      'private': 'on',
+      'th': suffixadd('TP1'),
+      'level': '1',
+      'f1': 'NS.EU.ORG',
+      'i1': ''
+    }
     r = self.c.post('/en/domain/new/', fields)
     self.assertEqual(200, r.status_code)
     self.assertTrue(hasattr(r, 'streaming_content'))
+    for line in r.streaming_content:
+      pass
+
+    r = Requests.objects.get(contact__handle='TP1')
+    self.assertEqual("\tNS\tNS.EU.ORG.\n", r.zonerecord)
+
+  def test_domainns_request_2(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = {
+      'fqdn': 'BLABLA.EU.ORG',
+      'pn1': 'John Snow',
+      'ad1': 'The North',
+      'ad2': '59000 Lenord',
+      'ad6': 'FR',
+      'private': 'on',
+      'th': suffixadd('TP1'),
+      'level': '1',
+      'f1': 'BLABLA.EU.ORG',
+      'i1': '192.168.0.1',
+      'f2': 'NS.BLABLA.EU.ORG',
+      'i2': '192.168.0.2'
+    }
+    r = self.c.post('/en/domain/new/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue(hasattr(r, 'streaming_content'))
+    for line in r.streaming_content:
+      pass
+    r = Requests.objects.get(contact__handle='TP1')
+    self.assertEqual("\tNS\tBLABLA.EU.ORG.\n"
+                     "\tNS\tNS.BLABLA.EU.ORG.\n"
+                      "\tA\t192.168.0.1\n"
+                      "NS\tA\t192.168.0.2\n",
+                     r.zonerecord)
 
   def test_domainns_orphan_ok(self):
     self.assertTrue(self.c.login(username='AA1', password=self.pw3))

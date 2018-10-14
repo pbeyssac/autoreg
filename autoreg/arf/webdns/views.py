@@ -113,7 +113,9 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
     gluelist.sort()
     for ns in gluelist:
       iplist = soac.manualip[ns]
-      if ns.endswith('.' + domain.upper()):
+      if ns == domain.upper():
+        ns = ''
+      elif ns.endswith('.' + domain.upper()):
         ns = ns[:-len(domain)-1]
       for ip in iplist:
         if ':' in ip:
