@@ -7,7 +7,6 @@
   <div id="id_code">{% trans "New code:" %} <span id="id_otpsecret">{{ secret }}</span></div>
   <img id="id_qrcode" src="data:image/png;base64,{{ qrcode }}">
 </div>
-</div>
 
 <FORM id="id_otpform" class="form" ACTION="{{ posturi }}" METHOD="POST">
 {% csrf_token %}
