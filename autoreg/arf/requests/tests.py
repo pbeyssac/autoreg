@@ -129,7 +129,6 @@ class RqViewsTest(TestCase):
     self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
     r = self.c.get('/en/rq/' + self.req.id)
     self.assertEqual(200, r.status_code)
-    print(r.content)
 
   def test_rqedit_get_ko_1(self):
     r = self.c.get('/en/rqe/' + self.req.id)
