@@ -66,7 +66,7 @@ class RqTest(TestCase):
 
 class RqViewsTest(TestCase):
   def setUp(self):
-    zone = webmodels.Zones.objects.get(name='EU.ORG')
+    self.zone = webmodels.Zones.objects.get(name='EU.ORG')
 
     cursor = connection.cursor()
     # Minimal test account
@@ -97,11 +97,12 @@ class RqViewsTest(TestCase):
     self.assertEqual(suffixadd('AA1'), p3.gethandle())
     a = whoismodels.Admins(login='AA1', contact=whoismodels.Contacts.objects.get(handle='AA1'))
     a.save()
+    self.admin = a
     self.admin_handle = p3.gethandle()
 
     rqid = rq_make_id()
     req = Requests(id=rqid, action='N', language='EN',
-                   email='foobar@local', fqdn='FOOBAR.EU.ORG', zone=zone,
+                   email='foobar@local', fqdn='FOOBAR.EU.ORG', zone=self.zone,
                    state='Open',
                    contact=whoismodels.Contacts.objects.get(handle=suffixstrip(self.handle)),
                    zonerecord='\n',
@@ -110,6 +111,25 @@ class RqViewsTest(TestCase):
     self.req = req
 
     self.c = Client()
+
+  def test_rq_get_ko_1(self):
+    r = self.c.get('/en/rq/' + self.req.id)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/login/?next=/en/rq/'+self.req.id, r['Location'])
+  def test_rq_get_ko_2(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/rq/' + self.req.id)
+    self.assertEqual(403, r.status_code)
+  def test_rq_get_ok(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    r = self.c.get('/en/rq/' + self.req.id)
+    self.assertEqual(403, r.status_code)
+  def test_rq_get_ok(self):
+    webmodels.AdminZone(zone_id=self.zone, admin_id=self.admin).save()
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    r = self.c.get('/en/rq/' + self.req.id)
+    self.assertEqual(200, r.status_code)
+    print(r.content)
 
   def test_rqedit_get_ko_1(self):
     r = self.c.get('/en/rqe/' + self.req.id)

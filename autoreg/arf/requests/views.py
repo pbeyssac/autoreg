@@ -152,7 +152,7 @@ def rqedit(request, rqid):
     r.save()
     return HttpResponseRedirect(reverse(rq, args=[rqid]))
 
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 @login_required
 def rq(request, rqid=None):
   login = admin_login(connection.cursor(), request.user.username)
