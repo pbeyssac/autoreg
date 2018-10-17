@@ -7,6 +7,7 @@ import codecs
 import collections
 import errno
 import smtplib
+import socket
 
 
 from django.core import mail
