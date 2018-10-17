@@ -231,3 +231,19 @@ class RqViewsTest(TestCase):
     outfile = io.BytesIO()
     c.handle(outfile=outfile)
     self.assertTrue(b'Zone insert done' in outfile.getvalue())
+
+  def test_rqrun_3(self):
+    webmodels.AdminZone(zone_id=self.zone, admin_id=self.admin).save()
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'rq1': self.req.id,
+      'action1': 'delete',
+      'reason1': ''
+    }
+    r = self.c.post('/en/val', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Deleted '+self.req.id in str(r.content))
+    c = rqrun.Command()
+    outfile = io.StringIO()
+    c.handle(outfile=outfile)
+    self.assertEqual('', outfile.getvalue())

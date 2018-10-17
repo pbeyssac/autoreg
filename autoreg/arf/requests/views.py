@@ -376,7 +376,7 @@ def _rqexec(rq, out, za, admin_contact, login, action, reasonfield):
     print(_("Accepted %(rqid)s (queued)") % {'rqid': rq}, file=out)
   else:
     if action == 'delete':
-      r.remove('DelQuiet');
+      r.remove('DelQuiet', admin_contact);
       print(_("Deleted %(rqid)s") % {'rqid': rq}, file=out)
     elif action == 'none':
       print(_("Nothing done on %(rqid)s") % {'rqid': rq}, file=out)

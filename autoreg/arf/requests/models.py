@@ -178,8 +178,9 @@ class Requests(models.Model):
         # raise to force a transaction rollback by Django
         raise IntegrityError(_("Error executing %(rqid)s") % {'rqid': self.id})
 
-    def remove(self, state):
+    def remove(self, state, admin_contact):
       self.state = state
+      self.admin_contact = admin_contact
       self.save()
       self.delete()
 
