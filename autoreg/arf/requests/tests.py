@@ -2,7 +2,10 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 from __future__ import print_function
 
+
+import io
 import re
+import sys
 
 
 from django.db import connection
@@ -13,7 +16,7 @@ from autoreg.whois.db import Person, suffixadd, suffixstrip
 from ..webdns import models as webmodels
 from ..whois import models as whoismodels
 from .models import Requests, rq_make_id, rq_list
-
+from .management.commands import rqrun
 
 class RqTest(TestCase):
   def setUp(self):
@@ -105,8 +108,11 @@ class RqViewsTest(TestCase):
                    email='foobar@local', fqdn='FOOBAR.EU.ORG', zone=self.zone,
                    state='Open',
                    contact=whoismodels.Contacts.objects.get(handle=suffixstrip(self.handle)),
+                   admin_contact=whoismodels.Contacts.objects.get(handle=suffixstrip(self.admin_handle)),
                    zonerecord='\n',
-                   whoisrecord='\n')
+                   whoisrecord="domain: %s\naddress: Address éœ line 1\n"
+                               "tech-c: %s\nadmin-c: %s\nprivate: yes\n"
+                                % ('FOOBAR.EU.ORG', self.handle, self.handle))
     req.save()
     self.req = req
 
@@ -188,3 +194,40 @@ class RqViewsTest(TestCase):
     self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
     r = self.c.get('/en/rl')
     self.assertEqual(200, r.status_code)
+
+  def test_rqrun_1(self):
+    c = rqrun.Command()
+    outfile = io.StringIO()
+    c.handle(outfile=sys.stdout)
+    self.assertEqual('', outfile.getvalue())
+
+  def test_rqval_1(self):
+    r = self.c.post('/en/val', {})
+    self.assertEqual(302, r.status_code)
+
+  def test_rqval_2(self):
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'rq1': self.req.id,
+      'action1': 'accept',
+      'reason1': ''
+    }
+    r = self.c.post('/en/val', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Permission denied on' in str(r.content))
+
+  def test_rqrun_2(self):
+    webmodels.AdminZone(zone_id=self.zone, admin_id=self.admin).save()
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    fields = {
+      'rq1': self.req.id,
+      'action1': 'accept',
+      'reason1': ''
+    }
+    r = self.c.post('/en/val', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Accepted '+self.req.id+' (queued)' in str(r.content))
+    c = rqrun.Command()
+    outfile = io.BytesIO()
+    c.handle(outfile=outfile)
+    self.assertTrue(b'Zone insert done' in outfile.getvalue())
