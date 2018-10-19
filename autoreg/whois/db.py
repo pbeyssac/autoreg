@@ -472,58 +472,41 @@ class Person(_whoisobject):
       # Note: store the result as a tuple, hence no ","
       o['cn'] = _fromdb(self._dbc.fetchone())
     return self._from_ripe(o, personattrs)
-  def _allocate_handle(self):
-    """Allocate ourselves a handle if we lack one."""
-    if ('nh' not in self.d) or self.d['nh'][0] is None:
-      l = mkinitials(self.d['pn'][0])
-
-      # Find the next free handle with the same initials
-      self._dbc.execute("SELECT nexthandle('%s')" % _todb((l,)))
-      assert self._dbc.rowcount == 1
-      h, = _fromdb(self._dbc.fetchone())
-      self.key = suffixadd(h)
-      self.d['nh'] = [ h ]
-      #print("Allocated handle", self.key, "for", self.d['pn'][0])
   def gethandle(self):
     return suffixadd(self.d['nh'][0])
   def insert(self):
     """Create in database."""
-    self._allocate_handle()
+    if 'nh' in self.d and self.d['nh'][0]:
+      handle = self.d['nh'][0]
+    else:
+      handle = None
+    initials = mkinitials(self.d['pn'][0])
     o = self.d
+    args = _todb(
+                 (handle, o['eh'][0], initials, o['pn'][0], o['em'][0],
+                  o['co'][0],
+                  self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
+                  o['cr'][0],
+                  o['ch'][0][1], o['ch'][0][0],
+                  o['pr'][0]))
+    if not self.validate:
+      self._dbc.execute('SELECT * FROM insertcontact'
+                        ' (%s,%s,%s,%s,%s,NULL,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                   args)
+    else:
+      self._dbc.execute('SELECT * FROM insertcontact'
+                        ' (%s,%s,%s,%s,%s,NOW(),%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                   args)
+
+    # fetch allocated handle, contact id, current time
+    h, cid, now = _fromdb(self._dbc.fetchone())
+    assert self._dbc.rowcount == 1
+    self.d['nh'] = [ h ]
+    self.cid = cid
     if o['ch'][0][1] is None:
-      self._dbc.execute('SELECT NOW()')
-      assert self._dbc.rowcount == 1
-      now, = self._dbc.fetchone()
       o['ch'] = [(o['ch'][0][0], now)]
       o['cr'] = [now]
-    if not self.validate:
-      self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
-                      'validated_on,country,'
-                      'passwd,addr,phone,fax,'
-                      'created_on,updated_by,updated_on,private) '
-                      'VALUES (%s,%s,%s,%s,NULL,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
-                   _todb(
-                      (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
-                       o['co'][0],
-                       self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
-                       str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]),
-                       o['pr'][0])))
-    else:
-      self._dbc.execute('INSERT INTO contacts (handle,exthandle,name,email,'
-                      'country,'
-                      'passwd,addr,phone,fax,'
-                      'created_on,updated_by,updated_on,private) '
-                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
-                   _todb(
-                      (o['nh'][0],o['eh'][0],o['pn'][0], o['em'][0],
-                       o['co'][0],
-                       self.passwd, addrmake(o['ad']), o['ph'][0], o['fx'][0],
-                       str(o['cr'][0]), o['ch'][0][0], str(o['ch'][0][1]),
-                       o['pr'][0])))
-    assert self._dbc.rowcount == 1
-    self._dbc.execute("SELECT currval('contacts_id_seq')")
-    self.cid, = self._dbc.fetchone()
-    assert self._dbc.rowcount == 1
+
   def update(self):
     """Write back to database, keeping history."""
     o = self.d

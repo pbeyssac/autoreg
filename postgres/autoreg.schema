@@ -116,17 +116,55 @@ CREATE TABLE rrs_hist (
 
 -- Functions
 
--- Return a free NIC handle for the given initials
+-- Allocate handle and insert contact at the same time
+-- to avoid race conditions
 
-CREATE OR REPLACE FUNCTION nexthandle(initials VARCHAR)
-    RETURNS VARCHAR AS $nexthandle$
+CREATE OR REPLACE FUNCTION insertcontact(
+	sethandle VARCHAR,
+	exthandle VARCHAR,
+	initials VARCHAR,
+	name VARCHAR, email VARCHAR,
+	validated_on TIMESTAMP WITH TIME ZONE,
+	country CHAR(2), passwd VARCHAR,
+	addr VARCHAR, phone VARCHAR, fax VARCHAR,
+	created_on TIMESTAMP WITH TIME ZONE,
+	updated_on TIMESTAMP WITH TIME ZONE,
+	updated_by VARCHAR,
+	private BOOLEAN,
+	OUT newhandle VARCHAR,
+	OUT contact_id INT,
+	OUT now TIMESTAMP WITH TIME ZONE)
+    AS $insertcontact$
 DECLARE
     num INT;
     upinitials VARCHAR;
 BEGIN
+	now := NOW();
+	IF created_on IS NULL THEN
+		created_on := now;
+	END IF;
+	IF updated_on IS NULL THEN
+		updated_on := now;
+	END IF;
+
+	IF sethandle IS NOT NULL THEN
+		-- handle is already set by the caller,
+		-- insert directly.
+		newhandle := sethandle;
+		INSERT INTO contacts (
+			handle, exthandle, name, email,
+			validated_on, country, passwd, addr, phone, fax,
+			created_on, updated_by, updated_on, private
+		) VALUES (
+			newhandle, exthandle, name, email,
+			validated_on, country, passwd, addr, phone, fax,
+			created_on, updated_by, updated_on, private
+		);
+		SELECT currval('contacts_id_seq') INTO contact_id;
+		RETURN;
+	END IF;
+
 	upinitials := UPPER(initials);
-	-- lock the table to avoid an obvious race condition
-	LOCK TABLE contacts IN ACCESS EXCLUSIVE MODE;
 	-- Find the highest allocated handle with the same initials
 	SELECT CAST(SUBSTRING(handle FROM '[0-9]+') AS INT)
 	    INTO num
@@ -136,10 +174,35 @@ BEGIN
         IF NOT FOUND THEN
 	    num := 0;
         END IF;
-	-- Build and return new handle
-	RETURN upinitials || CAST(num + 1 AS VARCHAR);
+	-- Assume the next is free
+	num := num + 1;
+	-- Try to insert the contact with the new handle
+	<<insert_until>>
+	LOOP
+		-- Build new handle
+		newhandle := upinitials || CAST(num AS VARCHAR);
+		BEGIN
+			INSERT INTO contacts (
+				handle, exthandle, name, email,
+				validated_on, country, passwd, addr, phone, fax,
+				created_on, updated_by, updated_on, private
+			) VALUES (
+				newhandle, exthandle, name, email,
+				validated_on, country, passwd, addr, phone, fax,
+				created_on, updated_by, updated_on, private
+			);
+			SELECT currval('contacts_id_seq') INTO contact_id;
+			-- INSERT ok; return the handle, contact id and NOW()
+			RETURN;
+		EXCEPTION
+			-- INSERT failed, race condition:
+			-- loop again to try next handle
+			WHEN UNIQUE_VIOLATION THEN
+		END;
+		num := num + 1;
+	END LOOP insert_until;
 END;
-$nexthandle$ LANGUAGE plpgsql;
+$insertcontact$ LANGUAGE plpgsql;
 
 -- Triggers
 
