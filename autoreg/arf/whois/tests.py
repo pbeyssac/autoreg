@@ -64,6 +64,18 @@ class AccountTest(TestCase):
     a.save()
     self.admin_handle = p3.gethandle()
 
+    # Unvalidated account
+    d = {'pn': ['Unvalidated Account'], 'em': ['foobaremail3@email.bla'],
+         'ad': ['test address', 'line2', 'line3'],
+         'co': ['UK'], 'cn': ('United Kingdom',),
+         'pr': [True], 'ch': [('::1', None)]}
+
+    p4 = Person(cursor, passwd=pwcrypt('@@unval+2345/'), validate=False)
+    pr = p4.from_ripe(d)
+    self.assertTrue(pr)
+    p4.insert()
+    self.unval_handle = p4.gethandle()
+
     # Registrant
     d = {'pn': ['Test Registrant'], 'em': [None],
          'ad': ['test address', 'line2', 'line3'],
@@ -462,6 +474,17 @@ $"""
     r = self.c.post('/en/domain/edit/' + self.domain + '/', fields)
     self.assertEqual(200, r.status_code)
     self.assertTrue('ZZ1111' in str(r.content))
+
+  def test_domainedit_unval(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = { 'contact_type': 'technical',
+               'handle': self.unval_handle,
+               'submita': '' }
+    r = self.c.post('/en/domain/edit/' + self.domain + '/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue(self.unval_handle + ' must be valid' in str(r.content))
+    n = DomainContact.objects.filter(whoisdomain__fqdn=self.domain, contact__handle=suffixstrip(self.unval_handle)).count()
+    self.assertEqual(0, n)
 
   def test_domainedit_nologin(self):
     r = self.c.post('/en/domain/edit/' + self.domain + '/', {})

@@ -786,7 +786,10 @@ def domainedit(request, fqdn):
           # Fall through to updated form display
         elif 'submit' in request.POST and request.POST['submit'] == 'Add' \
             or 'submita' in request.POST:
-          if cid not in dbdom.d[code]:
+          if ctl[0].validated_on is None:
+            msg = _("%(handle)s must be validated first") \
+                  % {'handle': suffixadd(chandle)}
+          elif cid not in dbdom.d[code]:
             log(handle, action='contactadd',
                 message=fqdn + ' ' + suffixadd(chandle))
             dbdom.d[code].append(cid)
