@@ -795,7 +795,9 @@ def domainedit(request, fqdn):
             dbdom.d[code].append(cid)
             dbdom.update()
           else:
-            msg = "%s is already a %s contact" % (chandle, contact_type)
+            msg = _("%(handle)s is already a %(contact_type)s contact") \
+                  % {'handle': suffixadd(chandle),
+                     'contact_type': _(contact_type)}
           # Fall through to updated form display
         elif 'submit' in request.POST and request.POST['submit'] == 'Cancel':
           # Fall through to updated form display
