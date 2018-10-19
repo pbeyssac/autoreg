@@ -86,7 +86,7 @@ class Contacts(models.Model):
 
 class Otp(models.Model):
     id = models.AutoField(primary_key=True)
-    contact = models.ForeignKey(Contacts, on_delete=models.CASCADE)
+    contact = models.OneToOneField(Contacts, on_delete=models.CASCADE)
     secret = models.CharField(max_length=16, null=True)
     codes = models.CharField(max_length=90, null=True)
     active = models.NullBooleanField(default=False, null=True)

@@ -224,7 +224,7 @@ CREATE INDEX contacts_exthandle_index ON contacts(exthandle);
 
 CREATE TABLE otp (
 	id SERIAL PRIMARY KEY,	-- used only for web framework access
-	contact_id INTEGER REFERENCES contacts(id) NOT NULL,
+	contact_id INTEGER REFERENCES contacts(id) UNIQUE NOT NULL,
 	secret varchar(16),
 	codes varchar(100),
 	created_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

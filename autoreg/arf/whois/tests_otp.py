@@ -11,12 +11,13 @@ import pyotp
 
 from django.core import mail
 from django.db import connection
+from django.db.utils import IntegrityError
 from django.test import TestCase, Client
 
 
 from autoreg.util import pwcrypt
 from autoreg.whois.db import Person, suffixadd, suffixstrip
-from . import otp, views
+from . import otp, views, models
 
 
 #
@@ -152,6 +153,18 @@ class OtpTestMisc(TestCase):
     code_list = [m.groups()[0] for m in re_code.finditer(str(r.content))]
     self.assertEqual(10, len(code_list))
 
+  def test_unique_1(self):
+    cotp1 = models.Otp(contact_id=1, codes='')
+    cotp1.save()
+    cotp2 = models.Otp(contact_id=1, codes='')
+    self.assertRaises(IntegrityError, cotp2.save)
+
+  def test_unique_2(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/2fa/set/1')
+    self.assertEqual(200, r.status_code)
+    r = self.c.get('/en/2fa/set/1')
+    self.assertEqual(200, r.status_code)
 
 #
 # Tests with a pre-configured account

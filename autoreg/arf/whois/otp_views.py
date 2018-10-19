@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 
 
 from django import forms
+from django.db import transaction
+from django.db.utils import IntegrityError
 from django.conf import settings
 import django.contrib.auth
 from django.contrib.auth.decorators import login_required
@@ -133,15 +135,37 @@ def totpsetup1(request):
   secret, codelist = otp.totp_generate()
   codes = ' '.join(codelist)
 
-  # Make sure an OTP entry exists, create it if needed
-  try:
-    cotp = Otp.objects.get(contact=c)
-    cotp.codes = codes
-    cotp.secret = secret
-    cotp.active = False
-  except Otp.DoesNotExist:
-    cotp = Otp(contact=c, secret=secret, codes=codes, active=False)
-  cotp.save()
+  #
+  # Make sure an OTP entry exists, create it if needed.
+  #
+  # To avoid race conditions, UPDATE/INSERT loop as per
+  # https://www.postgresql.org/docs/current/static/plpgsql-trigger.html#PLPGSQL-TRIGGER-SUMMARY-EXAMPLE
+  #
+  while True:
+    try:
+      with transaction.atomic():
+        cotp = Otp(contact=c, secret=secret, codes=codes, active=False)
+        cotp.save()
+        exists = False
+    except IntegrityError:
+      exists = True
+
+    if not exists:
+      break
+
+    try:
+      with transaction.atomic():
+        cotp = Otp.objects.get(contact=c)
+    except Otp.DoesNotExist:
+      exists = False
+
+    if exists:
+      cotp.codes = codes
+      cotp.secret = secret
+      cotp.active = False
+      cotp.save()
+      break
+
 
   vars['codes'] = codelist
   vars['nexturl'] = '2fa-setup2'
