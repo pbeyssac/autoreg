@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: autoreg\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-12 14:30+0200\n"
+"POT-Creation-Date: 2018-10-19 18:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Pierre Beyssac <translate@eu.org>\n"
 "Language-Team: French <translate@eu.org>\n"
@@ -1635,7 +1635,17 @@ msgstr "Désolé, il faut qu'il reste au minimum un contact !"
 msgid "%s is not a contact"
 msgstr "%s n'est pas un contact"
 
-#: autoreg/arf/whois/views.py:860
+#: autoreg/arf/whois/views.py:792
+#, python-format
+msgid "%(handle)s must be validated first"
+msgstr "%(handle)s doit d'abord être validé"
+
+#: autoreg/arf/whois/views.py:800
+#, python-format
+msgid "%(handle)s is already a %(contact_type)s contact"
+msgstr "%(handle)s est déjà contact %(contact_type)s"
+
+#: autoreg/arf/whois/views.py:865
 msgid "Sorry, domain deletion failed, please try again later."
 msgstr "Désolé, la destruction du domaine a échoué. Réessayez plus tard."
 
