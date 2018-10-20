@@ -11,7 +11,7 @@ import autoreg.dns.db
 from autoreg.util import pwcrypt
 from autoreg.whois.db import Person, suffixadd
 from ..requests.models import Requests
-from ..whois.models import Admins, Contacts, Whoisdomains
+from ..whois.models import Admins, Contacts, DomainContact, Whoisdomains
 from .models import Domains, Zones
 
 
@@ -69,8 +69,18 @@ class DomainNewTest(TestCase):
     Domains(name='ORPHAN', zone=z, created_by=a, updated_by=a).save()
     Domains(name='FOOBAR', zone=z, created_by=a, updated_by=a).save()
 
+    self.domain = 'foobar.eu.org'
+    w = Whoisdomains(fqdn=self.domain.upper())
+    w.save()
+    DomainContact(whoisdomain=w, contact=Contacts.objects.get(handle='TP1'), contact_type_id=1).save()
+
     self.c = Client()
 
+  def test_domain_new_get_1(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/domain/new/')
+    self.assertEqual(200, r.status_code)
+    self.assertTrue(b'value="Test Person"' in r.content)
 
   def test_domainns_th_length(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
@@ -203,7 +213,7 @@ class DomainNewTest(TestCase):
     self.assertEqual('/en/login/?next=/en/ds/eu.org/', r['Location'])
   def test_domainds_post_ko_2(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
-    r = self.c.post('/en/ds/foobar.eu.org/', {})
+    r = self.c.post('/en/ds/nons.dnssec.tests.eu.org/', {})
     self.assertEqual(403, r.status_code)
   def test_domainds_post_ko_3(self):
     self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
@@ -232,6 +242,11 @@ class DomainNewTest(TestCase):
     r = self.c.post('/en/ds/ns.dnssec.tests.eu.org/', fields)
     self.assertTrue('Domain doesn&#39;t match record' in str(r.content))
     self.assertEqual(200, r.status_code)
+  def test_domainds_post_ko_6(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.post('/en/ds/foobar.eu.org/', {})
+    self.assertEqual(200, r.status_code)
+    self.assertTrue(b'Not eligible to DNSSEC' in r.content)
   def test_domainds_post_ko_7(self):
     self.assertTrue(self.c.login(username='TU1', password=self.pwtu1))
     r = self.c.post('/en/ds/ns.dnssec.tests.eu.org/', {})
