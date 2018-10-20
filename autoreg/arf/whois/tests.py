@@ -435,6 +435,22 @@ $"""
     self.assertEqual(200, r.status_code)
     self.assertTrue('ZZ1111' in str(r.content))
 
+  def test_domainedit_handle_add_del(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = { 'contact_type': 'technical',
+               'handle': suffixadd('ZZ1111'),
+               'submita': '' }
+    r = self.c.post('/en/domain/edit/' + self.domain + '/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('ZZ1111' in str(r.content))
+
+    fields = { 'contact_type': 'technical',
+               'handle': suffixadd('ZZ1111'),
+               'submitd': '' }
+    r = self.c.post('/en/domain/edit/' + self.domain + '/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertFalse('ZZ1111' in str(r.content))
+
   def test_domainedit_unval(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     fields = { 'contact_type': 'technical',
