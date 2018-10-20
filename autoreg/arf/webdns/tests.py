@@ -164,6 +164,36 @@ class DomainNewTest(TestCase):
                       "NS\tA\t192.168.0.2\n",
                      r.zonerecord)
 
+  def test_domainns_changens_1(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = {
+      'fqdn': 'FOOBAR.EU.ORG',
+      'level': '1',
+      'f1': 'NS1.FOOBAR.EU.ORG',
+      'i1': '192.168.0.1',
+      'f2': 'NS2.FOOBAR.EU.ORG',
+      'i2': '192.168.0.2'
+    }
+    r = self.c.post('/en/ns/foobar.eu.org/' , fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue(hasattr(r, 'streaming_content'))
+    for line in r.streaming_content:
+      pass
+
+    fields = {
+      'fqdn': 'FOOBAR.EU.ORG',
+      'level': '1',
+      'f1': 'NS3.FOOBAR.EU.ORG',
+      'i1': '192.168.0.1',
+      'f2': 'NS4.FOOBAR.EU.ORG',
+      'i2': '192.168.0.2'
+    }
+    r = self.c.post('/en/ns/foobar.eu.org/' , fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue(hasattr(r, 'streaming_content'))
+    for line in r.streaming_content:
+      pass
+
   def test_domainns_orphan_ok(self):
     self.assertTrue(self.c.login(username='AA1', password=self.pw3))
 

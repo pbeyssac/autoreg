@@ -161,7 +161,12 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
       yield _("Saved as request %(rqid)s\n") % {'rqid': rqid}
     else:
       try:
-        dnsdb.modify(domain, None, 'NS', rrfile)
+        #
+        # This has to be atomic. This way, generating the zone
+        # shouldn't need any lock.
+        #
+        with transaction.atomic():
+          dnsdb.modify(domain, None, 'NS', rrfile)
       except autoreg.dns.db.DomainError as e:
         err = e.args[0]
       except autoreg.dns.db.AccessError as e:
@@ -277,9 +282,11 @@ def domainds(request, fqdn):
       if dsnokey:
         dserrs.append(_("Requested DS does not match any published DNSKEY in zone"))
       if dsok and not dserrs:
-        for ds in dsnew:
-          dd.addrr(fqdn, None, '', None, 'DS', '%d %d %d %s' % ds)
-          dscur.append(ds)
+        # Add all records at once from a database point of view
+        with transaction.atomic():
+          for ds in dsnew:
+            dd.addrr(fqdn, None, '', None, 'DS', '%d %d %d %s' % ds)
+            dscur.append(ds)
         rr = ""
         dscur.sort()
 
@@ -328,10 +335,8 @@ def _adopt_orphan(request, dbc, fqdn, form):
     whoisout = io.StringIO()
 
     #
-    # This block has to be in a transaction because
-    # an underlying LOCK TABLE requires it.
-    # It is difficult to test for it, as tests run
-    # in a transaction themselves.
+    # This should be atomic to make sure zone generation
+    # doesn't need locks.
     #
     with transaction.atomic():
       w = autoreg.whois.db.Main(dbc=dbc)
