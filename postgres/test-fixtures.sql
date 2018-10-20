@@ -11,10 +11,35 @@ INSERT INTO allowed_rr (zone_id, rrtype_id)
 INSERT INTO allowed_rr (zone_id, rrtype_id)
 	VALUES ((SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG'), (SELECT id FROM rrtypes WHERE label='DS'));
 
+-- Minimal accounts
 INSERT INTO contacts (handle, name, email, addr, country, passwd, private)
 	VALUES ('TU1', 'Test User', 'tu@foo.bar', 'Test user address\nTest test\n', 'FR',
 		'$6$1R/p0g2ie3yxya27$ARZEbafeY1J./mbUbOUN1CCf0UsGwsrtq7vTUIGweDuVinXYNpAhUfCvjk2VPM2jSyU4dTpHYtICfFrkyxuYP.',
 		true);
+INSERT INTO contacts (handle, name, email, addr, country, passwd, private, updated_by)
+	VALUES ('TP1', 'Test Person', 'foobaremail@email.bla', 'test address\nline2\nline3\nFrance\n', 'FR',
+		'$6$SDUcSDXhMqWxJHby$RF2s62JKIjqEhcmxqMq9ShhtTXaSr1sKdz3BMv5c/dx3J6Mn0fNVsClbugDEJnUsH301nilTqH1OKcABiBfMC.',
+		true, '::1');
+
+-- Test account with a long handle
+INSERT INTO contacts (handle, name, email, addr, country, passwd, private, updated_by)
+	VALUES ('ZZ1111', 'Test Person2', 'foobaremail2@email.bla', 'test address 2\nline2\nline3\nFrance\n', 'FR',
+		'$6$yMosWhub11BviiGi$ecmu3CHjI6WkUvLOgtLF/80Y.mupkMGDIXdL6ChhR1iCCcLEQF7mLWtOeECvrcIpH2S/cWAJUpDAoJjFRxuUg0',
+		true, '::1');
+
+-- Unvalidated account
+INSERT INTO contacts (handle, name, email, addr, country, passwd, private, updated_by, validated_on)
+	VALUES ('UA1', 'Unvalidated Account', 'foobaremail4@email.bla', 'test address\nline2\nline3\nUnited Kingdom\n', 'UK',
+		'$6$sHB3M.T.MvSzm9aQ$2q6Sz7X3qKaUmOhVsQt2LFQ/abKZ.cRNXb6vZiZB7prBLFydtdDbGh/amfo5GN1q8QQd0hX0ArZHj63p9Mqgc1',
+		true, '::1', NULL);
+
+
+-- Admin account
+INSERT INTO contacts (handle, name, email, addr, country, passwd, private, updated_by)
+	VALUES ('AA1', 'Admin Account', 'foobaremail3@email.bla', 'test address 3\nline2\nline3\nFrance\n', 'FR',
+		'$6$JHG/n2FuXShwJPo1$KLQoUvEy7/hLLMcNkvBgLZpj9cpPmtv0V64fDRnzoySgZ4MR1laCy.1/ZNY.q2oeU9yWuDFc2xgmKih5rLXVt0',
+		true, '::1');
+INSERT INTO admins (login, contact_id) VALUES('AA1', (SELECT id FROM contacts WHERE handle='AA1'));
 
 -- zone apex
 INSERT INTO domains (name, zone_id)

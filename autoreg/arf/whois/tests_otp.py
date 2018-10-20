@@ -10,13 +10,11 @@ import pyotp
 
 
 from django.core import mail
-from django.db import connection
 from django.db.utils import IntegrityError
 from django.test import TestCase, Client
 
 
-from autoreg.util import pwcrypt
-from autoreg.whois.db import Person, suffixadd, suffixstrip
+from autoreg.whois.db import suffixadd, suffixstrip
 from . import otp, views, models
 
 
@@ -25,20 +23,9 @@ from . import otp, views, models
 #
 class OtpTestMisc(TestCase):
   def setUp(self):
-    cursor = connection.cursor()
     # Minimal test account
-    d = {'pn': ['Test Person'], 'em': ['foobaremail@email.bla'],
-         'ad': ['test address', 'line2', 'line3'],
-         'co': ['FR'], 'cn': ('France',),
-         'pr': [True], 'ch': [('::1', None)]}
-
+    self.handle = suffixadd('TP1')
     self.pw = 'aaabbbcccddd'
-    p = Person(cursor, passwd=pwcrypt(self.pw),
-               validate=True)
-    pr = p.from_ripe(d)
-    self.assertTrue(pr)
-    p.insert()
-    self.handle = p.gethandle()
 
     self.c = Client()
 
@@ -171,20 +158,9 @@ class OtpTestMisc(TestCase):
 #
 class OtpTestSetAccount(TestCase):
   def setUp(self):
-    cursor = connection.cursor()
     # Minimal test account
-    d = {'pn': ['Test Person'], 'em': ['foobaremail@email.bla'],
-         'ad': ['test address', 'line2', 'line3'],
-         'co': ['FR'], 'cn': ('France',),
-         'pr': [True], 'ch': [('::1', None)]}
-
+    self.handle = suffixadd('TP1')
     self.pw = 'aaabbbcccddd'
-    p = Person(cursor, passwd=pwcrypt(self.pw),
-               validate=True)
-    pr = p.from_ripe(d)
-    self.assertTrue(pr)
-    p.insert()
-    self.handle = p.gethandle()
 
     self.c = Client()
 

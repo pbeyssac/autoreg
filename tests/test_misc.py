@@ -34,7 +34,7 @@ $TTL 259200
 _END-MARK	TXT	"end mark"
 """, zone.getvalue())
     self.assertEqual(
-"""Allowed zone NEWTEST.TESTS.EU.ORG to 1 administrators
+"""Allowed zone NEWTEST.TESTS.EU.ORG to 2 administrators
 Add the following to your BIND configuration file:
 zone "NEWTEST.TESTS.EU.ORG" { type master; file "<internal>"; allow-transfer {}; };
 Then run 'rndc reconfig'
