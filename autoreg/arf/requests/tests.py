@@ -126,11 +126,11 @@ class RqViewsTest(TestCase):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     r = self.c.get('/en/rq/' + self.req.id)
     self.assertEqual(403, r.status_code)
-  def test_rq_get_ok(self):
+  def test_rq_get_ok_1(self):
     self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
     r = self.c.get('/en/rq/' + self.req.id)
     self.assertEqual(403, r.status_code)
-  def test_rq_get_ok(self):
+  def test_rq_get_ok_2(self):
     webmodels.AdminZone(zone_id=self.zone, admin_id=self.admin).save()
     self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
     r = self.c.get('/en/rq/' + self.req.id)
