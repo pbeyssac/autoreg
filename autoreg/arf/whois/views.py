@@ -750,9 +750,7 @@ def domainedit(request, fqdn):
   msg = None
 
   if request.method == "POST":
-    if 'submit' in request.POST \
-        or 'submitd' in request.POST \
-        or 'submita' in request.POST:
+    if 'submitd' in request.POST or 'submita' in request.POST:
       contact_type = request.POST['contact_type']
       chandle = suffixstrip(request.POST['handle'].upper())
       ctl = Contacts.objects.filter(handle=chandle)
@@ -765,10 +763,7 @@ def domainedit(request, fqdn):
         if contact_type[0] not in 'atz':
           raise SuspiciousOperation
         code = contact_type[0] + 'c'
-        if 'submit' in request.POST \
-           and (request.POST['submit'] == 'Delete' \
-            or request.POST['submit'] == 'Confirm Delete') \
-           or 'submitd' in request.POST:
+        if 'submitd' in request.POST:
           if cid in dbdom.d[code]:
             numcontacts = 0
             for i in 'atz':
@@ -784,8 +779,7 @@ def domainedit(request, fqdn):
           else:
             msg = _("%s is not a contact") % suffixadd(chandle)
           # Fall through to updated form display
-        elif 'submit' in request.POST and request.POST['submit'] == 'Add' \
-            or 'submita' in request.POST:
+        elif 'submita' in request.POST:
           if ctl[0].validated_on is None:
             msg = _("%(handle)s must be validated first") \
                   % {'handle': suffixadd(chandle)}
@@ -799,9 +793,6 @@ def domainedit(request, fqdn):
                   % {'handle': suffixadd(chandle),
                      'contact_type': _(contact_type)}
           # Fall through to updated form display
-        elif 'submit' in request.POST and request.POST['submit'] == 'Cancel':
-          # Fall through to updated form display
-          pass
     else:
       raise SuspiciousOperation
 
