@@ -44,19 +44,26 @@ class newdomain_form(registrant_form):
   orphan = forms.BooleanField(required=False)
 
 
+class _special_actions_lazy(object):
+  """Lazy evaluation for the actions list, to defer the % operator."""
+  def __iter__(self):
+    self.c = [('none', ugettext_lazy('None')),
+              ('lock1', ugettext_lazy('Lock')),
+              ('lock0', ugettext_lazy('Unlock')),
+              ('hold1', ugettext_lazy('Hold')),
+              ('hold0', ugettext_lazy('Unhold')),
+              ('preempt',
+     ugettext_lazy('Preempt to %(preempthandle)s')
+       % {'preempthandle': suffixadd(PREEMPTHANDLE)})]
+    return self.c.__iter__()
+
+
 class special_form(forms.Form):
   domains = forms.CharField(max_length=200000, initial='.eu.org',
                             help_text=ugettext_lazy('Domain List'),
                             widget=forms.Textarea,
                             required=True)
-  action = forms.ChoiceField(choices=[('none', ugettext_lazy('None')),
-                                      ('lock1', ugettext_lazy('Lock')),
-                                      ('lock0', ugettext_lazy('Unlock')),
-                                      ('hold1', ugettext_lazy('Hold')),
-                                      ('hold0', ugettext_lazy('Unhold')),
-                                      ('preempt',
-                             ugettext_lazy('Preempt to %(preempthandle)s')
-                               % {'preempthandle': suffixadd(PREEMPTHANDLE)})],
+  action = forms.ChoiceField(choices=_special_actions_lazy,
                              required=True, widget=forms.RadioSelect)
 
 

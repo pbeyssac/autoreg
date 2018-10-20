@@ -347,6 +347,13 @@ class DomainNewTest(TestCase):
     r = self.c.post('/en/special/', {})
     self.assertEqual(403, r.status_code)
 
+  def test_special_get_defer(self):
+    """Test correct translation for formatted string"""
+    self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
+    r = self.c.get('/fr/special/')
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Préempter'.encode('UTF-8') in r.content)
+
   def test_checksoa_ko(self):
     r = self.c.get('/en/soa/AzE.Aze')
     self.assertEqual(302, r.status_code)
