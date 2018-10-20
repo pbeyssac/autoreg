@@ -232,6 +232,11 @@ class DomainNewTest(TestCase):
     r = self.c.post('/en/ds/ns.dnssec.tests.eu.org/', fields)
     self.assertTrue('Domain doesn&#39;t match record' in str(r.content))
     self.assertEqual(200, r.status_code)
+  def test_domainds_post_ko_7(self):
+    self.assertTrue(self.c.login(username='TU1', password=self.pwtu1))
+    r = self.c.post('/en/ds/ns.dnssec.tests.eu.org/', {})
+    self.assertEqual(200, r.status_code)
+    self.assertTrue(b'Unable to parse line' in r.content)
 
   def test_special_unlockdom_nx(self):
     self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
