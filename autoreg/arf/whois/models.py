@@ -157,6 +157,16 @@ class Tokens(models.Model):
     class Meta:
         db_table = 'arf_tokens'
 
+class Iso3166Countries(models.Model):
+    iso_id = models.CharField(primary_key=True, max_length=2)
+    lang = models.CharField(max_length=2)
+    name = models.CharField(max_length=60)
+    class Meta:
+        db_table = 'iso3166_countries'
+    def __str__(self):
+        return self.iso_id
+    class Admin:
+        pass
 
 class Admins(models.Model):
     id = models.AutoField(primary_key=True)
