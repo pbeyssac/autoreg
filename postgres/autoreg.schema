@@ -248,6 +248,7 @@ CREATE OR REPLACE FUNCTION trig_rrs()
 	IF TG_OP = 'DELETE' THEN
 	    RETURN OLD;
 	ELSE
+	    NEW.created_on := NOW();
 	    RETURN NEW;
 	END IF;
     END;
