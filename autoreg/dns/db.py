@@ -532,25 +532,25 @@ class _Domain:
     def gen_rrs(self, canon=False):
         """Generate all resource records for domain."""
         self._dbc.execute(
-            'SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value '
+            'SELECT rrs.label,rrs.ttl,rrtypes.label,rrs.value '
             'FROM domains,rrs,rrtypes '
             'WHERE domains.id=%s AND domains.id=rrs.domain_id '
             'AND rrtypes.id=rrs.rrtype_id '
-            'ORDER BY domains.name,rrs.label,rrtypes.label,rrs.value',
+            'ORDER BY rrs.label,rrtypes.label,rrs.value',
             (self.id,))
         lastlabel = ''
         t = self._dbc.fetchone()
         while t:
-            label, dom, ttl, typ, value = t
+            label, ttl, typ, value = t
 
             # "uncompress"
             value = redot_value(typ, value)
 
             # handle label
-            if label != '' and dom != '':
-                l = label + '.' + dom
+            if label != '' and self.name != '':
+                l = label + '.' + self.name
             else:
-                l = label + dom
+                l = label + self.name
             if l == lastlabel and not canon:
                 l = ''
             else:
