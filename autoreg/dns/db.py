@@ -514,10 +514,10 @@ class _Domain:
         if self._end_grace_period:
             print("; end_grace_period: %s"
                    % self._end_grace_period, file=outfile)
-    def show_rrs(self, outfile=sys.stdout):
+    def _print_rrs(self, gen, outfile=sys.stdout):
         """List all resource records for domain."""
         n = 0
-        for l, ttl, typ, value in self.gen_rrs():
+        for l, ttl, typ, value in gen:
             # tabulate output
             if len(l) > 15: pass
             elif len(l) > 7: l += '\t'
@@ -529,6 +529,11 @@ class _Domain:
             n += 1
         if n == 0:
             print('; (NO RECORD)', file=outfile)
+
+    def show_rrs(self, outfile=sys.stdout):
+        """List all resource records for domain."""
+        self._print_rrs(self.gen_rrs(), outfile=outfile)
+
     def gen_rrs(self, canon=False):
         """Generate all resource records for domain."""
         self._dbc.execute(
@@ -559,6 +564,101 @@ class _Domain:
             yield l, ttl, typ, value
 
             t = self._dbc.fetchone()
+
+    def showhist(self, canon=False, outfile=sys.stdout, rev=True):
+        self._dbc.execute(
+            "SELECT "
+              "TIMESTAMP '-infinity' AS deleted_on_utc, "
+              "TIMESTAMP 'infinity' AS created_on_utc ")
+        date_min, date_max = self._dbc.fetchone()
+
+        self._dbc.execute(
+            '(SELECT rrs_hist.label AS lab,rrs_hist.ttl,rrtypes.label AS rlab,rrs_hist.value,'
+              "rrs_hist.created_on AT TIME ZONE 'UTC' AS created_on_utc,"
+              "rrs_hist.deleted_on AT TIME ZONE 'UTC' AS deleted_on_utc "
+            'FROM domains,rrs_hist,rrtypes '
+            'WHERE domains.id=%s AND domains.id=rrs_hist.domain_id'
+            ' AND rrtypes.id=rrs_hist.rrtype_id '
+            ' UNION '
+            "SELECT rrs.label,rrs.ttl,rrtypes.label,rrs.value,"
+              "rrs.created_on AT TIME ZONE 'UTC' AS created_on_utc,"
+              "TIMESTAMP 'infinity' AS deleted_on_utc "
+            'FROM domains,rrs,rrtypes '
+            'WHERE domains.id=%s AND domains.id=rrs.domain_id'
+            ' AND rrtypes.id=rrs.rrtype_id) '
+            "ORDER BY " + ("deleted_on_utc DESC" if rev else "created_on_utc ASC"),
+            (self.id, self.id))
+
+        t = self._dbc.fetchone()
+        rlist = []
+        #date_min = datetime.datetime.utcfromtimestamp(0)
+        #date_max = datetime.datetime.utcfromtimestamp(4294967296)
+
+        if rev:
+          date_start = date_max
+          date_stop = date_min
+        else:
+          date_start = date_min
+          date_stop = date_max
+
+        last_date_cur = date_start
+        while t or last_date_cur != date_stop:
+          if t:
+            # process next record
+            label, ttl, typ, value, date_beg, date_end = t
+            if date_end is None:
+              xxx
+              date_end = date_max
+            # "uncompress"
+            value = redot_value(typ, value)
+
+            rr = (label, ttl, typ, value)
+            rlist.append((date_beg, date_end, rr))
+            t = self._dbc.fetchone()
+
+            if rev:
+              date_cur = date_end
+            else:
+              date_cur = date_beg
+          else:
+            date_cur = date_stop
+
+          if last_date_cur != date_cur:
+            if rev:
+              endlist = [d_beg for d_beg, d_end, rr in rlist if d_beg > date_cur]
+            else:
+              endlist = [d_end for d_beg, d_end, rr in rlist if d_end < date_cur]
+
+            # skip if last_date_cur == date_min (implies rev == False)
+            # to avoid displaying initial empty entry
+            if last_date_cur != date_min:
+              endlist.append(last_date_cur)
+
+            explist = sorted(list(set(endlist)), reverse=rev)
+
+            datelist = explist + [date_cur]
+            if rev:
+              if date_cur == date_min:
+                # drop to avoid displaying last empty entry
+                explist = explist[:-1]
+
+            for date_intermediate in explist:
+              if rev:
+                rlist = [(d_beg, d_end, rr) for d_beg, d_end, rr in rlist if d_beg < date_intermediate]
+                rrshow = [rr for d_beg, d_end, rr in rlist if d_end >= date_intermediate]
+              else:
+                rlist = [(d_beg, d_end, rr) for d_beg, d_end, rr in rlist if d_end > date_intermediate]
+                rrshow = [rr for d_beg, d_end, rr in rlist if d_beg <= date_intermediate]
+              date1 = datelist[1 if rev else 0]
+              date2 = datelist[0 if rev else 1]
+              if date2 == date_max:
+                date2 = '...'
+              datelist = datelist[1:]
+              print("; From", date1, "to", date2, file=outfile)
+              rrshow.sort(key=lambda x: (x[0], x[2], x[3]))
+              self._print_rrs(rrshow, outfile=outfile)
+            last_date_cur = date_cur
+
     def show(self, rrs_only=False, outfile=sys.stdout):
         """Shorthand to call show_head() then show_rrs()."""
         if not rrs_only:
@@ -756,6 +856,12 @@ class db:
         """Logout current user."""
         self._check_login_perm()
         self._login_id = None
+    def showhist(self, domain, zone, rrs_only=False, rev=True, outfile=sys.stdout):
+        """Show a pretty-printed zone excerpt for domain."""
+        d, z = self._zl.find(domain, zone)
+        self._check_login_perm(z.name)
+        d.fetch()
+        d.showhist(rev=rev, outfile=outfile)
     def show(self, domain, zone, rrs_only=False, outfile=sys.stdout):
         """Show a pretty-printed zone excerpt for domain."""
         d, z = self._zl.find(domain, zone)

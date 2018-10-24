@@ -3,6 +3,8 @@
 INSERT INTO zones (name, soaprimary, soaemail, soaserial, minlen, maxlen)
 	VALUES ('EU.ORG', 'NS.EU.ORG', 'hostmaster.eu.org', '2007110600', 2, 64);
 INSERT INTO zones (name, soaprimary, soaemail, soaserial, minlen, maxlen)
+	VALUES ('HISTORY.TESTS.EU.ORG', 'NS.EU.ORG', 'hostmaster.eu.org', '2007110600', 2, 64);
+INSERT INTO zones (name, soaprimary, soaemail, soaserial, minlen, maxlen)
 	VALUES ('DNSSEC.TESTS.EU.ORG', 'NS.EU.ORG', 'hostmaster.eu.org', '2007110600', 2, 64);
 INSERT INTO allowed_rr (zone_id, rrtype_id)
 	VALUES ((SELECT id FROM zones WHERE name='EU.ORG'), (SELECT id FROM rrtypes WHERE label='NS'));
@@ -10,6 +12,8 @@ INSERT INTO allowed_rr (zone_id, rrtype_id)
 	VALUES ((SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG'), (SELECT id FROM rrtypes WHERE label='NS'));
 INSERT INTO allowed_rr (zone_id, rrtype_id)
 	VALUES ((SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG'), (SELECT id FROM rrtypes WHERE label='DS'));
+INSERT INTO allowed_rr (zone_id, rrtype_id)
+	VALUES ((SELECT id FROM zones WHERE name='HISTORY.TESTS.EU.ORG'), (SELECT id FROM rrtypes WHERE label='NS'));
 
 -- Minimal accounts
 INSERT INTO contacts (handle, name, email, addr, country, passwd, private)
@@ -42,6 +46,8 @@ INSERT INTO contacts (handle, name, email, addr, country, passwd, private, updat
 INSERT INTO admins (login, contact_id) VALUES('AA1', (SELECT id FROM contacts WHERE handle='AA1'));
 
 -- zone apex
+INSERT INTO domains (name, zone_id)
+	VALUES ('', (SELECT id FROM zones WHERE name='HISTORY.TESTS.EU.ORG'));
 INSERT INTO domains (name, zone_id)
 	VALUES ('', (SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG'));
 INSERT INTO domains (name, zone_id)

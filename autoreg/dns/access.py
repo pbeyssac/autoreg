@@ -19,6 +19,7 @@
                 the same name, if any update in the zone occurred.
                 Print the serial in any case.
         show:	display entry for domainname.
+        showhist:	display history for domainname.
         showstubs:	display delegation data for all zones.
         cmpstubs:	check consistency of delegation data for all zones.
         hold:	put domain(s) on hold.
@@ -38,6 +39,7 @@ domain list for better performance.
 -d: in 'modify', 'addrr', 'delrr', 'show': apply both on the domain
     and the parent zone.
 -D: print dynamic update (experimental)
+-r: reverse (chronological mode) for showhistory
 -u: username, used to check access permissions with respect to the
     zone permissions. Defaults to USER environment variable.
 -t: type of resource record (for 'new' or 'modify'), checked with respect to
@@ -78,7 +80,7 @@ logging.basicConfig(filename='/tmp/access-zone.log', filemode='a+',
 action_list = ['addrr', 'cat', 'delete', 'undelete',
                 'delrr', 'lock', 'modify', 'unlock',
                 'hold', 'unhold',
-                'new', 'show', 'soa', 'list', 'showstubs', 'cmpstubs',
+                'new', 'show', 'showhist', 'soa', 'list', 'showstubs', 'cmpstubs',
                 'newzone', 'expire']
 
 MSG_ALLOC="Error: domain %s is already allocated."
@@ -100,7 +102,7 @@ def errexit(msg, args):
 
 def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   try:
-      opts, args = getopt.getopt(argv[1:], "a:cdDist:u:z:")
+      opts, args = getopt.getopt(argv[1:], "a:cdDirst:u:z:")
   except getopt.GetoptError:
       usage()
       sys.exit(1)
@@ -108,6 +110,7 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   action, type, zone = None, None, None
   dyn, keepds = False, False
   nowrite, internal, deleg, forceincr = False, False, False, False
+  rev = True
   user = os.getenv('USER', None)
   lang = os.getenv('LANG', '')
 
@@ -119,6 +122,8 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
         user = 'DNSADMIN'
       elif o == "-i":
         internal = True
+      elif o == "-r":
+        rev = False
       elif o == "-t":
         type = a.upper()
       elif o == "-u":
@@ -182,6 +187,8 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
       dd.show(domain, zone)
       if deleg:
         dd.show(domain, domain)
+    elif action == 'showhist':
+      dd.showhist(domain, zone, rev=rev, outfile=outfile)
     elif action == 'new':
       dd.new(domain, zone, type, file=sys.stdin, internal=internal)
       if dyn:
