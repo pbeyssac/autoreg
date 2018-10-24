@@ -71,3 +71,59 @@ INSERT INTO domain_contact (whoisdomain_id, contact_id, contact_type_id)
 	VALUES ((SELECT id FROM whoisdomains WHERE fqdn = 'NONS.DNSSEC.TESTS.EU.ORG'),
 		(SELECT id FROM contacts WHERE handle='TU1'),
 		(SELECT id FROM contact_types WHERE name='technical'));
+
+
+-- domain history
+INSERT INTO domains (id, name, zone_id)
+	VALUES (10, 'H1', (SELECT id FROM zones WHERE name='HISTORY.TESTS.EU.ORG'));
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, NULL, 1, '1997-01-06 15:11:38.94+01', '', '192.168.0.2', '1997-10-14 10:42:24.87+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, NULL, 1, '1997-10-14 10:42:24.87+02', '', '192.168.0.2', '1997-12-14 19:20:34.97+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, NULL, 28, '1997-10-14 10:42:24.87+02', '', '2001:db8:4::1:f', '1997-12-14 19:20:34.97+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, NULL, 1, '1997-12-14 19:20:34.97+01', '', '192.168.0.2', '2000-02-29 21:16:02.93+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 3600, 28, '1997-12-14 19:20:34.97+01', '', '2001:db8:4::1:f', '2000-02-29 21:16:02.93+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 60, 28, '2000-02-29 21:16:02.93+01', '', '2001:db8:4::1:f', '2008-07-21 13:45:16.62+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, NULL, 1, '2000-02-29 21:16:02.93+01', '', '192.168.0.2', '2008-07-21 13:45:16.62+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 1, '2008-07-21 13:45:16.62+02', '', '192.168.0.2', '2008-08-05 10:38:02.88+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 60, 28, '2008-07-21 13:45:16.62+02', '', '2001:db8:4::1:f', '2008-08-05 10:38:02.88+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 7200, 1, '2008-08-05 10:38:02.88+02', '', '192.168.1.3', '2008-11-29 19:32:30.54+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 7200, 28, '2008-08-05 10:38:02.88+02', '', '2001:db8:4::1:f', '2008-11-29 19:32:30.54+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 7200, 1, '2008-11-29 19:32:30.54+01', '', '192.168.1.3', '2008-11-29 19:42:55.64+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 28, '2008-11-29 19:32:30.54+01', '', '2001:db8:4::1:f', '2008-11-29 19:42:55.64+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 7200, 1, '2008-11-29 19:42:55.64+01', '', '192.168.1.3', '2008-11-30 00:26:13.73+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 60, 28, '2008-11-29 19:42:55.64+01', '', '2001:db8:4::1:f', '2008-11-30 00:26:13.73+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 7200, 1, '2008-11-30 00:26:13.73+01', '', '192.168.1.3', '2008-12-01 21:25:05.71+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 60, 28, '2008-11-30 00:26:13.73+01', '', '2001:db8:4::1:2', '2008-12-01 21:25:05.71+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 7200, 1, '2008-12-01 21:25:05.71+01', '', '192.168.1.3', '2008-12-02 00:52:54.18+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 7200, 28, '2008-12-02 00:52:54.18+01', '', '2001:db8:4::1:2', '2009-01-06 21:58:50.77+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 7200, 1, '2008-12-02 00:52:54.18+01', '', '192.168.1.3', '2009-01-06 21:58:50.77+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 7200, 1, '2009-01-06 21:58:50.77+01', '', '192.168.1.3', '2014-03-21 23:20:30.59+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 7200, 28, '2009-01-06 21:58:50.77+01', '', '2001:db8::4:3', '2014-02-28 23:20:30.59+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 1, '2014-02-28 23:20:30.59+01', '', '192.168.1.3', '2014-03-23 17:56:47.08+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 28, '2014-02-28 23:20:30.59+01', '', '2001:db8::4:3', '2014-03-23 17:56:47.08+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 28, '2014-03-23 17:56:47.08+01', '', '2001:db8::4:3', '2014-04-28 21:17:29.12+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 1, '2014-03-23 17:56:47.08+01', '', '192.168.2.6', '2014-04-28 21:17:29.12+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 28, '2014-04-28 21:17:29.12+02', '', '2001:db8::0:3', '2014-05-03 01:52:19.84+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 1, '2014-04-28 21:17:29.12+02', '', '192.168.2.6', '2014-05-03 01:52:19.84+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, NULL, 1, '2014-05-03 01:52:19.84+02', '', '192.168.2.6', '2015-05-19 18:22:31.05+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, NULL, 28, '2014-05-03 01:52:19.84+02', '', '2001:db8::0:3', '2015-05-19 18:22:31.05+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, NULL, 28, '2015-05-19 18:22:31.05+02', '', '2001:db8::0:4', '2015-09-21 17:24:15.93+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, NULL, 1, '2015-05-19 18:22:31.05+02', '', '192.168.2.6', '2016-02-29 23:30:25.09+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 28, '2015-09-21 17:24:25.06+02', '', '2001:db8::0:4', '2015-09-23 17:17:36.11+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, NULL, 28, '2015-10-02 20:28:07.89+02', '', '2001:db8::0:4', '2016-02-29 23:30:25.09+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 3600, 28, '2016-02-29 23:30:25.09+02', '', '2001:db8::0:4', '2016-10-01 00:38:32.06+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 3600, 1, '2016-02-29 23:30:25.09+02', '', '192.168.2.6', '2016-10-01 00:38:32.06+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 28, '2016-10-01 00:38:32.06+02', '', '2001:db8::0:4', '2016-10-01 11:43:33.99+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 1, '2016-10-01 00:38:32.06+02', '', '192.168.2.6', '2016-10-01 11:43:33.99+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 3600, 28, '2016-10-01 11:43:33.99+02', '', '2001:db8::1:4', '2016-10-02 15:19:22.75+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 3600, 28, '2016-10-01 11:43:33.99+02', '', '2001:db8::1:4', '2017-09-27 12:17:10.44+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 3600, 1, '2016-10-01 11:43:33.99+02', '', '192.168.2.6', '2017-09-27 12:17:10.44+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 3600, 1, '2017-09-27 12:17:10.44+02', '', '192.168.2.6', '2018-02-01 13:25:39.16+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 28, '2017-09-27 12:17:10.44+02', '', '2001:db8::1:4', '2018-02-01 13:25:39.16+01');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 3600, 1, '2018-02-01 13:25:39.16+01', '', '192.168.2.6', '2018-06-20 22:05:35.43+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 3600, 28, '2018-06-06 13:19:43.95+02', '', '2001:db8::1:4', '2018-06-21 18:50:09.05+02');
+INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, deleted_on) VALUES (10, 600, 1, '2018-06-20 22:05:43.44+02', '', '192.168.4.1', '2018-06-21 13:55:42.73+02');
+INSERT INTO rrs (domain_id, ttl, rrtype_id, created_on, label, value, id) VALUES (10, 600, 28, '2018-06-21 18:50:17.33+02', '', '2001:db8::1:4', 585542);
+INSERT INTO rrs (domain_id, ttl, rrtype_id, created_on, label, value, id) VALUES (10, 600, 1, '2018-06-21 13:55:51.75+02', '', '192.168.2.6', 585532);
+
+
+ALTER SEQUENCE domains_id_seq RESTART with 56;

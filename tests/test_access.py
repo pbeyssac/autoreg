@@ -224,3 +224,61 @@ class TestAccessShowHistory(unittest.TestCase):
 			600	AAAA	2001:db8::1:4
 """,
       v)
+
+
+class TestAccessCat(unittest.TestCase):
+  def test_1(self):
+    out = io.StringIO()
+    os.environ['USER'] = 'autoreg'
+    autoreg.dns.access.main(['access-zone', '-acat', 'HISTORY.TESTS.EU.ORG'], outfile=out)
+    v = out.getvalue()
+    self.assertEqual("""; zone name=HISTORY.TESTS.EU.ORG
+$TTL 259200
+@	SOA	NS.EU.ORG hostmaster.eu.org 2007110600 3600 1800 604800 259200
+H1	600	A	192.168.2.6
+	600	AAAA	2001:db8::1:4
+""",
+      v)
+
+
+class TestAccessShow(unittest.TestCase):
+  def test_1(self):
+    out = io.StringIO()
+    os.environ['USER'] = 'autoreg'
+    autoreg.dns.access.main(['access-zone', '-ashow', 'H1.HISTORY.TESTS.EU.ORG'], outfile=out)
+    v = out.getvalue()
+    self.assertEqual("""; zone HISTORY.TESTS.EU.ORG
+; domain H1.HISTORY.TESTS.EU.ORG
+H1			600	A	192.168.2.6
+			600	AAAA	2001:db8::1:4
+""",
+      v)
+
+
+# this should be executed last, hence the "Z" in the name
+# (executed by alphabetic order)
+
+class TestAccessZAddDelRR(unittest.TestCase):
+  def test_1(self):
+    os.environ['USER'] = 'autoreg'
+    infile = io.StringIO("H1 NS NS.EU.ORG.\n")
+    autoreg.dns.access.main(['access-zone', '-aaddrr', 'H1.HISTORY.TESTS.EU.ORG'], infile=infile)
+
+    out = io.StringIO()
+    autoreg.dns.access.main(['access-zone', '-ashow', 'H1.HISTORY.TESTS.EU.ORG'], outfile=out)
+    v = out.getvalue()
+
+    re_out = re.compile("; zone HISTORY\.TESTS\.EU\.ORG\n; domain H1\.HISTORY\.TESTS\.EU\.ORG\n"
+                        "; updated: by autoreg, \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d\.\d+.\d\d:\d\d\n"
+                        "H1			600	A	192\.168\.2\.6\n"
+                        "			600	AAAA	2001:db8::1:4\n"
+                        "				NS	NS\.EU\.ORG\.\n",
+                        re.MULTILINE)
+    self.assertNotEqual(None, re_out.match(v))
+    autoreg.dns.access.main(['access-zone', '-adelrr', 'H1.HISTORY.TESTS.EU.ORG'], infile=infile)
+    re_out = re.compile("; zone HISTORY\.TESTS\.EU\.ORG\n; domain H1\.HISTORY\.TESTS\.EU\.ORG\n"
+                        "; updated: by autoreg, \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d\.\d+.\d\d:\d\d\n"
+                        "H1			600	A	192\.168\.2\.6\n"
+                        "			600	AAAA	2001:db8::1:4\n",
+                        re.MULTILINE)
+    self.assertNotEqual(None, re_out.match(v))
