@@ -184,39 +184,39 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   r = 0
   try:
     if action == 'show':
-      dd.show(domain, zone)
+      dd.show(domain, zone, outfile=outfile)
       if deleg:
-        dd.show(domain, domain)
+        dd.show(domain, domain, outfile=outfile)
     elif action == 'showhist':
       dd.showhist(domain, zone, rev=rev, outfile=outfile)
     elif action == 'new':
-      dd.new(domain, zone, type, file=sys.stdin, internal=internal)
+      dd.new(domain, zone, type, file=infile, internal=internal)
       if dyn:
         dd.dyn.print()
     elif action == 'modify':
       if deleg:
-        dd.modifydeleg(domain, file=sys.stdin, override_internal=internal,
+        dd.modifydeleg(domain, file=infile, override_internal=internal,
                        keepds=keepds)
       else:
-        dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal,
+        dd.modify(domain, zone, type, file=infile, override_internal=internal,
                   keepds=keepds)
       if dyn:
         dd.dyn.print()
     elif action == 'addrr':
       if deleg:
-        dd.modifydeleg(domain, file=sys.stdin, override_internal=internal,
+        dd.modifydeleg(domain, file=infile, override_internal=internal,
                     replace=False)
       else:
-        dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal,
+        dd.modify(domain, zone, type, file=infile, override_internal=internal,
                 replace=False)
       if dyn:
         dd.dyn.print()
     elif action == 'delrr':
       if deleg:
-        dd.modifydeleg(domain, file=sys.stdin, override_internal=internal,
+        dd.modifydeleg(domain, file=infile, override_internal=internal,
                      replace=False, delete=True)
       else:
-        dd.modify(domain, zone, type, file=sys.stdin, override_internal=internal,
+        dd.modify(domain, zone, type, file=infile, override_internal=internal,
                 replace=False, delete=True)
       if dyn:
         dd.dyn.print()
