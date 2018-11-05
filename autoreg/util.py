@@ -7,8 +7,14 @@ import crypt
 import random
 
 
+from cryptography.fernet import Fernet
 import six
 
+
+from .conf import ENCRYPT_KEY
+
+# Fernet encryption/decryption object
+_fernet = Fernet(ENCRYPT_KEY)
 
 # parameters for SHA512 hashed passwords
 CRYPT_SALT_LEN=16
@@ -24,3 +30,9 @@ def pwcrypt(passwd):
   if six.PY2:
     passwd = passwd.encode('UTF-8')
   return crypt.crypt(passwd, CRYPT_ALGO + t + '$')
+
+def encrypt(text):
+  return _fernet.encrypt(text.encode()).decode()
+
+def decrypt(text):
+  return _fernet.decrypt(text.encode()).decode()

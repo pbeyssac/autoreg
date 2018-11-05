@@ -15,11 +15,21 @@ import qrcode
 from django.db import IntegrityError, transaction
 
 
+from autoreg.util import encrypt, decrypt
+
 from .models import Otp
+
+
+def _encrypt(secret, codes):
+  encrypted_codes = encrypt(secret + ' ' + codes)
+  codes = encrypted_codes
+  secret = ''
+  return secret, codes
 
 
 def totp_save(cotp):
   """Save existing OTP entry."""
+  cotp.secret, cotp.codes = _encrypt(cotp.secret, cotp.codes)
   cotp.save()
 
 
@@ -29,6 +39,9 @@ def totp_save_or_create(contact, secret, codes):
   # To avoid race conditions, UPDATE/INSERT loop as per
   # https://www.postgresql.org/docs/current/static/plpgsql-trigger.html#PLPGSQL-TRIGGER-SUMMARY-EXAMPLE
   #
+
+  secret, codes = _encrypt(secret, codes)
+
   while True:
     try:
       with transaction.atomic():
@@ -86,7 +99,21 @@ def totp_get_record(handle):
     raise IntegrityError
   if cotpl.count() == 0:
     return None
-  return cotpl[0]
+
+  c = cotpl[0]
+  # 174 = average of 100 (size of unencrypted entry)
+  # and 248 (size of encrypted entry)
+  # everything over 174 is assumed to be encrypted.
+  if len(c.codes) > 174:
+    secret, codes = decrypt(c.codes).split(' ', 1)
+    c.codes = codes
+    c.secret = secret
+  else:
+    # convert on the fly
+    saved_secret, saved_codes = c.secret, c.codes
+    totp_save(c)
+    c.secret, c.codes = saved_secret, saved_codes
+  return c
 
 def totp_count_valid_codes_handle(handle):
   cotp = totp_get_record(handle)

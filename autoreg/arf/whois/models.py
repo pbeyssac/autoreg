@@ -88,7 +88,7 @@ class Otp(models.Model):
     id = models.AutoField(primary_key=True)
     contact = models.OneToOneField(Contacts, on_delete=models.CASCADE)
     secret = models.CharField(max_length=16, null=True)
-    codes = models.CharField(max_length=90, null=True)
+    codes = models.CharField(max_length=250, null=True)
     active = models.NullBooleanField(default=False, null=True)
     class Meta:
         db_table = 'otp'

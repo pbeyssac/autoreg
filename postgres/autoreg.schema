@@ -275,7 +275,7 @@ CREATE TABLE contacts (
 	country char(2),
 	phone varchar(40),
 	fax varchar(40),
-	passwd varchar(106),
+	passwd varchar(250),
 	created_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	validated_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	updated_by varchar(64),
@@ -290,7 +290,9 @@ CREATE TABLE otp (
 	id SERIAL PRIMARY KEY,	-- used only for web framework access
 	contact_id INTEGER REFERENCES contacts(id) UNIQUE NOT NULL,
 	secret varchar(16),
-	codes varchar(100),
+	-- 'codes' string is maximum 99 chars,
+	-- + secret + encryption + base64-encoding = 248 max.
+	codes varchar(250),
 	created_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	active BOOLEAN DEFAULT FALSE
 );
@@ -365,7 +367,7 @@ CREATE TABLE contacts_hist (
 	country char(2),
 	phone varchar(40),
 	fax varchar(40),
-	passwd varchar(106),
+	passwd varchar(250),
 	created_on TIMESTAMP WITH TIME ZONE,
 	validated_on TIMESTAMP WITH TIME ZONE,
 	updated_by varchar(64),

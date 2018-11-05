@@ -36,7 +36,7 @@ from django.views.decorators.http import require_http_methods
 from autoreg.common import domain_delete
 from autoreg.conf import HANDLESUFFIX
 import autoreg.dns.db
-from autoreg.util import pwcrypt
+from autoreg.util import decrypt, encrypt, pwcrypt
 from autoreg.whois.db import \
   suffixstrip,suffixadd,Domain,check_handle_domain_auth,handle_domains_dnssec, \
   countries_get
@@ -398,7 +398,7 @@ def contactcreate(request):
 
       from autoreg.whois.db import Person
 
-      p = Person(connection.cursor(), passwd=pwcrypt(p1),
+      p = Person(connection.cursor(), passwd=encrypt(pwcrypt(p1)),
                  validate=False)
       if p.from_ripe(d):
         p.insert()
@@ -506,10 +506,13 @@ def chpass(request):
   ct = ctlist[0]
   if six.PY2:
     pass0 = pass0.encode('UTF-8')
-  if ct.passwd != crypt.crypt(pass0, ct.passwd):
+  passwd = ct.passwd
+  if len(passwd) > 123:
+    passwd = decrypt(passwd)
+  if passwd != crypt.crypt(pass0, passwd):
     vars['msg'] = _("Current password is not correct")
     return render(request, 'whois/chpass.html', vars)
-  ct.passwd = pwcrypt(pass1)
+  ct.passwd = encrypt(pwcrypt(pass1))
   ct.save()
   del vars['form']
   vars['ehandle'] = suffixadd(handle)

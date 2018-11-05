@@ -129,3 +129,11 @@ RECAPTCHA_REQUESTS_MIN=10
 RECAPTCHA_DOMAINS_MIN=10
 
 TOTP_ISSUER='eu.org'
+
+# Key used to protect secret+codes in the "otp" databse relation.
+# Generated with cryptography.fernet.Fernet.generate_key()
+try:
+  TOTP_CODES_KEY=open('/usr/local/autoreg/arf/TOTP_KEY', 'rb').read()[:-1]
+except PermissionError:
+  # default key for tests -- DO NOT USE!
+  TOTP_CODES_KEY=b'qVMjRVe9fQ-jF7G06l4Fogjqu_PjONV70KvZprhtit0='

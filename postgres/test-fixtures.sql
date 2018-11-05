@@ -16,13 +16,14 @@ INSERT INTO allowed_rr (zone_id, rrtype_id)
 	VALUES ((SELECT id FROM zones WHERE name='HISTORY.TESTS.EU.ORG'), (SELECT id FROM rrtypes WHERE label='NS'));
 
 -- Minimal accounts
+--		'$6$1R/p0g2ie3yxya27$ARZEbafeY1J./mbUbOUN1CCf0UsGwsrtq7vTUIGweDuVinXYNpAhUfCvjk2VPM2jSyU4dTpHYtICfFrkyxuYP.',
 INSERT INTO contacts (handle, name, email, addr, country, passwd, private)
 	VALUES ('TU1', 'Test User', 'tu@foo.bar', 'Test user address\nTest test\n', 'FR',
-		'$6$1R/p0g2ie3yxya27$ARZEbafeY1J./mbUbOUN1CCf0UsGwsrtq7vTUIGweDuVinXYNpAhUfCvjk2VPM2jSyU4dTpHYtICfFrkyxuYP.',
+		'gAAAAABb4bgxslpHR0f59hATY7Jh2MVRsflPb-DQTXJdWM-ds6QmZaAH40eYAN9IkwLA6neRvtl2F_CIHh5Iv4-8mMCZK_ijZqZ6I3S9rTR5PaNvPc_sRXfbpjRMznK5bkRne8B7RJj1sI7XspOnQq5HywHWPX7dWhdMfd0v7u12QzTKXzSDqcoAmgNT5KM-o4aRM-DqYlzB8E4QZf9iQe63NuTgjbz8Kg==',
 		true);
 INSERT INTO contacts (handle, name, email, addr, country, passwd, private, updated_by)
 	VALUES ('TP1', 'Test Person', 'foobaremail@email.bla', 'test address\nline2\nline3\nFrance\n', 'FR',
-		'$6$SDUcSDXhMqWxJHby$RF2s62JKIjqEhcmxqMq9ShhtTXaSr1sKdz3BMv5c/dx3J6Mn0fNVsClbugDEJnUsH301nilTqH1OKcABiBfMC.',
+		'gAAAAABb4bhjNRKUVFgahnCxebm1GJA48oEYbipxz43pRQn-2QA_MNOB373VIEGwtNWyrDlJV0RwrKKB98Ng3yAPYrmgpQLW9EK58QHavTqk1A5VQADSyT79kdgdw3cs3Y4qOon9as1MtMhdR2ruD-8f8PbeSl5_hZC4n3oscqm_lNbsqT9j1dxgqCncloy6OeFb5iCeeG5cEtRPXVEXAmLZWZj_A7aCTg==',
 		true, '::1');
 
 -- Test account with a long handle

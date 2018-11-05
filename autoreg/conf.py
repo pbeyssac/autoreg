@@ -24,6 +24,13 @@ SOA_MASTER='NS.EU.ORG'
 SOA_EMAIL='hostmaster.eu.org'
 ZONEFILES_DIR='/etc/namedb/autoreg'
 
+try:
+  ENCRYPT_KEY=open('/usr/local/autoreg/arf/ENCRYPT_KEY', 'rb').read()[:-1]
+except PermissionError:
+  # default key for tests -- make sure this fails unless explicitly configured
+  ENCRYPT_KEY=os.environ['ENCRYPT_KEY'].encode()
+
+
 # Postgres connect string
 # Don't use this in Django modules, use autoreg.arf.util.dbstring instead,
 # for compatibility with the test environment.
