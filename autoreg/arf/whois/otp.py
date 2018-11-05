@@ -12,10 +12,47 @@ import pyotp
 import qrcode
 
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 
 
 from .models import Otp
+
+
+def totp_save(cotp):
+  """Save existing OTP entry."""
+  cotp.save()
+
+
+def totp_save_or_create(contact, secret, codes):
+  """Make sure an OTP entry exists, create it if needed."""
+  #
+  # To avoid race conditions, UPDATE/INSERT loop as per
+  # https://www.postgresql.org/docs/current/static/plpgsql-trigger.html#PLPGSQL-TRIGGER-SUMMARY-EXAMPLE
+  #
+  while True:
+    try:
+      with transaction.atomic():
+        cotp = Otp(contact=contact, secret=secret, codes=codes, active=False)
+        cotp.save()
+        exists = False
+    except IntegrityError:
+      exists = True
+
+    if not exists:
+      break
+
+    try:
+      with transaction.atomic():
+        cotp = Otp.objects.get(contact=contact)
+    except Otp.DoesNotExist:
+      exists = False
+
+    if exists:
+      cotp.codes = codes
+      cotp.secret = secret
+      cotp.active = False
+      cotp.save()
+      break
 
 
 def totp_generate_recovery():
