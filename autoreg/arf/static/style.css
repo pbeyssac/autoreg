@@ -48,7 +48,7 @@ div.error {margin-top: .2em; margin-bottom: .2em;}
 
 nav.profile, nav.main {display: inline-block}
 nav.profile {background-color: #ddf}
-#id_logoutform {display: inline}
+#id_logoutform {display: inline-block}
 .admin {background-color: #fdd}
 
 span.handle {
@@ -90,7 +90,7 @@ span.email {font-weight: bold; font-family: monospace; background-color:#eef;}
   border-color: #6bd;
   border-style: solid;
   border-spacing: .5em;
-  display: inline;
+  display: inline-block;
 }
 #id_otpmain .action, #id_otpmain .miniaction {
   display: inline-block;
