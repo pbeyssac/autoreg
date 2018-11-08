@@ -3,6 +3,9 @@ from __future__ import unicode_literals
 from __future__ import print_function
 
 
+import re
+
+
 from django.db import connection
 from django.test import TestCase, Client
 
@@ -394,3 +397,62 @@ class DomainNewTest(TestCase):
     # need to get all the lines to run the code
     for line in r.streaming_content:
       pass
+
+  def test_domaindiff_ko_1(self):
+    r = self.c.get('/en/domain/diff/h1.history.tests.eu.org')
+    self.assertEqual(302, r.status_code)
+
+  def test_domaindiff_ko_2(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/domain/diff/h1.history.tests.eu.org')
+    self.assertEqual(403, r.status_code)
+
+  def test_domaindiff_ok_1(self):
+    self.assertTrue(self.c.login(username='TU1', password=self.pwtu1))
+    r = self.c.get('/en/domain/diff/h1.history.tests.eu.org')
+    self.assertEqual(200, r.status_code)
+    pre_re = re.compile('<table')
+    n = len(pre_re.findall(str(r.content)))
+    self.assertEqual(35, n)
+    pre_re = re.compile('<tr')
+    n = len(pre_re.findall(str(r.content)))
+    self.assertEqual(95, n)
+
+  def test_domainhist_ko_1(self):
+    r = self.c.get('/en/domain/hist/h1.history.tests.eu.org')
+    self.assertEqual(302, r.status_code)
+
+  def test_domainhist_ko_2(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/domain/hist/h1.history.tests.eu.org')
+    self.assertEqual(403, r.status_code)
+
+  def test_domainhist_ok_1(self):
+    self.assertTrue(self.c.login(username='TU1', password=self.pwtu1))
+    r = self.c.get('/en/domain/hist/h1.history.tests.eu.org')
+    self.assertEqual(200, r.status_code)
+    pre_re = re.compile('<pre class')
+    n = len(pre_re.findall(str(r.content)))
+    self.assertEqual(35, n)
+
+  def test_domainhistclear_ko_1(self):
+    r = self.c.post('/en/domain/histclear/h1.history.tests.eu.org')
+    self.assertEqual(302, r.status_code)
+
+  def test_domainhistclear_ko_2(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.post('/en/domain/histclear/h1.history.tests.eu.org')
+    self.assertEqual(403, r.status_code)
+
+  def test_domainhistclear_ok_1(self):
+    self.assertTrue(self.c.login(username='TU1', password=self.pwtu1))
+
+    r = self.c.post('/en/domain/histclear/h1.history.tests.eu.org')
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/domain/hist/h1.history.tests.eu.org', r['Location'])
+
+    r = self.c.get('/en/domain/hist/h1.history.tests.eu.org')
+    self.assertEqual(200, r.status_code)
+    pre_re = re.compile('<pre class')
+    n = len(pre_re.findall(str(r.content)))
+    self.assertEqual(2, n)

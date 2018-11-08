@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import difflib
 import io
 import sys
 import time
@@ -494,6 +495,9 @@ class _Domain:
           self._dbc.execute('DELETE FROM rrs WHERE domain_id=%s', (did,))
         if domains:
             self._dbc.execute('DELETE FROM domains WHERE id=%s', (did,))
+    def clear_hist(self):
+        """Clear domain history."""
+        self._dbc.execute('DELETE FROM rrs_hist WHERE domain_id=%s', (self.id,))
     def show_head(self, outfile=sys.stdout):
         """Show administrative data for domain."""
         print("; zone", self._zone_name, file=outfile)
@@ -515,8 +519,11 @@ class _Domain:
             print("; end_grace_period: %s"
                    % self._end_grace_period, file=outfile)
     def _print_rrs(self, gen, outfile=sys.stdout):
+        print('\n'.join(self._get_rrs(gen)), file=outfile)
+    def _get_rrs(self, gen, verboseempty=True):
         """List all resource records for domain."""
         n = 0
+        out = []
         for l, ttl, typ, value in gen:
             # tabulate output
             if len(l) > 15: pass
@@ -525,10 +532,11 @@ class _Domain:
             if ttl is None: ttl = ''
             else: ttl = str(ttl)
 
-            print("\t".join((l, ttl, typ, value)), file=outfile)
+            out.append("\t".join((l, ttl, typ, value)))
             n += 1
-        if n == 0:
-            print('; (NO RECORD)', file=outfile)
+        if n == 0 and verboseempty:
+            out.append('; (NO RECORD)')
+        return out
 
     def show_rrs(self, outfile=sys.stdout):
         """List all resource records for domain."""
@@ -565,7 +573,7 @@ class _Domain:
 
             t = self._dbc.fetchone()
 
-    def showhist(self, canon=False, outfile=sys.stdout, rev=True):
+    def _gen_hist(self, canon=False, rev=True, diff=False, full=False):
         self._dbc.execute(
             "SELECT "
               "TIMESTAMP '-infinity' AS deleted_on_utc, "
@@ -602,13 +610,12 @@ class _Domain:
           date_stop = date_max
 
         last_date_cur = date_start
+        last_header = ''
+        last_text = []
         while t or last_date_cur != date_stop:
           if t:
             # process next record
             label, ttl, typ, value, date_beg, date_end = t
-            if date_end is None:
-              xxx
-              date_end = date_max
             # "uncompress"
             value = redot_value(typ, value)
 
@@ -631,14 +638,14 @@ class _Domain:
 
             # skip if last_date_cur == date_min (implies rev == False)
             # to avoid displaying initial empty entry
-            if last_date_cur != date_min:
+            if full or last_date_cur != date_min:
               endlist.append(last_date_cur)
 
             explist = sorted(list(set(endlist)), reverse=rev)
 
             datelist = explist + [date_cur]
             if rev:
-              if date_cur == date_min:
+              if not full and date_cur == date_min:
                 # drop to avoid displaying last empty entry
                 explist = explist[:-1]
 
@@ -654,10 +661,51 @@ class _Domain:
               if date2 == date_max:
                 date2 = '...'
               datelist = datelist[1:]
-              print("; From", date1, "to", date2, file=outfile)
               rrshow.sort(key=lambda x: (x[0], x[2], x[3]))
-              self._print_rrs(rrshow, outfile=outfile)
+              new_text = self._get_rrs(rrshow, verboseempty=not diff)
+              yield date1, date2, new_text
             last_date_cur = date_cur
+
+    def _untabify(self, text):
+        i = text.find('\t')
+        while i >= 0:
+            text = text[0:i] + ' '*(8-i%8) + text[i+1:]
+            i = text.find('\t')
+        return text
+    def showhist(self, canon=False, outfile=sys.stdout,
+                 rev=True, diff=False, as_list=False):
+        """Show domain history, possibly in diff format."""
+        last_text = None
+        out = [] if as_list else None
+
+        for date1, date2, text in self._gen_hist(canon, rev, diff=diff, full=diff):
+          if diff:
+            text = [self._untabify(t) for t in text]
+          if diff and last_text is not None:
+            new_text = last_text if rev else text
+            old_text = text if rev else last_text
+            new_date = date2 if rev else date1
+            old_date = date1 if rev else date2
+
+            diffs = difflib.Differ().compare(old_text, new_text)
+            if as_list:
+              # split prefix ('+ ', '- ', '? -', '  ') from line
+              diffs = [(d[:1], d[2:]) for d in diffs]
+              out.append((old_date, new_date, diffs))
+            else:
+              diffs = '\n'.join([d for d in diffs if d[0] != '?'])
+              print("; At %s\n%s" % (new_date, diffs), file=outfile)
+
+          if not diff:
+            if as_list:
+              out.append((date1, date2, text))
+            else:
+              print("; From %s to %s" % (date1, date2), file=outfile)
+              print('\n'.join(text), file=outfile)
+
+          last_text = text
+
+        return out
 
     def show(self, rrs_only=False, outfile=sys.stdout):
         """Shorthand to call show_head() then show_rrs()."""
@@ -856,12 +904,19 @@ class db:
         """Logout current user."""
         self._check_login_perm()
         self._login_id = None
-    def showhist(self, domain, zone, rrs_only=False, rev=True, outfile=sys.stdout):
+    def clearhist(self, domain, zone):
+        """Clear domain history."""
+        d, z = self._zl.find(domain, zone)
+        d.fetch()
+        self._check_login_perm(z.name)
+        d.clear_hist()
+    def showhist(self, domain, zone, rev=True, diff=False, as_list=False,
+                 outfile=sys.stdout):
         """Show a pretty-printed zone excerpt for domain."""
         d, z = self._zl.find(domain, zone)
         self._check_login_perm(z.name)
         d.fetch()
-        d.showhist(rev=rev, outfile=outfile)
+        return d.showhist(rev=rev, diff=diff, as_list=as_list, outfile=outfile)
     def show(self, domain, zone, rrs_only=False, outfile=sys.stdout):
         """Show a pretty-printed zone excerpt for domain."""
         d, z = self._zl.find(domain, zone)

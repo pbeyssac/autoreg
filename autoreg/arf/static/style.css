@@ -122,6 +122,21 @@ input.action {padding: 3px}
 
 div.loginhelp {margin-top: 2em}
 
+/* Styles for diff list */
+
+.diff_add {background-color:#bbffbb}
+.diff_addi {background-color:#66dd66}
+.diff_addchgi {background-color:#66dd66}
+.diff_chg {background-color:#ffff77}
+.diff_chgi {background-color:#ffff55}
+.diff_sub {background-color:#ffbbbb}
+.diff_subi {background-color:#ff8888}
+.diff_subchgi {background-color:#ff8888}
+.diffentry h4 {margin-bottom: .1em;}
+.diffentry td {font-family: monospace; border-collapse: collapse; padding: 0 .2em;}
+.histentry h4 {margin-bottom: .1em;}
+.histentry pre {margin-top: .1em;}
+
 @media (min-width: 500px) {
   /* table alignment for fields in .form */
   .form fieldset {border-collapse: collapse;}

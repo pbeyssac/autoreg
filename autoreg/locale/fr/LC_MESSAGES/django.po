@@ -254,6 +254,57 @@ msgstr ""
 msgid "Not eligible to DNSSEC:"
 msgstr "Non éligible à DNSSEC:"
 
+#: autoreg/arf/templates/dns/histclearconfirm.html:3
+msgid "Domain history deletion"
+msgstr "Suppression de l'historique"
+
+#: autoreg/arf/templates/dns/histclearconfirm.html:5
+msgid "<strong>WARNING</strong>: clearing domain history cannot be undone."
+msgstr "<strong>ATTENTION</strong>&nbsp;: la suppression de l'historique est irréversible."
+
+#: autoreg/arf/templates/dns/histclearconfirm.html:9
+msgid "Confirm"
+msgstr "Confirmer"
+
+#: autoreg/arf/templates/dns/histclearconfirm.html:10
+#: autoreg/arf/templates/whois/domaineditconfirm.html:14
+msgid "Cancel"
+msgstr "Annulation"
+
+#: autoreg/arf/templates/dns/history.html:8
+#, python-format
+msgid "Diffs for <span class=\"domain\">%(fqdn)s</span>"
+msgstr "Diffs pour <span class=\"domain\">%(fqdn)s</span>"
+
+#: autoreg/arf/templates/dns/history.html:9
+#: autoreg/arf/templates/dns/history.html:13
+msgid "Clear"
+msgstr "Effacer"
+
+#: autoreg/arf/templates/dns/history.html:10
+#: autoreg/arf/templates/whois/domainedit.html:19
+msgid "History"
+msgstr "Historique"
+
+#: autoreg/arf/templates/dns/history.html:12
+#, python-format
+msgid "History for <span class=\"domain\">%(fqdn)s</span>"
+msgstr "Historique pour <span class=\"domain\">%(fqdn)s</span>"
+
+#: autoreg/arf/templates/dns/history.html:14
+msgid "Diffs"
+msgstr ""
+
+#: autoreg/arf/templates/dns/history.html:18
+#: autoreg/arf/templates/requests/rqlogdisplay.html:5
+msgid "Date:"
+msgstr "Date :"
+
+#: autoreg/arf/templates/dns/history.html:18
+#, python-format
+msgid "From %(d1)s to %(d2)s"
+msgstr "Du %(d1)s au %(d2)s"
+
 #: autoreg/arf/templates/dns/nsedit.html:6
 #: autoreg/arf/templates/dns/nsedit.html:15
 msgid "New domain request"
@@ -691,10 +742,6 @@ msgid "Show/Edit on one page"
 msgstr "Visualiser/éditer sur une page"
 
 #: autoreg/arf/templates/requests/rqlogdisplay.html:5
-msgid "Date:"
-msgstr "Date :"
-
-#: autoreg/arf/templates/requests/rqlogdisplay.html:5
 msgid "Errors:"
 msgstr "Erreurs :"
 
@@ -1101,10 +1148,6 @@ msgstr ""
 msgid "Confirm Remove"
 msgstr "Confirmer la suppression"
 
-#: autoreg/arf/templates/whois/domaineditconfirm.html:14
-msgid "Cancel"
-msgstr "Annulation"
-
 #: autoreg/arf/templates/whois/domainlist.html:3
 #: autoreg/arf/templates/whois/domainlist.html:10
 #, python-format
@@ -1343,11 +1386,7 @@ msgstr "existe dans la zone"
 msgid "Domain is not preemptable"
 msgstr "Le domaine ne peut être préempté"
 
-#: autoreg/arf/webdns/views.py:49
-msgid "Domain List"
-msgstr "Liste des domaines"
-
-#: autoreg/arf/webdns/views.py:53
+#: autoreg/arf/webdns/views.py:54
 msgid "Lock"
 msgstr "Verrouillage"
 
@@ -1363,7 +1402,11 @@ msgstr "Suspension"
 msgid "Unhold"
 msgstr "Fin de suspension"
 
-#: autoreg/arf/webdns/views.py:65
+#: autoreg/arf/webdns/views.py:66
+msgid "Domain List"
+msgstr "Liste des domaines"
+
+#: autoreg/arf/webdns/views.py:75
 msgid "Contact Handle"
 msgstr "Identifiant de contact"
 
@@ -1429,7 +1472,15 @@ msgstr "L'enregistrement DS demandé est déjà dans la zone"
 msgid "Requested DS does not match any published DNSKEY in zone"
 msgstr "L'enregistrement DS demandé ne correspond à aucune DNSKEY publiée"
 
-#: autoreg/arf/webdns/views.py:379
+#: autoreg/arf/webdns/views.py:428
+msgid "Domain Diffs"
+msgstr "Diffs du domaine"
+
+#: autoreg/arf/webdns/views.py:428
+msgid "Domain History"
+msgstr "Historique du domaine"
+
+#: autoreg/arf/webdns/views.py:508
 msgid "Invalid name"
 msgstr "Nom invalide"
 

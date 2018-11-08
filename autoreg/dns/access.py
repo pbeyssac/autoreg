@@ -48,6 +48,7 @@ domain list for better performance.
 -i: in 'modify' and 'delete', allow handling of "internal" domains.
     in 'new', set "internal" flag.
 -s: force incrementation of serial in 'soa', regardless of any zone updates.
+-U: show unified diffs in 'showhistory'.
 """
 
 from __future__ import absolute_import
@@ -102,13 +103,13 @@ def errexit(msg, args):
 
 def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   try:
-      opts, args = getopt.getopt(argv[1:], "a:cdDirst:u:z:")
+      opts, args = getopt.getopt(argv[1:], "a:cdDirst:u:Uz:")
   except getopt.GetoptError:
       usage()
       sys.exit(1)
 
   action, type, zone = None, None, None
-  dyn, keepds = False, False
+  dyn, keepds, diff = False, False, False
   nowrite, internal, deleg, forceincr = False, False, False, False
   rev = True
   user = os.getenv('USER', None)
@@ -136,6 +137,8 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
         dyn = True
       elif o == "-s":
         forceincr = True
+      elif o == "-U":
+        diff = True
 
   if action == None or user == None:
       usage()
@@ -188,7 +191,7 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
       if deleg:
         dd.show(domain, domain, outfile=outfile)
     elif action == 'showhist':
-      dd.showhist(domain, zone, rev=rev, outfile=outfile)
+      dd.showhist(domain, zone, rev=rev, diff=diff, outfile=outfile)
     elif action == 'new':
       dd.new(domain, zone, type, file=infile, internal=internal)
       if dyn:

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Domain history deletion" %}{% endblock %}
+{% block form %}
+{% trans "<strong>WARNING</strong>: clearing domain history cannot be undone." %}
+<P>
+<FORM ACTION="{{ posturi }}" METHOD="POST">
+{% csrf_token %}
+<INPUT class="action" TYPE="submit" NAME="submit" VALUE="{% trans "Confirm" %}">
+<a class="action" href="{% url 'domainhist' fqdn %}">{% trans "Cancel" %}</a>
+</FORM>
+{% endblock %}

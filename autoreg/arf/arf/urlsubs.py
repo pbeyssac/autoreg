@@ -81,6 +81,14 @@ urlpatterns += [
         name='domainns'),
   url(r'^domain/new/$', webdns_views.domainns,
         name='domainns'),
+  url(r'^domain/hist/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domainhist,
+        name='domainhist'),
+  url(r'^domain/diff/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domaindiff,
+        name='domaindiff'),
+  url(r'^domain/histclear/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domainhistclear,
+        name='domainhistclear'),
+  url(r'^domain/histclear/confirm/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domainhistclearconfirm,
+        name='domainhistclearconfirm'),
   url(r'^special/$', webdns_views.special, name='special'),
 ]
 urlpatterns += [

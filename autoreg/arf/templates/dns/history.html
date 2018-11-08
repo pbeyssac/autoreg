@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{{ title }}{% endblock %}
+{% block msg %}{{ msg }}{% for m in msglist %}{{ m }}<br>{% endfor %}{% endblock %}
+{% block form %}
+<div>
+{% if diff %}
+{% blocktrans %}Diffs for <span class="domain">{{ fqdn }}</span>{% endblocktrans %}<br>
+<a class="action" href="{% url 'domainhist' fqdn %}">{% trans "History" %}</A>
+{% else %}
+{% blocktrans %}History for <span class="domain">{{ fqdn }}</span>{% endblocktrans %}<br>
+<a class="action" href="{% url 'domaindiff' fqdn %}">{% trans "Diffs" %}</A>
+{% endif %}
+<a class="action" href="{% url 'domainhistclearconfirm' fqdn %}">{% trans "Clear" %}</A>
+</div>
+{% for d1, d2, text in difflist %}
+{% if diff %}
+<div class="diffentry">
+<h4>{% trans "Date:" %} {{ d2 }}</h4>
+<table class="zone">
+{% for diffcode, line in text %}<tr><td><span class="{{ diffcode.0 }}">{{ diffcode.1 }}</span>
+<td class="{{ diffcode.0 }}">{% for class, span in line %}<span class="{{ class }}">{{ span }}</span>{% endfor %}
+{% endfor %}
+</table>
+{% else %}
+<div class="histentry">
+<h4>{% blocktrans %}From {{ d1 }} to {{ d2 }}{% endblocktrans %}</h4>
+<pre class="zone rrlist">{% for line in text %}{{ line }}
+{% endfor %}</pre>
+{% endif %}
+</div>
+{% endfor %}
+{% endblock %}

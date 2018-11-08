@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import io
+import re
 
 import six
 
@@ -344,6 +345,122 @@ def _adopt_orphan(request, dbc, fqdn, form):
   else:
     vars['msg'] = errmsg
   return render(request, "dns/orphan.html", vars)
+
+def nbsp(text):
+  """Replace spaces with non-breakable spaces."""
+  return text.replace(' ', '\xa0')
+
+_intra_re = re.compile('( +|\\++|-+|\\^+)')
+
+def _markup_intra(cline, diffline):
+  """Markup cline with intra-line diffs in diffline"""
+  defaultclass = cline[0][0]
+  diffcode = cline[2]
+  lineorig = cline[3]
+  lineout = []
+  endspan = 0
+  for sp in _intra_re.finditer(diffline):
+    m = sp.group()[0][0]
+    begspan, endspan = sp.span()
+    spline = nbsp(lineorig[begspan:endspan])
+    if m == '+':
+      lineout.append(('diff_addi', spline))
+    elif m == '-':
+      lineout.append(('diff_subi', spline))
+    elif m == '^':
+      if diffcode[0] == '+':
+        lineout.append(('diff_addchgi', spline))
+      else:
+        lineout.append(('diff_subchgi', spline))
+    else: # m == ' ':
+      # no markup, apply default for line
+      lineout.append((defaultclass, spline))
+  if endspan < len(lineorig):
+    # add missing end of line, with default class
+    lineout.append((defaultclass, nbsp(lineorig[endspan:])))
+  return [cline[0], lineout, ' ', lineorig]
+
+def _decorate_difflist(difflist):
+  """Convert ASCII diff list to HTML."""
+  difflist2 = []
+  cline = None
+  for d1, d2, text in difflist:
+    text2 = []
+    for diffcode, line in text:
+      if diffcode[0] == '+':
+        cline = [('diff_add', nbsp(diffcode)), [('diff_add', nbsp(line))], diffcode, line]
+      elif diffcode[0] == '-':
+        cline = [('diff_sub', nbsp(diffcode)), [('diff_sub', nbsp(line))], diffcode, line]
+      elif diffcode[0] == '?':
+        # tag intra-line diffs on previous line
+        if cline is not None:
+          cline = _markup_intra(cline, line)
+          # drop last line, will be replaced
+          text2 = text2[:-1]
+      elif diffcode[0] == ' ':
+        cline = [('diff_eq', nbsp(diffcode)), [('diff_eq', nbsp(line))], diffcode, line]
+      if cline is not None:
+        difftuple = cline[0]
+        if difftuple[0]:
+          diff = '<span class="%s">' % difftuple[0] + difftuple[1] + '</span>'
+        else:
+          diff = difftuple[1]
+        line = ''
+        for linetuple in cline[1]:
+          if linetuple[0]:
+            line += '<span class="%s">' % linetuple[0] + linetuple[1] + '</span>'
+          else:
+            line += linetuple[1]
+        text2.append((cline[0], cline[1]))
+    difflist2.append((d1, d2, text2))
+  return difflist2
+
+@require_http_methods(["GET"])
+@login_active_required
+@check_handle_fqdn_perms
+def _domainhistdiff(request, fqdn, diff=False):
+  """Show history or diffs for domain"""
+  dbc = connection.cursor()
+
+  name, zone = fqdn.split('.', 1)
+  dd = autoreg.dns.db.db(dbc=dbc)
+  dd.login('autoreg')
+  domhist = dd.showhist(domain=fqdn, zone=zone, diff=diff, as_list=True)
+
+  title = _("Domain Diffs") if diff else _("Domain History")
+
+  if diff:
+    domhist = _decorate_difflist(domhist)
+
+  vars = {'difflist': domhist, 'title': title, 'diff': diff, 'fqdn': fqdn}
+  return render(request, 'dns/history.html', vars)
+
+def domainhist(request, fqdn):
+  return _domainhistdiff(request, fqdn=fqdn, diff=False)
+
+def domaindiff(request, fqdn):
+  return _domainhistdiff(request, fqdn=fqdn, diff=True)
+
+
+@require_http_methods(["GET"])
+@login_active_required
+def domainhistclearconfirm(request, fqdn):
+  vars = {'fqdn': fqdn, 'posturi': reverse(domainhistclear, args=[fqdn])}
+  return render(request,  'dns/histclearconfirm.html', vars)
+
+
+@require_http_methods(["POST"])
+@login_active_required
+@check_handle_fqdn_perms
+def domainhistclear(request, fqdn):
+  dbc = connection.cursor()
+
+  name, zone = fqdn.split('.', 1)
+  dd = autoreg.dns.db.db(dbc=dbc)
+  dd.login('autoreg')
+  dd.clearhist(domain=fqdn, zone=zone)
+
+  return HttpResponseRedirect(reverse(domainhist, args=[fqdn]))
 
 
 @require_http_methods(["GET", "POST"])
