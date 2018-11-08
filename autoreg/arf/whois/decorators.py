@@ -29,6 +29,22 @@ def login_active_required(function=None, redirect_field_name=REDIRECT_FIELD_NAME
     return actual_decorator
 
 
+def admin_required(function=None, redirect_field_name=REDIRECT_FIELD_NAME, login_url=None):
+    """
+    Decorator for views that checks that the user has admin privileges.
+    """
+    def decorator(view_func):
+      @wraps(view_func)
+      def _wrapped_view(request, *args, **kwargs):
+        if not check_is_admin(request.user.username):
+            return HttpResponseForbidden(_("Unauthorized"))
+        return view_func(request, *args, **kwargs)
+      return _wrapped_view
+    if function:
+      return decorator(function)
+    return decorator
+
+
 def check_handle_fqdn_perms(function):
     """
     Decorator for views that checks that the user is admin or

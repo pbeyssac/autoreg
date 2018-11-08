@@ -13,7 +13,7 @@ from django.urls import reverse, reverse_lazy
 from django.db import connection
 import django.forms as forms
 from django.http import HttpResponseRedirect, HttpResponseNotFound, \
-  HttpResponseForbidden, StreamingHttpResponse
+  StreamingHttpResponse
 from django.shortcuts import render
 from django.utils import translation
 from django.utils.translation import ugettext_lazy, ugettext as _
@@ -31,7 +31,7 @@ from autoreg.whois.db import suffixadd, suffixstrip
 
 
 from ..requests.models import Requests, rq_make_id
-from ..whois.decorators import login_active_required, check_handle_fqdn_perms
+from ..whois.decorators import login_active_required, check_handle_fqdn_perms, admin_required
 from ..whois.models import Contacts, Whoisdomains, check_is_admin
 from ..whois.views import registrant_form
 from .models import Zones, is_orphan, preempt
@@ -505,13 +505,9 @@ def domainns(request, fqdn=None):
 
 @require_http_methods(["GET", "POST"])
 @login_active_required
+@admin_required
 def special(request):
   """Special actions on domain"""
-  handle = request.user.username.upper()
-  is_admin = check_is_admin(request.user.username)
-  if not is_admin:
-    return HttpResponseForbidden(_("Unauthorized"))
-
   msg = ''
   msglist = []
   contact = None

@@ -253,7 +253,6 @@ def login(request):
 
 @require_http_methods(["GET", "POST"])
 def contactbydomain(request, fqdn=None):
-  is_admin = check_is_admin(request.user.username)
   if request.method == "GET" and fqdn is None:
     f = contactbydomain_form()
     form = f.as_table()

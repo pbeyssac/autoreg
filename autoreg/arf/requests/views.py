@@ -12,7 +12,6 @@ import sys
 import six
 
 
-from ..whois.models import check_is_admin
 import autoreg.dns.db
 from autoreg.whois.db import admin_login, country_from_iso
 import autoreg.whois.query as query
@@ -32,7 +31,7 @@ from django.views.decorators.http import require_http_methods
 
 from . import models
 from ..webdns.models import Admins, Zones
-from ..whois.decorators import login_active_required
+from ..whois.decorators import login_active_required, admin_required
 from ..whois.models import Contacts
 
 
@@ -429,11 +428,9 @@ def rqval(request):
 
 @require_http_methods(["GET"])
 @login_active_required
+@admin_required
 @cache_control(max_age=10)
 def rqloglist(request):
-  is_admin = check_is_admin(request.user.username)
-  if not is_admin:
-    raise PermissionDenied
   log = models.RequestsLog.objects.all().order_by('-date')
   paginator = Paginator(log, 100)
 
@@ -450,10 +447,8 @@ def rqloglist(request):
 
 @require_http_methods(["GET"])
 @login_active_required
+@admin_required
 def rqlogdisplay(request, id):
-  is_admin = check_is_admin(request.user.username)
-  if not is_admin:
-    raise PermissionDenied
   rql = models.RequestsLog.objects.get(id=id)
   vars = { 'rql': rql }
   return render(request, 'requests/rqlogdisplay.html', vars)
