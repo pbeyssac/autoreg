@@ -18,7 +18,6 @@ import six
 
 
 import django.contrib.auth
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import connection
@@ -45,6 +44,7 @@ from autoreg.conf import FROMADDR
 
 from ..util import render_to_mail
 from ..logs.models import log, Log
+from .decorators import login_active_required
 from .models import Whoisdomains,Contacts,Tokens,DomainContact, check_is_admin
 from . import otp
 from . import token
@@ -478,7 +478,7 @@ def domain(request, fqdn):
 # private pages
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_active_required
 @cache_control(private=True)
 def chpass(request):
   """Contact password change"""
@@ -519,7 +519,7 @@ def chpass(request):
   return render(request, 'whois/passchanged.html', vars)
 
 @require_http_methods(["GET"])
-@login_required
+@login_active_required
 @cache_control(private=True, max_age=10)
 def domainlist(request, handle=None):
   """Display domain list for a contact"""
@@ -550,7 +550,7 @@ def domainlist(request, handle=None):
   return render(request, 'whois/domainlist.html', vars)
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_active_required
 @cache_control(private=True)
 def contactchange(request, registrantdomain=None):
   """Contact or registrant modification page.
@@ -660,7 +660,7 @@ def contactchange(request, registrantdomain=None):
     return render(request, 'whois/contactchange.html', vars)
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_active_required
 @cache_control(private=True)
 def changemail(request):
   """Email change step 2:
@@ -699,7 +699,7 @@ def changemail(request):
   return render(request, 'whois/emailchanged.html', vars)
 
 @require_http_methods(["POST"])
-@login_required
+@login_active_required
 @cache_control(private=True)
 def domaineditconfirm(request, fqdn):
   """Request confirmation for self-deletion of a contact"""
@@ -713,7 +713,7 @@ def domaineditconfirm(request, fqdn):
   return HttpResponseRedirect(nexturi)
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_active_required
 @cache_control(private=True, max_age=10)
 def domainedit(request, fqdn):
   """Edit domain contacts"""
@@ -829,7 +829,7 @@ def domainedit(request, fqdn):
   return render(request, 'whois/domainedit.html', vars)
 
 @require_http_methods(["POST"])
-@login_required
+@login_active_required
 @cache_control(private=True)
 def domaindelete(request, fqdn):
   if fqdn != fqdn.lower():
@@ -862,7 +862,7 @@ def domaindelete(request, fqdn):
   return HttpResponseRedirect(reverse(domainedit, args=[fqdn.lower()]))
 
 @require_http_methods(["POST"])
-@login_required
+@login_active_required
 @cache_control(private=True)
 def domainundelete(request, fqdn):
   if fqdn != fqdn.lower():
@@ -879,7 +879,7 @@ def domainundelete(request, fqdn):
   return HttpResponseRedirect(reverse(domainedit, args=[fqdn]))
 
 @require_http_methods(["POST"])
-@login_required
+@login_active_required
 def logout(request):
   """Logout page"""
   django.contrib.auth.logout(request)

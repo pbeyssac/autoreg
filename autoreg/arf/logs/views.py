@@ -13,13 +13,13 @@ from django.utils.translation import ugettext_lazy, ugettext as _
 
 from .models import Log
 from ..whois.models import check_is_admin
+from ..whois.decorators import login_active_required
 
 
+@login_active_required
 def loglist(request):
   if request.method != "GET":
     raise SuspiciousOperation
-  if not request.user.is_authenticated():
-    raise PermissionDenied
   is_admin = check_is_admin(request.user.username)
   if not is_admin:
     raise PermissionDenied

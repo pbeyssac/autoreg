@@ -6,7 +6,6 @@ import io
 import six
 
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError, transaction
@@ -33,6 +32,7 @@ from autoreg.whois.db import check_handle_domain_auth, \
 
 
 from ..requests.models import Requests, rq_make_id
+from ..whois.decorators import login_active_required
 from ..whois.models import Contacts, Whoisdomains, check_is_admin
 from ..whois.views import registrant_form
 from .models import Zones, is_orphan, preempt
@@ -203,7 +203,7 @@ def checksoa(request, domain):
                                content_type="text/plain")
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_active_required
 def domainds(request, fqdn):
   """Show/edit DNSSEC DS record(s) for domain"""
   if fqdn != fqdn.lower():
@@ -349,8 +349,9 @@ def _adopt_orphan(request, dbc, fqdn, form):
     vars['msg'] = errmsg
   return render(request, "dns/orphan.html", vars)
 
+
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_active_required
 def domainns(request, fqdn=None):
   """Show/edit record(s) for domain"""
   if fqdn and fqdn != fqdn.lower():
@@ -509,7 +510,7 @@ def domainns(request, fqdn=None):
 
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_active_required
 def special(request):
   """Special actions on domain"""
   handle = request.user.username.upper()

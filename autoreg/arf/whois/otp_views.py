@@ -7,7 +7,6 @@ from django import forms
 from django.db.utils import IntegrityError
 from django.conf import settings
 import django.contrib.auth
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
@@ -24,6 +23,7 @@ from autoreg.conf import FROMADDR
 
 from ..logs.models import log
 from ..util import render_to_mail
+from .decorators import login_active_required
 from .models import Contacts
 from . import otp
 from .views import contactlogin_form
@@ -104,7 +104,7 @@ totplogin = login2fa
 # private pages
 
 @require_http_methods(["GET"])
-@login_required
+@login_active_required
 @cache_control(private=True, max_age=1)
 def totp(request):
   """Set timed one-time password"""
@@ -120,7 +120,7 @@ def totp(request):
     return render(request, 'whois/2fa-setup.html', vars)
 
 @require_http_methods(["GET"])
-@login_required
+@login_active_required
 @cache_control(private=True, max_age=10)
 def totpsetup1(request):
   """Display first setup page: recovery codes"""
@@ -143,7 +143,7 @@ def totpsetup1(request):
   return render(request, 'whois/2fa-setup1.html', vars)
 
 @require_http_methods(["POST"])
-@login_required
+@login_active_required
 @cache_control(private=True, max_age=10)
 def totpnewrecovery(request):
   """Generate and display a new set of recovery codes"""
@@ -184,7 +184,7 @@ def totpnewrecovery(request):
   return render(request, 'whois/2fa-setup1.html', vars)
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_active_required
 @cache_control(private=True, max_age=10)
 def totpsetup2(request):
   handle = request.user.username
@@ -218,7 +218,7 @@ def totpsetup2(request):
 
 
 @require_http_methods(["POST"])
-@login_required
+@login_active_required
 @cache_control(private=True, max_age=10)
 def totpclear(request):
   handle = request.user.username

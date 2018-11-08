@@ -18,7 +18,6 @@ from autoreg.whois.db import admin_login, country_from_iso
 import autoreg.whois.query as query
 import autoreg.zauth
 
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.urls import reverse, reverse_lazy
@@ -33,6 +32,7 @@ from django.views.decorators.http import require_http_methods
 
 from . import models
 from ..webdns.models import Admins, Zones
+from ..whois.decorators import login_active_required
 from ..whois.models import Contacts
 
 
@@ -126,7 +126,7 @@ def _rq1(request, r):
 #
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_active_required
 def rqedit(request, rqid):
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -153,7 +153,7 @@ def rqedit(request, rqid):
     return HttpResponseRedirect(reverse(rq, args=[rqid]))
 
 @require_http_methods(["GET", "POST"])
-@login_required
+@login_active_required
 def rq(request, rqid=None):
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -210,7 +210,7 @@ def rq(request, rqid=None):
   return render(request, 'requests/rqdisplay.html', vars)
 
 @require_http_methods(["GET"])
-@login_required
+@login_active_required
 def rqdom(request, domain):
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -229,7 +229,7 @@ def rqdom(request, domain):
   return render(request, 'requests/rqdisplay.html', vars)
 
 @require_http_methods(["GET"])
-@login_required
+@login_active_required
 def rqdisplaychecked(request):
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -246,7 +246,7 @@ def rqdisplaychecked(request):
   return render(request, 'requests/rqdisplay.html', vars)
 
 @require_http_methods(["GET"])
-@login_required
+@login_active_required
 def rqlistdom(request, domain=None):
   login = admin_login(connection.cursor(), request.user.username)
   if not login:
@@ -272,7 +272,7 @@ def rqlistdom(request, domain=None):
   return render(request, 'requests/rqlistdom.html', vars)
 
 @require_http_methods(["GET"])
-@login_required
+@login_active_required
 @cache_control(max_age=10)
 def rqlist(request, page='0'):
   login = admin_login(connection.cursor(), request.user.username)
@@ -386,7 +386,7 @@ def _rqexec(rq, out, za, admin_contact, login, action, reasonfield):
             file=out)
 
 @require_http_methods(["POST"])
-@login_required
+@login_active_required
 @transaction.non_atomic_requests
 def rqval(request):
   login = admin_login(connection.cursor(), request.user.username)
@@ -428,7 +428,7 @@ def rqval(request):
   return page
 
 @require_http_methods(["GET"])
-@login_required
+@login_active_required
 @cache_control(max_age=10)
 def rqloglist(request):
   is_admin = check_is_admin(request.user.username)
@@ -449,7 +449,7 @@ def rqloglist(request):
   return render(request, 'requests/rqloglist.html', vars)
 
 @require_http_methods(["GET"])
-@login_required
+@login_active_required
 def rqlogdisplay(request, id):
   is_admin = check_is_admin(request.user.username)
   if not is_admin:

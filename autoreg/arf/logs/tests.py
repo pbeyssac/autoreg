@@ -27,7 +27,8 @@ class LogTest(TestCase):
 
   def test_log_anon(self):
     r = self.c.get('/en/log')
-    self.assertEqual(403, r.status_code)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/login/?next=/en/log', r['Location'])
 
   def test_log_auth(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
