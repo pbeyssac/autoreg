@@ -23,7 +23,7 @@ class LogTest(TestCase):
 
   def test_log_post(self):
     r = self.c.post('/en/log')
-    self.assertEqual(400, r.status_code)
+    self.assertEqual(405, r.status_code)
 
   def test_log_anon(self):
     r = self.c.get('/en/log')

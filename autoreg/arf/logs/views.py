@@ -5,20 +5,19 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-from django.core.exceptions import SuspiciousOperation
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import render
+from django.views.decorators.http import require_http_methods
 
 
 from .models import Log
 from ..whois.decorators import login_active_required, admin_required
 
 
+@require_http_methods(["GET"])
 @login_active_required
 @admin_required
 def loglist(request):
-  if request.method != "GET":
-    raise SuspiciousOperation
   log = Log.objects.all().order_by('-date')
   paginator = Paginator(log, 100)
 
