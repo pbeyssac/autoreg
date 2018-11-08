@@ -25,6 +25,8 @@ INSERT INTO contacts (handle, name, email, addr, country, passwd, private, updat
 	VALUES ('TP1', 'Test Person', 'foobaremail@email.bla', 'test address\nline2\nline3\nFrance\n', 'FR',
 		'gAAAAABb4bhjNRKUVFgahnCxebm1GJA48oEYbipxz43pRQn-2QA_MNOB373VIEGwtNWyrDlJV0RwrKKB98Ng3yAPYrmgpQLW9EK58QHavTqk1A5VQADSyT79kdgdw3cs3Y4qOon9as1MtMhdR2ruD-8f8PbeSl5_hZC4n3oscqm_lNbsqT9j1dxgqCncloy6OeFb5iCeeG5cEtRPXVEXAmLZWZj_A7aCTg==',
 		true, '::1');
+INSERT INTO contacts (handle, name, email, addr, country, passwd, private)
+	VALUES ('TR1', 'Test Registrant', NULL, 'Test user address\nTest test\n', 'FR', NULL, true);
 
 -- Test account with a long handle
 INSERT INTO contacts (handle, name, email, addr, country, passwd, private, updated_by)
@@ -126,5 +128,14 @@ INSERT INTO rrs_hist (domain_id, ttl, rrtype_id, created_on, label, value, delet
 INSERT INTO rrs (domain_id, ttl, rrtype_id, created_on, label, value, id) VALUES (10, 600, 28, '2018-06-21 18:50:17.33+02', '', '2001:db8::1:4', 585542);
 INSERT INTO rrs (domain_id, ttl, rrtype_id, created_on, label, value, id) VALUES (10, 600, 1, '2018-06-21 13:55:51.75+02', '', '192.168.2.6', 585532);
 
+INSERT INTO whoisdomains (fqdn) VALUES ('H1.HISTORY.TESTS.EU.ORG');
+INSERT INTO domain_contact (whoisdomain_id, contact_id, contact_type_id)
+	VALUES ((SELECT id FROM whoisdomains WHERE fqdn = 'H1.HISTORY.TESTS.EU.ORG'),
+		(SELECT id FROM contacts WHERE handle='TU1'),
+		(SELECT id FROM contact_types WHERE name='technical'));
+INSERT INTO domain_contact (whoisdomain_id, contact_id, contact_type_id)
+	VALUES ((SELECT id FROM whoisdomains WHERE fqdn = 'H1.HISTORY.TESTS.EU.ORG'),
+		(SELECT id FROM contacts WHERE handle='TR1'),
+		(SELECT id FROM contact_types WHERE name='registrant'));
 
 ALTER SEQUENCE domains_id_seq RESTART with 56;

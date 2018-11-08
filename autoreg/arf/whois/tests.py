@@ -20,6 +20,8 @@ class AccountTest(TestCase):
   def setUp(self):
     cursor = connection.cursor()
 
+    self.pwtu1 = 'abcdefgh'
+
     # Minimal test account
     self.handle = suffixadd('TP1')
     self.pw = 'aaabbbcccddd'
@@ -90,6 +92,25 @@ class AccountTest(TestCase):
     self.assertEqual(302, r.status_code)
     self.assertEqual(b'', r.content)
     self.assertEqual('/en/login/?next=/en/contact/change/', r['Location'])
+  def test_contactchange_ko_2(self):
+    r = self.c.get('/en/registrant/edit/h1.history.tests.eu.org/')
+    self.assertEqual(302, r.status_code)
+    self.assertEqual(b'', r.content)
+    self.assertEqual('/en/login/?next=/en/registrant/edit/h1.history.tests.eu.org/', r['Location'])
+  def test_contactchange_ko_3(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/registrant/edit/h1.history.tests.eu.org')
+    self.assertEqual(301, r.status_code)
+    self.assertEqual('/en/registrant/edit/h1.history.tests.eu.org/', r['Location'])
+    self.assertEqual(b'', r.content)
+  def test_contactchange_ko_4(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    r = self.c.get('/en/registrant/edit/h1.history.tests.eu.org/')
+    self.assertEqual(403, r.status_code)
+  def test_contactchange_ko_5(self):
+    self.assertTrue(self.c.login(username='TU1', password=self.pwtu1))
+    r = self.c.get('/en/registrant/edit/ns.dnssec.tests.eu.org/')
+    self.assertEqual(400, r.status_code)
   def test_contactchangemail_ko(self):
     r = self.c.get('/en/contact/changemail/')
     self.assertEqual(302, r.status_code)
@@ -123,6 +144,10 @@ class AccountTest(TestCase):
   def test_contactchange_ok(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     r = self.c.get('/en/contact/change/')
+    self.assertEqual(200, r.status_code)
+  def test_contactchange_ok_2(self):
+    self.assertTrue(self.c.login(username='TU1', password=self.pwtu1))
+    r = self.c.get('/en/registrant/edit/h1.history.tests.eu.org/')
     self.assertEqual(200, r.status_code)
   def test_contactchangemail_ok(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
@@ -209,6 +234,22 @@ class AccountTest(TestCase):
     ct = Contacts.objects.get(handle=suffixstrip(self.handle))
     self.assertEqual('newemail@foobar.eu.org', ct.email)
     self.assertEqual(0, len(token.token_find(ct.id, "changemail")))
+  def test_contactchange_post_2(self):
+    self.assertTrue(self.c.login(username='TU1', password=self.pwtu1))
+    fields = { 'pn1': 'New Name',
+               'ad1': 'New address',
+               'ad2': 'New city',
+               'ad6': 'DE',
+               'private': True }
+    r = self.c.post('/en/registrant/edit/h1.history.tests.eu.org/', fields)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/domain/edit/h1.history.tests.eu.org/', r['Location'])
+
+    r = self.c.get('/en/registrant/edit/h1.history.tests.eu.org/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertEqual(True, 'name="ad1" value="New address"' in str(r.content))
+    self.assertEqual(True, 'name="ad2" value="New city"' in str(r.content))
+    self.assertEqual(True, 'option value="DE" selected>Germany</option>' in str(r.content))
 
   def test_get_del_405_anon(self):
     r = self.c.get('/en/domain/del/' + self.domain + '/')
