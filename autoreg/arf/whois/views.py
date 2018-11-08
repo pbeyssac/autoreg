@@ -23,7 +23,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import connection
 from django import forms
 from django.forms.widgets import PasswordInput
-from django.http import HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
@@ -44,7 +44,7 @@ from autoreg.conf import FROMADDR
 
 from ..util import render_to_mail
 from ..logs.models import log, Log
-from .decorators import login_active_required
+from .decorators import login_active_required, check_handle_fqdn_perms
 from .models import Whoisdomains,Contacts,Tokens,DomainContact, check_is_admin
 from . import otp
 from . import token
@@ -551,24 +551,19 @@ def domainlist(request, handle=None):
 
 @require_http_methods(["GET", "POST"])
 @login_active_required
+@check_handle_fqdn_perms
 @cache_control(private=True)
-def contactchange(request, registrantdomain=None):
+def contactchange(request, fqdn=None):
   """Contact or registrant modification page.
-     If registrant, registrantdomain contains the associated domain FQDN.
+     If registrant, fqdn contains the associated domain FQDN.
   """
-  if registrantdomain and registrantdomain != registrantdomain.lower():
+  if fqdn and fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(contactchange,
-                                        args=[registrantdomain.lower()]))
+                                        args=[fqdn.lower()]))
   handle = request.user.username
-  is_admin = check_is_admin(handle)
 
-  if registrantdomain:
-    # check handle is authorized on domain
-    if not check_handle_domain_auth(connection.cursor(),
-                                    suffixadd(handle), registrantdomain) \
-     and not is_admin:
-      return HttpResponseForbidden("Unauthorized")
-    dom = Whoisdomains.objects.get(fqdn=registrantdomain.upper())
+  if fqdn:
+    dom = Whoisdomains.objects.get(fqdn=fqdn.upper())
     cl = dom.domaincontact_set.filter(contact_type__name='registrant')
     if len(cl) != 1:
       raise SuspiciousOperation
@@ -580,8 +575,7 @@ def contactchange(request, registrantdomain=None):
   if request.method == "GET":
     c = Contacts.objects.get(handle=ehandle)
     initial = c.initial_form()
-    if registrantdomain:
-      fqdn = registrantdomain.lower()
+    if fqdn:
       vars['fqdn'] = fqdn
       idna = _to_idna(fqdn)
       vars['idna'] = idna
@@ -591,7 +585,7 @@ def contactchange(request, registrantdomain=None):
       vars['form'] = contactchange_form(initial=initial)
     return render(request, 'whois/contactchange.html', vars)
 
-  if registrantdomain:
+  if fqdn:
     form = registrant_form(request.POST)
   else:
     form = contactchange_form(request.POST)
@@ -649,9 +643,9 @@ def contactchange(request, registrantdomain=None):
                           " Please try again later.") }
         return render(request, 'whois/msgnext.html', vars)
       return HttpResponseRedirect(reverse(changemail))
-    if registrantdomain:
+    if fqdn:
       return HttpResponseRedirect(reverse(domainedit,
-                                          args=[registrantdomain]))
+                                          args=[fqdn]))
     else:
       vars['msg'] = _("Contact information changed successfully")
       return render(request, 'whois/msgnext.html', vars)
@@ -714,6 +708,7 @@ def domaineditconfirm(request, fqdn):
 
 @require_http_methods(["GET", "POST"])
 @login_active_required
+@check_handle_fqdn_perms
 @cache_control(private=True, max_age=10)
 def domainedit(request, fqdn):
   """Edit domain contacts"""
@@ -739,13 +734,6 @@ def domainedit(request, fqdn):
     raise SuspiciousOperation
   has_ns, has_ds, can_ds = domds[0][1], domds[0][7], domds[0][2]
   registry_hold, end_grace_period = domds[0][5], domds[0][6]
-
-  is_admin = check_is_admin(handle)
-
-  # check handle is authorized on domain
-  if not check_handle_domain_auth(connection.cursor(), suffixadd(handle), f) \
-     and not is_admin:
-    return HttpResponseForbidden(_("Unauthorized"))
 
   dbdom = Domain(connection.cursor(), did=dom.id)
   dbdom.fetch()
@@ -830,13 +818,11 @@ def domainedit(request, fqdn):
 
 @require_http_methods(["POST"])
 @login_active_required
+@check_handle_fqdn_perms
 @cache_control(private=True)
 def domaindelete(request, fqdn):
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaindelete, args=[fqdn.lower()]))
-  if not check_handle_domain_auth(connection.cursor(),
-                                  request.user.username, fqdn):
-    return HttpResponseForbidden("Unauthorized")
 
   dd = autoreg.dns.db.db(dbc=connection.cursor())
   dd.login('autoreg')
@@ -863,13 +849,11 @@ def domaindelete(request, fqdn):
 
 @require_http_methods(["POST"])
 @login_active_required
+@check_handle_fqdn_perms
 @cache_control(private=True)
 def domainundelete(request, fqdn):
   if fqdn != fqdn.lower():
     raise PermissionDenied
-  if not check_handle_domain_auth(connection.cursor(),
-                                  request.user.username, fqdn):
-    return HttpResponseForbidden(_("Unauthorized"))
 
   dd = autoreg.dns.db.db(dbc=connection.cursor())
   dd.login('autoreg')

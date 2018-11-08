@@ -35,7 +35,7 @@ urlpatterns = [
   url(r'^domain/undel/(?P<fqdn>[a-z0-9\.-]+)/$',
         whois_views.domainundelete,
         name='domainundelete'),
-  url(r'^registrant/edit/(?P<registrantdomain>[a-zA-Z0-9\.-]+)/$',
+  url(r'^registrant/edit/(?P<fqdn>[a-zA-Z0-9\.-]+)/$',
         whois_views.contactchange,
         name='contactchange'),
   # The following are special for lost password handling;

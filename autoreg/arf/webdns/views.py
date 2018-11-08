@@ -27,12 +27,11 @@ from autoreg.conf import HANDLESUFFIX, PREEMPTHANDLE
 import autoreg.dns.check
 import autoreg.dns.db
 import autoreg.dns.dnssec
-from autoreg.whois.db import check_handle_domain_auth, \
-  suffixadd, suffixstrip
+from autoreg.whois.db import suffixadd, suffixstrip
 
 
 from ..requests.models import Requests, rq_make_id
-from ..whois.decorators import login_active_required
+from ..whois.decorators import login_active_required, check_handle_fqdn_perms
 from ..whois.models import Contacts, Whoisdomains, check_is_admin
 from ..whois.views import registrant_form
 from .models import Zones, is_orphan, preempt
@@ -204,15 +203,12 @@ def checksoa(request, domain):
 
 @require_http_methods(["GET", "POST"])
 @login_active_required
+@check_handle_fqdn_perms
 def domainds(request, fqdn):
   """Show/edit DNSSEC DS record(s) for domain"""
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domainds, args=[fqdn.lower()]))
-  is_admin = check_is_admin(request.user.username)
   dbc = connection.cursor()
-  if not check_handle_domain_auth(dbc, request.user.username, fqdn) \
-      and not is_admin:
-    return HttpResponseForbidden(_("Unauthorized"))
   handle = request.user.username.upper()
   verbose = False
 
@@ -352,16 +348,13 @@ def _adopt_orphan(request, dbc, fqdn, form):
 
 @require_http_methods(["GET", "POST"])
 @login_active_required
+@check_handle_fqdn_perms
 def domainns(request, fqdn=None):
   """Show/edit record(s) for domain"""
   if fqdn and fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domainns, args=[fqdn.lower()]))
   handle = request.user.username.upper()
-  is_admin = check_is_admin(request.user.username)
   dbc = connection.cursor()
-  if fqdn and not check_handle_domain_auth(dbc, handle, fqdn) \
-      and not is_admin:
-    return HttpResponseForbidden(_("Unauthorized"))
 
   newdomain = (fqdn is None)
   contact = Contacts.objects.get(handle=handle)
@@ -431,6 +424,7 @@ def domainns(request, fqdn=None):
         errors['nsip1'] = [_('NS list is empty')]
       dd.set_nowrite(True)
 
+      is_admin = check_is_admin(request.user.username)
       if is_admin and form.is_valid() and form.cleaned_data['orphan']:
         return _adopt_orphan(request, dbc, fqdn, form)
 
