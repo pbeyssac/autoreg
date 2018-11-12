@@ -16,7 +16,7 @@ Created on: {% endblocktrans %}{{ whoisdomain.created_on|date:"o-m-d H:i" }}
 <tr>
 <td><A class="miniaction" HREF="{% url 'contactchange' fqdn %}">{% trans "Registrant" %}</A>
 <td><A class="miniaction" HREF="{% url 'domainns' fqdn %}">{% trans "Nameservers" %}</a>
-{% if is_admin %}<td><A class="miniaction" HREF="{% url 'domainhist' fqdn %}">{% trans "History" %}</a>{% endif %}
+<td><A class="miniaction" HREF="{% url 'domainhist' fqdn %}">{% trans "History" %}</a>
 <td>{% if has_ns and can_ds %}<A class="miniaction" HREF="{% url 'domainds' fqdn %}">DNSSEC</A>{% endif %}
 <td>{% if registry_hold and end_grace_period %}
 <form action="{% url 'domainundelete' fqdn %}" method="POST">
