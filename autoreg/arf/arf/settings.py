@@ -9,7 +9,13 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Make this unique, and don't share it with anybody.
 # This is used to generate hashes for session identifiers.
-SECRET_KEY = open('/usr/local/autoreg/arf/SECRET_KEY').read()[:-1]
+
+try:
+  SECRET_KEY = open('/usr/local/autoreg/arf/SECRET_KEY').read()[:-1]
+except PermissionError:
+  # only use in test/dev environements
+  SECRET_KEY = 'I-RgazBRR-HvI4k5xiU26eQg3MmGkUd8RDwY24zqvJA='
+
 
 DEBUG = False
 
