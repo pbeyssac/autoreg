@@ -526,7 +526,10 @@ def domainns(request, fqdn=None):
       if fqdn.endswith('.'):
         fqdn = fqdn[:-1]
 
-      fqdn = fqdn.lower().encode('idna').decode('ascii')
+      try:
+        fqdn = fqdn.lower().encode('idna').decode('ascii')
+      except UnicodeError:
+        errors['fqdn'] = [_('Invalid domain name')]
 
       th = request.POST.get('th').strip().upper()
 

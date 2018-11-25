@@ -132,6 +132,26 @@ class DomainNewTest(TestCase):
                       "NS\tA\t192.168.0.2\n",
                      r.zonerecord)
 
+  def test_domainns_request_3(self):
+    self.assertTrue(self.c.login(username=self.handle, password=self.pw))
+    fields = {
+      'fqdn': 'BLABLA..EU.ORG',
+      'pn1': 'John Snow',
+      'ad1': 'The North',
+      'ad2': '59000 Lenord',
+      'ad6': 'FR',
+      'private': 'on',
+      'th': suffixadd('TP1'),
+      'level': '1',
+      'f1': 'BLABLA.EU.ORG',
+      'i1': '192.168.0.1',
+      'f2': 'NS.BLABLA.EU.ORG',
+      'i2': '192.168.0.2'
+    }
+    r = self.c.post('/en/domain/new/', fields)
+    self.assertEqual(200, r.status_code)
+    self.assertTrue('Invalid domain name' in str(r.content))
+
   def test_domainns_changens_1(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))
     fields = {
