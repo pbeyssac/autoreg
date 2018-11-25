@@ -25,7 +25,7 @@ class AuthBackend:
     if login_valid:
       ct = ctlist[0]
       cryptpass = ct.passwd
-      if len(cryptpass) > 123:
+      if cryptpass and len(cryptpass) > 123:
         cryptpass = decrypt(cryptpass)
       if six.PY2:
         password = password.encode('UTF-8')

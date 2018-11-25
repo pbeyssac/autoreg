@@ -87,6 +87,10 @@ class AccountTest(TestCase):
     r = self.c.post('/en/logout/')
     self.assertEqual(302, r.status_code)
 
+  def test_login_ko_1(self):
+    # Django login on an old-style account
+    self.assertFalse(self.c.login(username=suffixadd('OA1'), password='no pass'))
+
   def test_contactchange_ko(self):
     r = self.c.get('/en/contact/change/')
     self.assertEqual(302, r.status_code)

@@ -39,6 +39,11 @@ INSERT INTO contacts (handle, name, email, addr, country, passwd, private, updat
 	VALUES ('UA1', 'Unvalidated Account', 'foobaremail4@email.bla', 'test address\nline2\nline3\nUnited Kingdom\n', 'UK',
 		'$6$sHB3M.T.MvSzm9aQ$2q6Sz7X3qKaUmOhVsQt2LFQ/abKZ.cRNXb6vZiZB7prBLFydtdDbGh/amfo5GN1q8QQd0hX0ArZHj63p9Mqgc1',
 		true, '::1', NULL);
+-- Old style (passwordless) account
+INSERT INTO contacts (handle, name, email, addr, country, passwd, private, updated_by, validated_on)
+	VALUES ('OA1', 'Old Account', 'foobaremail5@email.bla', 'test address\nline2\nline3\nBelgium\n', 'BE',
+		NULL,
+		true, '::1', NULL);
 
 
 -- Admin account
