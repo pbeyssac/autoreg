@@ -44,7 +44,7 @@ from autoreg.conf import FROMADDR
 
 from ..util import render_to_mail
 from ..logs.models import log, Log
-from .decorators import login_active_required, check_handle_fqdn_perms
+from .decorators import blackout, login_active_required, check_handle_fqdn_perms
 from .models import Whoisdomains,Contacts,Tokens,DomainContact, check_is_admin
 from . import otp
 from . import token
@@ -197,6 +197,7 @@ class chpass_form(forms.Form):
 #
 
 @require_http_methods(["GET", "POST"])
+@blackout
 def login(request):
   """Login page"""
   if request.method == "GET":
@@ -252,6 +253,7 @@ def login(request):
     return render(request, 'whois/login.html', vars)
 
 @require_http_methods(["GET", "POST"])
+@blackout
 def contactbydomain(request, fqdn=None):
   if request.method == "GET" and fqdn is None:
     f = contactbydomain_form()
@@ -270,6 +272,7 @@ def contactbydomain(request, fqdn=None):
     raise SuspiciousOperation
 
 @require_http_methods(["GET", "POST"])
+@blackout
 def makeresettoken(request, handle=None):
   """Password reset step 1: send a reset token to the contact email address"""
   if request.method == "GET":
@@ -316,6 +319,7 @@ def makeresettoken(request, handle=None):
   return render(request, 'whois/tokensent.html', vars)
 
 @require_http_methods(["GET", "POST"])
+@blackout
 def resetpass2(request, handle):
   """Password reset step 2:
      check provided reset token and force indicated password
@@ -353,6 +357,7 @@ def resetpass2(request, handle):
   return render(request, 'whois/passchanged.html', vars)
 
 @require_http_methods(["GET", "POST"])
+@blackout
 def contactcreate(request):
   """Contact creation page"""
   if request.user.is_authenticated() and request.user.is_active:
@@ -425,6 +430,7 @@ def contactcreate(request):
   return render(request, 'whois/contactcreate.html', vars)
 
 @require_http_methods(["GET", "POST"])
+@blackout
 def contactvalidate(request, handle, valtoken):
   """Contact validation page"""
   if request.user.is_authenticated():
@@ -460,6 +466,7 @@ def contactvalidate(request, handle, valtoken):
     return render(request, 'whois/msgnext.html', vars)
 
 @require_http_methods(["GET"])
+@blackout
 def domain(request, fqdn):
   """Whois from domain FQDN"""
   f = fqdn.upper()
@@ -479,6 +486,7 @@ def domain(request, fqdn):
 @require_http_methods(["GET", "POST"])
 @login_active_required
 @cache_control(private=True)
+@blackout
 def chpass(request):
   """Contact password change"""
   handle = request.user.username
@@ -520,6 +528,7 @@ def chpass(request):
 @require_http_methods(["GET"])
 @login_active_required
 @cache_control(private=True, max_age=10)
+@blackout
 def domainlist(request, handle=None):
   """Display domain list for a contact"""
   if handle is not None:
@@ -552,6 +561,7 @@ def domainlist(request, handle=None):
 @login_active_required
 @check_handle_fqdn_perms
 @cache_control(private=True)
+@blackout
 def contactchange(request, fqdn=None):
   """Contact or registrant modification page.
      If registrant, fqdn contains the associated domain FQDN.
@@ -655,6 +665,7 @@ def contactchange(request, fqdn=None):
 @require_http_methods(["GET", "POST"])
 @login_active_required
 @cache_control(private=True)
+@blackout
 def changemail(request):
   """Email change step 2:
      check provided change email token and force indicated email
@@ -694,6 +705,7 @@ def changemail(request):
 @require_http_methods(["POST"])
 @login_active_required
 @cache_control(private=True)
+@blackout
 def domaineditconfirm(request, fqdn):
   """Request confirmation for self-deletion of a contact"""
   nexturi = reverse(domainedit, args=[fqdn])
@@ -709,6 +721,7 @@ def domaineditconfirm(request, fqdn):
 @login_active_required
 @check_handle_fqdn_perms
 @cache_control(private=True, max_age=10)
+@blackout
 def domainedit(request, fqdn):
   """Edit domain contacts"""
   # list of shown and editable contact types
@@ -819,6 +832,7 @@ def domainedit(request, fqdn):
 @login_active_required
 @check_handle_fqdn_perms
 @cache_control(private=True)
+@blackout
 def domaindelete(request, fqdn):
   if fqdn != fqdn.lower():
     return HttpResponseRedirect(reverse(domaindelete, args=[fqdn.lower()]))
@@ -850,6 +864,7 @@ def domaindelete(request, fqdn):
 @login_active_required
 @check_handle_fqdn_perms
 @cache_control(private=True)
+@blackout
 def domainundelete(request, fqdn):
   if fqdn != fqdn.lower():
     raise PermissionDenied

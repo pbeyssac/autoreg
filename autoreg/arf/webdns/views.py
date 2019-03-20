@@ -32,7 +32,7 @@ from autoreg.whois.db import suffixadd, suffixstrip
 
 
 from ..requests.models import Requests, rq_make_id
-from ..whois.decorators import login_active_required, check_handle_fqdn_perms, admin_required
+from ..whois.decorators import blackout, login_active_required, check_handle_fqdn_perms, admin_required
 from ..whois.models import Contacts, Whoisdomains, check_is_admin
 from ..whois.views import registrant_form
 from .models import Zones, is_orphan, preempt
@@ -194,6 +194,7 @@ def _gen_checksoa_log(dbc, domain, handle, nsiplist=None, doit=False,
               (domain, contact.id, ''.join(rec), soac.errs, soac.warns))
   assert dbc.rowcount == 1
 
+@blackout
 def checksoa(request, domain):
   if request.method != 'GET':
     raise SuspiciousOperation
@@ -205,6 +206,7 @@ def checksoa(request, domain):
 @require_http_methods(["GET", "POST"])
 @login_active_required
 @check_handle_fqdn_perms
+@blackout
 def domainds(request, fqdn):
   """Show/edit DNSSEC DS record(s) for domain"""
   if fqdn != fqdn.lower():
@@ -435,15 +437,18 @@ def _domainhistdiff(request, fqdn, diff=False):
   vars = {'difflist': domhist, 'title': title, 'diff': diff, 'fqdn': fqdn}
   return render(request, 'dns/history.html', vars)
 
+@blackout
 def domainhist(request, fqdn):
   return _domainhistdiff(request, fqdn=fqdn, diff=False)
 
+@blackout
 def domaindiff(request, fqdn):
   return _domainhistdiff(request, fqdn=fqdn, diff=True)
 
 
 @require_http_methods(["GET"])
 @login_active_required
+@blackout
 def domainhistclearconfirm(request, fqdn):
   vars = {'fqdn': fqdn, 'posturi': reverse(domainhistclear, args=[fqdn])}
   return render(request,  'dns/histclearconfirm.html', vars)
@@ -452,6 +457,7 @@ def domainhistclearconfirm(request, fqdn):
 @require_http_methods(["POST"])
 @login_active_required
 @check_handle_fqdn_perms
+@blackout
 def domainhistclear(request, fqdn):
   dbc = connection.cursor()
 
@@ -466,6 +472,7 @@ def domainhistclear(request, fqdn):
 @require_http_methods(["GET", "POST"])
 @login_active_required
 @check_handle_fqdn_perms
+@blackout
 def domainns(request, fqdn=None):
   """Show/edit record(s) for domain"""
   if fqdn and fqdn != fqdn.lower():
@@ -626,6 +633,7 @@ def domainns(request, fqdn=None):
 @require_http_methods(["GET", "POST"])
 @login_active_required
 @admin_required
+@blackout
 def special(request):
   """Special actions on domain"""
   msg = ''
