@@ -28,7 +28,7 @@ try:
   ENCRYPT_KEY=open('/usr/local/autoreg/arf/ENCRYPT_KEY', 'rb').read()[:-1]
 except PermissionError:
   # default key for tests -- make sure this fails unless explicitly configured
-  ENCRYPT_KEY=os.environ['ENCRYPT_KEY'].encode()
+  ENCRYPT_KEY=os.environ.get('ENCRYPT_KEY', '').encode()
 
 
 # Postgres connect string
