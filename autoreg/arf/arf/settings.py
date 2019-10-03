@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 try:
   SECRET_KEY = open('/usr/local/autoreg/arf/SECRET_KEY').read()[:-1]
 except PermissionError:
-  # only use in test/dev environements
+  # only use in test/dev environments
   SECRET_KEY = 'I-RgazBRR-HvI4k5xiU26eQg3MmGkUd8RDwY24zqvJA='
 
 
