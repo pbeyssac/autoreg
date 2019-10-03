@@ -18,7 +18,7 @@ from .models import Contacts
 
 
 class AuthBackend:
-  def authenticate(self, username=None, password=None):
+  def authenticate(self, request, username=None, password=None):
     username = suffixstrip(username.upper())
     ctlist = Contacts.objects.filter(handle=username)
     login_valid = (len(ctlist) == 1)

@@ -347,7 +347,7 @@ Subject: password reset for EU.org contact TP1-FREE
 From: noreply@eu.org
 To: foobaremail@email.bla
 Date: .*
-Message-ID: <[^>]+@[^>]+>
+Message-ID: \s*<[^>]+@[^>]+>
 
 Hello,
 

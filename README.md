@@ -6,8 +6,8 @@ is the software that's been running most of *eu.org* since 1996.
 
 The current version requires:
 
-	* Python 3.6 (preferably) or 2.7
-	* Django >= 1.10
+	* Python 3.6
+	* Django >= 2.1
 	* BIND 9.10
 	* Postfix 3.2
 	* Postfix 3.2 (or another mail-transfer agent if you convert
@@ -17,7 +17,7 @@ The current version requires:
 
 *PRELIMINARY*, many bits are missing.
 
-Autoreg can be installed with `./setup.py` install, or from a pre-wrapped
+Autoreg can be installed with `./setup.py install`, or from a pre-wrapped
 package (Python egg, etc).
 
 Required Python modules are listed in `setup.py`

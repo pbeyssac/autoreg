@@ -202,7 +202,7 @@ def login(request):
   """Login page"""
   if request.method == "GET":
     next = request.GET.get('next', None)
-    if request.user.is_authenticated() and request.user.is_active:
+    if request.user.is_authenticated and request.user.is_active:
       return HttpResponseRedirect(reverse(domainlist))
     f = contactlogin_form()
     form = f.as_table()
@@ -212,7 +212,7 @@ def login(request):
   elif request.method == "POST":
     next = request.POST.get('next', reverse(domainlist))
     vars = {'next': next}
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
       #django.contrib.auth.logout(request)
       return HttpResponseRedirect(next)
     if not request.session.test_cookie_worked():
@@ -360,7 +360,7 @@ def resetpass2(request, handle):
 @blackout
 def contactcreate(request):
   """Contact creation page"""
-  if request.user.is_authenticated() and request.user.is_active:
+  if request.user.is_authenticated and request.user.is_active:
     handle = request.user.username
   else:
     handle = None
@@ -433,7 +433,7 @@ def contactcreate(request):
 @blackout
 def contactvalidate(request, handle, valtoken):
   """Contact validation page"""
-  if request.user.is_authenticated():
+  if request.user.is_authenticated:
     django.contrib.auth.logout(request)
 
   # XXX: strange bug causes a SIGSEGV if we use valtoken from URL parsing

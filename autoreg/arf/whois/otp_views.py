@@ -49,7 +49,7 @@ class otpconfirm_form(forms.Form):
 def login2fa(request):
   """Second login page for OTP code"""
   if request.method == "GET":
-    if request.user.is_authenticated() and request.user.is_active:
+    if request.user.is_authenticated and request.user.is_active:
       return HttpResponseRedirect(reverse('domainlist'))
     next = request.GET.get('next', None)
     #f = otplogin_form()
@@ -60,7 +60,7 @@ def login2fa(request):
 
   next = request.POST.get('next', reverse('domainlist'))
   vars = {'next': next}
-  if request.user.is_authenticated():
+  if request.user.is_authenticated:
     return HttpResponseRedirect(next)
   if not '1fa' in request.session:
     return HttpResponseRedirect(reverse('login'))
@@ -108,7 +108,7 @@ totplogin = login2fa
 @cache_control(private=True, max_age=1)
 def totp(request):
   """Set timed one-time password"""
-  if not request.user.is_authenticated() or not request.user.is_active:
+  if not request.user.is_authenticated or not request.user.is_active:
     return HttpResponseRedirect(reverse('login') + '?next=%s' % request.path)
   handle = request.user.username
   vars = {}

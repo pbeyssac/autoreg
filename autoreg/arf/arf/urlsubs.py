@@ -1,7 +1,7 @@
 # $Id$
 
-from django.conf.urls import include, url
 from django.contrib import admin
+from django.urls import path, re_path
 
 import autoreg.arf.logs.views as logs_views
 import autoreg.arf.requests.views as requests_views
@@ -11,87 +11,87 @@ import autoreg.arf.whois.views as whois_views
 
 
 urlpatterns = [
-  url(r'^$', whois_views.domainlist, name='domainlist'),
-  url(r'^login/$', whois_views.login, name='login'),
-  url(r'^logout/$', whois_views.logout, name='logout'),
-  url(r'^contact/change/$', whois_views.contactchange, name='contactchange'),
-  url(r'^contact/changemail/$', whois_views.changemail),
-  url(r'^contact/chpass/$', whois_views.chpass, name='chpass'),
-  url(r'^2fa/login/$', otp_views.totplogin, name='login2fa'),
-  url(r'^2fa/$', otp_views.totp, name='2fa'),
-  url(r'^2fa/set/1$', otp_views.totpsetup1, name='2fa-setup1'),
-  url(r'^2fa/set/2$', otp_views.totpsetup2, name='2fa-setup2'),
-  url(r'^2fa/clear$', otp_views.totpclear, name='2fa-clear'),
-  url(r'^2fa/newrecovery$', otp_views.totpnewrecovery, name='2fa-newrecovery'),
-  url(r'^domain/list/(?P<handle>[A-Z0-9]+)$', whois_views.domainlist,
+  path('', whois_views.domainlist, name='domainlist'),
+  path('login/', whois_views.login, name='login'),
+  path('logout/', whois_views.logout, name='logout'),
+  path('contact/change/', whois_views.contactchange, name='contactchange'),
+  path('contact/changemail/', whois_views.changemail),
+  path('contact/chpass/', whois_views.chpass, name='chpass'),
+  path('2fa/login/', otp_views.totplogin, name='login2fa'),
+  path('2fa/', otp_views.totp, name='2fa'),
+  path('2fa/set/1', otp_views.totpsetup1, name='2fa-setup1'),
+  path('2fa/set/2', otp_views.totpsetup2, name='2fa-setup2'),
+  path('2fa/clear', otp_views.totpclear, name='2fa-clear'),
+  path('2fa/newrecovery', otp_views.totpnewrecovery, name='2fa-newrecovery'),
+  re_path(r'^domain/list/(?P<handle>[A-Z0-9]+)$', whois_views.domainlist,
         name='domainlist'),
-  url(r'^domain/edit/(?P<fqdn>[a-zA-Z0-9\.-]+)/$', whois_views.domainedit,
+  re_path(r'^domain/edit/(?P<fqdn>[a-zA-Z0-9\.-]+)/$', whois_views.domainedit,
         name='domainedit'),
-  url(r'^domain/edit/confirm/(?P<fqdn>[a-zA-Z0-9\.-]+)/$',
+  re_path(r'^domain/edit/confirm/(?P<fqdn>[a-zA-Z0-9\.-]+)/$',
         whois_views.domaineditconfirm),
-  url(r'^domain/del/(?P<fqdn>[a-z0-9\.-]+)/$',
+  re_path(r'^domain/del/(?P<fqdn>[a-z0-9\.-]+)/$',
         whois_views.domaindelete,
         name='domaindelete'),
-  url(r'^domain/undel/(?P<fqdn>[a-z0-9\.-]+)/$',
+  re_path(r'^domain/undel/(?P<fqdn>[a-z0-9\.-]+)/$',
         whois_views.domainundelete,
         name='domainundelete'),
-  url(r'^registrant/edit/(?P<fqdn>[a-zA-Z0-9\.-]+)/$',
+  re_path(r'^registrant/edit/(?P<fqdn>[a-zA-Z0-9\.-]+)/$',
         whois_views.contactchange,
         name='contactchange'),
   # The following are special for lost password handling;
   # putting these under /contact/... is not quite correct as they are
   # not private.
-  url(r'^contact/create/$', whois_views.contactcreate, name='contactcreate'),
-  url(r'^contact/reset/$', whois_views.makeresettoken,
+  path('contact/create/', whois_views.contactcreate, name='contactcreate'),
+  path('contact/reset/', whois_views.makeresettoken,
         name='makeresettoken'),
-  url(r'^contact/reset/(?P<handle>[A-Z0-9]+)$', whois_views.makeresettoken,
+  re_path(r'^contact/reset/(?P<handle>[A-Z0-9]+)$', whois_views.makeresettoken,
         name='makeresettoken'),
-  url(r'^contact/doreset/(?P<handle>[A-Z0-9]+)/$', whois_views.resetpass2),
-  url(r'^contact/validate/(?P<handle>[A-Z0-9]+)/(?P<valtoken>[a-zA-Z0-9]+)/$',
+  re_path(r'^contact/doreset/(?P<handle>[A-Z0-9]+)/$', whois_views.resetpass2),
+  re_path(r'^contact/validate/(?P<handle>[A-Z0-9]+)/(?P<valtoken>[a-zA-Z0-9]+)/$',
         whois_views.contactvalidate),
-  url(r'^contact/bydom$', whois_views.contactbydomain,
+  path('contact/bydom', whois_views.contactbydomain,
         name='contactbydomain'),
-  url(r'^contact/bydom/(?P<fqdn>[a-zA-Z0-9\.-]+)$',
+  re_path(r'^contact/bydom/(?P<fqdn>[a-zA-Z0-9\.-]+)$',
         whois_views.contactbydomain)
 ]
 urlpatterns += [
-  url(r'^log$', logs_views.loglist, name='loglist')
+  path('log', logs_views.loglist, name='loglist')
 ]
 urlpatterns += [
-  url(r'^rq/(?P<rqid>[a-z0-9-]+)$', requests_views.rq, name='rq'),
-  url(r'^rq$', requests_views.rq, name='rq'),
-  url(r'^rqe/(?P<rqid>[a-z0-9-]+)$', requests_views.rqedit, name='rqedit'),
-  url(r'^rqd/(?P<domain>[a-z0-9\.A-Z-]+)$', requests_views.rqdom,
+  re_path(r'^rq/(?P<rqid>[a-z0-9-]+)$', requests_views.rq, name='rq'),
+  path('rq', requests_views.rq, name='rq'),
+  re_path(r'^rqe/(?P<rqid>[a-z0-9-]+)$', requests_views.rqedit, name='rqedit'),
+  re_path(r'^rqd/(?P<domain>[a-z0-9\.A-Z-]+)$', requests_views.rqdom,
         name='rqdom'),
-  url(r'^r/$', requests_views.rqlist, name='rqlist'),
-  url(r'^r/(?P<page>[0-9]+)$', requests_views.rqlist, name='rqlist'),
-  url(r'^rd$', requests_views.rqlistdom),
-  url(r'^rd/(?P<domain>[a-z0-9\.A-Z-]+)$', requests_views.rqlistdom),
-  url(r'^rl$', requests_views.rqloglist, name='rqloglist'),
-  url(r'^rl/(?P<id>[0-9]+)$', requests_views.rqlogdisplay, name='rqlogdisplay'),
-  url(r'^val$', requests_views.rqval, name='rqval')
+  path('r/', requests_views.rqlist, name='rqlist'),
+  path('r/<int:page>', requests_views.rqlist, name='rqlist'),
+  path('rd', requests_views.rqlistdom),
+  re_path(r'^rd/(?P<domain>[a-z0-9\.A-Z-]+)$', requests_views.rqlistdom),
+  path('rl', requests_views.rqloglist, name='rqloglist'),
+  path('rl/<int:id>', requests_views.rqlogdisplay, name='rqlogdisplay'),
+  path('val', requests_views.rqval, name='rqval')
 ]
 urlpatterns += [
   # first line for empty domain (root zone)
-  url(r'^soa/(?P<domain>)$', webdns_views.checksoa),
-  url(r'^soa/(?P<domain>[a-z0-9\.A-Z-]+)$', webdns_views.checksoa),
-  url(r'^ds/(?P<fqdn>[a-z0-9\.A-Z-]+)/$', webdns_views.domainds,
+  re_path(r'^soa/(?P<domain>)$', webdns_views.checksoa),
+  re_path(r'^soa/(?P<domain>[a-z0-9\.A-Z-]+)$', webdns_views.checksoa),
+  re_path(r'^ds/(?P<fqdn>[a-z0-9\.A-Z-]+)/$', webdns_views.domainds,
         name='domainds'),
-  url(r'^ns/(?P<fqdn>[a-z0-9\.A-Z-]+)/$', webdns_views.domainns,
+  re_path(r'^ns/(?P<fqdn>[a-z0-9\.A-Z-]+)/$', webdns_views.domainns,
         name='domainns'),
-  url(r'^domain/new/$', webdns_views.domainns,
+  path('domain/new/', webdns_views.domainns,
         name='domainns'),
-  url(r'^domain/hist/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domainhist,
+  re_path(r'^domain/hist/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domainhist,
         name='domainhist'),
-  url(r'^domain/diff/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domaindiff,
+  re_path(r'^domain/diff/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domaindiff,
         name='domaindiff'),
-  url(r'^domain/histclear/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domainhistclear,
+  re_path(r'^domain/histclear/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domainhistclear,
         name='domainhistclear'),
-  url(r'^domain/histclear/confirm/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domainhistclearconfirm,
+  re_path(r'^domain/histclear/confirm/(?P<fqdn>[a-z0-9\.-]+)$', webdns_views.domainhistclearconfirm,
         name='domainhistclearconfirm'),
-  url(r'^special/$', webdns_views.special, name='special'),
+  path('special/', webdns_views.special, name='special'),
 ]
 urlpatterns += [
   # Uncomment this for admin:
-  url(r'^admin/', include(admin.site.urls))
+  path('admin/', admin.site.urls)
 ]
