@@ -109,6 +109,7 @@ class RqViewsTest(TestCase):
     webmodels.AdminZone(zone_id=self.zone, admin_id=self.admin).save()
     self.assertTrue(self.c.login(username=self.admin_handle, password=self.pw3))
     r = self.c.get('/en/rq/' + self.req.id)
+    self.assertTrue('<pre class="whoisdisplay">person:' in str(r.content))
     self.assertEqual(200, r.status_code)
 
   def test_rqedit_get_ko_1(self):
