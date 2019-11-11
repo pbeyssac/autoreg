@@ -15,7 +15,7 @@ DNSSEC_KEYGEN="/usr/local/sbin/dnssec-keygen"
 
 keyfilename = re.compile('^K([a-z0-9\.-]+)\.\+(\d{3})\+(\d{5}).key$')
 keytimestamp = re.compile('^;\s*(Created|Publish|Activate|Revoke|Inactive|Delete):\s*(\d{14})\s+')
-keyrr = re.compile('^([a-z0-9\.-]+)\.\s+(IN\s+|)DNSKEY\s+(\d+)\s+(\d+)\s+(\d+)\s+', re.IGNORECASE)
+keyrr = re.compile('^([a-z0-9\.-]+)\.\s+(?:\d+\s+)?(IN\s+|)DNSKEY\s+(\d+)\s+(\d+)\s+(\d+)\s+', re.IGNORECASE)
 mktime_offset = time.mktime((1970, 1, 1, 0, 0, 0, 0, 0, 0))
 
 def time_to_ymd(t):
