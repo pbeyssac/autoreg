@@ -73,6 +73,7 @@ def main():
   activate = {}
   active = []
   publish = []
+  abort = False
 
   year, month, day, h, m, s, wd, yd, dst = time.gmtime()
   nowu = time.time()
@@ -101,6 +102,10 @@ def main():
       else:
         g = m.groups()
         keytimes[g[0]] = g[1]
+    if 'flags' not in keytimes:
+      print("%s: unrecognized record (can't find DNSKEY flags), aborting" % f)
+      abort = True
+      break
     if keytimes['flags'] & 1:
       # Key is a KSK
       ksk = True
@@ -148,8 +153,9 @@ def main():
         publish.append((dom, algo, keyid))
     domains[dom][algo, keyid] = keytimes
 
-  print("Active:", active)
-  print("Publish:", publish)
+  if not abort:
+    print("Active:", active)
+    print("Publish:", publish)
 
   sys.exit(0)
 
