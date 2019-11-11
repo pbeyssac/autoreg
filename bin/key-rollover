@@ -137,7 +137,7 @@ def main():
         cmd = DNSSEC_SETTIME + " -I%s -D%s %s" % (oldina, olddel, keyname)
         if not dryrun:
           os.system(cmd)
-        cmd = DNSSEC_KEYGEN + " -i%d -S %s" % (prepub_duration, keyname)
+        cmd = DNSSEC_KEYGEN + " -i%d -L%d -S %s" % (prepub_duration, dnskey_ttl, keyname)
         if not dryrun:
           os.system(cmd)
     elif keytimes['Inactive'] > now:
