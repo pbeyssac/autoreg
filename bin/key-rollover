@@ -31,20 +31,14 @@ def ymd_to_time(s):
 
 def main():
   max_zone_ttl = 86400
-  # -d
-  dnskey_ttl = 86400
-  # -r
-  reload_margin = 43200
-  # -g
-  keygen_margin = 2*86400
-  # -I
-  zsk_lifetime = 20*86400
-  # -i
-  prepub_duration = 2*86400
-  # -D
-  postpub_duration = max_zone_ttl
-  # -a
-  zsk_rollover_algo = 8
+  dnskey_ttl = 86400     # -d
+  reload_margin = 43200  # -r
+  keygen_margin = 86400  # -g
+
+  zsk_lifetime = 20*86400          # -I
+  prepub_duration = 2*86400        # -i
+  postpub_duration = max_zone_ttl  # -D
+  zsk_rollover_algo = 8            # -a
 
   dryrun = False
 
