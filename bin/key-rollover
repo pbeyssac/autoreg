@@ -31,8 +31,8 @@ def ymd_to_time(s):
 
 def main():
   max_zone_ttl = 86400
-  dnskey_ttl = 86400     # -d
-  reload_margin = 43200  # -r
+  dnskey_ttl = 2*86400   # -d
+  reload_margin = 1800   # -r
   keygen_margin = 86400  # -g
 
   zsk_lifetime = 20*86400          # -I
