@@ -10,6 +10,8 @@
 AZ=/usr/local/bin/access-zone
 # The directory where "master" zone files are located
 DEST=/etc/namedb/autoreg
+# Key directory
+KEYS=$DEST/keys
 # Command to reload the nameserver. Used only if option -r is provided.
 NDC=/usr/local/sbin/rndc
 # DNS Zone signing
@@ -86,7 +88,7 @@ do
 			cd $DEST
 			rm -f $i.signed.old
 			ln $i.signed $i.signed.old
-			if $SIGNZONE -QR -DS -3 fadaf001 -O full -j432000 -o $i -f $i.signed $i.DNSSEC; then
+			if $SIGNZONE -QR -DS -3 fadaf001 -O full -j432000 -o $i -K $KEYS -f $i.signed $i.DNSSEC; then
 			    grep -v '^;' $i.signed | sort > $i.signed.sorted
 			    mv $i.signed.sorted $i.signed
 			    diff -u $i.signed.old $i.signed
