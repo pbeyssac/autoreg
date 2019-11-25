@@ -516,6 +516,18 @@ H1	600	A	192.168.2.6
 	600	AAAA	2001:db8::1:4
 """,
       v)
+  def test_2(self):
+    out = io.StringIO()
+    os.environ['USER'] = 'autoreg'
+    autoreg.dns.access.main(['access-zone', '-R', '-acat', 'HISTORY.TESTS.EU.ORG'], outfile=out)
+    v = out.getvalue()
+    self.assertEqual("""; zone name=HISTORY.TESTS.EU.ORG
+HISTORY.TESTS.EU.ORG.	259200	IN	SOA	NS.EU.ORG hostmaster.eu.org 2007110600 3600 1800 604800 259200
+H1.HISTORY.TESTS.EU.ORG.	600	IN	A	192.168.2.6
+H1.HISTORY.TESTS.EU.ORG.	600	IN	AAAA	2001:db8::1:4
+HISTORY.TESTS.EU.ORG.	259200	IN	SOA	NS.EU.ORG hostmaster.eu.org 2007110600 3600 1800 604800 259200
+""",
+      v)
 
 
 class TestAccessShow(unittest.TestCase):

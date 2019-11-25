@@ -39,6 +39,7 @@ domain list for better performance.
 -d: in 'modify', 'addrr', 'delrr', 'show': apply both on the domain
     and the parent zone.
 -D: print dynamic update (experimental)
+-R: for 'cat', raw (dig) style output for easier parsing
 -r: reverse (chronological mode) for showhistory
 -u: username, used to check access permissions with respect to the
     zone permissions. Defaults to USER environment variable.
@@ -103,13 +104,13 @@ def errexit(msg, args):
 
 def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   try:
-      opts, args = getopt.getopt(argv[1:], "a:cdDirst:u:Uz:")
+      opts, args = getopt.getopt(argv[1:], "a:cdDirRst:u:Uz:")
   except getopt.GetoptError:
       usage()
       sys.exit(1)
 
   action, type, zone = None, None, None
-  dyn, keepds, diff = False, False, False
+  dyn, keepds, diff, digstyle = False, False, False, False
   nowrite, internal, deleg, forceincr = False, False, False, False
   rev = True
   user = os.getenv('USER', None)
@@ -125,6 +126,8 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
         internal = True
       elif o == "-r":
         rev = False
+      elif o == "-R":
+        digstyle = True
       elif o == "-t":
         type = a.upper()
       elif o == "-u":
@@ -250,7 +253,7 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
         if dyn:
           dd.dyn.print()
     elif action == 'cat':
-      dd.cat(domain, outfile=outfile)
+      dd.cat(domain, digstyle=digstyle, outfile=outfile)
     elif action == 'soa':
       (updated, serial) = dd.soa(domain, forceincr)
       if not updated:

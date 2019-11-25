@@ -120,14 +120,11 @@ class _Zone:
         if self._dbc.rowcount == 1: return
         assert self._dbc.rowcount == 0
         raise AccessError(AccessError.ILLRR, rrtype, zid)
-    def cat(self, outfile=sys.stdout):
+    def cat(self, digstyle=False, outfile=sys.stdout):
         """Output zone file."""
         print("; zone name=%s" % (self.name,), file=outfile)
-        if self._ttl is not None: print('$TTL', self._ttl, file=outfile)
-        print("@\tSOA\t%s %s %d %d %d %d %d" %
-            (self._soaprimary, self._soaemail, self._soaserial,
-             self._soarefresh, self._soaretry,
-             self._soaexpires, self._soaminimum), file=outfile)
+        if self._ttl is not None and not digstyle:
+            print('$TTL', self._ttl, file=outfile)
 
         self._dbc.execute(
             'SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value '
@@ -137,32 +134,56 @@ class _Zone:
             'ORDER BY domains.name,rrs.label,rrtypes.label,rrs.value',
             (self.id,))
 
+        rrclass = 'IN\t' if digstyle else ''
+
         # Loop over returned rows, printing as we go.
-        t = self._dbc.fetchone()
-        lastlabel = '@'
+
+        # Synthesize SOA as first record
+        t = ('', '', None, 'SOA',
+             '%s %s %d %d %d %d %d'
+               % (self._soaprimary, self._soaemail, self._soaserial,
+                  self._soarefresh, self._soaretry, self._soaexpires,
+                  self._soaminimum))
+
+        # Keep a copy of SOA for last record if digstyle
+        soat = t
+        soadone = 0
+
+        lastlabel = None
         while t:
             (label, domain, ttl, typ, value) = t
             # "uncompress"
             value = redot_value(typ, value)
-            # prepare label
-            if label != '' and domain != '':
-                l = label + '.' + domain
-            elif label+domain == '':
-                l = self.name + '.'
+            tab = ''
+            if digstyle:
+                # label is FQDN + '.'
+                l = (label+'.' if label else '') + (domain+'.' if domain else '') + self.name + '.'
+                if len(l) < 8:
+                    tab = '\t\t'
+                elif len(l) < 16:
+                    tab = '\t'
+                ttl = str(ttl or self._ttl)+'\t'
             else:
-                l = label + domain
-            if l == self.name+'.':
-                l = '@'
-            if ttl is None: ttl = ''
-            else: ttl = str(ttl)+'\t'
-            # print line, removing label if possible
-            # for compactness and clarity
-            if l == lastlabel:
-                l = ''
-            else:
-                lastlabel = l
-            print("%s\t%s%s\t%s" % (l, ttl, typ, value), file=outfile)
+                # label is relative (zone name stripped out)
+                l = label + ('.' if label and domain else '') + domain
+                if l == '':
+                    l = '@'
+                if ttl is None: ttl = ''
+                else: ttl = str(ttl)+'\t'
+                # print line, removing label if possible
+                # for compactness and clarity
+                if l == lastlabel:
+                    l = ''
+                else:
+                    lastlabel = l
+            print("%s%s\t%s%s%s\t%s" % (l, tab, ttl, rrclass, typ, value), file=outfile)
+            if digstyle and t == soat:
+                soadone += 1
+                if soadone == 2:
+                    break
             t = self._dbc.fetchone()
+            if digstyle and t is None:
+                t = soat
     def lock(self):
         """Lock zone row for update."""
         assert self.id is not None
@@ -1128,11 +1149,11 @@ class db:
         (r, serial) = z.soa(forceincr, dyn=self.dyn)
         self.dyn.log()
         return r, serial
-    def cat(self, zone, outfile=sys.stdout):
+    def cat(self, zone, digstyle=False, outfile=sys.stdout):
         """Output zone file."""
         z = self._zl.zones[zone.upper()]
         z.fetch()
-        z.cat(outfile=outfile)
+        z.cat(digstyle=digstyle, outfile=outfile)
     def zonelist(self):
         """Return zone list."""
         return self._zl.get()
