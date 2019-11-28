@@ -6,13 +6,12 @@ is the software that's been running most of *eu.org* since 1996.
 
 The current version requires:
 
-	* Python 3.6
+	* Python >= 3.6
 	* Django >= 2.1
-	* BIND 9.10
-	* Postfix 3.2
-	* Postfix 3.2 (or another mail-transfer agent if you convert
+	* BIND >= 9.12
+	* Postfix >= 3.2 (or another mail-transfer agent if you convert
           postgres/postfix-handles.cf)
-	* Postgres >= 9.6
+	* Postgres >= 10
 	* a web server running WSGI
 
 *PRELIMINARY*, many bits are missing.
@@ -26,7 +25,13 @@ Required Python modules are listed in `setup.py`
 
 2. Create Unix userids for *autoreg* and *whois*
 
-3. Create a Postgres database, run `postgres/autoreg.schema` on it
+3. Create a Postgres database, run:
+	`psql $(database) < postgres/autoreg.schema`
+	`psql $(database) < postgres/init.sql`
+
+3b. Create ENCRYPT_KEY and SECRET_KEY
+	`python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())' > /usr/local/autoreg/arf/ENCRYPT_KEY`
+	`python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())' > /usr/local/autoreg/arf/SECRET_KEY`
 
 4. Configure a web server with WSGI.
 

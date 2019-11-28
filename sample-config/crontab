@@ -8,6 +8,7 @@
 
 # request processing
 */10	*	*	*	*	www	DJANGO_SETTINGS_MODULE=autoreg.arf.arf.settings /usr/local/bin/django-admin rqrun
+0	3	*	*	0	www	DJANGO_SETTINGS_MODULE=autoreg.arf.arf.settings /usr/local/bin/django-admin clearsessions
 # zone updates
 4,19,34,49	*	*	*	*	autoreg /usr/local/autoreg/bin/soa -c -r -A
 # antispam mail handle seed
