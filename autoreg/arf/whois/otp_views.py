@@ -230,7 +230,7 @@ def totpclear(request):
 
   form = otpconfirm_form(request.POST)
   pw = request.POST.get('otp', '')
-  if form.is_valid() and otp.totp_check(pw, cotp.secret):
+  if form.is_valid() and otp.totp_or_recovery(pw, cotp):
     cotp.delete()
     return HttpResponseRedirect(reverse(totp))
 

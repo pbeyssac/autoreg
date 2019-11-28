@@ -217,20 +217,21 @@ class OtpTestSetAccount(TestCase):
     self.assertTrue(otp.totp_is_active(suffixstrip(self.handle)))
 
   def test_2fa_deactivate_wrong1(self):
-    # try a code from the recovery list
+    # try a wrong code
     fields = {'otp': '000'}
     r = self.c.post('/en/2fa/clear', fields)
     self.assertEqual(200, r.status_code)
     self.assertTrue('Wrong code, please try again' in str(r.content))
     self.assertTrue(otp.totp_is_active(suffixstrip(self.handle)))
 
-  def test_2fa_deactivate_wrong2(self):
+  def test_2fa_deactivate_good_recovery(self):
     # try a code from the recovery list
     fields = {'otp': self.code_list[0]}
     r = self.c.post('/en/2fa/clear', fields)
-    self.assertEqual(200, r.status_code)
-    self.assertTrue('Wrong code, please try again' in str(r.content))
-    self.assertTrue(otp.totp_is_active(suffixstrip(self.handle)))
+    self.assertEqual(b'', r.content)
+    self.assertEqual(302, r.status_code)
+    self.assertEqual('/en/2fa/', r['Location'])
+    self.assertFalse(otp.totp_is_active(suffixstrip(self.handle)))
 
   def test_2fa_deactivate_good(self):
     fields = {'otp': pyotp.TOTP(self.secret).now()}
