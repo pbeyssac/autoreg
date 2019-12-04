@@ -209,7 +209,8 @@ def login(request):
     request.session.set_test_cookie()
     vars = { 'form': form, 'next': next }
     return render(request, 'whois/login.html', vars)
-  elif request.method == "POST":
+
+  if request.method == "POST":
     next = request.POST.get('next', reverse(domainlist))
     vars = {'next': next}
     if request.user.is_authenticated:
