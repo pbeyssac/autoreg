@@ -18,7 +18,16 @@ class TestCheckAllSoa(unittest.TestCase):
   def test1(self):
     os.environ['USER'] = 'autoreg'
     out = io.StringIO()
-    autoreg.dns.check.main_checkallsoa(file=out)
+    autoreg.dns.check.checkallsoa(['checkallsoa', 'HISTORY.TESTS.EU.ORG'], file=out)
+    self.assertTrue('HISTORY.TESTS.EU.ORG FAILED' in out.getvalue())
+    self.assertTrue('Error: empty name server list' in out.getvalue())
+  def test2(self):
+    os.environ['USER'] = 'autoreg'
+    out = io.StringIO()
+    autoreg.dns.check.checkallsoa(['checkallsoa', 'DNSSEC.TESTS.EU.ORG'], file=out)
+    self.assertTrue('Accepted IP for NS1.DNSSEC.TESTS.EU.ORG: 192.168.0.15' in out.getvalue())
+    self.assertTrue('NS from NS1.DNSSEC.TESTS.EU.ORG at 192.168.0.15: Error: Answer not authoritative' in out.getvalue())
+    self.assertTrue('SOA from NS1.DNSSEC.TESTS.EU.ORG at 192.168.0.15: Error: Answer not authoritative' in out.getvalue())
 
 class TestNewZone(unittest.TestCase):
   def test1(self):

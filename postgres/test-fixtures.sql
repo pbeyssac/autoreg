@@ -62,11 +62,41 @@ INSERT INTO domains (name, zone_id)
 	VALUES ('', (SELECT id FROM zones WHERE name='EU.ORG'));
 
 INSERT INTO domains (name, zone_id)
+	VALUES ('NS', (SELECT id FROM zones WHERE name='EU.ORG'));
+INSERT INTO domains (name, zone_id)
 	VALUES ('NS', (SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG'));
 
 INSERT INTO rrs (domain_id, rrtype_id, label, value)
-	VALUES ((SELECT id FROM domains WHERE name='NS'),
+	VALUES ((SELECT id FROM domains WHERE name=''
+                  AND zone_id=(SELECT id FROM zones WHERE name='EU.ORG')),
 		(SELECT id FROM rrtypes WHERE label='NS'), '', 'NS.EU.ORG');
+-- glue in EU.ORG
+-- NS.EU.ORG. A 192.168.0.15
+INSERT INTO rrs (domain_id, rrtype_id, label, value)
+	VALUES ((SELECT id FROM domains WHERE name=''
+                  AND zone_id=(SELECT id FROM zones WHERE name='EU.ORG')),
+		(SELECT id FROM rrtypes WHERE label='A'), 'NS', '192.168.0.15');
+
+INSERT INTO rrs (domain_id, rrtype_id, label, value)
+	VALUES ((SELECT id FROM domains WHERE name='NS'
+                  AND zone_id=(SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG')),
+		(SELECT id FROM rrtypes WHERE label='NS'), '', 'DNSSEC.TESTS.EU.ORG');
+INSERT INTO rrs (domain_id, rrtype_id, label, value)
+	VALUES ((SELECT id FROM domains WHERE name=''
+                  AND zone_id=(SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG')),
+		(SELECT id FROM rrtypes WHERE label='NS'), '', 'NS1.DNSSEC.TESTS.EU.ORG');
+-- glue in DNSSEC.TESTS.EU.ORG
+-- NS1.DNSSEC.TESTS.EU.ORG. A 192.168.0.15
+INSERT INTO rrs (domain_id, rrtype_id, label, value)
+	VALUES ((SELECT id FROM domains WHERE name=''
+                  AND zone_id=(SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG')),
+		(SELECT id FROM rrtypes WHERE label='A'), 'NS1', '192.168.0.15');
+-- NS1.DNSSEC.TESTS.EU.ORG. AAAA 2001:db8:4::1:1
+INSERT INTO rrs (domain_id, rrtype_id, label, value)
+	VALUES ((SELECT id FROM domains WHERE name=''
+                  AND zone_id=(SELECT id FROM zones WHERE name='DNSSEC.TESTS.EU.ORG')),
+		(SELECT id FROM rrtypes WHERE label='AAAA'), 'NS1', '192.168.0.15');
+
 INSERT INTO whoisdomains (fqdn) VALUES ('NS.DNSSEC.TESTS.EU.ORG');
 INSERT INTO domain_contact (whoisdomain_id, contact_id, contact_type_id)
 	VALUES ((SELECT id FROM whoisdomains WHERE fqdn = 'NS.DNSSEC.TESTS.EU.ORG'),

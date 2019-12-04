@@ -569,17 +569,23 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   return 0
 
 
-def main_checkallsoa(file=sys.stdout):
+def main_checkallsoa():
+  return checkallsoa(sys.argv)
+
+def checkallsoa(argv, file=sys.stdout):
   import io
   import os
-  import re
 
   import psycopg2
 
   import autoreg.conf
   import autoreg.dns.db
 
-  re_ns = re.compile('^\t+(?:\d+)?\t+NS\t+(\S+)\.')
+  if len(argv) > 1:
+    domlist = [dom.upper() for dom in argv[1:]]
+  else:
+    domlist = None
+
   dbh = psycopg2.connect(autoreg.conf.dbstring)
   dd = autoreg.dns.db.db(dbc=dbh.cursor(), nowrite=True)
   user = os.getenv('USER', None)
@@ -587,15 +593,14 @@ def main_checkallsoa(file=sys.stdout):
 
   exitcode = 0
   for zone in dd.zonelist():
-    z_out = io.StringIO()
-    dd.show(zone, zone, outfile=z_out)
+    if domlist and zone not in domlist:
+      continue
     infile = io.StringIO()
-    for line in z_out.getvalue().split('\n'):
-      if not line or line[0] == ';':
-        continue
-      m = re_ns.match(line)
-      if m:
-        print(m.groups()[0], file=infile)
+    for t in dd.get_ns(zone, zone):
+        if t[2]:
+          print(t[0], t[2], file=infile)
+        else:
+          print(t[0], file=infile)
     infile.seek(0)
     outfile = io.StringIO()
     r = main(argv=['check-ns', '-g', zone], infile=infile, outfile=outfile)

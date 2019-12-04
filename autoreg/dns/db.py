@@ -563,6 +563,41 @@ class _Domain:
         """List all resource records for domain."""
         self._print_rrs(self.gen_rrs(), outfile=outfile)
 
+    def get_ns(self, domglue=True, zoneglue=False):
+        """Return nameserver list:
+        If domglue is True, with all glue records in the same domain
+        If zoneglue is True, with all glue records in the same zone
+        """
+        if domglue or zoneglue:
+          s = ("SELECT rrs.value, addrtype, addrs.value FROM rrs"
+                 " LEFT OUTER JOIN (SELECT TRIM(LEADING '.'"
+                   " FROM REPLACE(rrs.label||'.'||domains.name||'.'||zones.name,'..','.'))"
+                   " AS fqdn, rrtypes.label AS addrtype, value"
+                   " FROM rrs, domains, zones, rrtypes"
+                   " WHERE zones.id=domains.zone_id"
+                   " AND rrs.domain_id=domains.id"
+                   " AND rrtypes.id = rrs.rrtype_id"
+                   " AND (rrs.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label='A')"
+                        " OR rrs.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label='AAAA'))"
+
+                   + (" AND domains.id=%s" if domglue else "") +
+
+                   ") AS addrs"
+                   " ON addrs.fqdn=rrs.value"
+               " WHERE rrs.domain_id=%s AND rrs.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label='NS')"
+               " ORDER BY rrs.value, addrtype DESC"
+              )
+          self._dbc.execute(s, (self.id, self.id) if domglue else (self.id,))
+          return [(t[0], t[1], t[2]) for t in self._dbc.fetchall()]
+
+        self._dbc.execute(
+          "SELECT rrs.value FROM domains,rrs "
+          "WHERE domains.id=%s AND domains.id=rrs.domain_id "
+          "AND rrs.label = '' "
+          "AND rrs.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label = 'NS') "
+          "ORDER BY rrs.value",
+          (self.id,))
+        return [t[0] for t in self._dbc.fetchall()]
     def gen_rrs(self, canon=False):
         """Generate all resource records for domain."""
         self._dbc.execute(
@@ -944,6 +979,12 @@ class db:
         self._check_login_perm(z.name)
         d.fetch()
         d.show(rrs_only=rrs_only, outfile=outfile)
+    def get_ns(self, domain, zone, domglue=True, zoneglue=False):
+        """Get NS list for domain."""
+        d, z = self._zl.find(domain, zone)
+        self._check_login_perm(z.name)
+        d.fetch()
+        return d.get_ns(domglue, zoneglue)
     def delete(self, domain, zone, override_internal=False,
                grace_days=DEFAULT_GRACE_DAYS):
         """Delete domain.
