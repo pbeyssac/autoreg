@@ -296,7 +296,7 @@ class SOAChecker(MultiResolver):
     self.qsoa = qsoa
     self.level = LEVEL_NS
     self.serial_log = []
-    self.dbh = None
+    self.dbh = dbh
 
   def set_level(self, level):
     """LEVEL_IP: check FQDNs/IP only
@@ -472,7 +472,7 @@ class SOAChecker(MultiResolver):
         self.errs += 1
 
     if self.dbh:
-      for ok, msg in handle_serial_stats(self.domain, self.serial_log, self.dbh, file):
+      for ok, msg in handle_serial_stats(self.domain, self.serial_log, self.dbh):
         yield True, msg
         if not ok:
           self.errs += 1

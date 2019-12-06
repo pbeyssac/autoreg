@@ -658,4 +658,4 @@ GRANT INSERT, SELECT ON TABLE log TO www, autoreg;
 GRANT INSERT, SELECT ON TABLE log_hist TO www;
 GRANT SELECT, UPDATE ON TABLE log_id_seq TO www, autoreg;
 GRANT INSERT, SELECT, UPDATE ON TABLE serial_server_log TO autoreg;
-GRANT SELECT, UPDATE ON TABLE serial_server_log_id_seq TO autoreg
+GRANT SELECT, UPDATE ON TABLE serial_server_log_id_seq TO autoreg;
