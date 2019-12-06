@@ -580,14 +580,14 @@ class _Domain:
                    " AND (rrs.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label='A')"
                         " OR rrs.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label='AAAA'))"
 
-                   + (" AND domains.id=%s" if domglue else "") +
+                   + (" AND domains.id=%s" if not zoneglue else "") +
 
                    ") AS addrs"
                    " ON addrs.fqdn=rrs.value"
                " WHERE rrs.domain_id=%s AND rrs.rrtype_id=(SELECT id FROM rrtypes WHERE rrtypes.label='NS')"
                " ORDER BY rrs.value, addrtype DESC"
               )
-          self._dbc.execute(s, (self.id, self.id) if domglue else (self.id,))
+          self._dbc.execute(s, (self.id, self.id) if not zoneglue else (self.id,))
           return [(t[0], t[1], t[2]) for t in self._dbc.fetchall()]
 
         self._dbc.execute(
