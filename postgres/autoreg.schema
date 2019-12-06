@@ -583,6 +583,22 @@ $trig_del_log$ LANGUAGE plpgsql;
 CREATE TRIGGER trig_del_log BEFORE DELETE ON log
 	FOR EACH ROW EXECUTE PROCEDURE trig_del_log();
 
+-- Monitoring
+CREATE TABLE serial_server_log (
+	id SERIAL PRIMARY KEY,
+	zone VARCHAR(255),	-- not a reference to the zones table to allow external zones
+	fqdn VARCHAR(255),
+	ip VARCHAR(40),
+	serial INTEGER,
+	first_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+	last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE (zone, ip, serial)
+);
+
+CREATE VIEW serial_log AS
+	SELECT zone, serial, MIN(first_seen), MAX(last_seen) FROM serial_server_log GROUP by zone, serial;
+
+
 -- Permissions on DNS database
 -- read-write
 GRANT INSERT,SELECT,UPDATE,DELETE ON TABLE rrs TO root, www, nobody, autoreg;
@@ -624,6 +640,7 @@ GRANT SELECT ON TABLE contacts, contacts_email, handle_secrets, whoisdomains, do
 GRANT SELECT ON TABLE contacts_email TO www, autoreg;
 GRANT SELECT ON TABLE iso3166_countries TO www, autoreg, whois;
 GRANT SELECT ON TABLE contacts, handle_secrets TO postfix;
+GRANT SELECT ON TABLE serial_log TO autoreg;
 
 -- Permissions on OTP
 GRANT INSERT, SELECT, UPDATE, DELETE ON otp TO autoreg, www;
@@ -640,3 +657,5 @@ GRANT INSERT ON TABLE requests_hist TO autoreg, www;
 GRANT INSERT, SELECT ON TABLE log TO www, autoreg;
 GRANT INSERT, SELECT ON TABLE log_hist TO www;
 GRANT SELECT, UPDATE ON TABLE log_id_seq TO www, autoreg;
+GRANT INSERT, SELECT, UPDATE ON TABLE serial_server_log TO autoreg;
+GRANT SELECT, UPDATE ON TABLE serial_server_log_id_seq TO autoreg

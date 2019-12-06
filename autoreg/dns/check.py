@@ -6,6 +6,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import datetime
 import re
 import socket
 import sys
@@ -16,6 +17,8 @@ import dns.message
 import dns.query
 import dns.rdatatype
 import dns.resolver
+
+import autoreg.conf
 
 #
 # Import Django i18n framework, if available and configured.
@@ -283,14 +286,17 @@ LEVEL_SOA = 2
 LEVEL_NS = 3
 
 class SOAChecker(MultiResolver):
-  def __init__(self, domain, nslist=[], manualip={}, nat={}):
+  def __init__(self, domain, nslist=[], manualip={}, nat={}, dbh=None):
     super(self.__class__, self).__init__(domain, nslist, manualip, nat)
     if not domain.endswith('.'):
       domain += '.'
+    self.domain = domain[:-1].upper()
     qsoa = dns.message.make_query(domain, 'SOA')
     qsoa.flags = 0
     self.qsoa = qsoa
     self.level = LEVEL_NS
+    self.serial_log = []
+    self.dbh = None
 
   def set_level(self, level):
     """LEVEL_IP: check FQDNs/IP only
@@ -299,14 +305,14 @@ class SOAChecker(MultiResolver):
     """
     self.level = level
 
-  def getsoa(self, server):
+  def getsoa(self, server, fqdn=None):
     """Send SOA query to server and wait for reply.
        Return master name and serial.
     """
     t1 = time.time()
     ok, r = sendquery(self.qsoa, server)
-    t = time.time()
-    t = (t - t1)*1000
+    t2 = time.time()
+    t = (t2 - t1)*1000
     if not ok:
       return None, r, t
     if (r.flags & dns.flags.AA) == 0:
@@ -321,13 +327,14 @@ class SOAChecker(MultiResolver):
       return None, _("Answer type mismatch"), t
     mastername = str(r.answer[0].items[0].mname).upper()
     serial = r.answer[0].items[0].serial
+    self.serial_log.append((self.domain, fqdn, server, serial, t2))
     return True, (mastername, serial), t
 
   def gen_soa(self):
     """Get SOA in turn from each IP in self.ips."""
     for resolved, fqdn, iplist in self.ips:
       for i in iplist:
-        ok, r, t = self.getsoa(i)
+        ok, r, t = self.getsoa(i, fqdn.lower())
         yield ok, fqdn, i, r, t
 
   def print_checks(self):
@@ -357,13 +364,14 @@ class SOAChecker(MultiResolver):
       serialsk = list(serials.keys())
       serialsk.sort()
       if serialsk[-1] - serialsk[0] < (1<<31):
+        # no serial number wraparound
         del serials[serialsk[-1]]
         values = []
         for f in serials.values():
           values.extend(f)
-        yield None, _("Servers not up to date: ") + ' '.join(values)
+        yield True, _("Servers not up to date: ") + ' '.join(values)
       else:
-        yield None, _("Some servers are not up to date!")
+        yield True, _("Some servers are not up to date!")
 
     yield True, ""
 
@@ -463,6 +471,12 @@ class SOAChecker(MultiResolver):
       if not ok:
         self.errs += 1
 
+    if self.dbh:
+      for ok, msg in handle_serial_stats(self.domain, self.serial_log, self.dbh, file):
+        yield True, msg
+        if not ok:
+          self.errs += 1
+
     if self.errs or self.warns:
       yield True, ""
     if self.errs:
@@ -511,7 +525,7 @@ class DNSKEYChecker(MultiResolver):
     return dnskey
 
 
-def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
+def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout, dbh=None):
   """Gets on stdin :
   1)    a domain name
   2)    lines giving, for each server, its fqdn and
@@ -557,7 +571,7 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
     domain = infile.readline()
     domain = domain[:-1]
 
-  soac = SOAChecker(domain, manualip, nat)
+  soac = SOAChecker(domain, manualip, nat, dbh=dbh)
 
   for ok, out in soac.main(file=infile, checkglue=checkglue):
     print(out, file=outfile)
@@ -569,6 +583,57 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   return 0
 
 
+def find_last_serial(serials):
+  """Try to find the likeliest latest serial."""
+  while len(serials) > 1:
+    s1 = serials[0]
+    s2 = serials[1]
+    d = s1 - s2
+    if d < 0:
+      d += 2 ** 32
+    if d < 2 ** 31:
+      # remove s2
+      serials = [serials[0]] + serials[2:]
+    else:
+      # remove s1
+      serials = serials[1:]
+  return serials[0]
+
+
+def handle_serial_stats(zone, stats, dbh):
+  """Handle serial stats: store in database, emit warnings if necessary."""
+  dbc = dbh.cursor()
+  for s in stats:
+    d = datetime.datetime.fromtimestamp(s[4], datetime.timezone.utc)
+    dbc.execute('INSERT INTO serial_server_log (zone, fqdn, ip, serial, first_seen, last_seen)'
+      ' VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT(zone, ip, serial) DO UPDATE SET last_seen = %s',
+      (s[0], s[1], s[2], s[3], d, d, d))
+    dbh.commit()
+
+  dbc.execute('SELECT * FROM '
+     '(SELECT serial, MIN(min) FROM serial_log WHERE zone=%(zone)s AND serial=ANY(%(serials)s)'
+     ' GROUP BY serial ORDER BY min LIMIT 1) AS min, '
+     '(SELECT serial, MAX(max) FROM serial_log WHERE zone=%(zone)s AND serial=ANY(%(serials)s)'
+     ' GROUP BY serial ORDER BY max DESC LIMIT 1) AS max',
+     {'zone': zone, 'serials': [s[3] for s in stats]})
+  t = dbc.fetchone()
+
+  if t is None:
+    # nothing in the database
+    return
+  smin, dmin, smax, dmax = t
+  if smin == smax or dmax - dmin <= datetime.timedelta(seconds=autoreg.conf.MAX_ZONE_AGE):
+    # same serial everywhere or small time delta between oldest and newest
+    return
+
+  slatest = find_latest_serial([s[3] for s in stats])
+  yield True, _("Zone %s: outdated copy (serial %d, dated %s, old %s, latest %s)"
+                % (zone, smin, dmin, dmax - dmin, slatest))
+  for s in stats:
+    if s[3] != smax:
+      yield None, _("Server %s (%s): %s serial %s") % (s[1], s[2], zone, s[3])
+
+
 def main_checkallsoa():
   return checkallsoa(sys.argv)
 
@@ -578,7 +643,6 @@ def checkallsoa(argv, file=sys.stdout):
 
   import psycopg2
 
-  import autoreg.conf
   import autoreg.dns.db
 
   if len(argv) > 1:
@@ -596,18 +660,20 @@ def checkallsoa(argv, file=sys.stdout):
     if domlist and zone not in domlist:
       continue
     infile = io.StringIO()
-    for t in dd.get_ns(zone, zone):
+    for t in dd.get_ns(zone, zone, zoneglue=True):
         if t[2]:
           print(t[0], t[2], file=infile)
         else:
           print(t[0], file=infile)
     infile.seek(0)
     outfile = io.StringIO()
-    r = main(argv=['check-ns', '-g', zone], infile=infile, outfile=outfile)
+    r = main(argv=['check-ns', '-g', zone], infile=infile, outfile=outfile, dbh=dbh)
+
     if r:
       print('****', zone, 'FAILED ****', file=file)
       print(outfile.getvalue(), end='', file=file)
       exitcode = 1
+
   return exitcode
 
 if __name__ == "__main__":

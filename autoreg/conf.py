@@ -24,6 +24,9 @@ SOA_MASTER='NS.EU.ORG'
 SOA_EMAIL='hostmaster.eu.org'
 ZONEFILES_DIR='/etc/namedb/autoreg'
 
+# Maximum zone age in seconds on older serial before autoreg.dns.check.SOAChecker() issues a warning
+MAX_ZONE_AGE = 720
+
 try:
   ENCRYPT_KEY=open('/usr/local/autoreg/arf/ENCRYPT_KEY', 'rb').read()[:-1]
 except PermissionError:

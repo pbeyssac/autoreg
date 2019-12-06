@@ -28,6 +28,16 @@ class TestCheckAllSoa(unittest.TestCase):
     self.assertTrue('Accepted IP for NS1.DNSSEC.TESTS.EU.ORG: 192.168.0.15' in out.getvalue())
     self.assertTrue('NS from NS1.DNSSEC.TESTS.EU.ORG at 192.168.0.15: Error: Answer not authoritative' in out.getvalue())
     self.assertTrue('SOA from NS1.DNSSEC.TESTS.EU.ORG at 192.168.0.15: Error: Answer not authoritative' in out.getvalue())
+  def test3(self):
+    out = io.StringIO()
+    zone = io.StringIO()
+    autoreg.dns.newzones.transfer(['importzone', '127.0.0.1', 'serial.tests.eu.org'],
+                                  outfile=out, zonefile=zone)
+    os.environ['USER'] = 'autoreg'
+    out = io.StringIO()
+    autoreg.dns.check.checkallsoa(['checkallsoa', 'SERIAL.TESTS.EU.ORG'], file=out)
+    print(out.getvalue())
+
 
 class TestNewZone(unittest.TestCase):
   def test1(self):
