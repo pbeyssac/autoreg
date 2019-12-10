@@ -72,11 +72,11 @@ def checkinternalfqdn(fqdn):
   """Check fully-qualified internal domain name for validity"""
   return _internal_valid_fqdn.match(fqdn)
 
-def sendquery(q, server):
+def sendquery(q, server, timeout=10):
   """Send DNS query q, in UDP then TCP, to server"""
   trytcp = False
   try:
-    r = dns.query.udp(q, server, timeout=10)
+    r = dns.query.udp(q, server, timeout=timeout)
   except dns.query.BadResponse:
     return None, _("BadResponse")
   except dns.query.UnexpectedSource:
@@ -90,7 +90,7 @@ def sendquery(q, server):
     return True, r
 
   try:
-    r = dns.query.tcp(q, server, timeout=10)
+    r = dns.query.tcp(q, server, timeout=timeout)
   except dns.query.BadResponse:
     return None, _("BadResponse")
   except dns.query.UnexpectedSource:
@@ -109,12 +109,13 @@ def undot_list(fqdnlist):
 
 
 class MultiResolver(object):
-  def __init__(self, domain, nslist=[], manualip={}, nat={}):
+  def __init__(self, domain, nslist=[], manualip={}, nat={}, timeout=10):
     self.res = dns.resolver.Resolver()
     self.domain = domain
     self.mastername = None
     self.manualip = manualip
     self.nat = nat
+    self.timeout = timeout
     if not domain.endswith('.'):
       domain += '.'
     qns = dns.message.make_query(domain, 'NS')
@@ -129,7 +130,7 @@ class MultiResolver(object):
        Return NS list.
     """
     t1 = time.time()
-    ok, r = sendquery(self.qns, server)
+    ok, r = sendquery(self.qns, server, timeout=self.timeout)
     t = time.time()
     t = (t - t1)*1000
     if not ok:
@@ -286,8 +287,8 @@ LEVEL_SOA = 2
 LEVEL_NS = 3
 
 class SOAChecker(MultiResolver):
-  def __init__(self, domain, nslist=[], manualip={}, nat={}, dbh=None):
-    super(self.__class__, self).__init__(domain, nslist, manualip, nat)
+  def __init__(self, domain, nslist=[], manualip={}, nat={}, timeout=10, dbh=None):
+    super(self.__class__, self).__init__(domain, nslist, manualip, nat, timeout=timeout)
     if not domain.endswith('.'):
       domain += '.'
     self.domain = domain[:-1].upper()
@@ -310,7 +311,7 @@ class SOAChecker(MultiResolver):
        Return master name and serial.
     """
     t1 = time.time()
-    ok, r = sendquery(self.qsoa, server)
+    ok, r = sendquery(self.qsoa, server, timeout=self.timeout)
     t2 = time.time()
     t = (t2 - t1)*1000
     if not ok:
@@ -487,8 +488,8 @@ class SOAChecker(MultiResolver):
 
 
 class DNSKEYChecker(MultiResolver):
-  def __init__(self, domain, nslist=[], manualip={}, nat={}):
-    super(self.__class__, self).__init__(domain, nslist, manualip, nat)
+  def __init__(self, domain, nslist=[], manualip={}, nat={}, timeout=10):
+    super(self.__class__, self).__init__(domain, nslist, manualip, nat, timeout=timeout)
     if not domain.endswith('.'):
       domain += '.'
     qdnskey = dns.message.make_query(domain, 'DNSKEY')
@@ -503,7 +504,7 @@ class DNSKEYChecker(MultiResolver):
     """Send DNSKEY query to server and wait for reply.
        Return answer.
     """
-    ok, r = sendquery(self.qdnskey, server)
+    ok, r = sendquery(self.qdnskey, server, timeout=self.timeout)
     if not ok:
       return []
     if (r.flags & dns.flags.AA) == 0:
