@@ -611,28 +611,24 @@ def handle_serial_stats(zone, stats, dbh):
       (s[0], s[1], s[2], s[3], d, d, d))
     dbh.commit()
 
-  dbc.execute('SELECT * FROM '
-     '(SELECT serial, MIN(min) FROM serial_log WHERE zone=%(zone)s AND serial=ANY(%(serials)s)'
-     ' GROUP BY serial ORDER BY min LIMIT 1) AS min, '
-     '(SELECT serial, MAX(max) FROM serial_log WHERE zone=%(zone)s AND serial=ANY(%(serials)s)'
-     ' GROUP BY serial ORDER BY max DESC LIMIT 1) AS max',
-     {'zone': zone, 'serials': [s[3] for s in stats]})
-  t = dbc.fetchone()
+  serials = [s[3] for s in stats]
+  slatest = find_last_serial(serials)
+  serials = [s for s in serials if s != slatest]
 
-  if t is None:
-    # nothing in the database
-    return
-  smin, dmin, smax, dmax = t
-  if smin == smax or dmax - dmin <= datetime.timedelta(seconds=autoreg.conf.MAX_ZONE_AGE):
-    # same serial everywhere or small time delta between oldest and newest
-    return
-
-  slatest = find_latest_serial([s[3] for s in stats])
-  yield True, _("Zone %s: outdated copy (serial %d, dated %s, old %s, latest %s)"
-                % (zone, smin, dmin, dmax - dmin, slatest))
+  dbc.execute(
+     'SELECT serial, MIN(min) FROM serial_log WHERE zone=%(zone)s AND serial=ANY(%(serials)s)'
+     ' GROUP BY serial ORDER BY min LIMIT 1',
+     {'zone': zone, 'serials': serials})
+  dnow = datetime.datetime.now()
+  for smin, dmin in dbc.fetchall():
+    if dnow - dmin <= datetime.timedelta(seconds=autoreg.conf.MAX_ZONE_AGE):
+      yield True, _("Zone %s: outdated copy (serial %d, dated %s)"
+                    % (zone, smin, dmin))
   for s in stats:
-    if s[3] != smax:
+    if s[3] != slatest:
       yield None, _("Server %s (%s): %s serial %s") % (s[1], s[2], zone, s[3])
+
+  return
 
 
 def main_checkallsoa():
