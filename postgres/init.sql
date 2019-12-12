@@ -10,6 +10,7 @@ INSERT INTO zones (name, minlen, maxlen, soaserial, soaprimary, soaemail) VALUES
 INSERT INTO rrtypes values (1, 'A');
 INSERT INTO rrtypes values (2, 'NS');
 INSERT INTO rrtypes values (5, 'CNAME');
+INSERT INTO rrtypes values (6, 'SOA');
 INSERT INTO rrtypes values (12, 'PTR');
 INSERT INTO rrtypes values (13, 'HINFO');
 INSERT INTO rrtypes values (15, 'MX');

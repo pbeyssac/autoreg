@@ -11,6 +11,13 @@ import io
 import sys
 import time
 
+
+import dns.message
+import dns.query
+import dns.tsigkeyring
+import dns.update
+
+
 import six
 
 # local modules
@@ -18,6 +25,9 @@ from autoreg.conf import DEFAULT_GRACE_DAYS, SOA_MASTER, SOA_EMAIL
 import autoreg.zauth as zauth
 from . import check
 from . import parser
+
+
+import traceback
 
 class DnsDbError(Exception):
     pass
@@ -62,6 +72,10 @@ class _Zone:
         self._dbc = dbc
         self.name = name
         self.id = id
+        self.fetched = None
+        self.dyn_key = None
+        self.dyn_algorithm = None
+        self.dyn_secret = None
     def set_updateserial(self):
         """Mark zone for serial update in SOA."""
         assert self.id is not None
@@ -84,7 +98,7 @@ class _Zone:
         self._updateserial = False
         self._dbc.execute('UPDATE zones SET soaserial=%s, updateserial=FALSE '
                           'WHERE id=%s', (serial,zid))
-        if dyn:
+        if dyn and forceincr:
           dyn.add('', self.name, self._ttl, 'SOA',
                   '%s %s %d %d %d %d %d' %
                   (self._soaprimary, self._soaemail,
@@ -96,8 +110,11 @@ class _Zone:
 
         Lock zone row for update if wlock is True.
         """
+        if self.fetched:
+            return
         q='SELECT id,ttl,soaserial,soarefresh,soaretry,soaexpires,' \
-          'soaminimum,soaprimary,soaemail,updateserial,minlen,maxlen ' \
+          'soaminimum,soaprimary,soaemail,updateserial,minlen,maxlen, ' \
+          'dyn_ip, dyn_key ' \
           'FROM zones WHERE name=%s'
         if wlock: q += ' FOR UPDATE'
         self._dbc.execute(q, (self.name,))
@@ -107,7 +124,8 @@ class _Zone:
         (self.id, self._ttl, self._soaserial,
          self._soarefresh,self._soaretry, self._soaexpires, self._soaminimum,
          self._soaprimary, self._soaemail, self._updateserial,
-         self.minlen, self.maxlen) = self._dbc.fetchone()
+         self.minlen, self.maxlen, self.dyn_ip, self.dyn_key) = self._dbc.fetchone()
+        self.fetched = True
     def checktype(self, rrtype):
         """Check rrtype is allowed in zone."""
         if rrtype is None: return
@@ -189,11 +207,21 @@ class _Zone:
         assert self.id is not None
         self._dbc.execute('SELECT NULL FROM zones WHERE id=%s FOR UPDATE',
                           (self.id,))
+    def get_key(self):
+        if not self.fetched:
+            self.fetch()
+        if self.dyn_key is not None and self.dyn_secret is None:
+            self._dbc.execute('SELECT algorithm, secret FROM keys WHERE name = %s',
+                              (self.dyn_key,))
+            self.dyn_algorithm, self.dyn_secret = self._dbc.fetchone()
+        return self.dyn_ip, self.dyn_key, self.dyn_algorithm, self.dyn_secret
 
 
 class DynamicUpdate(object):
-  def __init__(self):
+  def __init__(self, zonelist, dbc=None):
     self.clear()
+    self.zonelist = zonelist.zones
+    self._dbc = dbc
   def clear(self):
     self.masters = {}
     self.alist = {}
@@ -202,13 +230,13 @@ class DynamicUpdate(object):
       self.masters[zone] = master
     if zone not in self.alist:
       self.alist[zone] = []
-    self.alist[zone].append(('nxdomain', label, None, None, None))
+    self.alist[zone].append(('nxd', label, None, None, None))
   def yxdomain(self, label, zone, master):
     if master not in self.masters:
       self.masters[zone] = master
     if zone not in self.alist:
       self.alist[zone] = []
-    self.alist[zone].append(('yxdomain', label, None, None, None))
+    self.alist[zone].append(('yxd', label, None, None, None))
   def add(self, label, zone, ttl, typ, value, master):
     if master not in self.masters:
       self.masters[zone] = master
@@ -225,22 +253,22 @@ class DynamicUpdate(object):
         return
     else:
       # special case for ('del', '', None, None): need to
-      # explicitly delete NS records as they are
-      # not handled by default by the dynamic update
-      # protocol.
+      # explicitly delete NS records at zone apex as they are
+      # not handled by default by the dynamic update protocol.
+      # Source: RFC 2136, 3.4.2.3.
       if typ is None:
-        if ('del', label, None, 'NS', None) in self.alist[zone]:
-          return
-        self.alist[zone].append(('del', label, None, 'NS', value))
+        if ('del', label, None, 'NS', None) not in self.alist[zone]:
+          self.alist[zone].append(('del', label, None, 'NS', value))
       # fall through to add the other delete order
     if ('del', label, None, typ, None) in self.alist[zone]:
       return
     if ('del', label, None, typ, value) in self.alist[zone]:
       return
     self.alist[zone].append(('del', label, None, typ, value))
-  def log(self):
+  def execute(self):
     if not self.has_actions():
       return
+    self._store()
   def zone_has_actions(self, zone):
     actions = [cmd for cmd, label, ttl, typ, value in self.alist[zone]
                    if cmd == 'add' or cmd == 'del']
@@ -252,29 +280,150 @@ class DynamicUpdate(object):
       if self.zone_has_actions(zone):
         return True
     return False
-  def print(self, out=sys.stdout):
-    self._print(out)
-  def _print(self, out=sys.stdout):
+  def run_updates(self, outfile=sys.stdout, errout=sys.stderr, stdout=sys.stdout):
+    """Execute all pending transactions."""
+    self._dbc.execute("SELECT dyn_transaction.id, zones.name FROM dyn_transaction, zones"
+                      " WHERE executed_at IS NULL AND zones.id=dyn_transaction.zone_id"
+                      " ORDER BY dyn_transaction.id")
+    for trans_id, zone in self._dbc.fetchall():
+      print(time.strftime('%Y%m%d-%H%M%S'), trans_id, zone, file=stdout)
+      self._oneupdate(trans_id, zone, out=outfile, errout=errout)
+  def _oneupdate(self, tid, zone, out=sys.stdout, errout=sys.stderr):
+    """Execute transaction tid, if pending."""
+    # fetch dynamic update parameters for this zone
+    server_ip, keyname, keyalgorithm, keydata = self.zonelist[zone].get_key()
+    if keyname:
+      keyring = dns.tsigkeyring.from_text({ keyname: keydata })
+      update = dns.update.Update(zone, keyring=keyring, keyalgorithm=keyalgorithm)
+    else:
+      update = None
+
+    # get the list of updates for this transaction
+    self._dbc.execute("SELECT action, dyn_queue.label, dyn_queue.ttl, rrt.label, value"
+                      " FROM dyn_transaction, dyn_queue"
+                      " LEFT OUTER JOIN rrtypes AS rrt ON rrt.id=dyn_queue.rrtype_id"
+                      " WHERE dyn_transaction.executed_at IS NULL"
+                      " AND dyn_transaction.id=dyn_queue.trans_id"
+                      " AND trans_id=%s ORDER BY dyn_queue.id"
+                      " FOR UPDATE OF dyn_transaction",
+                      (tid,))
+    text = "; %s id %d%s\n%s" % (time.strftime('%Y%m%d-%H%M%S'), tid,
+           "" if self._dbc.rowcount else " (no content, executed?)",
+           "" if update else "; (no dynamic update for this zone)\n")
+    text += "zone %s\n" % zone
+    if not self._dbc.rowcount:
+      print(text, end='', file=out)
+      return
+
+    # not empty, prepare the dynamic update packet + accompanying text.
+
+    for cmd, label, ttl, typ, value in self._dbc.fetchall():
+      if label:
+        fqdn = label + '.' + zone + '.'
+      else:
+        fqdn = zone + '.'
+      a = "%s %s" % (cmd, fqdn)
+      if ttl is not None:
+        a += " " + str(ttl)
+      if typ is not None:
+        a += " " + typ
+      if value is not None:
+        a += " " + value
+      text += a + '\n'
+      args = []
+      if typ is not None:
+        args.append(typ)
+      if value is not None:
+        args.append(value)
+
+      try:
+        if cmd == 'nxd':
+          if update:
+            update.absent(fqdn, *args)
+        elif cmd == 'yxd':
+          if update:
+            update.present(fqdn, *args)
+        elif cmd == 'add':
+          if update:
+            update.add(fqdn, ttl, *args)
+        elif cmd == 'del':
+          if update:
+            update.delete(fqdn, *args)
+      except:
+        print("; %s (id %d)" % (time.strftime('%Y%m%d-%H%M%S'), tid), file=errout)
+        traceback.print_exc(file=errout)
+
+    soac = check.SOAChecker(domain=zone, timeout=60)
+
+    print(text, end='', file=out)
+
+    # Get and log zone serial before update
+    serial_before, ok, r, t = None, None, None, None
+    try:
+      if server_ip:
+        ok, r, t = soac.getsoa(server_ip)
+    except:
+      traceback.print_exc(file=errout)
+    if ok:
+      serial_before = r[1]
+      self._dbc.execute("UPDATE dyn_transaction SET serial_before = %s WHERE id = %s",
+                        (r[1], tid))
+
+    done = False
+    if update:
+      response = None
+      try:
+        response = dns.query.tcp(update, server_ip, timeout=60)
+      # dns.tsig.PeerBadKey: The peer didn't know the key we used
+      except:
+        print("; %s (id %d)" % (time.strftime('%Y%m%d-%H%M%S'), tid), file=errout)
+        traceback.print_exc(file=errout)
+      if response and not response.rcode():
+        done = True
+      else:
+        print(update, file=errout)
+        print(text, end='', file=errout)
+        print("reponse:", response, file=errout)
+    else:
+      done = True
+
+
+    # Get and log zone serial after update
+    serial_after = None
+    if update:
+      ok, r, t = None, None, None
+      try:
+        ok, r, t = soac.getsoa(server_ip)
+      except:
+        traceback.print_exc(file=errout)
+      if ok:
+        serial_after = r[1]
+      print("; Serial before %s, after %s" % (serial_before, serial_after), file=out)
+    else:
+      print("; Serial before %s" % serial_before, file=out)
+
+
+    if done:
+      self._dbc.execute("UPDATE dyn_transaction SET executed_at=NOW(),"
+                        " serial_after=%s WHERE id=%s", (serial_after, tid,))
+      self._dbc.execute("DELETE FROM dyn_transaction WHERE id=%s", (tid,))
+
+
+  def _store(self):
     for zone, master in self.masters.items():
       if not self.zone_has_actions(zone):
         # skip this list if only nxdomain/yxdomain
         continue
-      #print("server %s" % master, file=out)
-      print("zone %s" % zone, file=out)
-      for cmd, label, ttl, typ, value in self.alist[zone]:
-        if label:
-          fqdn = label + '.' + zone
-        else:
-          fqdn = zone
-        a = "%s %s" % (cmd, fqdn)
-        if ttl is not None:
-          a += " " + str(ttl)
-        if typ is not None:
-          a += " " + typ
-        if value is not None:
-          a += " " + value
-        print(a, file=out)
 
+      self._dbc.execute("INSERT INTO dyn_transaction (zone_id) VALUES (%s)", (self.zonelist[zone].id,))
+      self._dbc.execute("SELECT currval('dyn_transaction_id_seq')")
+      tid, = self._dbc.fetchone()
+
+      for cmd, label, ttl, typ, value in self.alist[zone]:
+        self._dbc.execute("INSERT INTO dyn_queue (trans_id, action, label, ttl, rrtype_id, value)"
+                          " VALUES (%s, %s, %s, %s, (SELECT id FROM rrtypes WHERE label = %s), %s)",
+                          (tid, cmd, label, ttl, typ, value))
+    self._dbc.execute("NOTIFY dyn_transaction")
 
 class _Domain:
     def __init__(self, dbc, id=None, name=None, zone=None):
@@ -931,7 +1080,7 @@ class db:
         self._nowrite = nowrite
         self._login_id = None
         self._zl = _ZoneList(self._dbc)
-        self.dyn = DynamicUpdate()
+        self.dyn = DynamicUpdate(self._zl, dbc)
     def set_nowrite(self, nowrite):
         self._nowrite = nowrite
     def login(self, login):
@@ -1014,7 +1163,7 @@ class db:
             else:
               d.move_hist(login_id=self._login_id, domains=True, dyn=self.dyn)
         z.set_updateserial()
-        self.dyn.log()
+        self.dyn.execute()
     def undelete(self, domain, zone, override_internal=False):
         """Undelete domain.
 
@@ -1034,7 +1183,7 @@ class db:
         if self._nowrite: return
         d.set_end_grace_period(None, dyn=self.dyn)
         z.set_updateserial()
-        self.dyn.log()
+        self.dyn.execute()
     def modify(self, domain, zone, typ, file, override_internal=False,
                replace=True, delete=False, keepds=True):
         """Modify domain.
@@ -1060,7 +1209,7 @@ class db:
         d.mod_rr(file, delete=delete, dyn=self.dyn)
         d.set_updated_by(self._login_id)
         z.set_updateserial()
-        self.dyn.log()
+        self.dyn.execute()
     def modifydeleg(self, domain, file, override_internal=False,
                     replace=True, delete=False):
         """Modify a domain delegation in the child and the parent at the
@@ -1102,7 +1251,7 @@ class db:
             return
         d.addrr(label, ttl, rrtype, value, dyn=self.dyn)
         z.set_updateserial()
-        self.dyn.log()
+        self.dyn.execute()
     def delrr(self, domain, zone, label, rrtype, value):
         """Delete records of a given label, type and value"""
         d, z = self._zl.find(domain, zone)
@@ -1113,7 +1262,7 @@ class db:
         n = d.delrr(label, rrtype, value, dyn=self.dyn)
         if n:
             z.set_updateserial()
-        self.dyn.log()
+        self.dyn.execute()
         return n
     def checkds(self, domain, zone):
         """Check whether domain is eligible for DS records
@@ -1168,7 +1317,7 @@ class db:
         if file:
             d.mod_rr(file, dyn=self.dyn)
         z.set_updateserial()
-        self.dyn.log()
+        self.dyn.execute()
     def set_registry_lock(self, domain, zone, val):
         """Set registry_lock flag for domain."""
         d, z = self._zl.find(domain, zone, wlock=True)
@@ -1182,13 +1331,13 @@ class db:
         if self._nowrite: return
         d.set_registry_hold(val, dyn=self.dyn)
         z.set_updateserial()
-        self.dyn.log()
+        self.dyn.execute()
     def soa(self, zone, forceincr=False):
         """Update SOA serial for zone if necessary or forceincr is True."""
         z = self._zl.zones[zone.upper()]
         z.fetch()
         (r, serial) = z.soa(forceincr, dyn=self.dyn)
-        self.dyn.log()
+        self.dyn.execute()
         return r, serial
     def cat(self, zone, digstyle=False, outfile=sys.stdout):
         """Output zone file."""
@@ -1207,7 +1356,7 @@ class db:
                 default_ttl=default_ttl,
                 soaserial=soaserial, soarefresh=soarefresh, soaretry=soaretry,
                 soaexpires=soaexpires, soaminimum=soaminimum)
-        self.dyn.log()
+        self.dyn.execute()
     def expired(self, now=False):
         """List domains in grace period."""
         if not now:
@@ -1223,3 +1372,5 @@ class db:
                             ' AND end_grace_period < NOW()'
                             ' ORDER BY end_grace_period')
         return self._dbc.fetchall()
+    def updates(self, outfile=sys.stdout, errout=sys.stderr):
+        self.dyn.run_updates(outfile=outfile, errout=errout)

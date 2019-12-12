@@ -38,7 +38,6 @@ domain list for better performance.
 
 -d: in 'modify', 'addrr', 'delrr', 'show': apply both on the domain
     and the parent zone.
--D: print dynamic update (experimental)
 -R: for 'cat', raw (dig) style output for easier parsing
 -r: reverse (chronological mode) for showhistory
 -u: username, used to check access permissions with respect to the
@@ -104,13 +103,13 @@ def errexit(msg, args):
 
 def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
   try:
-      opts, args = getopt.getopt(argv[1:], "a:cdDirRst:u:Uz:")
+      opts, args = getopt.getopt(argv[1:], "a:cdirRst:u:Uz:")
   except getopt.GetoptError:
       usage()
       sys.exit(1)
 
   action, type, zone = None, None, None
-  dyn, keepds, diff, digstyle = False, False, False, False
+  keepds, diff, digstyle = False, False, False
   nowrite, internal, deleg, forceincr = False, False, False, False
   rev = True
   user = os.getenv('USER', None)
@@ -136,8 +135,6 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
         zone = a.upper()
       elif o == "-d":
         deleg = True
-      elif o == "-D":
-        dyn = True
       elif o == "-s":
         forceincr = True
       elif o == "-U":
@@ -197,8 +194,6 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
       dd.showhist(domain, zone, rev=rev, diff=diff, outfile=outfile)
     elif action == 'new':
       dd.new(domain, zone, type, file=infile, internal=internal)
-      if dyn:
-        dd.dyn.print()
     elif action == 'modify':
       if deleg:
         dd.modifydeleg(domain, file=infile, override_internal=internal,
@@ -206,8 +201,6 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
       else:
         dd.modify(domain, zone, type, file=infile, override_internal=internal,
                   keepds=keepds)
-      if dyn:
-        dd.dyn.print()
     elif action == 'addrr':
       if deleg:
         dd.modifydeleg(domain, file=infile, override_internal=internal,
@@ -215,8 +208,6 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
       else:
         dd.modify(domain, zone, type, file=infile, override_internal=internal,
                 replace=False)
-      if dyn:
-        dd.dyn.print()
     elif action == 'delrr':
       if deleg:
         dd.modifydeleg(domain, file=infile, override_internal=internal,
@@ -224,16 +215,10 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
       else:
         dd.modify(domain, zone, type, file=infile, override_internal=internal,
                 replace=False, delete=True)
-      if dyn:
-        dd.dyn.print()
     elif action == 'delete':
       dd.delete(domain, zone, override_internal=internal)
-      if dyn:
-        dd.dyn.print()
     elif action == 'undelete':
       dd.undelete(domain, zone, override_internal=internal)
-      if dyn:
-        dd.dyn.print()
     elif action == 'lock':
       for domain in domainlist:
         dd.set_registry_lock(domain, zone, True)
@@ -244,14 +229,10 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
       for domain in domainlist:
         dd.dyn.clear()
         dd.set_registry_hold(domain, zone, True)
-        if dyn:
-          dd.dyn.print()
     elif action == 'unhold':
       for domain in domainlist:
         dd.dyn.clear()
         dd.set_registry_hold(domain, zone, False)
-        if dyn:
-          dd.dyn.print()
     elif action == 'cat':
       dd.cat(domain, digstyle=digstyle, outfile=outfile)
     elif action == 'soa':
@@ -259,8 +240,6 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
       if not updated:
         r = 1
       print(serial, file=outfile)
-      if dyn:
-        dd.dyn.print()
     elif action == 'list':
       for zone in dd.zonelist():
           print(zone, file=outfile)
@@ -319,8 +298,6 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout):
         records = io.StringIO('\tNS\t' + autoreg.conf.SOA_MASTER + '.')
         dd.dyn.clear()
         dd.new(domain, parent, typ=None, file=records, internal=True)
-        if dyn:
-          dd.dyn.print()
 
     elif action == 'expire':
       for dom, zone, dateexp in dd.expired():

@@ -34,8 +34,11 @@ CREATE TABLE zones (
 	soaexpires INTEGER DEFAULT 604800,
 	soaminimum INTEGER DEFAULT 259200,
 	soaprimary VARCHAR(255) NOT NULL,
-	soaemail VARCHAR(255) NOT NULL
+	soaemail VARCHAR(255) NOT NULL,
+	dyn_ip VARCHAR(64),
+	dyn_key VARCHAR(64) REFERENCES keys(name)
 );
+
 
 -- lists allowed RR types for each zone
 CREATE TABLE allowed_rr (
@@ -82,6 +85,36 @@ CREATE TABLE rrs (
 	value VARCHAR(2048)
 );
 CREATE INDEX rrs_domain_id_index ON rrs(domain_id);
+
+
+-- Support for dynamic DNS updates
+
+-- TSIG key table
+CREATE TABLE keys (
+	name VARCHAR(64) PRIMARY KEY,
+	algorithm VARCHAR(20),
+	secret VARCHAR(220)
+);
+
+CREATE TABLE dyn_transaction (
+	id SERIAL PRIMARY KEY,
+	date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+	zone_id INTEGER REFERENCES zones,
+	external_ref VARCHAR(30),
+	executed_at TIMESTAMP WITH TIME ZONE,
+	serial_before INTEGER,
+	serial_after INTEGER
+);
+
+CREATE TABLE dyn_queue (
+	id SERIAL PRIMARY KEY,
+	trans_id INTEGER REFERENCES dyn_transaction ON DELETE CASCADE,
+	action VARCHAR(3),
+	label VARCHAR(64),
+	ttl INTEGER,
+	rrtype_id INTEGER REFERENCES rrtypes(id),
+	value VARCHAR(2048)
+);
 
 -- keeping history
 
@@ -609,14 +642,20 @@ GRANT INSERT ON TABLE zones TO autoreg;
 GRANT SELECT,UPDATE ON TABLE zones_id_seq TO autoreg;
 GRANT INSERT,SELECT ON TABLE rrs_hist TO root, www, nobody, autoreg;
 GRANT DELETE ON TABLE rrs_hist TO www, autoreg;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE dyn_transaction TO www, autoreg;
+GRANT SELECT, INSERT, UPDATE ON TABLE dyn_queue TO www, autoreg;
+GRANT DELETE ON TABLE dyn_queue TO autoreg;
 -- append-only
 GRANT INSERT,SELECT ON TABLE domains_hist TO root, www, nobody, autoreg;
 GRANT INSERT,SELECT ON TABLE allowed_rr TO autoreg;
 GRANT SELECT,UPDATE ON TABLE allowed_rr_id_seq TO autoreg;
+GRANT SELECT,UPDATE ON TABLE dyn_transaction_id_seq TO www, autoreg;
+GRANT SELECT,UPDATE ON TABLE dyn_queue_id_seq TO www, autoreg;
 -- read-only
 GRANT SELECT ON TABLE admins,allowed_rr,rrtypes TO root, www, nobody;
 GRANT SELECT ON TABLE contact_types TO whois;
 GRANT SELECT ON TABLE admin_zone TO www, autoreg;
+GRANT SELECT ON TABLE keys TO www, autoreg;
 
 -- Permissions on Whois database
 -- read-write
