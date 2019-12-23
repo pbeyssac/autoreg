@@ -6,6 +6,18 @@ import unittest
 import autoreg.dns.dnssec
 
 
+class TestKeytagWirekey(unittest.TestCase):
+  def test_even_keylength(self):
+    self.assertEqual(
+      (38808, b'\x01\x01\x05\x02abcdefgh'),
+      autoreg.dns.dnssec.compute_keytag_wirekey(257, 5, 2, b'abcdefgh'))
+
+  def test_odd_keylength(self):
+    self.assertEqual(
+      (153, b'\x01\x01\x05\x02abcdefghi'),
+      autoreg.dns.dnssec.compute_keytag_wirekey(257, 5, 2, b'abcdefghi'))
+
+
 class TestDnsParser(unittest.TestCase):
   def setUp(self):
     pass

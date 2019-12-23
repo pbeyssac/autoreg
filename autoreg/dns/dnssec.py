@@ -17,7 +17,7 @@ def compute_keytag_wirekey(flags, protocol, algorithm, key):
 
   wk = wirekey
   if len(wk) % 2:
-    wk += chr(0)
+    wk += b'\0'
   tag = 0
   while wk:
     h, = struct.unpack('>H', wk[:2])
