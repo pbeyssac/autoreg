@@ -195,13 +195,13 @@ class MultiResolver(object):
     try:
       ans = self.res.query(self.domain+'.', 'NS', tcp=tcp)
     except dns.resolver.NXDOMAIN:
-      return None, _("Error: Domain not found")
+      return None, _("Domain not found")
     except dns.exception.Timeout:
-      return None, _("Error: Timeout")
+      return None, _("Timeout")
     except dns.resolver.NoAnswer:
-      return None, _("Error: No answer")
+      return None, _("No answer")
     except dns.resolver.NoNameservers:
-      return None, _("Error: No name servers")
+      return None, _("No name servers")
     for i in ans.rrset.items:
       fqdn = i.to_text().upper()
       nslist.append(fqdn)
@@ -217,7 +217,7 @@ class MultiResolver(object):
       l = l[:-1]
       m = fqdnip.match(l)
       if not m:
-        errlist.append(_("Error: Invalid line"))
+        errlist.append(_("Invalid line"))
         continue
       fqdn, ip = m.groups()
       nsiplist.append((fqdn, ip))
@@ -234,7 +234,7 @@ class MultiResolver(object):
         ip = ip.upper()
 
         if not checkip(ip):
-          errlist.append(_("Error: Invalid IP address %s") % ip)
+          errlist.append(_("Invalid IP address %s") % ip)
           ip = None
 
       if fqdn.endswith('.'+self.domain.upper()) \
