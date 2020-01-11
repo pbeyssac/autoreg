@@ -210,6 +210,7 @@ class MultiResolver(object):
 
   def setnslist_file(self, file, checkglue):
     """Fetch NS list from file"""
+    errlist = []
     nsiplist = []
     fqdnip = re.compile('^([a-zA-Z0-9\.-]+)(?:\s+(\S+))?\s*$')
     for l in file:
@@ -220,11 +221,11 @@ class MultiResolver(object):
         continue
       fqdn, ip = m.groups()
       nsiplist.append((fqdn, ip))
-    return self.setnslist_nsiplist(nsiplist, checkglue)
+    return self.setnslist_nsiplist(nsiplist, checkglue, errlist)
 
-  def setnslist_nsiplist(self, nsiplist, checkglue):
+  def setnslist_nsiplist(self, nsiplist, checkglue, errlist=None):
     """Fetch NS list from (fqdn, ip) list"""
-    errlist = []
+    errlist = errlist or []
     warnlist = []
     nslist = []
     for fqdn, ip in nsiplist:

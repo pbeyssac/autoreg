@@ -39,6 +39,24 @@ class TestCheckAllSoa(unittest.TestCase):
     print(out.getvalue())
 
 
+class TestCheckSoa(unittest.TestCase):
+  def test1(self):
+    os.environ['USER'] = 'autoreg'
+    out = io.StringIO()
+    infile = io.StringIO('DNSSEC.TESTS.EU.ORG\n \nNS1.DNSSEC.TESTS.EU.ORG\t192.168.0.15\n')
+    autoreg.dns.check.main(argv=['checksoa'], infile=infile, outfile=out)
+    print(out.getvalue())
+    self.assertTrue('Error: Error: Invalid line' in out.getvalue())
+  def test2(self):
+    os.environ['USER'] = 'autoreg'
+    out = io.StringIO()
+    infile = io.StringIO('DNSSEC.TESTS.EU.ORG\nNS1.DNSSEC.TESTS.EU.ORG\t192.168.0.999\n')
+    autoreg.dns.check.main(argv=['checksoa'], infile=infile, outfile=out)
+    self.assertTrue('Error: Invalid line' in out.getvalue())
+    self.assertTrue('Error: Invalid IP address 192.168.0.999' in out.getvalue())
+    self.assertTrue('Missing glue IP for NS1.DNSSEC.TESTS.EU.ORG' in out.getvalue())
+
+
 class TestNewZone(unittest.TestCase):
   def test1(self):
     out = io.StringIO()
