@@ -34,6 +34,10 @@ except PermissionError:
   ENCRYPT_KEY=os.environ.get('ENCRYPT_KEY', '').encode()
 
 
+# Label for the TXT record identifying the last committed DNS update.
+# This probably shouldn't need to be messed with.
+TRANS_LABEL='_TRANS'
+
 # Postgres connect string
 # Don't use this in Django modules, use autoreg.arf.util.dbstring instead,
 # for compatibility with the test environment.

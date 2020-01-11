@@ -146,6 +146,42 @@ class MultiResolver(object):
     nslist.sort()
     return True, nslist, t
 
+  def gettxt(self, server, domain):
+    q = dns.message.make_query(domain, 'TXT')
+    q.flags = 0
+    t1 = time.time()
+    ok, r = sendquery(q, server, timeout=self.timeout)
+    t = time.time()
+    t = (t - t1)*1000
+    if not ok:
+      return None, r, t
+    if (r.flags & dns.flags.AA) == 0:
+      return None, _("Answer not authoritative"), t
+    if len(r.answer) == 0:
+      return None, _("Empty answer"), t
+    if len(r.answer) != 1:
+      return None, _("Unexpected answer length"), t
+    if len(r.answer[0]) != 1:
+      return None, _("Unexpected answer content length"), t
+    txt = r.answer[0][0].to_text()
+    return True, txt, t
+
+  def getany_domain(self, server, domain):
+    q = dns.message.make_query(domain, 'ANY')
+    q.flags = 0
+    t1 = time.time()
+    ok, r = sendquery(q, server, timeout=self.timeout)
+    t = time.time()
+    t = (t - t1)*1000
+    if not ok:
+      return None, r, t
+    rc = r.rcode()
+    if rc == 0:
+      return True, _("Domain exists"), t
+    if rc == dns.rcode.NXDOMAIN:
+      return None, "NXDOMAIN", t
+    return None, _("Unexpected answer"), t
+
   def setnslist_direct(self, nslist):
     """Set NS list from provided list"""
     nslist.sort()

@@ -21,7 +21,8 @@ import dns.update
 import six
 
 # local modules
-from autoreg.conf import DEFAULT_GRACE_DAYS, SOA_MASTER, SOA_EMAIL
+from autoreg.conf import DEFAULT_GRACE_DAYS, SOA_MASTER, SOA_EMAIL, TRANS_LABEL
+
 import autoreg.zauth as zauth
 from . import check
 from . import parser
@@ -358,7 +359,7 @@ class DynamicUpdate(object):
     print(text, end='', file=out)
 
     # Get and log zone serial before update
-    serial_before, ok, r, t = None, None, None, None
+    serial_before, text_before, ok, r, t = None, None, None, None, None
     try:
       if server_ip:
         ok, r, t = soac.getsoa(server_ip)
@@ -370,9 +371,15 @@ class DynamicUpdate(object):
                         (r[1], tid))
 
     done = False
+    txtfqdn = TRANS_LABEL + '.' + zone + '.'
+
     if update:
+      ok, text_before, t = soac.gettxt(server_ip, txtfqdn)
+
       response = None
       try:
+        update.delete(txtfqdn, 'TXT')
+        update.add(txtfqdn, 60, 'TXT', '"%s"' % (tid,))
         response = dns.query.tcp(update, server_ip, timeout=60)
       # dns.tsig.PeerBadKey: The peer didn't know the key we used
       except:
@@ -398,9 +405,14 @@ class DynamicUpdate(object):
         traceback.print_exc(file=errout)
       if ok:
         serial_after = r[1]
-      print("; Serial before %s, after %s" % (serial_before, serial_after), file=out)
+
+      ok, text_after, t = soac.gettxt(server_ip, txtfqdn)
+
+      print("; Serial and TXT %s, %s => %s, %s" %
+            (serial_before, text_before, serial_after, text_after),
+            file=out)
     else:
-      print("; Serial before %s" % serial_before, file=out)
+      print("; Serial and TXT %s, %s" % (serial_before, text_before), file=out)
 
 
     if done:
