@@ -116,6 +116,61 @@ CREATE TABLE dyn_queue (
 	value VARCHAR(2048)
 );
 
+CREATE TABLE dyn_transaction_hist (
+	id INTEGER UNIQUE,
+	date TIMESTAMP WITH TIME ZONE,
+	zone_id INTEGER REFERENCES zones,
+	external_ref VARCHAR(30),
+	executed_at TIMESTAMP WITH TIME ZONE,
+	serial_before INTEGER,
+	serial_after INTEGER
+);
+
+CREATE TABLE dyn_queue_hist (
+	id INTEGER,
+	trans_id INTEGER REFERENCES dyn_transaction_hist(id) ON DELETE CASCADE,
+	action VARCHAR(3),
+	label VARCHAR(64),
+	ttl INTEGER,
+	rrtype_id INTEGER REFERENCES rrtypes(id),
+	value VARCHAR(2048)
+);
+
+-- Triggers
+
+CREATE OR REPLACE FUNCTION trig_del_dyn_transaction()
+    RETURNS TRIGGER as $trig_del_dyn_transaction$
+    BEGIN
+	INSERT INTO dyn_transaction_hist (
+		id, date, zone_id, external_ref,
+		executed_at, serial_before, serial_after)
+	    VALUES (
+		OLD.id, OLD.date, OLD.zone_id, OLD.external_ref,
+		OLD.executed_at, OLD.serial_before, OLD.serial_after);
+	RETURN OLD;
+    END;
+$trig_del_dyn_transaction$ LANGUAGE plpgsql;
+
+-- only useful on DELETE
+CREATE TRIGGER trig_dyn_transaction BEFORE DELETE ON dyn_transaction
+	FOR EACH ROW EXECUTE PROCEDURE trig_del_dyn_transaction();
+
+CREATE OR REPLACE FUNCTION trig_del_dyn_queue()
+    RETURNS TRIGGER as $trig_del_dyn_queue$
+    BEGIN
+	INSERT INTO dyn_queue_hist (
+		id, trans_id, action, label, ttl, rrtype_id, value)
+	    VALUES (
+		OLD.id, OLD.trans_id, OLD.action, OLD.label, OLD.ttl, OLD.rrtype_id, OLD.value);
+	RETURN OLD;
+    END;
+$trig_del_dyn_queue$ LANGUAGE plpgsql;
+
+-- only useful on DELETE
+CREATE TRIGGER trig_dyn_queue BEFORE DELETE ON dyn_queue
+	FOR EACH ROW EXECUTE PROCEDURE trig_del_dyn_queue();
+
+
 -- keeping history
 
 -- deleted domains
@@ -651,6 +706,8 @@ GRANT INSERT,SELECT ON TABLE allowed_rr TO autoreg;
 GRANT SELECT,UPDATE ON TABLE allowed_rr_id_seq TO autoreg;
 GRANT SELECT,UPDATE ON TABLE dyn_transaction_id_seq TO www, autoreg;
 GRANT SELECT,UPDATE ON TABLE dyn_queue_id_seq TO www, autoreg;
+GRANT INSERT ON TABLE dyn_transaction_hist TO www, autoreg;
+GRANT INSERT ON TABLE dyn_queue_hist TO www, autoreg;
 -- read-only
 GRANT SELECT ON TABLE admins,allowed_rr,rrtypes TO root, www, nobody;
 GRANT SELECT ON TABLE contact_types TO whois;
