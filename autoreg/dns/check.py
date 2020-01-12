@@ -658,11 +658,12 @@ def handle_serial_stats(zone, stats, dbh):
   dnow = datetime.datetime.now()
   for smin, dmin in dbc.fetchall():
     if dnow - dmin <= datetime.timedelta(seconds=autoreg.conf.MAX_ZONE_AGE):
-      yield True, _("Zone %s: outdated copy (serial %d, dated %s)"
-                    % (zone, smin, dmin))
+      yield True, (_("Zone %(zone)s: outdated copy (serial %(smin)d, dated %(dmin)s)")
+                    % {'zone': zone, 'smin': smin, 'dmin': dmin})
   for s in stats:
     if s[3] != slatest:
-      yield None, _("Server %s (%s): %s serial %s") % (s[1], s[2], zone, s[3])
+      yield None, (_("Server %(fqdn)s (%(ip)s): %(zone)s serial %(serial)s")
+                    % {'fqdn': s[1], 'ip': s[2], 'zone': zone, 'serial': s[3]})
 
   return
 
