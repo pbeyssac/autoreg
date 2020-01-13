@@ -635,7 +635,7 @@ def find_last_serial(serials):
     else:
       # remove s1
       serials = serials[1:]
-  return serials[0]
+  return serials[0] if serials else None
 
 
 def handle_serial_stats(zone, stats, dbh):
