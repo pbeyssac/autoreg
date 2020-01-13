@@ -20,7 +20,7 @@ class TestCheckAllSoa(unittest.TestCase):
     out = io.StringIO()
     autoreg.dns.check.checkallsoa(['checkallsoa', 'HISTORY.TESTS.EU.ORG'], file=out)
     self.assertTrue('HISTORY.TESTS.EU.ORG FAILED' in out.getvalue())
-    self.assertTrue('Error: empty name server list' in out.getvalue())
+    self.assertTrue('Error: Empty name server list' in out.getvalue())
   def test2(self):
     os.environ['USER'] = 'autoreg'
     out = io.StringIO()

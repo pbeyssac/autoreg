@@ -35,8 +35,9 @@ CREATE TABLE zones (
 	soaminimum INTEGER DEFAULT 259200,
 	soaprimary VARCHAR(255) NOT NULL,
 	soaemail VARCHAR(255) NOT NULL,
-	dyn_ip VARCHAR(64),
-	dyn_key VARCHAR(64) REFERENCES keys(name)
+	dyn_ip VARCHAR(64)
+	-- XXX: following line moved to ALTER TABLE to fix circular reference
+	-- dyn_key VARCHAR(64) REFERENCES keys(name)
 );
 
 
@@ -201,6 +202,7 @@ CREATE TABLE rrs_hist (
 	value VARCHAR(2048),
 	deleted_on TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+CREATE INDEX rrs_hist_domain_id_index ON rrs_hist(domain_id);
 
 -- Functions
 
@@ -385,8 +387,9 @@ CREATE TABLE otp (
 	active BOOLEAN DEFAULT FALSE
 );
 
--- moved here from CREATE TABLE admins to fix circular reference
+-- moved here from CREATE TABLE admins and zones to fix circular reference
 ALTER TABLE admins ADD COLUMN contact_id INTEGER REFERENCES contacts(id);
+ALTER TABLE zones ADD COLUMN dyn_key VARCHAR(64) REFERENCES keys(name);
 
 -- mostly static table for mapping contact type integer to a string
 -- see example rows below
