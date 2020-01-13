@@ -481,7 +481,7 @@ class SOAChecker(MultiResolver):
       self.warns += len(warnlist)
 
     if not self.nslist:
-      yield True, _("Error: empty name server list")
+      yield True, _("Error: ") + _("Empty name server list")
       self.errs += 1
 
     if self.errs:
@@ -594,7 +594,7 @@ def main(argv=sys.argv, infile=sys.stdin, outfile=sys.stdout, dbh=None):
       oldip, newip = val.split('=')
       for ip in oldip, newip:
         if not checkip(ip):
-          print("Error: Invalid IP address", ip, file=outfile)
+          print(_("Error: ") + _("Invalid IP address %s") % ip, file=outfile)
           errs += 1
           ip = None
       if ip is not None:
