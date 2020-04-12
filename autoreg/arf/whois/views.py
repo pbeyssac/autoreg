@@ -32,7 +32,7 @@ from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_http_methods
 
 
-from autoreg.common import domain_delete
+from autoreg.common import domain_delete, fqdn_to_idna
 from autoreg.conf import HANDLESUFFIX
 import autoreg.dns.db
 from autoreg.util import decrypt, encrypt, pwcrypt
@@ -65,16 +65,6 @@ domcontact_choices = [('technical', ugettext_lazy('technical')),
 #
 # Helper functions
 #
-
-def _to_idna(fqdn):
-  fqdn = fqdn.lower()
-  try:
-    idna = fqdn.encode('ascii').decode('idna')
-  except UnicodeDecodeError:
-    idna = fqdn
-  except UnicodeError:
-    idna = fqdn
-  return idna
 
 
 class Country(object):
@@ -541,7 +531,7 @@ def domainlist(request, handle=None):
   domds = handle_domains_dnssec(connection.cursor(), handle)
 
   domds = [(d[0].lower(), d[1], d[2], d[3], d[4], d[5], d[6], d[7],
-            _to_idna(d[0])) for d in domds]
+            fqdn_to_idna(d[0])) for d in domds]
   domds.sort(key=lambda d: d[8])
 
   paginator = Paginator(domds, 50)
@@ -587,7 +577,7 @@ def contactchange(request, fqdn=None):
     initial = c.initial_form()
     if fqdn:
       vars['fqdn'] = fqdn
-      idna = _to_idna(fqdn)
+      idna = fqdn_to_idna(fqdn)
       vars['idna'] = idna
       vars['form'] = registrant_form(initial=initial)
     else:
@@ -739,7 +729,7 @@ def domainedit(request, fqdn):
   except Whoisdomains.DoesNotExist:
     dom = None
   if dom is None:
-    vars = { 'fqdn': fqdn, 'idna': _to_idna(fqdn) }
+    vars = { 'fqdn': fqdn, 'idna': fqdn_to_idna(fqdn) }
     return render(request, 'whois/domainnotfound.html', vars)
 
   domds = handle_domains_dnssec(connection.cursor(), None, fqdn)
@@ -817,7 +807,7 @@ def domainedit(request, fqdn):
                        'handle': suffixadd(cthandle),
                        'posturi': posturi })
 
-  idna = _to_idna(fqdn)
+  idna = fqdn_to_idna(fqdn)
 
   vars = {'whoisdomain': dom, 'domaincontact_list': cl,
           'fqdn': fqdn, 'idna': idna,

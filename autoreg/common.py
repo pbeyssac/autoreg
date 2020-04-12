@@ -60,5 +60,16 @@ def expiremain():
       dbh.rollback()
 
 
+def fqdn_to_idna(fqdn):
+  fqdn = fqdn.lower()
+  try:
+    idna = fqdn.encode('ascii').decode('idna')
+  except UnicodeDecodeError:
+    idna = fqdn
+  except UnicodeError:
+    idna = fqdn
+  return idna
+
+
 if __name__ == "__main__":
   expiremain()
