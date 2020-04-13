@@ -7,7 +7,11 @@
 {% if goto %}<input name="goto" type="hidden" value="{{ goto }}">{% endif %}
 {% for r in rlist %}
 <p>
-<h2>{% blocktrans with fqdn=r.fqdn %}Request for <span class="domain">{{ fqdn }}</span>{% endblocktrans %}</h2>
+<h2>{% if r.fqdn.lower != r.idna %}
+{% blocktrans with fqdn=r.fqdn idna=r.idna %}Request for <span class="domain">{{ fqdn }}</span> / <span class="domain">{{ idna }}</span>{% endblocktrans %}
+{% else %}
+{% blocktrans with fqdn=r.fqdn %}Request for <span class="domain">{{ fqdn }}</span>{% endblocktrans %}
+{% endif %}</h2>
 <span class="requestid">{{ r.id }}</span>
 
 {% if r.zonerecord %}

@@ -12,6 +12,7 @@ import sys
 import six
 
 
+from autoreg.common import fqdn_to_idna
 import autoreg.dns.db
 from autoreg.whois.db import admin_login, country_from_iso
 import autoreg.whois.query as query
@@ -66,8 +67,9 @@ def _rq_nemail(fqdn):
          .order_by('email').distinct('email').count()
 
 def _rq_decorate(r):
-  """Add attributes rclass, ndom, nemail to request"""
+  """Add attributes rclass, ndom, nemail, idna to request"""
   r.ndom = _rq_ndom(r.fqdn)
+  r.idna = fqdn_to_idna(r.fqdn)
   if r.ndom > 1:
     r.nemail = _rq_nemail(r.fqdn)
     if r.nemail > 1:
@@ -85,6 +87,8 @@ def _rq_decorate(r):
 def _rq1(request, r):
   dbc = connection.cursor()
   wlist = []
+
+  _rq_decorate(r)
 
   w = []
   lastaddr = None
