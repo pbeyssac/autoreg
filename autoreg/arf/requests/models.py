@@ -193,6 +193,7 @@ class RequestsLog(models.Model):
     output = models.CharField(max_length=20000)
     errors = models.IntegerField()
     warnings = models.IntegerField()
+    request_id = models.CharField(max_length=30)
     class Meta:
         db_table = 'requests_log'
 

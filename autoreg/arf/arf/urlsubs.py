@@ -68,7 +68,7 @@ urlpatterns += [
   path('rd', requests_views.rqlistdom),
   re_path(r'^rd/(?P<domain>[a-z0-9\.A-Z-]+)$', requests_views.rqlistdom),
   path('rl', requests_views.rqloglist, name='rqloglist'),
-  path('rl/<int:id>', requests_views.rqlogdisplay, name='rqlogdisplay'),
+  re_path(r'^rl/(?P<id>[a-z0-9-]+)$', requests_views.rqlogdisplay, name='rqlogdisplay'),
   path('val', requests_views.rqval, name='rqval')
 ]
 urlpatterns += [

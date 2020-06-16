@@ -453,6 +453,18 @@ def rqloglist(request):
 @login_active_required
 @admin_required
 def rqlogdisplay(request, id):
-  rql = models.RequestsLog.objects.get(id=id)
+  try:
+    id = int(id)
+  except ValueError:
+    pass
+
+  try:
+    if isinstance(id, int):
+      rql = models.RequestsLog.objects.get(id=id)
+    else:
+      rql = models.RequestsLog.objects.get(request_id=id)
+  except models.RequestsLog.DoesNotExist:
+    raise Http404(_("Request %s not found") % id)
+
   vars = { 'rql': rql }
   return render(request, 'requests/rqlogdisplay.html', vars)

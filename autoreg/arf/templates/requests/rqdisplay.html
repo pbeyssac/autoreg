@@ -12,7 +12,7 @@
 {% else %}
 {% blocktrans with fqdn=r.fqdn %}Request for <span class="domain">{{ fqdn }}</span>{% endblocktrans %}
 {% endif %}</h2>
-<span class="requestid">{{ r.id }}</span>
+<span class="requestid"><a href="{% url 'rqlogdisplay' r.id %}">{{ r.id }}</a></span>
 
 {% if r.zonerecord %}
 <h3>{% trans "Records to be inserted in zone file" %}</h3>

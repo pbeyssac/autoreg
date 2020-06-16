@@ -159,6 +159,7 @@ def _gen_checksoa(domain, nsiplist=None, doit=False, dnsdb=None, soac=None,
                      whoisrecord=whoisrecord)
       req.save()
       yield _("Saved as request %(rqid)s\n") % {'rqid': rqid}
+      yield req
     else:
       try:
         #
@@ -184,14 +185,20 @@ def _gen_checksoa_log(dbc, domain, handle, nsiplist=None, doit=False,
   soac.set_level(level)
   rec = []
   contact = Contacts.objects.get(handle=handle.upper())
+  request_id = None
   for line in _gen_checksoa(domain, nsiplist, doit, dnsdb, soac, contact,
                             newdomain, form):
-    rec.append(line)
-    yield line
+    if isinstance(line, str):
+      rec.append(line)
+      yield line
+    else:
+      # is a request object
+      req = line
+      request_id = req.id
   dbc.execute("INSERT INTO requests_log"
-              " (fqdn, contact_id, output, errors, warnings)"
-              " VALUES (%s, %s, %s, %s, %s)",
-              (domain, contact.id, ''.join(rec), soac.errs, soac.warns))
+              " (fqdn, contact_id, output, errors, warnings, request_id)"
+              " VALUES (%s, %s, %s, %s, %s, %s)",
+              (domain, contact.id, ''.join(rec), soac.errs, soac.warns, request_id))
   assert dbc.rowcount == 1
 
 @blackout

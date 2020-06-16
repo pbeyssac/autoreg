@@ -610,7 +610,8 @@ CREATE TABLE requests_log (
 	date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	output VARCHAR(20000),
 	errors INTEGER,
-	warnings INTEGER
+	warnings INTEGER,
+	request_id VARCHAR(30)
 );
 
 -- Triggers
