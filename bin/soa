@@ -70,16 +70,16 @@ do
 		  echo ";"
 		  # access-zone is used to get a ASCII dump of the zone.
 		  # If it returns false, the copy to stdout failed.
-		  $AZ -u$USER -acat $i) > $DEST/$i.new &&
+		  $AZ -u$USER -acat $i) > $DEST/$i.new.$$ &&
 		#
 		# Copy apparently ok, check it.
 		#
-		(tail -5 $DEST/$i.new | grep -q ^_END-MARK); then
+		(tail -5 $DEST/$i.new.$$ | grep -q ^_END-MARK); then
 		    # Copy ok, show diffs
-		    diff -U2 $DEST/$i $DEST/$i.new
+		    diff -U2 $DEST/$i $DEST/$i.new.$$
 		    # replace the older file
 		    mv -f $DEST/$i $DEST/$i.old
-		    mv -f $DEST/$i.new $DEST/$i
+		    mv -f $DEST/$i.new.$$ $DEST/$i
 
 		    echo ----
 		    # Sign zone, if relevant
@@ -87,11 +87,13 @@ do
 			(
 			cd $DEST
 			rm -f $i.signed.old
-			ln $i.signed $i.signed.old
-			if $SIGNZONE -QR -DS -3 fadaf001 -O full -j432000 -o $i -K $KEYS -f $i.signed $i.DNSSEC; then
-			    grep -v '^;' $i.signed | sort > $i.signed.sorted
-			    mv $i.signed.sorted $i.signed
-			    diff -u $i.signed.old $i.signed
+			ln $i.signed $i.signed.old.$$
+			if $SIGNZONE -QR -DS -3 fadaf001 -O full -j432000 -o $i -K $KEYS -f $i.signed.$$ $i.DNSSEC; then
+			    grep -v '^;' $i.signed.$$ | sort > $i.signed.sorted.$$
+			    mv $i.signed.sorted.$$ $i.signed.$$
+			    diff -u $i.signed.old.$$ $i.signed.$$
+			    mv $i.signed.$$ $i.signed
+			    mv $i.signed.old.$$ $i.signed.old
 			    return 0
 			else
 			    return 1
@@ -101,8 +103,8 @@ do
 			mod=1
 		    fi
 		else
-		    echo "Error: cannot dump zone $i to $DEST/$i.new"
-		    rm -f $DEST/$i.new
+		    echo "Error: cannot dump zone $i to $DEST/$i.new.$$"
+		    rm -f $DEST/$i.new.$$
 		fi
 	   else
 		echo "Error: cannot read $DEST/$i"
