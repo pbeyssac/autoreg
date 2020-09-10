@@ -88,7 +88,9 @@ do
 			cd $DEST
 			rm -f $i.signed.old
 			ln $i.signed $i.signed.old.$$
-			if $SIGNZONE -QR -DS -3 fadaf001 -O full -j432000 -o $i -K $KEYS -f $i.signed.$$ $i.DNSSEC; then
+			# NSEC3 opt-out
+			optoutA="-u -A"
+			if $SIGNZONE -QR -DS ${optoutA} -3 fadaf001 -O full -j432000 -o $i -K $KEYS -f $i.signed.$$ $i.DNSSEC; then
 			    grep -v '^;' $i.signed.$$ | sort > $i.signed.sorted.$$
 			    mv $i.signed.sorted.$$ $i.signed.$$
 			    diff -u $i.signed.old.$$ $i.signed.$$
