@@ -105,6 +105,10 @@ NS2.TESTGL			AAAA	::ffff:10.1.2.3
                       ['registry_lock'] + expect_flags,
                       of1))
     self.dd.set_registry_hold(fqdn, zone, True)
+    self.assertEqual((self.dd.dyn.has_actions(), dom), (val1 != self.null, dom))
+    self.dd.dyn.clear()
+    self.dd.set_registry_hold(fqdn, zone, True)
+    self.assertEqual((self.dd.dyn.has_actions(), dom), (False, dom))
     self.assertEqual(self._parseout(fqdn, zone),
                      (fqdn, zone,
                       '*unknown*', '*unknown*',
@@ -116,6 +120,7 @@ NS2.TESTGL			AAAA	::ffff:10.1.2.3
                       self.dd.modify, fqdn, zone, 'NS',
                       file=cStringIO.StringIO(f2))
     self.dd.set_registry_lock(fqdn, zone, False)
+    self.assertEqual(self.dd.dyn.has_actions(), False)
     self.assertEqual(self._parseout(fqdn, zone),
                      (fqdn, zone,
                       '*unknown*', '*unknown*',

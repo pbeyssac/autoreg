@@ -939,9 +939,13 @@ class _Domain:
     def set_registry_hold(self, val, dyn=None):
         """Set value of boolean registry_hold."""
         self._registry_hold = val
-        self._dbc.execute('UPDATE domains SET registry_hold=%s WHERE id=%s',
-                          (val, self.id))
-        self.set_dyn_hold(val, dyn)
+        self._dbc.execute('UPDATE domains SET registry_hold=%s WHERE id=%s '
+                          'RETURNING (SELECT registry_hold FROM domains WHERE id=%s)',
+                          (val, self.id, self.id))
+        assert self._dbc.rowcount == 1
+        old_registry_lock, = self._dbc.fetchone()
+        if val != old_registry_lock:
+          self.set_dyn_hold(val, dyn)
     def set_dyn_hold(self, val, dyn=None):
         if dyn is None:
           return
