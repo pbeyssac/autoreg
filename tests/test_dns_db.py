@@ -184,7 +184,79 @@ NS2.TESTGL			AAAA	::ffff:10.1.2.3
     self._test_base('TESTNL', 'EU.ORG', False, self.null, self.ns12)
   def test3b(self):
     self._test_base('TESTNL', 'EU.ORG', False, self.ns12, self.null)
-            
+  def test4(self):
+    dom = 'TESTGL'
+    zone = 'EU.ORG'
+    fqdn = dom + '.' + zone
+    self.dd.new(fqdn, zone, 'NS', file=cStringIO.StringIO(self.null))
+    self.dd.set_registry_hold(fqdn, zone, True)
+    self.assertEqual(self.dd.dyn.has_actions(), False)
+  def test5(self):
+    dom = 'TESTGL'
+    zone = 'EU.ORG'
+    fqdn = dom + '.' + zone
+    self.dd.new(fqdn, zone, 'NS', file=cStringIO.StringIO(self.ns12))
+    self.dd.set_registry_hold(fqdn, zone, True)
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+  def test6(self):
+    dom = 'TESTGL'
+    zone = 'EU.ORG'
+    fqdn = dom + '.' + zone
+    self.dd.new(fqdn, zone, 'NS', file=cStringIO.StringIO(self.ns12))
+    self.dd.set_registry_hold(fqdn, zone, True)
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+    self.dd.dyn.clear()
+    self.dd.modify(fqdn, zone, 'NS', file=cStringIO.StringIO(self.ns345))
+    self.assertEqual(self.dd.dyn.has_actions(), False)
+    self.dd.set_registry_hold(fqdn, zone, False)
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+  def test7addrr(self):
+    dom = 'TESTGL'
+    zone = 'EU.ORG'
+    fqdn = dom + '.' + zone
+    self.dd.new(fqdn, zone, 'NS', file=cStringIO.StringIO(self.ns12))
+    self.dd.dyn.clear()
+    self.dd.addrr(fqdn, zone, "", 600, "NS", "NS3.EU.ORG.")
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+    self.dd.dyn.clear()
+    self.dd.set_registry_hold(fqdn, zone, True)
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+  def test8addrr(self):
+    dom = 'TESTGL'
+    zone = 'EU.ORG'
+    fqdn = dom + '.' + zone
+    self.dd.new(fqdn, zone, 'NS', file=cStringIO.StringIO(self.ns12))
+    self.dd.set_registry_hold(fqdn, zone, True)
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+    self.dd.dyn.clear()
+    self.dd.addrr(fqdn, zone, "", 600, "NS", "NS3.EU.ORG.")
+    self.assertEqual(self.dd.dyn.has_actions(), False)
+    self.dd.set_registry_hold(fqdn, zone, False)
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+  def test8delrr(self):
+    dom = 'TESTGL'
+    zone = 'EU.ORG'
+    fqdn = dom + '.' + zone
+    self.dd.new(fqdn, zone, 'NS', file=cStringIO.StringIO(self.ns12))
+    self.dd.dyn.clear()
+    self.dd.delrr(fqdn, zone, "", "NS", "NS2.EU.ORG.")
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+    self.dd.dyn.clear()
+    self.dd.set_registry_hold(fqdn, zone, True)
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+  def test8delrr(self):
+    dom = 'TESTGL'
+    zone = 'EU.ORG'
+    fqdn = dom + '.' + zone
+    self.dd.new(fqdn, zone, 'NS', file=cStringIO.StringIO(self.ns12))
+    self.dd.set_registry_hold(fqdn, zone, True)
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+    self.dd.dyn.clear()
+    self.dd.delrr(fqdn, zone, "", "NS", "NS2.EU.ORG.")
+    self.assertEqual(self.dd.dyn.has_actions(), False)
+    self.dd.set_registry_hold(fqdn, zone, False)
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+
 if __name__ == '__main__':
   unittest.main()
 

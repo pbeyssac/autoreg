@@ -1220,14 +1220,17 @@ class db:
         if d._internal and not override_internal:
             raise AccessError(AccessError.DINTERNAL)
         if self._nowrite: return
+        dyn = None if d._registry_hold else self.dyn
         if replace and not delete:
           d.move_hist(login_id=self._login_id,
-                      domains=False, keepds=keepds, dyn=self.dyn)
+                      domains=False, keepds=keepds, dyn=dyn)
         # add new resource records
-        d.mod_rr(file, delete=delete, dyn=self.dyn)
+        d.mod_rr(file, delete=delete, dyn=dyn)
         d.set_updated_by(self._login_id)
         z.set_updateserial()
-        self.dyn.execute()
+        if dyn is not None:
+          # modify in zone only if domain is not held
+          dyn.execute()
     def modifydeleg(self, domain, file, override_internal=False,
                     replace=True, delete=False):
         """Modify a domain delegation in the child and the parent at the
@@ -1267,9 +1270,12 @@ class db:
         d.fetch()
         if self._nowrite:
             return
-        d.addrr(label, ttl, rrtype, value, dyn=self.dyn)
+        dyn = None if d._registry_hold else self.dyn
+        d.addrr(label, ttl, rrtype, value, dyn=dyn)
         z.set_updateserial()
-        self.dyn.execute()
+        if dyn is not None:
+          # modify in zone only if domain is not held
+          dyn.execute()
     def delrr(self, domain, zone, label, rrtype, value):
         """Delete records of a given label, type and value"""
         d, z = self._zl.find(domain, zone)
@@ -1277,10 +1283,13 @@ class db:
         d.fetch()
         if self._nowrite:
             return 0
-        n = d.delrr(label, rrtype, value, dyn=self.dyn)
+        dyn = None if d._registry_hold else self.dyn
+        n = d.delrr(label, rrtype, value, dyn=dyn)
         if n:
             z.set_updateserial()
-        self.dyn.execute()
+        if dyn is not None:
+          # modify in zone only if domain is not held
+          dyn.execute()
         return n
     def checkds(self, domain, zone):
         """Check whether domain is eligible for DS records
