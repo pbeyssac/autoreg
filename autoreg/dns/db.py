@@ -439,6 +439,15 @@ class DynamicUpdate(object):
                           (tid, cmd, label, ttl, typ, value))
     self._dbc.execute("NOTIFY dyn_transaction")
 
+  def __str__(self):
+    s = []
+    for zone in sorted(self.masters.keys()):
+      if not self.zone_has_actions(zone):
+        # skip this list if only nxdomain/yxdomain
+        continue
+      s.extend(["%s %s %s %s %s\n" % (cmd, label, ttl, typ, value) for cmd, label, ttl, typ, value in self.alist[zone]])
+    return "".join(s)
+
 class _Domain:
     def __init__(self, dbc, id=None, name=None, zone=None):
         self._dbc = dbc
