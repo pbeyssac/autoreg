@@ -952,8 +952,8 @@ class _Domain:
                           'RETURNING (SELECT registry_hold FROM domains WHERE id=%s)',
                           (val, self.id, self.id))
         assert self._dbc.rowcount == 1
-        old_registry_lock, = self._dbc.fetchone()
-        if val != old_registry_lock:
+        old_registry_hold, = self._dbc.fetchone()
+        if val != old_registry_hold:
           self.set_dyn_hold(val, dyn)
     def set_dyn_hold(self, val, dyn=None):
         if dyn is None:
