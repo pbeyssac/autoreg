@@ -1386,5 +1386,5 @@ class db:
                             ' AND end_grace_period < NOW()'
                             ' ORDER BY end_grace_period')
         return self._dbc.fetchall()
-    def updates(self, outfile=sys.stdout, errout=sys.stderr):
-        self.dyn.run_updates(outfile=outfile, errout=errout)
+    def updates(self, dbh=None, outfile=sys.stdout, errout=sys.stderr):
+        self.dyn.run_updates(dbh=dbh, outfile=outfile, errout=errout)
