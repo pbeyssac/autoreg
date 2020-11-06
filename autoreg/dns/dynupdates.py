@@ -29,7 +29,7 @@ def dynupdates():
 
     while True:
       # Run updates, if any
-      dd.updates(outfile=outfile, errout=errout)
+      dd.updates(dbh=dbh, outfile=outfile, errout=errout)
       dbh.commit()
       outfile.flush()
       errout.flush()

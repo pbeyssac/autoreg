@@ -281,7 +281,7 @@ class DynamicUpdate(object):
       if self.zone_has_actions(zone):
         return True
     return False
-  def run_updates(self, outfile=sys.stdout, errout=sys.stderr, stdout=sys.stdout):
+  def run_updates(self, dbh=None, outfile=sys.stdout, errout=sys.stderr, stdout=sys.stdout):
     """Execute all pending transactions."""
     self._dbc.execute("SELECT dyn_transaction.id, zones.name FROM dyn_transaction, zones"
                       " WHERE executed_at IS NULL AND zones.id=dyn_transaction.zone_id"
@@ -289,6 +289,8 @@ class DynamicUpdate(object):
     for trans_id, zone in self._dbc.fetchall():
       print(time.strftime('%Y%m%d-%H%M%S'), trans_id, zone, file=stdout)
       self._oneupdate(trans_id, zone, out=outfile, errout=errout)
+      if dbh is not None:
+        dbh.commit()
   def _oneupdate(self, tid, zone, out=sys.stdout, errout=sys.stderr):
     """Execute transaction tid, if pending."""
     # fetch dynamic update parameters for this zone
