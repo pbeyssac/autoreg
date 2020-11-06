@@ -146,7 +146,8 @@ class _Zone:
         self._dbc.execute(
             'SELECT rrs.label,domains.name,rrs.ttl,rrtypes.label,rrs.value '
             'FROM domains,rrs,rrtypes '
-            'WHERE domains.zone_id=%s AND domains.registry_hold=FALSE '
+            'WHERE domains.zone_id=%s '
+            'AND NOT (domains.registry_hold OR domains.client_hold) '
             'AND domains.id=rrs.domain_id AND rrtypes.id=rrs.rrtype_id '
             'ORDER BY domains.name,rrs.label,rrtypes.label,rrs.value',
             (self.id,))
@@ -473,6 +474,7 @@ class _Domain:
         self._dbc.execute('SELECT domains.name, zones.name, zones.ttl, '
                           'zones.soaprimary, '
                           'registry_hold, registry_lock, '
+                          'client_hold, '
                           'internal, zone_id, registrar_id, '
                           'created_by, created_on, updated_by, updated_on, '
                           'end_grace_period '
@@ -484,6 +486,7 @@ class _Domain:
         assert self._dbc.rowcount == 1
         (self.name, self._zone_name, self.zone_ttl, self.zone_master,
          self._registry_hold, self._registry_lock,
+         self._client_hold,
          self._internal, self._zone_id, self._registrar_id,
          idcr, self._created_on, idup, self._updated_on,
          self._end_grace_period) = self._dbc.fetchone()
@@ -702,6 +705,7 @@ class _Domain:
                    % (self._updated_by, self._updated_on), file=outfile)
         if self._registry_lock: print("; registry_lock", file=outfile)
         if self._registry_hold: print("; registry_hold", file=outfile)
+        if self._client_hold: print("; client_hold", file=outfile)
         if self._internal: print("; internal", file=outfile)
         if self._end_grace_period:
             print("; end_grace_period: %s"
@@ -944,11 +948,21 @@ class _Domain:
         """Set value of boolean registry_hold."""
         self._registry_hold = val
         self._dbc.execute('UPDATE domains SET registry_hold=%s WHERE id=%s '
-                          'RETURNING (SELECT registry_hold FROM domains WHERE id=%s)',
-                          (val, self.id, self.id))
+                          'RETURNING (SELECT (registry_hold OR client_hold) != (%s OR client_hold) FROM domains WHERE id=%s)',
+                          (val, self.id, val, self.id))
         assert self._dbc.rowcount == 1
-        old_registry_hold, = self._dbc.fetchone()
-        if val != old_registry_hold:
+        changed, = self._dbc.fetchone()
+        if changed:
+          self.set_dyn_hold(val, dyn)
+    def set_client_hold(self, val, dyn=None):
+        """Set value of boolean client_hold."""
+        self._client_hold = val
+        self._dbc.execute('UPDATE domains SET client_hold=%s WHERE id=%s '
+                          'RETURNING (SELECT (registry_hold OR client_hold) != (registry_hold OR %s) FROM domains WHERE id=%s)',
+                          (val, self.id, val, self.id))
+        assert self._dbc.rowcount == 1
+        changed = self._dbc.fetchone()
+        if changed:
           self.set_dyn_hold(val, dyn)
     def set_dyn_hold(self, val, dyn=None):
         if dyn is None:
@@ -1177,7 +1191,7 @@ class db:
         if grace_days != 0:
             d.set_end_grace_period(time.time()+grace_days*86400, dyn=self.dyn)
         else:
-            if d._registry_hold:
+            if d._registry_hold or d._client_hold:
               # no use of dyn here since the domain is already out of the zone
               d.move_hist(login_id=self._login_id, domains=True)
             else:
@@ -1222,7 +1236,7 @@ class db:
         if d._internal and not override_internal:
             raise AccessError(AccessError.DINTERNAL)
         if self._nowrite: return
-        dyn = None if d._registry_hold else self.dyn
+        dyn = None if d._registry_hold or d._client_hold else self.dyn
         if replace and not delete:
           d.move_hist(login_id=self._login_id,
                       domains=False, keepds=keepds, dyn=dyn)
@@ -1272,7 +1286,7 @@ class db:
         d.fetch()
         if self._nowrite:
             return
-        dyn = None if d._registry_hold else self.dyn
+        dyn = None if d._registry_hold or d._client_hold else self.dyn
         d.addrr(label, ttl, rrtype, value, dyn=dyn)
         z.set_updateserial()
         if dyn is not None:
@@ -1285,7 +1299,7 @@ class db:
         d.fetch()
         if self._nowrite:
             return 0
-        dyn = None if d._registry_hold else self.dyn
+        dyn = None if d._registry_hold or d._client_hold else self.dyn
         n = d.delrr(label, rrtype, value, dyn=dyn)
         if n:
             z.set_updateserial()
@@ -1359,6 +1373,14 @@ class db:
         self._check_login_perm(z.name)
         if self._nowrite: return
         d.set_registry_hold(val, dyn=self.dyn)
+        z.set_updateserial()
+        self.dyn.execute()
+    def set_client_hold(self, domain, zone, val):
+        """Set client_hold flag for domain."""
+        d, z = self._zl.find(domain, zone, wlock=True)
+        self._check_login_perm(z.name)
+        if self._nowrite: return
+        d.set_client_hold(val, dyn=self.dyn)
         z.set_updateserial()
         self.dyn.execute()
     def soa(self, zone, forceincr=False):
