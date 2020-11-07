@@ -303,6 +303,27 @@ add TESTGL 600 NS NS3.EU.ORG.
 """nxd TESTGL None None None
 add TESTGL 259200 NS NS1.EU.ORG.
 """)
+  def test9duprr(self):
+    dom = 'TESTGL'
+    zone = 'EU.ORG'
+    fqdn = dom + '.' + zone
+    self.dd.new(fqdn, zone, 'NS', file=cStringIO.StringIO(self.null))
+    self.dd.dyn.clear()
+    self.dd.addrr(fqdn, zone, "", 3600, "NS", "NS2.EU.ORG.")
+    self.dd.addrr(fqdn, zone, "", 3600, "NS", "NS2.EU.ORG.")
+    self.assertEqual(str(self.dd.dyn),
+"""add TESTGL 3600 NS NS2.EU.ORG.
+add TESTGL 3600 NS NS2.EU.ORG.
+""")
+    self.dd.dyn.clear()
+    self.dd.delrr(fqdn, zone, "", "NS", "NS2.EU.ORG.")
+    self.assertEqual(self.dd.dyn.has_actions(), True)
+    self.assertEqual(str(self.dd.dyn), "del TESTGL None NS NS2.EU.ORG.\n")
+    of1 = dom + "			3600	NS	NS2.EU.ORG.\n\n"
+    self.assertEqual(self._parseout(fqdn, zone),
+                     (fqdn, zone,
+                      '*unknown*', '*unknown*', [], of1))
+
 
 if __name__ == '__main__':
   unittest.main()
