@@ -258,7 +258,7 @@ class DomainNewTest(TestCase):
       'rr': 'EU.ORG. DNSKEY 256 3 8 AwEAAaD28FYK/09FqyUtDaG0ZnkoB7rarNe5I70Ll1/ZDRlcSCDBffa6 Pr/Za1/MCkTa1DN8ZbGKlk1oXKde081tuRmdmIUpibvLg6hPGQ516Z91 zENIP0S5PovnoRA1WpPPdcCQcZ+mpgPt/in74KVJggGHQiklL2F2Dt4Y pLxcTlXD'
     }
     r = self.c.post('/en/ds/ns.dnssec.tests.eu.org/', fields)
-    self.assertTrue('Domain doesn&#39;t match record' in str(r.content))
+    self.assertTrue('Domain doesn&#39;t match record' in str(r.content) or 'Domain doesn&#x27;t match record' in str(r.content))
     self.assertEqual(200, r.status_code)
   def test_domainds_post_ko_6(self):
     self.assertTrue(self.c.login(username=self.handle, password=self.pw))

@@ -122,7 +122,7 @@ class contact_form(contactchange_form):
 
 class registrant_form(forms.Form):
   # same as contactchange_form minus the email field
-  pn1 = forms.RegexField(max_length=60, label=ugettext_lazy(label="Name"),
+  pn1 = forms.RegexField(max_length=60, label=ugettext_lazy("Name"),
               regex='^[a-zA-Z \.-]+\s+[a-zA-Z \.-]')
   # disabled until we get rid of the RIPE model (unshared registrant records)
   #em1 = forms.EmailField(max_length=64, label="E-mail", required=False)

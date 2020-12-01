@@ -89,7 +89,7 @@ class Otp(models.Model):
     contact = models.OneToOneField(Contacts, on_delete=models.CASCADE)
     secret = models.CharField(max_length=16, null=True)
     codes = models.CharField(max_length=250, null=True)
-    active = models.NullBooleanField(default=False, null=True)
+    active = models.BooleanField(default=False, null=True)
     class Meta:
         db_table = 'otp'
 

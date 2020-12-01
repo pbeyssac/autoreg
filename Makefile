@@ -23,7 +23,7 @@ preparedb:
 test:	preparedb
 	coverage-3.6 erase
 	-PYTHONPATH=$(HOME)/autoreg ENCRYPT_KEY='qVMjRVe9fQ-jF7G06l4Fogjqu_PjONV70KvZprhtit0=' \
-		coverage-3.6 run --source='.' ./autoreg/arf/manage.py test -k --settings autoreg.arf.arf.debugsettings
+		coverage-3.6 run --source='.' ./autoreg/arf/manage.py test --keepdb --settings autoreg.arf.arf.debugsettings
 	-PYTHONPATH=$(HOME)/autoreg ENCRYPT_KEY='qVMjRVe9fQ-jF7G06l4Fogjqu_PjONV70KvZprhtit0=' \
 		AUTOREG_DBSTRING="dbname=$(DBNAME) host=$(DBHOST) user=autoreg password=" \
 		coverage-3.6 run --source='.' -a -m unittest discover tests
