@@ -8,7 +8,6 @@ import random
 
 
 from cryptography.fernet import Fernet
-import six
 
 
 from .conf import ENCRYPT_KEY
@@ -27,8 +26,6 @@ def pwcrypt(passwd):
   salt_chars = '0123456789abcdefghijklmnopqstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/.'
   t = ''.join(random.SystemRandom().choice(salt_chars) \
               for i in range(CRYPT_SALT_LEN))
-  if six.PY2:
-    passwd = passwd.encode('UTF-8')
   return crypt.crypt(passwd, CRYPT_ALGO + t + '$')
 
 def encrypt(text):

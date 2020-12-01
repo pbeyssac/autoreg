@@ -24,7 +24,6 @@ import sys
 import time
 
 import psycopg2
-import six
 
 import autoreg.conf
 import autoreg.whois.db as whoisdb
@@ -146,8 +145,7 @@ class server:
     c.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     q = ''
     r = c.recv(256)
-    if six.PY3:
-      r = str(r, encoding)
+    r = str(r, encoding)
     dbh = psycopg2.connect(self.dbstring)
     dbc = dbh.cursor()
     while r:
@@ -166,8 +164,7 @@ class server:
         c.shutdown(socket.SHUT_WR)
         break
       r = c.recv(256)
-      if six.PY3:
-        r = str(r, encoding)
+      r = str(r, encoding)
     c.close()
   def log(self, msg):
     (year, month, day, hh, mm, ss, d1, d2, d3) = time.localtime(time.time())
@@ -194,7 +191,7 @@ def query(a, dbc, out, encoding='iso8859-15', remote=True):
       encoding = 'utf-8'
 
   a = ' '.join(args)
-  if not isinstance(a, six.text_type):
+  if not isinstance(a, str):
     a = a.decode(encoding)
 
   if a[0] == '/' and not remote:

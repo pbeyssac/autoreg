@@ -7,8 +7,6 @@ from __future__ import unicode_literals
 
 import crypt
 
-import six
-
 from autoreg.util import decrypt, encrypt
 from autoreg.whois.db import suffixstrip
 
@@ -27,8 +25,6 @@ class AuthBackend:
       cryptpass = ct.passwd
       if cryptpass and len(cryptpass) > 123:
         cryptpass = decrypt(cryptpass)
-      if six.PY2:
-        password = password.encode('UTF-8')
       pwd_valid = cryptpass and crypt.crypt(password,
                                             cryptpass) == cryptpass
     else:

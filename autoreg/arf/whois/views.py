@@ -14,9 +14,6 @@ import socket
 import time
 
 
-import six
-
-
 import django.contrib.auth
 from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -502,8 +499,6 @@ def chpass(request):
     raise SuspiciousOperation
 
   ct = ctlist[0]
-  if six.PY2:
-    pass0 = pass0.encode('UTF-8')
   passwd = ct.passwd
   if len(passwd) > 123:
     passwd = decrypt(passwd)
@@ -813,7 +808,7 @@ def domainedit(request, fqdn):
           'fqdn': fqdn, 'idna': idna,
           'msg': msg,
           'formlist': formlist,
-          'whoisdisplay': six.text_type(dbdom),
+          'whoisdisplay': str(dbdom),
           'has_ns': has_ns, 'has_ds': has_ds, 'can_ds': can_ds,
           'registry_hold': registry_hold, 'end_grace_period': end_grace_period,
           'addform': { 'domcontact_form': domcontact_form()} }
@@ -837,9 +832,9 @@ def domaindelete(request, fqdn):
   try:
     ok = domain_delete(dd, fqdn, out, None)
   except autoreg.dns.db.AccessError as e:
-    err = six.text_type(e)
+    err = str(e)
   except autoreg.dns.db.DomainError as e:
-    err = six.text_type(e)
+    err = str(e)
 
   if not ok or err:
     if err:

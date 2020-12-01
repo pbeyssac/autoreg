@@ -16,8 +16,6 @@ from django.utils import translation
 
 import autoreg.conf
 
-import six
-
 
 def _render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
                    language=None, encoding='quoted-printable'):
@@ -51,7 +49,7 @@ def _render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
       if line[0] not in ' \n\t' and ':' in line:
         key, val = line.split(':', 1)
         val = '=?utf-8?Q?%s?=' \
-            % six.text_type(codecs.encode(val.strip().encode('utf-8'), 'quoted-printable'), 'ascii')
+            % str(codecs.encode(val.strip().encode('utf-8'), 'quoted-printable'), 'ascii')
         # quoted-printable encoding can add '\n' which is an absolute no-no
         # in mail headers!
         val = val.replace('=\n', '').replace('=\r', '') \
@@ -63,9 +61,9 @@ def _render_to_mail(templatename, context, fromaddr, toaddrs, request=None,
       outh.append(line)
   if encoding is not None:
     msg = '\n'.join(outh) + '\n\n' \
-          + six.text_type(codecs.encode(body.encode('utf-8'), encoding), 'ascii')
+          + str(codecs.encode(body.encode('utf-8'), encoding), 'ascii')
   else:
-    msg = '\n'.join(outh) + '\n\n' + six.text_type(body)
+    msg = '\n'.join(outh) + '\n\n' + body
   return msg
 
 

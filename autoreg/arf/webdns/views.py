@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 import io
 import re
 
-import six
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -566,9 +565,9 @@ def domainns(request, fqdn=None):
         # don't really create (in read-only mode)
         dd.new(fqdn, None, 'NS', file=io.StringIO())
       except autoreg.dns.db.DomainError as e:
-        errors['fqdn'] = [six.text_type(e)]
+        errors['fqdn'] = [str(e)]
       except autoreg.dns.db.AccessError as e:
-        errors['fqdn'] = [six.text_type(e)]
+        errors['fqdn'] = [str(e)]
 
       dd.set_nowrite(False)
       rrlist = []

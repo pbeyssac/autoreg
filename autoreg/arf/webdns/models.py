@@ -5,7 +5,6 @@ from __future__ import absolute_import
 
 import io
 
-import six
 
 from django.db import connection, models
 
@@ -199,9 +198,9 @@ def preempt(handle, fqdn):
     # create empty
     dd.new(fqdn, None, 'NS', file=io.StringIO())
   except autoreg.dns.db.DomainError as e:
-    errors = six.text_type(e)
+    errors = str(e)
   except autoreg.dns.db.AccessError as e:
-    errors = six.text_type(e)
+    errors = str(e)
 
   if errors:
     wd.delete()

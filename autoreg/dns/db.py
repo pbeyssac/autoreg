@@ -18,8 +18,6 @@ import dns.tsigkeyring
 import dns.update
 
 
-import six
-
 # local modules
 from autoreg.conf import DEFAULT_GRACE_DAYS, SOA_MASTER, SOA_EMAIL, TRANS_LABEL
 
@@ -489,9 +487,6 @@ class _Domain:
          self._internal, self._zone_id, self._registrar_id,
          idcr, self._created_on, idup, self._updated_on,
          self._end_grace_period) = self._dbc.fetchone()
-        if six.PY2:
-          self._zone_name = six.text_type(self._zone_name)
-          self.name = six.text_type(self.name)
         # "GRANT SELECT" perms do not allow "SELECT ... FOR UPDATE",
         # hence the request below is done separately from the request above.
         self._dbc.execute('SELECT ad1.login, ad2.login '
@@ -1004,8 +999,6 @@ class _ZoneList:
         t = self._dbc.fetchone()
         while t:
             name, zid = t
-            if six.PY2:
-              name = six.text_type(name)
             self.zones[name] = _Zone(dbc, id=zid, name=name)
             t = self._dbc.fetchone()
     def newzone(self, name, soamaster, soaemail,
@@ -1253,11 +1246,11 @@ class db:
         if '.' not in domain:
             raise DomainError(DomainError.DNOTFOUND)
         label, parent = domain.split('.', 1)
-        rrfile = io.StringIO(six.text_type(records))
+        rrfile = io.StringIO(records)
         self.dyn.clear()
         self.modify(domain, parent, None, rrfile,
                     override_internal, replace, delete)
-        rrfile = io.StringIO(six.text_type(records))
+        rrfile = io.StringIO(records)
         self.dyn.clear()
         self.modify(domain, domain, None, rrfile,
                     override_internal, replace, delete)

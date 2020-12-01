@@ -9,9 +9,6 @@ import subprocess
 import sys
 
 
-import six
-
-
 from autoreg.common import fqdn_to_idna
 import autoreg.dns.db
 from autoreg.whois.db import admin_login, country_from_iso
@@ -413,7 +410,7 @@ def rqval(request):
       try:
         _rqexec(rq, out, za, admin_contact, login, action, reason)
       except IntegrityError as e:
-        print(six.text_type(e), file=out)
+        print(str(e), file=out)
         allok = False
 
     i += 1

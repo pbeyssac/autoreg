@@ -11,9 +11,6 @@ import re
 import sys
 
 
-import six
-
-
 from ..conf import dbstring, HANDLESUFFIX, HANDLEMAILHOST
 
 _tv68 = re.compile('^(\S+)\s*(?:(\d\d))?(\d\d)(\d\d)(\d\d)$')
@@ -35,28 +32,8 @@ def fetch_dbencoding(dbc):
       DBENCODING = 'ASCII'
   return DBENCODING
 
-if six.PY2:
-  def _todb(atuple):
-    """Convert Unicode strings in the tuple for use in a database request."""
-    newlist = []
-    for i in atuple:
-      if type(i) == unicode:
-        i = i.encode(DBENCODING)
-      newlist.append(i)
-    return tuple(newlist)
-
-  def _fromdb(atuple):
-    """Convert to Unicode any strings returned by the database."""
-    newlist = []
-    for i in atuple:
-      if type(i) == str:
-        i = unicode(i, DBENCODING)
-      newlist.append(i)
-    return tuple(newlist)
-
-else:
-  _todb = lambda x: x
-  _fromdb = lambda x: x
+_todb = lambda x: x
+_fromdb = lambda x: x
 
 
 def parse_changed(changed, outfile=sys.stdout):
@@ -330,8 +307,8 @@ class _whoisobject(object):
         continue
       r = []
       for s in o[k]:
-        if isinstance(s, six.binary_type):
-          s = six.text_type(s, encoding or 'ascii')
+        if isinstance(s, bytes):
+          s = str(s, encoding or 'ascii')
         r.append(s)
       o[k] = r
     # move foreign NIC handle out of the way
@@ -349,7 +326,7 @@ class _whoisobject(object):
         for l in o[k]:
           if l is None:
             continue
-          if not isinstance(l, six.text_type):
+          if not isinstance(l, str):
             continue
           if len(l) > maxlen:
             err.append([k + str(i), "value too long"])
@@ -1106,7 +1083,7 @@ class Main:
       pass
     else:
       print("ERROR: Unknown object type", file=outfile)
-      print(six.text_type(o, 'ascii'), file=outfile)
+      print(str(o, 'ascii'), file=outfile)
       return False
     return True
 
